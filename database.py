@@ -61,6 +61,7 @@ def get_countries():
     cursor.execute(query)
     data = cursor.fetchall()
     arr = [d['country'] for d in data]
+    conn.close()
     return arr
 
 def get_ages():
@@ -69,6 +70,7 @@ def get_ages():
     cursor.execute(query)
     data = cursor.fetchall()
     arr = [d['age'] for d in data]
+    conn.close()
     return arr
 
 def get_jobs():
@@ -77,6 +79,7 @@ def get_jobs():
     cursor.execute(query)
     data = cursor.fetchall()
     arr = [d['job'] for d in data]
+    conn.close()
     return arr
 
 def get_earnings():
@@ -85,6 +88,7 @@ def get_earnings():
     cursor.execute(query)
     data = cursor.fetchall()
     arr = [d['earning'] for d in data]
+    conn.close()
     return arr
 
 def get_trainings():
@@ -93,6 +97,7 @@ def get_trainings():
     cursor.execute(query)
     data = cursor.fetchall()
     arr = [d['training'] for d in data]
+    conn.close()
     return arr
 
 def get_times():
@@ -101,4 +106,13 @@ def get_times():
     cursor.execute(query)
     data = cursor.fetchall()
     arr = [d['time'] for d in data]
+    conn.close()
     return arr
+
+def get_ta_filters(user_id):
+    conn, cursor = connect()
+    query = "SELECT id, title FROM target_audience_filters WHERE user_id=%s"
+    cursor.execute(query, (user_id,))
+    data = cursor.fetchall()
+    conn.close()
+    return data

@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, make_response
+from flask import Flask, render_template, request, redirect, make_response, jsonify
 from database import get_all_data, get_accounts, get_trafficologists, add_account, add_trafficologist, get_countries, get_ages, get_jobs, get_earnings, get_trainings, get_times
+from database import get_ta_filters
 from analytics import get_segments, get_clusters
 from turnover import get_turnover
 from auth import check_token, get_session
+import hashlib
 import pandas as pd
 from datetime import datetime
 from hashlib import md5
@@ -81,7 +83,9 @@ def clusters():
     if len(table) == 0:
         return render_template('clusters.html', error='Not enough data')
     tables = get_clusters(table)
-    return render_template('clusters.html', tables=tables)
+    def hash(str):
+        return hashlib.md5(str.encode('utf-8')).hexdigest()
+    return render_template('clusters.html', tables=tables, hash=hash, enumerate=enumerate)
 
 @app.route('/trafficologists')
 def trafficologist_page():
@@ -103,6 +107,12 @@ def add_account_request():
     add_account(title, label, trafficologist_id)
     return redirect('/trafficologists')
 
+@app.route('/target_audience')
+def target_audience_page():
+    ta_filters = get_ta_filters(1)
+    print(ta_filters)
+    return render_template('ta.html', filters=ta_filters)
+
 @app.route('/target_audience/add', methods=['get'])
 def add_ta_page():
     countries = get_countries()
@@ -112,13 +122,18 @@ def add_ta_page():
     trainings = get_trainings()
     times = get_times()
     
-    return render_template('edit_ta_filter.html', 
+    return render_template('create_ta_filter.html', 
         countries=countries,
         ages=ages,
         jobs=jobs,
         earnings=earnings,
         trainings=trainings,
         times=times)
+
+@app.route('/target_audience/add', methods=['post'])
+def add_ta_action():
+    countries = request.form.get('countries')
+    return jsonify(countries)
 
 app.run('0.0.0.0', 8000, debug=True)
 

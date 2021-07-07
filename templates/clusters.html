@@ -2,6 +2,23 @@
 {% block title %} Кластеры {% endblock %}
 {% block content %}
 <div class="d-flex flex-column">
+    <!-- <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">Home</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Profile</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">Contact</button>
+        </li>
+      </ul>
+      <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">...</div>
+        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">...</div>
+        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">...</div>
+      </div> -->
+
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
         <form method='get' action='/turnover'>
@@ -11,12 +28,47 @@
         </form>
     {% else %}
         <h1>Кластеры</h1>
+        <div><a href="/" class="btn btn-success">В меню</a></div>
         <form method='get' action='/turnover'>
             <input type='date' name='date_start' placeholder="date start">
             <input type='date' name='date_end' placeholder="date end">
             <button class="btn btn-primary">Update</button>
         </form>
-        {% for header, dict in tables.items() %}
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            {% for i, (header, dict) in enumerate(tables.items()) %}
+                {% if i == 0 %}
+                    <button class="nav-link active" id="{{'a' + hash(header + '-tab')}}" data-bs-toggle="tab" data-bs-target="#{{'a' + hash(header)}}" type="button" role="tab" aria-controls="{{'a' + hash(header)}}" aria-selected="true">{{ header }}</button>
+                {% else %}
+                    <button class="nav-link" id="{{'a' + hash(header + '-tab')}}" data-bs-toggle="tab" data-bs-target="#{{'a' + hash(header)}}" type="button" role="tab" aria-controls="{{'a' + hash(header)}}" aria-selected="false">{{ header }}</button>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            {% for i, (header, dict) in enumerate(tables.items()) %}
+                {% if i == 0 %}
+                <div class="tab-pane fade show active" id="{{'a'+ hash(header)}}" role="tabpanel" aria-labelledby="{{ 'a' + hash(header + '-tab') }}">
+                    <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
+                    {% if dict['Размер кластера'] != 0 %}
+                        <h3>Кластер</h3>
+                        {{ dict['Датасет'].to_html() |safe }}
+                    {% endif %}
+                </div>    
+                {% else %}
+                    <div class="tab-pane fade" id="{{'a' + hash(header)}}" role="tabpanel" aria-labelledby="{{ 'a' + hash(header + '-tab') }}">
+                        <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
+                        {% if dict['Размер кластера'] != 0 %}
+                            <h3>Кластер</h3>
+                            {{ dict['Датасет'].to_html() |safe }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <!-- <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">...</div> -->
+            <!-- <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">...</div> -->
+            <!-- <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">...</div> -->
+        </div>
+
+        <!-- {% for header, dict in tables.items() %}
             <h3>{{ header }}</h3>
             <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
             {% if dict['Размер кластера'] != 0 %}
@@ -24,7 +76,7 @@
                 {{ dict['Датасет'].to_html() |safe }}
             {% endif %}
             <hr>
-        {% endfor %}
+        {% endfor %} -->
     {% endif %}
 </div>
 {% endblock %}

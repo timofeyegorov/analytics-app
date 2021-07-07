@@ -8,6 +8,7 @@ def check_token(token):
     query = "SELECT * FROM sessions WHERE token=%s"
     cursor.execute(query, (token,))
     session = cursor.fetchone()
+    conn.close()
     if session is None:
         return False
     return True

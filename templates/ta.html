@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %} Целевая аудитория {% endblock %}
+{% block content %}
+<div class="d-flex flex-column">
+    <div><a href="/" class="btn btn-success">В меню</a></div>
+    <div class="m-2">
+        <a href="/target_audience/add" class="btn btn-primary">Добавить фильтр целевой аудитории</a>
+    </div>
+    <div class="card">
+        {% for filter in filters %}
+            <div class="m-2"><a class="btn btn-success m-1" href="/target_audience/{{filter['id']}}/edit">Редактировать</a><span>{{ filter['title'] }} </span></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

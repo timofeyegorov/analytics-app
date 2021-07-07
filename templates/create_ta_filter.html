@@ -3,7 +3,8 @@
 {% block content %}
 
 <div class="card p-2">
-    <form action='login' method='post'>
+    <div><a href="/" class="btn btn-success">В меню</a></div>
+    <form action='/target_audience/add' method='post'>
         <div class="m-2">
             <p>Страны</p>
             {% for country in countries %} 
