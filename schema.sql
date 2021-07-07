@@ -1,8 +1,8 @@
-DROP DATABASE analytics;
-CREATE DATABASE analytics;
-GRANT ALL PRIVILEGES ON analytics.* TO analytics@localhost;
+DROP DATABASE analytic;
+CREATE DATABASE analytic;
+-- GRANT ALL PRIVILEGES ON analytics.* TO analytics@localhost;
 
-use analytics;
+use analytic;
 
 CREATE TABLE `leads` (
   `id` int AUTO_INCREMENT PRIMARY KEY NOT NULL,

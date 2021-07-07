@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %} Сегменты {% endblock %}
+{% block content %}
+<div class='d-flex flex-column'>
+    {% if error %}
+        <h1 style="color: red">{{ error }}</h1>
+        <form method='get' action='/segments'>
+            <input type='date' name='date_start' placeholder="date start">
+            <input type='date' name='date_end' placeholder="date end">
+            <button class="btn btn-primary">Update</button>
+        </form>
+    {% else %}
+        <h1>Сегменты</h1>
+        <form method='get' action='/segments'>
+            <input type='date' name='date_start' placeholder="date start">
+            <input type='date' name='date_end' placeholder="date end">
+            <button class="btn btn-primary">Update</button>
+        </form>
+        {% for header, table in tables.items() %}
+            <h3>{{ header }}</h3>
+            {{ table.to_html() |safe }}
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

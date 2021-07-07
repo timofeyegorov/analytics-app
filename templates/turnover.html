@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %} Обороты {% endblock %}
+{% block content %}
+<div class="d-flex flex-column">
+    {% if error %}
+        <h1 style="color: red">{{ error }}</h1>
+        <form method='get' action='/turnover'>
+            <input type='date' name='date_start' placeholder="date start">
+            <input type='date' name='date_end' placeholder="date end">
+            <button class="btn btn-primary">Update</button>
+        </form>
+    {% else %}
+        <h1>Обороты</h1>
+        <form method='get' action='/turnover'>
+            <input type='date' name='date_start' placeholder="date start">
+            <input type='date' name='date_end' placeholder="date end">
+            <button class="btn btn-primary">Update</button>
+        </form>
+        {% for header, (table1, table2, table3) in tables.items() %}
+            <h3>{{ header }}</h3>
+            <h3>Factor: {{table3}}</h3> 
+            {{ table1.to_html() |safe }}
+            <hr>
+            {{ table2.to_html() |safe }}
+            <hr>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

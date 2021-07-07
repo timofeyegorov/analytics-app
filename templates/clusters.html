@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %} Кластеры {% endblock %}
+{% block content %}
+<div class="d-flex flex-column">
+    {% if error %}
+        <h1 style="color: red">{{ error }}</h1>
+        <form method='get' action='/turnover'>
+            <input type='date' name='date_start' placeholder="date start">
+            <input type='date' name='date_end' placeholder="date end">
+            <button class="btn btn-primary">Update</button>
+        </form>
+    {% else %}
+        <h1>Кластеры</h1>
+        <form method='get' action='/turnover'>
+            <input type='date' name='date_start' placeholder="date start">
+            <input type='date' name='date_end' placeholder="date end">
+            <button class="btn btn-primary">Update</button>
+        </form>
+        {% for header, dict in tables.items() %}
+            <h3>{{ header }}</h3>
+            <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
+            {% if dict['Размер кластера'] != 0 %}
+                <h3>Кластер</h3>
+                {{ dict['Датасет'].to_html() |safe }}
+            {% endif %}
+            <hr>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

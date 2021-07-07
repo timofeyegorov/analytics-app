@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, make_response
 from database import get_all_data, get_accounts, get_trafficologists, add_account, add_trafficologist, get_countries, get_ages, get_jobs, get_earnings, get_trainings, get_times
-from analytics import get_segments
+from analytics import get_segments, get_clusters
+from turnover import get_turnover
 from auth import check_token, get_session
 import pandas as pd
 from datetime import datetime
@@ -40,8 +41,8 @@ def logout():
     resp.set_cookie('token', '')
     return resp
 
-@app.route('/stats')
-def stats():
+@app.route('/segments')
+def segments():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
     table = get_all_data()
@@ -50,9 +51,37 @@ def stats():
     if date_end:
         table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
     if len(table) == 0:
-        return render_template('table.html', error='Нет данных для заданного периода')
+        return render_template('segments.html', error='Нет данных для заданного периода')
     tables = get_segments(table)
-    return render_template('table.html', tables=tables, header='Table 1')
+    return render_template('segments.html', tables=tables)
+
+@app.route('/turnover')
+def turnover():
+    date_start = request.args.get('date-start')
+    date_end = request.args.get('date-end')
+    table = get_all_data()
+    if date_start:
+        table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+    if date_end:
+        table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+    if len(table) == 0:
+        return render_template('turonver.html', error='Not enough data')
+    tables, traffic_channel = get_turnover(table)
+    return render_template('turnover.html', tables=tables, traffic_channel=traffic_channel)
+
+@app.route('/clusters')
+def clusters():
+    date_start = request.args.get('date-start')
+    date_end = request.args.get('date-end')
+    table = get_all_data()
+    if date_start:
+        table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+    if date_end:
+        table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+    if len(table) == 0:
+        return render_template('clusters.html', error='Not enough data')
+    tables = get_clusters(table)
+    return render_template('clusters.html', tables=tables)
 
 @app.route('/trafficologists')
 def trafficologist_page():
