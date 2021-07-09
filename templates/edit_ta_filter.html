@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %} Авторизация {% endblock %}
+{% block content %}
+
+<div class="card p-2">
+    <div><a href="/" class="btn btn-success">В меню</a></div>
+    <form action='/target_audience/add' method='post'>
+        <div class="m-2">
+            <input type='hidden' name='id' value={{id}}>
+            <input type='form-control' name='title' value="{{ title }}" placeholder="Заголовок">
+        </div>
+        <div class="m-2">
+            <p>Страны</p>
+            {% for country in countries %} 
+            <div class="p-1"><input type='checkbox' name='countries[]' value="{{ country }}" {{'checked' if country in ta_countries else ''}}><span class="m-1">{{ country }}</span></div>
+            {% endfor %}
+        </div>
+        <div class="m-2">
+            <p>Возрасты</p>
+            {% for age in ages %} 
+            <div class="p-1"><input type='checkbox' name='ages[]' value="{{ age }}" {{'checked' if age in ta_ages else ''}}><span class="m-1">{{ age }}</span></div>
+            {% endfor %}
+        </div>
+        <div class="m-2">
+            <p>Работы</p>
+            {% for job in jobs %} 
+            <div class="p-1"><input type='checkbox' name='jobs[]' value="{{ job }}" {{'checked' if job in ta_jobs else ''}}><span class="m-1">{{ job }}</span></div>
+            {% endfor %}
+        </div>
+        <div class="m-2">
+            <p>Заработки</p>
+            {% for earning in earnings %} 
+            <div class="p-1"><input type='checkbox' name='earnings[]' value="{{ earning }}" {{'checked' if earning in ta_earnings else ''}}><span class="m-1">{{ earning }}</span></div>
+            {% endfor %}
+        </div>
+        <div class="m-2">
+            <p>Trainings</p>
+            {% for training in trainings %} 
+            <div class="p-1"><input type='checkbox' name='trainings[]' value="{{ training }}" {{'checked' if training in ta_trainings else ''}}><span class="m-1">{{ training }}</span></div>
+            {% endfor %}
+        </div>
+        <div class="m-2">
+            <p>Times</p>
+            {% for time in times %} 
+            <div class="p-1"><input type='checkbox' name='times[]' value="{{ time }}" {{'checked' if time in ta_times else ''}}><span class="m-1">{{ time }}</span></div>
+            {% endfor %}
+        </div>
+        <div class="m-2"></div>
+        <div class="m-2"><button class="btn btn-success">Изменить</button></div>
+    </form>
+</div>
+
+{% endblock %}

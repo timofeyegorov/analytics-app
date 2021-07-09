@@ -37,14 +37,12 @@
         <div class="card m-5 p-2">
             <form action="/trafficologists/add_account" method='post'>
                 <h1>Добавить кабинет</h1>
-                <!-- <div class="m-2"><input name='title' placeholder="Название кабинета"></div> -->
-                <!-- <div class="m-2"><input name='label' placeholder="Метка кабинета"></div> -->
+                <div class="m-2"><input name='title' placeholder="Название кабинета"></div>
+                <div class="m-2"><input name='label' placeholder="Метка кабинета"></div>
                 <div class="m-2"><select name='trafficologist_id'>
-                    <!-- {% for id, trafficologist in trafficologists %}
+                    {% for id, trafficologist in trafficologists %}
                         <option value="{{ id }}">{{ trafficologist }}</option>
-                    {% endfor %} -->
-                    <option>более 100 000 руб.</option>
-                    <option>до 100 000 руб.</option>
+                    {% endfor %}
                 </select></div>
                 <div class="m-2"><button class="btn btn-primary">Add</button></div>
             </form>

@@ -1,6 +1,8 @@
 from config import config
 import pandas as pd
 import pymysql
+import pickle as pkl
+from uuid import uuid4 as uuid
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
@@ -116,3 +118,36 @@ def get_ta_filters(user_id):
     data = cursor.fetchall()
     conn.close()
     return data
+
+def get_ta_filter(id):
+    conn, cursor = connect()
+    query = "SELECT id, title, pickle FROM target_audience_filters WHERE id=%s"
+    cursor.execute(query, (id,))
+    data = cursor.fetchone()
+    conn.close()
+    return data
+
+def add_ta_filter(user_id, title, countries, ages, jobs, earnings, trainings, times):
+    pickle = str(uuid()) + '.pkl'
+    with open('filters/' + pickle, 'wb') as f:
+        pkl.dump((countries, ages, jobs, earnings, trainings, times), f)
+    conn, cursor = connect()
+    query = "INSERT INTO target_audience_filters (user_id, title, pickle) VALUES (%s, %s, %s)"
+    cursor.execute(query, (user_id, title, pickle))
+    conn.commit()
+    conn.close()
+
+def edit_ta_filter(id, title, countries, ages, jobs, earnings, trainings, times):
+    conn, cursor = connect()
+    query = "SELECT * FROM target_audience_filters WHERE id=%s"
+    cursor.execute(query, (id,))
+    data = cursor.fetchone()
+    query = "UPDATE target_audience_filters SET title=%s WHERE id=%s"
+    cursor.execute(query, (title, id))
+    conn.commit()
+    conn.close()
+    pickle = data['pickle']
+    with open('filters/' + pickle, 'wb') as f:
+        pkl.dump((countries, ages, jobs, earnings, trainings, times), f)
+
+     

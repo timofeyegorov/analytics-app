@@ -8,7 +8,7 @@
     </div>
     <div class="card">
         {% for filter in filters %}
-            <div class="m-2"><a class="btn btn-success m-1" href="/target_audience/{{filter['id']}}/edit">Редактировать</a><span>{{ filter['title'] }} </span></div>
+            <div class="m-2"><a class="btn btn-success m-1" href="/target_audience/{{filter['id']}}/edit">Редактировать</a><a class="mx-1" href="/target_audience/{{filter['id']}}">{{ filter['title'] }} </a></div>
         {% endfor %}
     </div>
 </div>

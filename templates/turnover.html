@@ -7,24 +7,71 @@
         <form method='get' action='/turnover'>
             <input type='date' name='date_start' placeholder="date start">
             <input type='date' name='date_end' placeholder="date end">
-            <button class="btn btn-primary">Update</button>
+            <input type='hidden' name='tab' id='tab' value="{{tab if tab else 1}}">
+            <button class="btn btn-primary">Обновить</button>
+            <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
         </form>
     {% else %}
         <h1>Обороты</h1>
         <div><a href="/" class="btn btn-success">В меню</a></div>
         <form method='get' action='/turnover'>
-            <input type='date' name='date_start' placeholder="date start">
-            <input type='date' name='date_end' placeholder="date end">
-            <button class="btn btn-primary">Update</button>
+            <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
+            <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
+            <input type='hidden' name='tab' id='tab' value="{{tab if tab else 1}}">
+            <button class="btn btn-primary">Обновить</button>
+            <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
         </form>
-        {% for header, (table1, table2, table3) in tables.items() %}
-            <h3>{{ header }}</h3>
-            <h3>Factor: {{table3}}</h3> 
-            {{ table1.to_html() |safe }}
-            <hr>
-            {{ table2.to_html() |safe }}
-            <hr>
-        {% endfor %}
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            {% for header, (table1, table2, table3) in tables.items() %}
+                <li class="nav-item" role="presentation">
+                    <button class="tab-button nav-link {{'active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}-tab}}" data-bs-toggle="tab" data-bs-target="#turnover-{{loop.index}}" type='button' role='tab' aria-controls="turnover-{{loop.index}}" aria-selected="{{'true' if loop.index == 1 and tab is none or tab|int == loop.index else 'false'}}">{{ header }}</button>
+                </li>
+            {% endfor %}
+            <li class="nav-item" role="presentation">
+                <button class="tab-button nav-link {{'active' if tables|length + 1 == 1 and tab is none or tab|int == tables|length + 1 else ''}}" id="turnover-{{tables|length + 1}}-tab" data-bs-toggle="tab" data-bs-target="#turnover-{{tables|length + 1}}" type='button' role='tab' aria-controls="turnover-{{tables|length}}" aria-selected="{{'true' if tab|int == tables|length + 1 else 'false'}}">Каналы трафика</button>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            {% for header, (table1, table2, table3) in tables.items() %}
+                <div class="tab-pane fade {{'show active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
+                    <h3>Множитель: {{table3}}</h3> 
+                    {{ table1.to_html() |safe }}
+                    <hr>
+                    {{ table2.to_html() |safe }}
+                    <hr>
+                </div>
+            {% endfor %}
+            <div class="tab-pane fade {{'show active' if tab|int == tables|length + 1 else ''}}" id="turnover-{{tables|length+1}}" role="tabpanel" aria-labelledby="turnover-{{tables|length+1}}-tab">
+                <h3>Каналы трафика</h3> 
+                {{ traffic_channel['traffic_channel'].to_html() |safe }}
+                <hr>
+            </div>
+        </div>
     {% endif %}
 </div>
+
+<script>
+    function onTabChange(num) {
+        return function(event) {
+            let element = document.querySelector('#tab');
+            element.setAttribute('value', num);
+        }
+    }
+    for (const [i, element] of document.querySelectorAll('.tab-button').entries()) {
+        element.addEventListener('click', onTabChange(i + 1));
+    }
+
+    let resetFilterButton = document.querySelector('#resetFilterButton');
+    resetFilterButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        let button = event.target;
+        let form = button.closest('form');
+        let start_date = form.querySelector('[name=date_start]');
+        let end_date = form.querySelector('[name=date_end]');
+        start_date.value="";
+        end_date.value="";
+        form.submit();
+    })
+</script>
 {% endblock %}
