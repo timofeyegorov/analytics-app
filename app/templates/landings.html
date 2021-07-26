@@ -17,15 +17,9 @@
         <form method='get' id='filters' action='/landings'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
-            <input type='hidden' id='ta-filter' name='ta_filter' value={{ filter['id'] }}>
             <button class="btn btn-primary">Обновить</button>
             <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
         </form>
-        <div>
-        {% for ta_filter in ta_filters %}
-            <button class="ta-filter-button btn btn-warning" id="filterButton{{ta_filter['id']}}" {{'disabled' if filter['id'] == ta_filter['id'] else ''}}>{{ta_filter['title']}}</button>
-        {% endfor %}
-        </div>
         {% for header, table in tables.items() %}
             <h3>{{ header }}</h3>
             {{ table.to_html() |safe }}
@@ -55,12 +49,6 @@
             form.submit();
         }
     }
-
-    let button;
-    {% for ta_filter in ta_filters %}
-    button = document.querySelector("#filterButton{{ta_filter['id']}}");
-    button.addEventListener('click', setTAFilter({{ta_filter['id']}}))
-    {% endfor %}
 </script>
 
 {% endblock %}

@@ -30,15 +30,9 @@
                 <input type='date' name='date_payment_end' value="{{ date_payment_end }}">
             </p>
             <input type='hidden' name='tab' id='tab' value="{{tab if tab else 1}}">
-            <input type='hidden' id='ta-filter' name='ta_filter' value={{ filter['id'] }}>
             <button class="btn btn-primary">Обновить</button>
             <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
         </form>
-        <div>
-            {% for ta_filter in ta_filters %}
-                <button class="ta-filter-button btn btn-warning" id="filterButton{{ta_filter['id']}}" {{'disabled' if filter['id'] == ta_filter['id'] else ''}}>{{ta_filter['title']}}</button>
-            {% endfor %}
-        </div>
 
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             {% for header, (table1, table2, table3) in tables.items() %}
@@ -103,11 +97,5 @@
             form.submit();
         }
     }
-
-    let button;
-    {% for ta_filter in ta_filters %}
-    button = document.querySelector("#filterButton{{ta_filter['id']}}");
-    button.addEventListener('click', setTAFilter({{ta_filter['id']}}))
-    {% endfor %}
 </script>
 {% endblock %}

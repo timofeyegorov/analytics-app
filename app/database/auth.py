@@ -1,4 +1,4 @@
-from database import connect
+from . import connect
 from uuid import uuid4 as uuid
 
 def check_token(token):

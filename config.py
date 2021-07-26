@@ -1,9 +1,9 @@
 config = {
     'database': {
-        'user': 'analytic',
-        'password': '+Z#rR(7_ks&kNSbx',
+        'user': 'analytics',
+        'password': 'analytics',
         'host': 'localhost',
-        'db': 'analytic',
+        'db': 'analytics',
         'charset': 'utf8'
     }
 }
