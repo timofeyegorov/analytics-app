@@ -1,3 +1,6 @@
+{% from 'macros/buttons.html' import reset_button %}
+{% from 'macros/tables.html' import wide_table %}
+
 {% extends 'base.html' %}
 {% block title %}Сегменты{% endblock %}
 {% block content %}
@@ -9,7 +12,7 @@
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
             <button class="btn btn-primary">Обновить</button>
-            <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
+            {{ reset_button() }}
         </form>
     {% else %}
         <h1>Сегменты</h1>
@@ -18,37 +21,15 @@
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
             <button class="btn btn-primary">Обновить</button>
-            <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
+            {{ reset_button() }}
         </form>
-         {% for header, table in tables.items() %}
+        {{ wide_table(tables) }}        
+
+
+        <!-- {% for header, table in tables.items() %}
             <h3>{{ header }}</h3>
             {{ table.to_html() |safe }}
-        {% endfor %} 
+        {% endfor %}  -->
     {% endif %}
 </div>
-<script>
-    let resetFilterButton = document.querySelector('#resetFilterButton');
-    resetFilterButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        let button = event.target;
-        let form = button.closest('form');
-        let start_date = form.querySelector('[name=date_start]');
-        let end_date = form.querySelector('[name=date_end]');
-        start_date.value="";
-        end_date.value="";
-        form.submit();
-    });
-
-    function setTAFilter(num) {
-        return function(event) {
-            console.log(1);
-            event.preventDefault()
-            let hidden = document.querySelector('#ta-filter');
-            hidden.setAttribute('value', num);
-            let form = document.querySelector('#filters');
-            form.submit();
-        }
-    }                           
-</script>
-
 {% endblock %}

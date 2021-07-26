@@ -1,0 +1,16 @@
+{% macro reset_button() -%}
+    <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
+    <script>
+        let resetFilterButton = document.querySelector('#resetFilterButton');
+        resetFilterButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            let button = event.target;
+            let form = button.closest('form');
+            let start_date = form.querySelector('[name=date_start]');
+            let end_date = form.querySelector('[name=date_end]');
+            start_date.value="";
+            end_date.value="";
+            form.submit();
+        });    
+    </script>
+{%- endmacro %}

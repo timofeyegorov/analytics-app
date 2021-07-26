@@ -1,0 +1,42 @@
+{% macro wide_table(tables, skip=1) -%}
+    <style>
+        .col-disabled {
+            display: none;
+        }
+    </style>
+
+    <div>
+        {% for column in (tables.values()|first).columns[skip:] %}
+            <button class="btn btn-success m-1 column-disable column-{{ loop.index }}">{{ column }}</button>
+        {% endfor %}
+    </div>
+    {% for header, table in tables.items() %}
+        <h1>{{ header }}</h1>
+        {{ table.to_html() |safe }}
+    {% endfor %}
+    <script>
+        let button;
+        {% for column in (tables.values()|first).columns[skip:] %}
+        button = document.querySelector('.column-{{ loop.index }}');
+        button.addEventListener('click', function(event) {
+            column = '{{ column }}'
+            let button = event.target;
+
+            let table = document.querySelector('table');
+            let columns = Array.from(table.querySelectorAll('thead tr th')).map((e) => e.innerText);
+            let columnIndex = columns.indexOf(column);
+            let elements = document.querySelectorAll('table tr :nth-child(' + (columnIndex + 1) + ')');
+            for (element of elements) {
+                element.classList.toggle('col-disabled');
+            }
+            button.classList.toggle('btn-warning');
+            button.classList.toggle('btn-success');          
+        });
+        {% endfor %}
+
+        let buttons = document.querySelectorAll('button.column-disable');
+        for (let i = 5; i < buttons.length; i++) {
+            buttons[i].dispatchEvent(new Event('click'));
+        }
+    </script>
+{%- endmacro %}
