@@ -24,28 +24,85 @@
 <body class="p-5">
     <div class="d-flex p-2">
         <div class="m-5">
+            <div><a href="/" class="btn btn-success">В меню</a></div>
             <h1>Все трафикологи и их кабинеты</h1>
-            {{ accounts | safe }}
+            {{ accounts.sort_values(by='name').to_html(index=False) | safe }}
         </div>
-        <div class="card m-5 p-2">
-            <form action="/trafficologists/add" method='post'>
-                <h1>Добавить трафиколога</h1>
-                <div class="m-2"><input name='name' placeholder="Имя трафиколога"></div>
-                <div class="m-2"><button class='btn btn-primary'>Add</button></div>
-            </form>
+        <div>
+            <div class="card m-5 p-2">
+                <form action="/trafficologists/add" method='post'>
+                    <h3 class="p-2">Добавить трафиколога</h3>
+
+                    {% if trafficologist_error %}
+                        <div class="m-2">
+                            <p style="color: red">{{ trafficologist_error }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="m-2"><input class="form-control" name='name' placeholder="Имя трафиколога"></div>
+                    <div class="m-2"><button class='btn btn-primary'>Добавить</button></div>
+                </form>
+            </div>
+
+            <div class="card m-5 p-2">
+                <form action="/trafficologists/delete" method='post'>
+                    <h3 class="p-2">Удалить трафиколога</h3>
+                    <div class="m-2"><select class="form-control" name='id'>
+                        {% for id, trafficologist in trafficologists %}
+                            <option value="{{ id }}">{{ trafficologist }}</option>
+                        {% endfor %}
+                    </select></div>
+                    <div>
+                        <input type='checkbox' required>
+                        <span>Подтвердите удаление</span>
+                    </div>
+                    <div class="m-2"><button class='btn btn-primary'>Удалить</button></div>
+                </form>
+            </div>
         </div>
-        <div class="card m-5 p-2">
-            <form action="/trafficologists/add_account" method='post'>
-                <h1>Добавить кабинет</h1>
-                <div class="m-2"><input name='title' placeholder="Название кабинета"></div>
-                <div class="m-2"><input name='label' placeholder="Метка кабинета"></div>
-                <div class="m-2"><select name='trafficologist_id'>
-                    {% for id, trafficologist in trafficologists %}
-                        <option value="{{ id }}">{{ trafficologist }}</option>
-                    {% endfor %}
-                </select></div>
-                <div class="m-2"><button class="btn btn-primary">Add</button></div>
-            </form>
+        <div>
+            <div class="card m-5 p-2">
+                <form action="/trafficologists/add_account" method='post'>
+                    <h3 class="p-2">Добавить кабинет</h3>
+                    {% if account_error %}
+                        <div class="m-2">
+                            <p style="color: red">{{ account_error }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="m-2">
+                        <label>title</label><br>
+                        <input class="form-control" name='title' placeholder="Название кабинета">
+                    </div>
+                    <div class="m-2">
+                        <label>label</label><br>
+                        <input class="form-control" name='label' placeholder="Метка кабинета">
+                    </div>
+                    <div class="m-2">
+                        <label>trafficologist</label><br>
+                        <select class="form-control" name='trafficologist_id'>
+                        {% for id, trafficologist in trafficologists2 %}
+                            <option value="{{ id }}">{{ trafficologist }}</option>
+                        {% endfor %}
+                        </select>
+                    </div>
+                    <div class="m-2"><button class="btn btn-primary">Add</button></div>
+                </form>
+            </div>
+
+            <div class="card m-5 p-2">
+                <form action="/accounts/delete" method='post'>
+                    <h3 class="p-2">Удалить кабинет</h3>
+                    <div class="m-2">
+                        <input class="form-control" name="id" placeholder="Id">
+                    </div>
+                    <div>
+                        <input type='checkbox' required>
+                        <span>Подтвердите удаление</span>
+                    </div>
+                    <div class="m-2"><button class='btn btn-primary'>Удалить</button></div>
+                </form>
+            </div>
         </div>
     </div>
 </body>

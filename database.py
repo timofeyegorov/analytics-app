@@ -29,11 +29,14 @@ def get_trafficologist_data():
 
 def get_accounts():
     conn, cursor = connect()
-    query = "SELECT label, title, name FROM trafficologists, accounts WHERE accounts.trafficologist_id=trafficologists.id"
+    query = "SELECT accounts.id, label, title, name FROM trafficologists, accounts WHERE accounts.trafficologist_id=trafficologists.id"
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
-    return pd.DataFrame(data)
+    data = pd.DataFrame(data)
+    # data.index = data.id
+    # data.drop('id', axis=1, inplace=True)
+    return data
 
 def get_trafficologists():
     conn, cursor = connect()
@@ -50,10 +53,24 @@ def add_trafficologist(name):
     conn.commit()
     conn.close()
 
+def delete_trafficologist(id):
+    conn, cursor = connect()
+    query = "DELETE FROM trafficologists WHERE id=%s"
+    cursor.execute(query, (id,))
+    conn.commit()
+    conn.close()
+
 def add_account(title, label, trafficologist_id):
     conn, cursor = connect()
     query = "INSERT INTO accounts (title, label, trafficologist_id) VALUES (%s, %s, %s)"
     cursor.execute(query, (title, label, trafficologist_id))
+    conn.commit()
+    conn.close()
+
+def delete_account(id):
+    conn, cursor = connect()
+    query = "DELETE FROM accounts WHERE id=%s"
+    cursor.execute(query, (id,))
     conn.commit()
     conn.close()
     

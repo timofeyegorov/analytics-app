@@ -32,8 +32,8 @@ CREATE TABLE `leads` (
 
 CREATE TABLE accounts (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    label VARCHAR(255) NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    label VARCHAR(255) UNIQUE NOT NULL,
+    title VARCHAR(255) UNIQUE NOT NULL,
     trafficologist_id INTEGER NOT NULL
 );
 

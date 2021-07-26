@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %} Сегменты статистика {% endblock %}
+{% block content %}
+<div class="d-flex flex-column">
+    {% if error %}
+        <h1 style="color: red">{{ error }}</h1>
+        <form method='get' action='/traffic_sourses'>
+            <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
+            <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
+            <input type='hidden' name='tab' value="{{ tab if tab else 1 }}" >
+            <button class="btn btn-primary">Обновить</button>
+            <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
+        </form>
+    {% else %}
+        <h1>Сегменты статистика</h1>
+        <div><a href="/" class="btn btn-success">В меню</a></div>
+        <form method='get' action='/traffic_sources'>
+            <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
+            <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
+            <input type='hidden' name='tab' id="tab" value="{{ tab if tab else 1 }}"> 
+            <button class="btn btn-primary">Обновить</button>
+            <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
+        </form>
+        <div>
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                {% for header, table in tables.items() %}
+                    <li class="nav-item" role="presentation">
+                        {% if loop.index == 1 and tab is none or tab|int == loop.index %}
+                            <button class="tab-button nav-link active" id="{{'cluster-' + loop.index|string + '-tab'}}" data-bs-toggle="tab" data-bs-target="#{{'cluster' + loop.index|string}}" type="button" role="tab" aria-controls="{{'cluster-' + loop.index|string}}" aria-selected="true">{{ header }}</button>
+                        {% else %}
+                            <button class="tab-button nav-link" id="{{'cluster-' + loop.index|string + '-tab'}}" data-bs-toggle="tab" data-bs-target="#{{'cluster-' + loop.index|string}}" type="button" role="tab" aria-controls="{{'cluster-' + loop.index|string}}" aria-selected="false">{{ header }}</button>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="tab-content" id="myTabContent">
+                {% for header, table in tables.items() %}
+                    {% if loop.index == 1 and tab is none or tab|int == loop.index %}
+                    <div class="tab-pane w-100 fade show active" id="{{'cluster-'+ loop.index|string}}" role="tabpanel" aria-labelledby="{{ 'cluster-' + loop.index|string + '-tab' }}">
+                        {{ table.to_html()|safe }}
+                    </div>    
+                    {% else %}
+                        <div class="tab-pane fade" id="{{'cluster-' + loop.index|string}}" role="tabpanel" aria-labelledby="{{ 'cluster-' + loop.index|string + '-tab' }}">
+                            {{ table.to_html()|safe }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function onTabChange(num) {
+        return function(event) {
+            console.log(event.target);
+            let element = document.querySelector('#tab');
+            element.setAttribute('value', num);
+        }
+    }
+    for ([i, element] of document.querySelectorAll('.tab-button').entries()) {
+        element.addEventListener('click', onTabChange(i + 1));
+    }
+
+    let resetFilterButton = document.querySelector('#resetFilterButton');
+    resetFilterButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        let button = event.target;
+        let form = button.closest('form');
+        let start_date = form.querySelector('[name=date_start]');
+        let end_date = form.querySelector('[name=date_end]');
+        start_date.value="";
+        end_date.value="";
+        form.submit();
+    })
+</script>
+
+{% endblock %}

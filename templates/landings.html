@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Сегменты{% endblock %}
+{% block title %}Лендинги{% endblock %}
 {% block content %}
 <div class='d-flex flex-column'>
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
         <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' action='/segments'>
+        <form method='get' action='/landings'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
             <button class="btn btn-primary">Обновить</button>
@@ -14,7 +14,7 @@
     {% else %}
         <h1>Сегменты</h1>
         <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' id='filters' action='/segments'>
+        <form method='get' id='filters' action='/landings'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
             <input type='hidden' id='ta-filter' name='ta_filter' value={{ filter['id'] }}>
@@ -26,10 +26,10 @@
             <button class="ta-filter-button btn btn-warning" id="filterButton{{ta_filter['id']}}" {{'disabled' if filter['id'] == ta_filter['id'] else ''}}>{{ta_filter['title']}}</button>
         {% endfor %}
         </div>
-         {% for header, table in tables.items() %}
+        {% for header, table in tables.items() %}
             <h3>{{ header }}</h3>
             {{ table.to_html() |safe }}
-        {% endfor %} 
+        {% endfor %}
     {% endif %}
 </div>
 <script>

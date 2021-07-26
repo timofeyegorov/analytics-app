@@ -4,9 +4,15 @@
 <div class="d-flex flex-column">
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
-        <form method='get' action='/turnover'>
-            <input type='date' name='date_start' placeholder="date start">
-            <input type='date' name='date_end' placeholder="date end">
+        <form method='get' id='filters' action='/turnover'>
+            <p>Дата создания:
+                <input type='date' name='date_request_start' value="{{ date_request_start }}">
+                <input type='date' name='date_request_end' value="{{ date_request_end }}">
+            </p>
+            <p>Дата оплаты:
+                <input type='date' name='date_payment_start' value="{{ date_payment_start }}">
+                <input type='date' name='date_payment_end' value="{{ date_payment_end }}">
+            </p>
             <input type='hidden' name='tab' id='tab' value="{{tab if tab else 1}}">
             <button class="btn btn-primary">Обновить</button>
             <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
@@ -14,13 +20,25 @@
     {% else %}
         <h1>Обороты</h1>
         <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' action='/turnover'>
-            <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
-            <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
+        <form method='get' id='filters' action='/turnover'>
+            <p>Дата создания:
+                <input type='date' name='date_request_start' value="{{ date_request_start }}">
+                <input type='date' name='date_request_end' value="{{ date_request_end }}">
+            </p>
+            <p>Дата оплаты:
+                <input type='date' name='date_payment_start' value="{{ date_payment_start }}">
+                <input type='date' name='date_payment_end' value="{{ date_payment_end }}">
+            </p>
             <input type='hidden' name='tab' id='tab' value="{{tab if tab else 1}}">
+            <input type='hidden' id='ta-filter' name='ta_filter' value={{ filter['id'] }}>
             <button class="btn btn-primary">Обновить</button>
             <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
         </form>
+        <div>
+            {% for ta_filter in ta_filters %}
+                <button class="ta-filter-button btn btn-warning" id="filterButton{{ta_filter['id']}}" {{'disabled' if filter['id'] == ta_filter['id'] else ''}}>{{ta_filter['title']}}</button>
+            {% endfor %}
+        </div>
 
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             {% for header, (table1, table2, table3) in tables.items() %}
@@ -73,5 +91,23 @@
         end_date.value="";
         form.submit();
     })
+
+    function setTAFilter(num) {
+        return function(event) {
+            console.log(1);
+            event.preventDefault()
+            let hidden = document.querySelector('#ta-filter');
+            hidden.setAttribute('value', num);
+            console.log('hidden');
+            let form = document.querySelector('#filters');
+            form.submit();
+        }
+    }
+
+    let button;
+    {% for ta_filter in ta_filters %}
+    button = document.querySelector("#filterButton{{ta_filter['id']}}");
+    button.addEventListener('click', setTAFilter({{ta_filter['id']}}))
+    {% endfor %}
 </script>
 {% endblock %}
