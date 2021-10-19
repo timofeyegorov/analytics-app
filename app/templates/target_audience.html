@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Целевая аудитория{% endblock %}
+{% block content %}
+<div class='d-flex flex-column'>
+    <h1>Список целевой аудитории</h1>
+    <div><a href="/" class="btn btn-success">В меню</a></div>
+    <ul class="m-2">
+        {% for item in target_audience %}
+            <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -19,5 +19,16 @@
         <div class="m-2 d-flex justify-content-center">
             <a href="/logout" class="btn btn-danger m-1">Выйти</a>
         </div>
+
     </div>
+
+    <div id="leads-dynamics-plot">
+
+    </div>
+
+    <script>
+        console.log("{{ fig_leads_dynamics() }}".replaceAll('&#34;', "\""))
+        let plot = JSON.parse("{{ fig_leads_dynamics() }}".replaceAll('&#34;', "\""));
+        Plotly.newPlot('leads-dynamics-plot', plot.data, plot.layout);
+    </script>
 {% endblock %}

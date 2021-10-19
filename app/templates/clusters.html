@@ -1,3 +1,5 @@
+{% from 'macros/tables.html' import tabs %}
+
 {% extends 'base.html' %}
 {% block title %} Кластеры {% endblock %}
 {% block content %}
@@ -21,63 +23,21 @@
             <button class="btn btn-primary">Обновить</button>
             <button class="btn btn-success" id="resetFilterButton">Сбросить фильтр</button> 
         </form>
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            {% for header, dict in tables.items() %}
-                <li class="nav-item" role="presentation">
-                    {% if loop.index == 1 and tab is none or tab|int == loop.index %}
-                        <button class="tab-button nav-link active" id="{{'cluster-' + loop.index|string + '-tab'}}" data-bs-toggle="tab" data-bs-target="#{{'cluster' + loop.index|string}}" type="button" role="tab" aria-controls="{{'cluster-' + loop.index|string}}" aria-selected="true">{{ header }}</button>
-                    {% else %}
-                        <button class="tab-button nav-link" id="{{'cluster-' + loop.index|string + '-tab'}}" data-bs-toggle="tab" data-bs-target="#{{'cluster-' + loop.index|string}}" type="button" role="tab" aria-controls="{{'cluster-' + loop.index|string}}" aria-selected="false">{{ header }}</button>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-        <div class="tab-content" id="myTabContent">
-            {% for header, dict in tables.items() %}
-                {% if loop.index == 1 and tab is none or tab|int == loop.index %}
-                <div class="tab-pane fade show active" id="{{'cluster-'+ loop.index|string}}" role="tabpanel" aria-labelledby="{{ 'cluster-' + loop.index|string + '-tab' }}">
-                    <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
-                    {% if dict['Размер кластера'] != 0 %}
-                        <h3>Кластер</h3>
-                        {{ dict['Датасет'].to_html(index=False) |safe }}
-                    {% endif %}
-                </div>    
-                {% else %}
-                    <div class="tab-pane fade" id="{{'cluster-' + loop.index|string}}" role="tabpanel" aria-labelledby="{{ 'cluster-' + loop.index|string + '-tab' }}">
-                        <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
-                        {% if dict['Размер кластера'] != 0 %}
-                            <h3>Кластер</h3>
-                            {{ dict['Датасет'].to_html(index=False) |safe }}
-                        {% endif %}
-                    </div>
+
+        {% macro table(header, dict, loop) -%}
+            <div class="tab-pane fade {{'show active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
+                <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
+                {% if dict['Размер кластера'] != 0 %}
+                    <h3>Кластер</h3>
+                    {{ dict['Датасет'].to_html(index=False) |safe }}
                 {% endif %}
-            {% endfor %}
-        </div>
+            </div>
+        {%- endmacro %}
+
+        {{ tabs (tables, table, tab) }}
+
     {% endif %}
 </div>
 
-<script>
-    function onTabChange(num) {
-        return function(event) {
-            let element = document.querySelector('#tab');
-            element.setAttribute('value', num);
-        }
-    }
-    for (const [i, element] of document.querySelectorAll('.tab-button').entries()) {
-        element.addEventListener('click', onTabChange(i + 1));
-    }
-
-    let resetFilterButton = document.querySelector('#resetFilterButton');
-    resetFilterButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        let button = event.target;
-        let form = button.closest('form');
-        let start_date = form.querySelector('[name=date_start]');
-        let end_date = form.querySelector('[name=date_end]');
-        start_date.value="";
-        end_date.value="";
-        form.submit();
-    })
-</script>
 
 {% endblock %}

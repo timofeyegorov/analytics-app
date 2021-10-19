@@ -1,2 +1,6 @@
 *__pycache__*
 config.py
+logs/
+*airflow*
+*standalone*
+webserver_config.py

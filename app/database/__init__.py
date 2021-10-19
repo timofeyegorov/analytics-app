@@ -3,17 +3,15 @@ import pandas as pd
 import pymysql
 import pickle as pkl
 from uuid import uuid4 as uuid
+import httplib2
+import apiclient.discovery
+from oauth2client.service_account import ServiceAccountCredentials
+from .preprocessing import preprocess_target_audience, preprocess_dataframe
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     return connection, cursor
-
-def get_target_audience():
-  # countries, ages, jobs, earnings, trainings, times
-  with open('filters/default.pkl', 'rb') as f:
-    data = pkl.load(f)
-  return data
 
 def get_leads_data():
     conn, cursor = connect()
@@ -21,11 +19,11 @@ def get_leads_data():
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
-    return pd.DataFrame(data)
+    return preprocess_dataframe(pd.DataFrame(data))
 
 def get_trafficologist_data():
     conn, cursor = connect()
-    query = "SELECT label, title, name FROM trafficologists, accounts WHERE accounts.trafficologist_id=trafficologists.id"
+    query = "SELECT label, title, name FROM trafficologists, accounts WHERE accounts.trafficologist_id=trafficologists.id LIMIT 1000"
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
@@ -132,3 +130,25 @@ def get_times():
     conn.close()
     return arr
 
+
+# Подключаем библиотеки
+
+def get_target_audience():
+    CREDENTIALS_FILE = 'analytics-322510-46607fe39c6c.json'  # Имя файла с закрытым ключом, вы должны подставить свое
+    spreadsheet_id = '1_kytD9tww-2ETFOp46Av75PndibaoFzgHKV46fxHEWY'
+    # Читаем ключи из файла
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        ['https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'])
+
+    httpAuth = credentials.authorize(httplib2.Http()) # Авторизуемся в системе
+    service = apiclient.discovery.build('sheets', 'v4', http = httpAuth) # Выбираем работу с таблицами и 4 версию API
+
+    values = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range='A1:A996',
+        majorDimension='COLUMNS'
+    ).execute()
+
+    return preprocess_target_audience(values['values'][0])
