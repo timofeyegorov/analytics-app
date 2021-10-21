@@ -1,4 +1,4 @@
-from database import get_target_audience, get_accounts, get_leads_data
+from .database import get_target_audience, get_accounts, get_leads_data
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ def get_segments(df):
   except ValueError:
     pass
 
+  df.index = np.arange(len(df))
   # Анализируем ссылки каждого лида на то, какой трафиколог привел этого лида
   links_list = [] # Сохраняем в список ссылки, не содержащие метки аккаунтов (в таком случае неизвестно, кто привел лида)
   for el in list(traff_data['label']): # Проходимся по всем метка которые есть

@@ -263,10 +263,3 @@ def get_landings(tabl):
       else:
         result[s] = landing(key, table=dd, absolut=ab).T
   return result
-
-data = get_leads_data()
-print('get data')
-landings = get_landings(data)
-print('calculated landings')
-with open('results/landings.pkl', 'wb') as f:
-  pkl.dump(landings, f)

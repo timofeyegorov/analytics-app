@@ -205,10 +205,3 @@ def get_turnover(df):
           'Время':times_df,
           'traffic_channel':landings_df,}, df_ta
 
-
-data = get_leads_data()
-print('get data')
-turnover = get_turnover(data)
-print('calculated turnover')
-with open('results/turnover.pkl', 'wb') as f:
-  pkl.dump(turnover, f)

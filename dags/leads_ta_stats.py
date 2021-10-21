@@ -168,7 +168,7 @@ def get_leads_ta_stats(df):
         lead_df.loc[i, 'Расход общий (ОП+бюджет)'] = float(lead_df.loc[i, 'Бюджет']) + float(lead_df.loc[i, 'Расход на ОП'])
         lead_df.loc[i, '% расходов на трафик (доля от Расход общий)'] = round(float(lead_df.loc[i, 'Бюджет'])/float(lead_df.loc[i, 'Расход общий (ОП+бюджет)'] * 100), 2) if float(lead_df.loc[i, 'Расход общий (ОП+бюджет)'] * 100) != 0 else float('nan')
         lead_df.loc[i, '% расходов на ОП (доля от Расход общий)'] = round(lead_df.loc[i, 'Расход на ОП']/lead_df.loc[i, 'Расход общий (ОП+бюджет)'] * 100, 2)
-        lead_df.loc[i, 'ROI'] = round((temp_df['payment_amount'].sum() - temp_df['channel_expense'].sum()) / temp_df['channel_expense'].sum() * 100, 2) if temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
+        lead_df.loc[i, 'ROI'] = round((float(temp_df['payment_amount'].sum()) - float(temp_df['channel_expense'].sum())) / float(temp_df['channel_expense'].sum()) * 100, 2) if temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
         lead_df.loc[i, 'Маржа'] = float(temp_df['payment_amount'].sum()) - float(temp_df['channel_expense'].sum())
         lead_df.loc[i, 'Цена Разговора'] = temp_df['channel_expense'].sum() / temp_df[temp_df['status_amo'].isin(was_conversation_status)].shape[0] \
                                            if temp_df[temp_df['status_amo'].isin(was_conversation_status)].shape[0] != 0 else 0 
@@ -207,15 +207,9 @@ def get_leads_ta_stats(df):
       lead_df.loc[7, col] = df[df['target_class'].isin([5,6])]['payment_amount'].sum() / df[df['payment_amount'] != 0].shape[0] \
                             if df[df['payment_amount'] != 0].shape[0] != 0 else 0
     elif col == '% расходов на трафик (доля от Расход общий)':
-      lead_df.loc[7, col] = round(lead_df.loc[7, 'Бюджет']/lead_df.loc[7, 'Расход общий (ОП+бюджет)'] * 100, 2)
+      lead_df.loc[7, col] = round(float(lead_df.loc[7, 'Бюджет'])/lead_df.loc[7, 'Расход общий (ОП+бюджет)'] * 100, 2)
     elif col == '% расходов на ОП (доля от Расход общий)':
-      lead_df.loc[7, col] = round(lead_df.loc[7, 'Расход на ОП']/lead_df.loc[7, 'Расход общий (ОП+бюджет)'] * 100, 2)
+      lead_df.loc[7, col] = round(float(lead_df.loc[7, 'Расход на ОП'])/lead_df.loc[7, 'Расход общий (ОП+бюджет)'] * 100, 2)
   lead_df.rename(index={7 :'5-6'}, inplace = True)
   return {'Статистика лиды' :lead_df}
 
-data = get_leads_data()
-print('get data')
-leads_ta_stats = get_leads_ta_stats(data)
-print('calculated leads ta stats')
-with open('results/leads_ta_stats.pkl', 'wb') as f:
-  pkl.dump(leads_ta_stats, f)

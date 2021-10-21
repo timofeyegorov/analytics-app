@@ -1,7 +1,7 @@
 from app import app
-from app.database import get_leads_data
 from .clusters import get_clusters
 from .segments import get_segments
+from dags.segments import get_segments as get_segments_raw
 from .landings import get_landings
 from .turnover import get_turnover
 from .leads_ta_stats import get_leads_ta_stats
@@ -21,16 +21,23 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 @app.route('/segments')
 def segments():
-    # date_start = request.args.get('date_start')
-    # date_end = request.args.get('date_end')
-    # table = get_leads_data()
-
-    # if date_start:
-    #     table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
-    # if date_end:
-    #     table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template('segments.html', error='Нет данных для заданного периода')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+    
+    if date_start or date_end:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('segments.html', error='Нет данных для заданного периода')
+        tables = get_segments_raw(table)
+        return render_template(
+            'segments.html', 
+            tables=tables, date_start=date_start, date_end=date_end
+        )
     tables = get_segments()
     return render_template(
         'segments.html', 

@@ -191,9 +191,3 @@ def get_traffic_sources(df):
         'margin': 'Маржа'
     })}
 
-data = get_leads_data()
-print('get data')
-traffic_sources = get_traffic_sources(data)
-print('calculated traffic_sources')
-with open('results/traffic_sources.pkl', 'wb') as f:
-  pkl.dump(traffic_sources, f)

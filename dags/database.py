@@ -7,7 +7,7 @@ from uuid import uuid4 as uuid
 import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
-from preprocessing import preprocess_target_audience, preprocess_dataframe
+from .preprocessing import preprocess_target_audience, preprocess_dataframe
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
