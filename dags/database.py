@@ -7,7 +7,10 @@ from uuid import uuid4 as uuid
 import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
-from .preprocessing import preprocess_target_audience, preprocess_dataframe
+try:
+    from .preprocessing import preprocess_target_audience, preprocess_dataframe
+except ImportError:
+    from preprocessing import preprocess_dataframe, preprocess_target_audience
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
@@ -69,3 +72,9 @@ def get_target_audience():
     ).execute()
 
     return preprocess_target_audience(values['values'][0])
+
+def get_status():
+    try:
+        return pd.read_csv('data/status.csv')
+    except FileNotFoundError:
+        return pd.read_csv('dags/data/status.csv')

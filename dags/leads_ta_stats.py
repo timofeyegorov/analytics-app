@@ -1,11 +1,16 @@
-from database import get_target_audience, get_leads_data
+try:
+  from database import get_target_audience, get_leads_data, get_status
+except ModuleNotFoundError:
+  from .database import get_target_audience, get_leads_data, get_status
 
 import numpy as np
 import pickle as pkl
 import pandas as pd
 
 def get_leads_ta_stats(df):
-  status = pd.read_csv('data/status.csv')
+  df.reset_index(inplace=True, drop=True)
+
+  status = get_status()
   status.fillna(0, inplace=True)
 
   target_audience = get_target_audience()
@@ -103,7 +108,11 @@ def get_leads_ta_stats(df):
                                         ((float(df['payment_amount'].sum()) * 0.6 + 150 * float(
                                            df[df['payment_amount'] != 0].shape[0]) + 27 * float(
                                            df[df['payment_amount'] != 0].shape[0]) + 20 * float(
-                                           df[df['payment_amount'] != 0].shape[0])) * 1.4)) * 100, 2)
+                                           df[df['payment_amount'] != 0].shape[0])) * 1.4)) * 100, 2) if (float(df['channel_expense'].sum()) + \
+                                        ((float(df['payment_amount'].sum()) * 0.6 + 150 * float(
+                                           df[df['payment_amount'] != 0].shape[0]) + 27 * float(
+                                           df[df['payment_amount'] != 0].shape[0]) + 20 * float(
+                                           df[df['payment_amount'] != 0].shape[0])) * 1.4) != 0) else 0
       
       else:
         pass
@@ -124,9 +133,9 @@ def get_leads_ta_stats(df):
   lead_df.rename(index={7 :'5-6'}, inplace = True)
   return {'Статистика лиды' :lead_df}
 
-data = get_leads_data()
-print('get data')
-clusters = get_leads_ta_stats(data)
-print('calculated clusters')
-with open('results/leads_ta_stats.pkl', 'wb') as f:
-  pkl.dump(clusters, f)
+# data = get_leads_data()
+# print('get data')
+# clusters = get_leads_ta_stats(data)
+# print('calculated clusters')
+# with open('results/leads_ta_stats.pkl', 'wb') as f:
+#   pkl.dump(clusters, f)

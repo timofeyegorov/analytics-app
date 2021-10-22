@@ -5,6 +5,7 @@ from dags.segments import get_segments as get_segments_raw
 from .landings import get_landings
 from .turnover import get_turnover
 from .leads_ta_stats import get_leads_ta_stats
+from dags.leads_ta_stats import get_leads_ta_stats as get_leads_ta_stats_raw
 from .segments_stats import get_segments_stats
 from .traffic_sources import get_traffic_sources
 from config import config
@@ -138,19 +139,23 @@ def segments_stats():
 
 @app.route('/leads_ta_stats')
 def leads_ta_stats():
-    # date_start = request.args.get('date_start')
-    # date_end = request.args.get('date_end')
-    # table = get_leads_data()
-    # if date_start:
-    #     table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
-    # if date_end:
-    #     table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template('leads_ta_stats.html', error='Not enough data', date_start=date_start, date_end=date_end)
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+    if date_start is not None or date_end is not None:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('leads_ta_stats.html', error='Not enough data', date_start=date_start, date_end=date_end)
+        table = get_leads_ta_stats_raw(table)
+        return render_template('leads_ta_stats.html', table=table, 
+            date_start=date_start, date_end=date_end
+        )
     table = get_leads_ta_stats()
-    return render_template('leads_ta_stats.html', table=table, 
-    #date_start=date_start, date_end=date_end
-    )
+    return render_template('leads_ta_stats.html', table=table)
 
 
 @app.route('/landings')

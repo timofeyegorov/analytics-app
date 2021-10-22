@@ -1,4 +1,7 @@
-from .database import get_target_audience, get_accounts, get_leads_data
+try:
+  from database import get_target_audience, get_leads_data
+except ModuleNotFoundError:
+  from .database import get_target_audience, get_leads_data
 
 import numpy as np
 import pandas as pd
