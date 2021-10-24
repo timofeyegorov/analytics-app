@@ -1,23 +1,20 @@
 from app import app
-from .clusters import get_clusters
-from .segments import get_segments
-from .landings import get_landings
-from .turnover import get_turnover
-from .leads_ta_stats import get_leads_ta_stats
-from .segments_stats import get_segments_stats
-from .traffic_sources import get_traffic_sources
+from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
+from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
 
-from dags.clusters import get_clusters as get_clusters_raw
-from dags.segments import get_segments as get_segments_raw
-from dags.landings import get_landings as get_landings_raw
-from dags.turnover import get_turnover as get_turnover_raw
-from dags.leads_ta_stats import get_leads_ta_stats as get_leads_ta_stats_raw
-from dags.segments_stats import get_segments_stats as get_segments_stats_raw
-from dags.traffic_sources import get_traffic_sources as get_traffic_sources_raw
+from app.dags.clusters import calculate_clusters 
+from app.dags.segments import calculate_segments
+from app.dags.landings import calculate_landings
+from app.dags.turnover import calculate_turnover
+from app.dags.leads_ta_stats import calculate_leads_ta_stats
+from app.dags.segments_stats import calculate_segments_stats 
+from app.dags.traffic_sources import calculate_traffic_sources 
 
 
 from config import config
+from config import RESULTS_FOLDER
 
+import os
 import numpy as np
 from flask import render_template, request, redirect
 from datetime import datetime
@@ -34,7 +31,7 @@ def segments():
     date_end = request.args.get('date_end')
     
     if date_start or date_end:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
@@ -42,7 +39,7 @@ def segments():
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('segments.html', error='Нет данных для заданного периода')
-        tables = get_segments_raw(table)
+        tables = calculate_segments(table)
         return render_template(
             'segments.html', 
             tables=tables, date_start=date_start, date_end=date_end
@@ -84,7 +81,7 @@ def turnover():
         #     date_payment_end=date_payment_end,
         #     tab=tab
         #     )
-        tables, ta = get_turnover_raw(table)
+        tables, ta = calculate_turnover(table)
         print(2)
         return render_template(
             'turnover.html',
@@ -123,7 +120,7 @@ def clusters():
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('clusters.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
-        tables = get_clusters_raw(table)
+        tables = calculate_clusters(table)
         return render_template('clusters.html', tables=tables,
                                # date_start=date_start, date_end=date_end,
                                tab=tab
@@ -148,7 +145,7 @@ def traffic_sources():
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('traffic_sources.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
-        table = get_traffic_sources_raw(table)
+        table = calculate_traffic_sources(table)
         return render_template('traffic_sources.html', tables=table, tab=tab, date_start=date_start,
                                date_end=date_end)
     tables = get_traffic_sources()
@@ -171,7 +168,7 @@ def segments_stats():
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('segments_stats.html', error='Not enough data', tab=tab, date_start=date_start, date_end=date_end)
-        tables = get_segments_stats_raw(table)
+        tables = calculate_segments_stats(table)
         return render_template('segments_stats.html', tables=tables, tab=tab, date_start=date_start,
                                date_end=date_end)
     tables = get_segments_stats()
@@ -193,7 +190,7 @@ def leads_ta_stats():
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('leads_ta_stats.html', error='Not enough data', date_start=date_start, date_end=date_end)
-        table = get_leads_ta_stats_raw(table)
+        table = calculate_leads_ta_stats(table)
         return render_template('leads_ta_stats.html', table=table, 
             date_start=date_start, date_end=date_end
         )
@@ -214,7 +211,7 @@ def landings():
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('landings.html', error='Нет данных для заданного периода')
-        table = get_landings_raw(table)
+        table = calculate_landings(table)
         return render_template('landings.html', tables=table,
             date_start=date_start, date_end=date_end
         )

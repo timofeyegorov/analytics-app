@@ -6,7 +6,7 @@ import pandas as pd
 import pickle as pkl
 from config import DATA_FOLDER, CREDENTIALS_FILE
 import os
-from urllib.parse import urlparse
+from urllib import parse
 
 
 spreadsheet_id = '1dHxep6G9uQ9HSSwhKOzrXZiJX9d5a0wlY6SPSyLh1Qg'
@@ -52,12 +52,12 @@ crops.reset_index(drop=True, inplace=True)
 # Получаем список уникальных имен посевов
 crops_links = crops['Ссылка'].unique()
 crops_list = []
-for link in crops_links:
-    # print(urlparse(link))
-    o = urlparse(link).query
-    # print(o)
-    # print()
-    crops_list.append(o)
+for link in crops_links[:2]:
+    o = parse.urlparse(link).query
+    params = parse.parse_qs(o)
+    utm_source = params['utm_source']
+    crops_list.append(f"utm_source={utm_source[0]}")
+    print(link, f"utm_source={utm_source[0]}")
 # crops.to_csv('crops_expences.csv', index=False, encoding='cp1251')
-with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'wb') as f:
-    pkl.dump(crops_list, f)
+# with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'wb') as f:
+    # pkl.dump(crops_list, f)

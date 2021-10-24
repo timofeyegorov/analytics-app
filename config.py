@@ -13,6 +13,6 @@ config = {
     }
 }
 
-DATA_FOLDER = '/data/projects/analytic/python/analytics-app/dags/data'
-RESULTS_FOLDER = '/data/projects/analytic/python/analytics-app/dags/results'
+DATA_FOLDER = '/data/projects/analytic/python/analytics-app/app/dags/data'
+RESULTS_FOLDER = '/data/projects/analytic/python/analytics-app/app/dags/results'
 CREDENTIALS_FILE = '/data/projects/analytic/python/analytics-app/analytics-322510-46607fe39c6c.json'

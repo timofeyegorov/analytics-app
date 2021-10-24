@@ -25,7 +25,7 @@ def trafficologist_page(trafficologist_error=None, account_error=None):
     # accounts = get_accounts()
     # trafficologists = get_trafficologists()
     # trafficologists2 = get_trafficologists()
-    print(trafficologists)
+    # print(trafficologists)
     return render_template("trafficologists.html", 
         tables=[trafficologists.to_html()],
         ) #,
