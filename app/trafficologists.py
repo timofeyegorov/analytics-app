@@ -1,6 +1,6 @@
 from app import app
 from app.database import delete_trafficologist, delete_account, add_account, add_trafficologist
-from app.database.get_trafficologists import get_trafficologists
+from app.database import get_trafficologists
 from config import DATA_FOLDER
 import os
 import pickle as pkl
