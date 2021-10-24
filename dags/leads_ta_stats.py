@@ -1,5 +1,5 @@
 try:
-  from database import get_target_audience, get_leads_data, get_status
+  from app.database import get_target_audience, get_leads_data, get_status
 except ModuleNotFoundError:
   from .database import get_target_audience, get_leads_data, get_status
 

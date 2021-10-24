@@ -12,3 +12,7 @@ config = {
         'employer_id': 3754394,
     }
 }
+
+DATA_FOLDER = '/data/projects/analytic/python/analytics-app/dags/data'
+RESULTS_FOLDER = '/data/projects/analytic/python/analytics-app/dags/results'
+CREDENTIALS_FILE = '/data/projects/analytic/python/analytics-app/analytics-322510-46607fe39c6c.json'
