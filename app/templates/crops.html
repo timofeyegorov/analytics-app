@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Целевая аудитория{% endblock %}
+{% block content %}
+<div class='d-flex flex-column'>
+    <h1>Актуальный список посевов</h1>
+        <p>
+            Для изменения списка посевов перейдите в
+            <a href ='https://docs.google.com/spreadsheets/d/1dHxep6G9uQ9HSSwhKOzrXZiJX9d5a0wlY6SPSyLh1Qg/edit#gid=1930603601' target="_blank"> Google таблицу<a>
+        </p>
+    <div><a href="/" class="btn btn-success">В меню</a></div>
+    <ul class="m-2">
+        {% for item in crops %}
+            <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
