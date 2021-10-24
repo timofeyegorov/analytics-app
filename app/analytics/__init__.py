@@ -1,13 +1,21 @@
 from app import app
 from .clusters import get_clusters
 from .segments import get_segments
-from dags.segments import get_segments as get_segments_raw
 from .landings import get_landings
 from .turnover import get_turnover
 from .leads_ta_stats import get_leads_ta_stats
-from dags.leads_ta_stats import get_leads_ta_stats as get_leads_ta_stats_raw
 from .segments_stats import get_segments_stats
 from .traffic_sources import get_traffic_sources
+
+from dags.clusters import get_clusters as get_clusters_raw
+from dags.segments import get_segments as get_segments_raw
+from dags.landings import get_landings as get_landings_raw
+from dags.turnover import get_turnover as get_turnover_raw
+from dags.leads_ta_stats import get_leads_ta_stats as get_leads_ta_stats_raw
+from dags.segments_stats import get_segments_stats as get_segments_stats_raw
+from dags.traffic_sources import get_traffic_sources as get_traffic_sources_raw
+
+
 from config import config
 
 import numpy as np
@@ -47,32 +55,49 @@ def segments():
 
 @app.route('/turnover')
 def turnover():
-    # date_request_start = request.args.get('date_request_start')
-    # date_request_end = request.args.get('date_request_end')
-    # date_payment_start = request.args.get('date_payment_start')
-    # date_payment_end = request.args.get('date_payment_end')
+    date_request_start = request.args.get('date_request_start')
+    date_request_end = request.args.get('date_request_end')
+    date_payment_start = request.args.get('date_payment_start')
+    date_payment_end = request.args.get('date_payment_end')
     tab = request.args.get('tab')
-    # table = get_leads_data()
-    
-    # if date_request_start:
-    #     table = table[table.date_request >= datetime.strptime(date_request_start, '%Y-%m-%d')]
-    # if date_request_end:
-    #     table = table[table.date_request <= datetime.strptime(date_request_end, '%Y-%m-%d')]
-    # if date_payment_start:
-    #     table = table[table.date_payment >= datetime.strptime(date_payment_start, '%Y-%m-%d')]
-    # if date_payment_end:
-    #     table = table[table.date_payment <= datetime.strptime(date_payment_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template(
-    #         'turnover.html', 
-    #         error='Not enough data',
-    #         date_request_start=date_request_start,
-    #         date_request_end=date_request_end,
-    #         date_payment_start=date_payment_start,
-    #         date_payment_end=date_payment_end,
-    #         tab=tab
-    #     )
+    if date_request_start or date_request_end or date_payment_start or date_payment_end:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        table.date_payment = pd.to_datetime(table.date_payment)
+        if date_request_start:
+            table = table[table.date_request >= datetime.strptime(date_request_start, '%Y-%m-%d')]
+        if date_request_end:
+            table = table[table.date_request <= datetime.strptime(date_request_end, '%Y-%m-%d')]
+        if date_payment_start:
+            table = table[table.date_payment >= datetime.strptime(date_payment_start, '%Y-%m-%d')]
+        if date_payment_end:
+            table = table[table.date_payment <= datetime.strptime(date_payment_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            print(1)
+            return render_template('turnover.html', error='Нет данных для заданного периода', ta=pd.DataFrame())
+        # return render_template(
+        #     'turnover.html',
+        #     error='Not enough data',
+        #     date_request_start=date_request_start,
+        #     date_request_end=date_request_end,
+        #     date_payment_start=date_payment_start,
+        #     date_payment_end=date_payment_end,
+        #     tab=tab
+        #     )
+        tables, ta = get_turnover_raw(table)
+        print(2)
+        return render_template(
+            'turnover.html',
+            tables=tables,
+            ta=ta,
+            # date_request_start=date_request_start,
+            # date_request_end=date_request_end,
+            # date_payment_start=date_payment_start,
+            # date_payment_end=date_payment_end,
+            tab=tab
+        )
     tables, ta = get_turnover()
+    print(3)
     return render_template(
         'turnover.html', 
         tables=tables,
@@ -86,16 +111,23 @@ def turnover():
 
 @app.route('/clusters')
 def clusters():
-    # date_start = request.args.get('date_start')
-    # date_end = request.args.get('date_end')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
     tab = request.args.get('tab')
-    # table = get_leads_data()
-    # if date_start:
-    #     table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
-    # if date_end:
-    #     table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template('clusters.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
+    if date_start or date_end:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('clusters.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
+        tables = get_clusters_raw(table)
+        return render_template('clusters.html', tables=tables,
+                               # date_start=date_start, date_end=date_end,
+                               tab=tab
+                               )
     tables = get_clusters()
     return render_template('clusters.html', tables=tables,
      #date_start=date_start, date_end=date_end, 
@@ -104,33 +136,44 @@ def clusters():
 
 @app.route('/traffic_sources')
 def traffic_sources():
-    # date_start = request.args.get('date_start')
-    # date_end = request.args.get('date_end')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
     tab = request.args.get('tab')
-    # table = get_leads_data()
-    # if date_start:
-    #     table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
-    # if date_end:
-    #     table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template('traffic_sources.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
-    table = get_traffic_sources()
-    return render_template('traffic_sources.html', table=table, 
-    #date_start=date_start, date_end=date_end, 
-        tab=tab)
+    if date_start or date_end:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('traffic_sources.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
+        table = get_traffic_sources_raw(table)
+        return render_template('traffic_sources.html', tables=table, tab=tab, date_start=date_start,
+                               date_end=date_end)
+    tables = get_traffic_sources()
+    return render_template('traffic_sources.html', tables=tables,
+    tab=tab,
+    # date_start=date_start, date_end=date_end
+    )
 
 @app.route('/segments_stats')
 def segments_stats():
-    # date_start = request.args.get('date_start')
-    # date_end = request.args.get('date_end')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
     tab = request.args.get('tab')
-    # table = get_leads_data()
-    # if date_start:
-    #     table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
-    # if date_end:
-    #     table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template('segments_stats.html', error='Not enough data', tab=tab, date_start=date_start, date_end=date_end)
+    if date_start or date_end:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('segments_stats.html', error='Not enough data', tab=tab, date_start=date_start, date_end=date_end)
+        tables = get_segments_stats_raw(table)
+        return render_template('segments_stats.html', tables=tables, tab=tab, date_start=date_start,
+                               date_end=date_end)
     tables = get_segments_stats()
     return render_template('segments_stats.html', tables=tables, 
     tab=tab, 
@@ -160,16 +203,21 @@ def leads_ta_stats():
 
 @app.route('/landings')
 def landings():
-    # date_start = request.args.get('date_start')
-    # date_end = request.args.get('date_end')
-    # table = get_leads_data()
-
-    # if date_start:
-    #     table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
-    # if date_end:
-    #     table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
-    # if len(table) == 0:
-    #     return render_template('landings.html', error='Нет данных для заданного периода')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+    if date_start or date_end:
+        table = pd.read_csv('dags/results/leads.csv')
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('landings.html', error='Нет данных для заданного периода')
+        table = get_landings_raw(table)
+        return render_template('landings.html', tables=table,
+            date_start=date_start, date_end=date_end
+        )
     tables = get_landings()
     return render_template(
         'landings.html', 

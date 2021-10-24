@@ -6,37 +6,39 @@ except ModuleNotFoundError:
 import numpy as np
 import pickle as pkl
 import pandas as pd
+import os
+from config import DATA_FOLDER
 
 def get_leads_ta_stats(df):
   df.reset_index(inplace=True, drop=True)
 
-  status = get_status()
+  status = pd.read_csv('dags/data/status.csv')
   status.fillna(0, inplace=True)
 
-  target_audience = get_target_audience()
-    
-  status.fillna(0, inplace=True)
+  # target_audience = get_target_audience()
+  with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    target_audience = pkl.load(f)
 
   payment_status = status[status['Оплатил'] == ' +']['Соответствующий статус в воронке Теплые продажи'].unique().tolist() # Статусы с этапом "оплатил"
   was_conversation_status = status[status['Был разговор'] == ' +']['Соответствующий статус в воронке Теплые продажи'].unique().tolist() # Статусы с этапом "был разговор"
   in_progress_status = status[status['В работе'] == ' +']['Соответствующий статус в воронке Теплые продажи'].unique().tolist() # Статусы с этапом "в работе"
 
-  for i in range(df.shape[0]):
-    target_class = 0
-    if df.loc[i, 'quiz_answers1'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers2'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers3'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers4'] in target_audience:
-      target_class += 1         
-    if df.loc[i, 'quiz_answers5'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers6'] in target_audience:
-      target_class += 1
-
-    df.loc[i, 'target_class'] = target_class
+  # for i in range(df.shape[0]):
+  #   target_class = 0
+  #   if df.loc[i, 'quiz_answers1'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers2'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers3'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers4'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers5'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers6'] in target_audience:
+  #     target_class += 1
+  #
+  #   df.loc[i, 'target_class'] = target_class
 
   columns = ['Бюджет', 'Кол-во лидов',
              '% в работе', '% дозвонов', '% офферов', '% счетов',

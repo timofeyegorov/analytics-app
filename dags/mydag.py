@@ -17,7 +17,7 @@ from traffic_sources import get_traffic_sources
 
 def load_data():
     data = get_leads_data()
-    data.to_csv('/data/projects/analytic/python/analytics-app/dags/results/leads.csv', idnex=False)
+    data.to_csv('/data/projects/analytic/python/analytics-app/dags/results/leads.csv', index=False)
     return None
 
 def segments():

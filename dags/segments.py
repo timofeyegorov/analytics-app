@@ -3,49 +3,56 @@ try:
 except ModuleNotFoundError:
   from .database import get_target_audience, get_leads_data
 
+import os
 import numpy as np
 import pandas as pd
 import pickle as pkl
+from config import DATA_FOLDER
+# from app.database import get_accounts
 
 def get_segments(df):
+  with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    target_audience = pkl.load(f)
 
-  target_audience = get_target_audience()
-  traff_data = get_accounts()
-  try:
-    df.insert(19, 'trafficologist', 'Неизвестно')                # Добавляем столбец trafficologist для записи имени трафиколога
-    df.insert(20, 'account', 'Неизвестно 1')                       # Добавляем столбец account для записи аккаунта трафиколога
-    df.insert(21, 'target_class', 0)  
-  except ValueError:
-    pass
-
-  df.index = np.arange(len(df))
-  # Анализируем ссылки каждого лида на то, какой трафиколог привел этого лида
-  links_list = [] # Сохраняем в список ссылки, не содержащие метки аккаунтов (в таком случае неизвестно, кто привел лида)
-  for el in list(traff_data['label']): # Проходимся по всем метка которые есть
-    for i in range(df.shape[0]): # Проходим по всему датасету
-      try: # Пробуем проверить, есть ли элемент в ссылке
-        if el in df.loc[i, 'traffic_channel']: # Если элемент (метка) есть
-          df.loc[i, 'trafficologist'] = traff_data[traff_data['label'] == el]['name'].values[0] # Заносим имя трафиколога по в ячейку по значению метки
-          df.loc[i, 'account'] = traff_data[traff_data['label'] == el]['title'].values[0] # Заносим кабинет трафиколога по в ячейку по значению метки
-      except TypeError: # Если в ячейке нет ссылки, а проставлен 0
-        links_list.append(df.loc[i, 'traffic_channel'])
-
-  for i in range(df.shape[0]):
-    target_class = 0
-    if df.loc[i, 'quiz_answers1'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers2'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers3'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers4'] in target_audience:
-      target_class += 1         
-    if df.loc[i, 'quiz_answers5'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers6'] in target_audience:
-      target_class += 1
-
-    df.loc[i, 'target_class'] = target_class
+  with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+    traff_data = pkl.load(f)
+  # target_audience = get_target_audience()
+  # traff_data = get_accounts()
+  # try:
+  #   df.insert(19, 'trafficologist', 'Неизвестно')                # Добавляем столбец trafficologist для записи имени трафиколога
+  #   df.insert(20, 'account', 'Неизвестно 1')                       # Добавляем столбец account для записи аккаунта трафиколога
+  #   df.insert(21, 'target_class', 0)
+  # except ValueError:
+  #   pass
+  #
+  # df.index = np.arange(len(df))
+  # # Анализируем ссылки каждого лида на то, какой трафиколог привел этого лида
+  # links_list = [] # Сохраняем в список ссылки, не содержащие метки аккаунтов (в таком случае неизвестно, кто привел лида)
+  # for el in list(traff_data['label']): # Проходимся по всем метка которые есть
+  #   for i in range(df.shape[0]): # Проходим по всему датасету
+  #     try: # Пробуем проверить, есть ли элемент в ссылке
+  #       if el in df.loc[i, 'traffic_channel']: # Если элемент (метка) есть
+  #         df.loc[i, 'trafficologist'] = traff_data[traff_data['label'] == el]['name'].values[0] # Заносим имя трафиколога по в ячейку по значению метки
+  #         df.loc[i, 'account'] = traff_data[traff_data['label'] == el]['title'].values[0] # Заносим кабинет трафиколога по в ячейку по значению метки
+  #     except TypeError: # Если в ячейке нет ссылки, а проставлен 0
+  #       links_list.append(df.loc[i, 'traffic_channel'])
+  #
+  # for i in range(df.shape[0]):
+  #   target_class = 0
+  #   if df.loc[i, 'quiz_answers1'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers2'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers3'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers4'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers5'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers6'] in target_audience:
+  #     target_class += 1
+  #
+  #   df.loc[i, 'target_class'] = target_class
 
   # Получаем массив трафикологов в отфильтрованном датасете
   filtered_trafficologists = df['trafficologist'].unique()
@@ -74,14 +81,14 @@ def get_segments(df):
     '''
     # Создаем заготовки результирующих датасетов из нулей
     data_category = np.zeros((len(df[column_name].unique())+1, len(created_columns))).astype('int')
-    df_category = pd.DataFrame(data_category, columns=created_columns) # Датасет для процентного кол-ва лидов
+    template_df = pd.DataFrame(data_category, columns=created_columns)
+    df_category =  template_df.copy() # Датасет для процентного кол-ва лидов
     df_category.insert(0, 'Все', 0) # Столбец для подсчета всех лидов (сумма по всем таргетологам)
     df_category.insert(0, column_name, 0) # Столбец названия подкатегорий указанной категории
 
-    df_category_val = pd.DataFrame(data_category, columns=created_columns)  # Датасет для абсолютного кол-ва лидов
+    df_category_val = template_df.copy()  # Датасет для абсолютного кол-ва лидов
     df_category_val.insert(0, 'Все', 0) # Столбец для подсчета всех лидов (сумма по всем таргетологам)
     df_category_val.insert(0, column_name, 0) # Столбец названия подкатегорий указанной категории
-
     # Проходим в цикле по каждой подкатегории выбранной категории
     # Формируем список для прохода сначала по подкатегориям куда попадает ЦА
     if (column_name == df.columns[3]):
@@ -122,7 +129,7 @@ def get_segments(df):
       # Проходим в цикле по каждому таргетологу и его кабинету
       for traff_name in created_columns:
         df_category_val.loc[idx, traff_name] = df[(df[column_name] == subcategory_name) & ((df['trafficologist'] == traff_name) | (df['account'] == traff_name))].shape[0]
-        df_category.loc[idx, traff_name] = round((df_category_val.loc[idx, traff_name]/df[(df['trafficologist'] == traff_name) | (df['account'] == traff_name)].shape[0])*100, 0).astype('int')
+        df_category.loc[idx, traff_name] = round((df_category_val.loc[idx, traff_name]/(df[(df['trafficologist'] == traff_name) | (df['account'] == traff_name)].shape[0]))*100, 0).astype('int')
 
     df_category_val.loc[idx+1, column_name] = 'ЦА'
     df_category.loc[idx+1, column_name] = 'ЦА'
@@ -139,8 +146,9 @@ def get_segments(df):
 
     # Формируем заготовки под результирующие датасеты из нулей
     data_ta = np.zeros((8, len(created_columns))).astype('int')
-    df_ta = pd.DataFrame(data_ta, columns=created_columns)
-    df_ta_val = pd.DataFrame(data_ta, columns=created_columns)
+    template_df = pd.DataFrame(data_ta, columns=created_columns)
+    df_ta = template_df.copy()
+    df_ta_val = template_df.copy()
 
     df_ta_val.insert(0, 'Все', 0)
     df_ta.insert(0, 'Все', 0)
@@ -171,17 +179,19 @@ def get_segments(df):
 
     # Формируем заготовки под результирующие датасеты из нулей
     data_segment = np.zeros((6, len(created_columns))).astype('int')
-
-    df_segment = pd.DataFrame(data_segment, columns=created_columns)
+    template_df = pd.DataFrame(data_segment, columns=created_columns)
+    df_segment = template_df.copy()
     df_segment.insert(0, 'Все', 0)
     df_segment.insert(0, 'Сегмент', 0)
 
-    df_segment_val = pd.DataFrame(data_segment, columns=created_columns)
+    df_segment_val = template_df.copy()
     df_segment_val.insert(0, 'Все', 0)
     df_segment_val.insert(0, 'Сегмент', 0)
 
+    categories_names = {df.columns.values[2]: 'Страны', df.columns.values[3]: 'Возраст', df.columns.values[4]: 'Профессия',
+                        df.columns.values[5]: 'Заработок', df.columns.values[6]: 'Обучение', df.columns.values[7]: 'Время'}
     for idx, column_category in enumerate(df.columns.values[2:8]):
-      df_segment_val.loc[idx, 'Сегмент'] = column_category
+      df_segment_val.loc[idx, 'Сегмент'] = categories_names[column_category]
       df_segment_val.loc[idx, 'Все'] = df[df[column_category].isin(target_audience)].shape[0]
 
       df_segment.loc[idx, 'Сегмент'] = column_category
@@ -230,3 +240,15 @@ def get_segments(df):
           'Время, абсолютные значения': df_times_val, 'Время, относительные значения': df_times,
           'Попадание в ЦА, абсолютные значения': df_target_audience_val, 'Попадание в ЦА, относительные значения': df_target_audience,
           'Попадание в ЦА по категориям, абсолютные значения': df_segment_val, 'Попадание в ЦА по категориям, относительные значения': df_segment}
+
+if __name__ == '__main__':
+  from config import RESULTS_FOLDER
+  path = RESULTS_FOLDER
+  df = pd.read_csv(os.path.join(path, 'leads.csv'))
+  df = df[:1000]
+  res = get_segments(df)
+  print(res['Страны, абсолютные значения'])
+  print()
+  print(res['Страны, относительные значения'])
+  print()
+  print(res['Попадание в ЦА по категориям, абсолютные значения'])

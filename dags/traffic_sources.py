@@ -1,193 +1,157 @@
-from database import get_accounts, get_target_audience, get_leads_data
+from app.database import get_accounts, get_target_audience, get_leads_data
 
 import pandas as pd
 from urllib import parse
 import pickle as pkl
+import os
+from config import DATA_FOLDER
+import numpy as np
 
+path = DATA_FOLDER
 
 def get_traffic_sources(df):
-    data = df
 
-    status_df = pd.read_csv('data/status.csv')
-    in_process = status_df[~status_df['В работе'].isna()]['Статус'].unique().tolist()
-    reached = status_df[~status_df['Дозвон'].isna()]['Статус'].unique().tolist()
-    appointment = status_df[~status_df['Назначен zoom'].isna()]['Статус'].unique().tolist()
-    any_status = status_df.dropna(thresh=2).dropna(how='all')['Статус'].unique().tolist()
+    with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+        target_audience = pkl.load(f)
 
-    target_audience = get_target_audience()
-    traff_data = get_accounts()
+    with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+        traff_data = pkl.load(f)
 
-    def parse_label(url):
-        query = parse.parse_qs(parse.urlparse(url).query)
-        if 'rs' in query.keys():
-            query['rs'][0] = query['rs'][0].split('_')[0]
-        if 'utm_source' in query.keys():
+    status = pd.read_csv('dags/data/status.csv')
+    status.fillna(0, inplace=True)
 
-            if query['utm_source'][0] in traff_data['label'].values:
-                return traff_data[traff_data['label'] == query['utm_source'][0]].values[0][1]
-            elif 'rs' in query.keys():
-                if query['rs'][0] in traff_data['label'].values:
-                    return traff_data[traff_data['label'] == query['rs'][0]].values[0][1]
-                else:
-                    return query['utm_source'][0]
-            else:
-                return query['utm_source'][0]
-        elif 'rs' in query.keys():
-            if query['rs'][0] in traff_data['label'].values:
-                return traff_data[traff_data['label'] == query['rs'][0]].values[0][1]
-            else:
-                return query['rs'][0]
-        return 'Not found'
+    payment_status = status[status['Оплатил'] == ' +'][
+        'Соответствующий статус в воронке Теплые продажи'].unique().tolist()  # Статусы с этапом "оплатил"
+    was_conversation_status = status[status['Был разговор'] == ' +'][
+        'Соответствующий статус в воронке Теплые продажи'].unique().tolist()  # Статусы с этапом "был разговор"
+    in_progress_status = status[status['В работе'] == ' +'][
+        'Соответствующий статус в воронке Теплые продажи'].unique().tolist()  # Статусы с этапом "в работе"
 
-    def parse_label2(url):
-        args = parse.parse_qs(parse.urlparse(url).query)
-        label = None
-        if 'rs' in args:
-            label = args['rs'][0].split('_')[0] # facebook17_23848555310470208_23849132838180208_23849132838200208 (args['rs'])
-        elif 'amp;rs' in args:
-            label = args['amp;rs'][0].split('_')[0] 
-        elif 'utm_source' in args:
-            label = 'utm_source=' + args['utm_source'][0]
-        elif 'amp;utm_source' in args:
-            label = 'utm_source' + args['utm_source'][0]
-        if label in traff_data.label.values:
-            return label
-        return 'Not found'
+    # Получаем массив трафикологов в отфильтрованном датасете
+    filtered_trafficologists = df['trafficologist'].unique()
+    # Создаем список с трафикологами и названиями их кабинетов - это будут заголовки колонок результирующей таблицы
+    created_columns = []
+    for name in filtered_trafficologists:
+        created_columns.append(name)
+        # Проверяем, что у трафиколога более 1 кабинета, чтобы не дублировать инфу, если кабинет только один
+        if traff_data[traff_data['name'] == name]['title'].shape[0] > 1:
+            created_columns.extend(list(df[df['trafficologist'] == name]['account'].unique()))
+    created_columns.sort()
 
+    columns = ['Бюджет', 'Кол-во лидов',
+               '% в работе', '% дозвонов', '% офферов', '% счетов',
+               'Цена лида',
+               '% ЦА 5-6', '% ЦА 5', '% ЦА 6', '% ЦА 4-5-6', '% ЦА 4', '% не ЦА', '% ЦА 3', '% ЦА 2', '% ЦА 1',
+               'Цена ЦА 5-6', 'Цена ЦА 4-5-6',
+               '% продаж', 'Средний чек', 'Оборот', 'Расход на ОП', 'Расход общий (ОП+бюджет)',
+               '% расходов на трафик (доля от Расход общий)', '% расходов на ОП (доля от Расход общий)',
+               'ROI', 'Маржа', 'Цена Разговора', 'Цена Оффера', 'Цена Счета',
+               'Оборот на лида (на обработанного лида)', 'Оборот на разговор', 'CV обр.лид/оплата',
+               'CV разговор/оплата', 'CPO',
+               '% лидов (доля от общего)', '% Оборот (доля от общего)', '% Оплат (доля от общего)',
+               '% Затрат (доля от общего)']
 
-    data = data.assign(
-        label = data.traffic_channel.apply(parse_label)
-    )
+    data_category = np.zeros((len(created_columns), len(columns))).astype('int')
+    df_category = pd.DataFrame(data_category, columns=columns)  # Датасет для процентного кол-ва лидов
+    df_category.insert(0, 'Все', 0)  # Столбец для подсчета всех лидов (сумма по всем таргетологам)
+    df_category.insert(0, 'Источник', 0)  # Столбец названия подкатегорий указанной категории
 
-    data = data.assign(
-    target_audience = data.quiz_answers1.isin(target_audience).astype(int) + \
-                      data.quiz_answers2.isin(target_audience) + \
-                      data.quiz_answers3.isin(target_audience) + \
-                      data.quiz_answers4.isin(target_audience) + \
-                      data.quiz_answers5.isin(target_audience) + \
-                      data.quiz_answers6.isin(target_audience)
-    )
-    target_audience_table = data.pivot_table(index='id', values='traffic_channel', columns='target_audience', aggfunc='count').reset_index()
-    target_audience_table = target_audience_table.fillna(0)
-    for i in range(0, 7):
-        if i not in target_audience_table:
-            target_audience_table.loc[:, str(i)] = 0
-        target_audience_table = target_audience_table.rename(
-            columns={ str(i): 'target_audience_' + str(i),
-                    i: 'target_audience_' + str(i)}
-        )
+    for i, subcategory_name in enumerate(created_columns):
+        temp_df = df[(df['trafficologist'] == subcategory_name) | (df['account'] == subcategory_name)]
+        if temp_df.shape[0] != 0:
 
-    data = data.merge(target_audience_table, on='id', how='inner')
-    data = traff_data.drop(columns='id').merge(data, on='label', how='right')
-    data['title'] = data['title'].fillna('Not found')
-    data['name'] = data['name'].fillna('Not found')
+            df_category.loc[i, 'Источник'] = subcategory_name
+            df_category.loc[i, 'Бюджет'] = temp_df['channel_expense'].sum()
+            df_category.loc[i, 'Кол-во лидов'] = temp_df.shape[0]
+            df_category.loc[i, '% в работе'] = round(
+                temp_df[temp_df['status_amo'].isin(in_progress_status)].shape[0] / temp_df.shape[0] * 100, 1)
+            df_category.loc[i, '% дозвонов'] = round(
+                temp_df[temp_df['status_amo'].isin(was_conversation_status)].shape[0] / temp_df.shape[0] * 100, 1)
+            df_category.loc[i, '% офферов'] = round(
+                temp_df[temp_df['status_amo'] == 'Сделан оффер из Теплые продажи'].shape[0] / temp_df.shape[
+                    0] * 100, 1)
+            df_category.loc[i, '% счетов'] = round(
+                temp_df[temp_df['status_amo'] == 'Выставлен счет из Теплые продажи'].shape[0] / temp_df.shape[
+                    0] * 100, 1)
+            df_category.loc[i, 'Цена лида'] = round(
+                temp_df[temp_df['channel_expense'] != 0]['channel_expense'].sum() / temp_df.shape[0], 1)
 
-    zoom_channel_expense = data.channel_expense.copy()
-    zoom_channel_expense[data.status_amo.str.contains('zoom', na=False)] = 0
+            df_category.loc[i, '% ЦА 5-6'] = round(
+                temp_df[temp_df['target_class'].isin([5, 6])].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 5'] = round(
+                temp_df[temp_df['target_class'] == 5].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 6'] = round(
+                temp_df[temp_df['target_class'] == 6].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 4-5-6'] = round(
+                temp_df[temp_df['target_class'].isin([4, 5, 6])].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 4'] = round(
+                temp_df[temp_df['target_class'] == 4].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% не ЦА'] = round(
+                temp_df[temp_df['target_class'] == 0].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 3'] = round(
+                temp_df[temp_df['target_class'] == 3].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 2'] = round(
+                temp_df[temp_df['target_class'] == 2].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, '% ЦА 1'] = round(
+                temp_df[temp_df['target_class'] == 1].shape[0] / temp_df.shape[0] * 100, 2)
+            df_category.loc[i, 'Цена ЦА 5-6'] = temp_df[temp_df['target_class'].isin([5, 6])][
+                                                    'channel_expense'].sum() / \
+                                                temp_df[temp_df['target_class'].isin([5, 6])].shape[0]
+            df_category.loc[i, 'Цена ЦА 4-5-6'] = temp_df[temp_df['target_class'].isin([4, 5, 6])][
+                                                      'channel_expense'].sum() / \
+                                                  temp_df[temp_df['target_class'].isin([4, 5, 6])].shape[0]
 
-    zoom_payment_amount = data.payment_amount.copy()
-    zoom_payment_amount[data.status_amo.str.contains('zoom', na=False)] = 0
+            df_category.loc[i, '% продаж'] = round(
+                temp_df[temp_df['status_amo'].isin(payment_status)].shape[0] / temp_df.shape[0] * 100, 1)
+            df_category.loc[i, 'Средний чек'] = temp_df['payment_amount'].sum() / \
+                                                temp_df[temp_df['payment_amount'] != 0].shape[0] if \
+            temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
+            df_category.loc[i, 'Оборот'] = temp_df['payment_amount'].sum()
+            df_category.loc[i, 'Расход на ОП'] = (temp_df['payment_amount'].sum() * 0.6 + 150 *
+                                                  temp_df[temp_df['payment_amount'] != 0].shape[0] + 27 *
+                                                  temp_df[temp_df['payment_amount'] != 0].shape[0] + 20 *
+                                                  temp_df[temp_df['payment_amount'] != 0].shape[0]) * 1.4
+            df_category.loc[i, 'Расход общий (ОП+бюджет)'] = df_category.loc[i, 'Бюджет'] + df_category.loc[
+                i, 'Расход на ОП']
+            df_category.loc[i, '% расходов на трафик (доля от Расход общий)'] = round(
+                df_category.loc[i, 'Бюджет'] / df_category.loc[i, 'Расход общий (ОП+бюджет)'] * 100, 2)
+            df_category.loc[i, '% расходов на ОП (доля от Расход общий)'] = round(
+                df_category.loc[i, 'Расход на ОП'] / df_category.loc[i, 'Расход общий (ОП+бюджет)'] * 100, 2)
+            df_category.loc[i, 'ROI'] = round(
+                (temp_df['payment_amount'].sum() - temp_df['channel_expense'].sum()) / temp_df[
+                    'channel_expense'].sum() * 100, 2) if temp_df[temp_df['payment_amount'] != 0].shape[
+                                                              0] != 0 else 0
+            df_category.loc[i, 'Маржа'] = temp_df['payment_amount'].sum() - temp_df['channel_expense'].sum()
+            df_category.loc[i, 'Цена Разговора'] = temp_df['channel_expense'].sum() / temp_df[
+                temp_df['status_amo'].isin(was_conversation_status)].shape[0] \
+                if temp_df[temp_df['status_amo'].isin(was_conversation_status)].shape[0] != 0 else 0
+            df_category.loc[i, 'Цена Оффера'] = temp_df['channel_expense'].sum() / temp_df[
+                temp_df['status_amo'] == 'Сделан оффер из Теплые продажи'].shape[0] \
+                if temp_df[temp_df['channel_expense'] == 'Сделан оффер из Теплые продажи'].shape[0] != 0 else 0
+            df_category.loc[i, 'Цена Счета'] = temp_df['channel_expense'].sum() / temp_df[
+                temp_df['status_amo'] == 'Выставлен счет из Теплые продажи'].shape[0] \
+                if temp_df[temp_df['status_amo'] == 'Выставлен счет из Теплые продажи'].shape[0] != 0 else 0
 
-    data = data.assign(
-        sell_percent = data.payment_amount.copy(),
-        mean_receipt = data.payment_amount.copy(),
-        sell_count = data.payment_amount.copy(),
-        cv_receipt = data.payment_amount.copy(),
-        done_zoom = data.status_amo.copy(),
-        zoom_channel_expense = zoom_channel_expense.copy(),
-        zoom_payment_amount = zoom_payment_amount.copy(),
-        zoom_price = zoom_channel_expense.copy()
-    )
-
-    result = data.groupby(['name', 'title', 'label'], as_index=False).agg({
-        'payment_amount': 'sum',
-        'sell_percent': lambda x: (x != 0).sum() / len(x),
-        'sell_count': lambda x: (x != 0).sum(), 
-        'done_zoom': lambda x: x.str.contains('zoom', na=False).sum(),
-        # 'zoom_payment_amount': 'mean',
-        # 'zoom_channel_expense': 'mean',
-        # 'zoom_price': lam
-        'cv_receipt': lambda x: (x != 0).sum() / len(data),
-        # 'mean_receipt': 'mean',
-        'channel_expense': 'sum',
-        'traffic_channel': 'count',
-        'is_double': lambda x: (x == 'yes').sum(),
-        'status_amo': list,
-        'quiz_answers1': lambda x: x.isin(target_audience).sum(),
-        'quiz_answers2': lambda x: x.isin(target_audience).sum(),
-        'quiz_answers3': lambda x: x.isin(target_audience).sum(),
-        'quiz_answers4': lambda x: x.isin(target_audience).sum(),
-        'quiz_answers5': lambda x: x.isin(target_audience).sum(),
-        'quiz_answers6': lambda x: x.isin(target_audience).sum(),
-        'target_audience_0': 'sum',
-        'target_audience_1': 'sum',
-        'target_audience_2': 'sum',
-        'target_audience_3': 'sum',
-        'target_audience_4': 'sum',
-        'target_audience_5': 'sum',
-        'target_audience_6': 'sum',
-    }).rename(columns={
-        'payment_amount': 'turnover',
-        'channel_expense': 'budget',
-        'traffic_channel': 'lead_number',
-        'is_double': 'reoccurences',
-    })
-
-    result = result.assign(
-        reoccurences_percentage = result.reoccurences / result.lead_number * 100,
-        in_process = result.status_amo.apply(lambda x: len([el for el in x if x in in_process])) / result.lead_number * 100,
-        reached = result.status_amo.apply(lambda x: len([el for el in x if x in reached])) / result.lead_number * 100,
-        appointment = result.status_amo.apply(lambda x: len([el for el in x if x in appointment])) / result.lead_number * 100,
-        not_reached = result.status_amo.apply(lambda x: len([el for el in x if x not in any_status])) / result.lead_number * 100,
-        target_audience_5_6 = result.target_audience_5 + result.target_audience_6,
-        target_audience_4_5_6 = result.target_audience_4 + result.target_audience_5 + result.target_audience_6,
-        zoom_turnover = result.done_zoom * 340 + result.done_zoom * 268 + result.sell_count * 3584,
-    )
-    result = result.assign(
-        price_target_audience_4_5_6 = result.budget.astype(float) / result.target_audience_4_5_6,
-        price_target_audience_5_6 = result.budget.astype(float) / result.target_audience_5_6,
-        # romi = (result.turnover - result.budget) / (result.budget + result.zoom_turnover) * 100,
-        margin = result.turnover - result.budget,
-    )
-
-    result = result.drop(columns=['quiz_answers1', 'quiz_answers2', 'quiz_answers3', 'quiz_answers4', 'quiz_answers5', 'quiz_answers6', 'status_amo'])
-
-    return {'traff_table': result.rename(columns={
-        'label': 'Метка',
-        'name': 'Имя',
-        'title': 'Название',
-        
-        'sell_count': 'Кол-во продаж',
-        'done_zoom': 'Проведено zoom',
-
-        'target_audience_0': 'Не ЦА',
-        'target_audience_1': 'ЦА-1',
-        'target_audience_2': 'ЦА-2',
-        'target_audience_3': 'ЦА-3',
-        'target_audience_4': 'ЦА-4',
-        'target_audience_5': 'ЦА-5',
-        'target_audience_6': 'ЦА-6',
-        'target_audience_5_6': 'ЦА-5-6',
-        'target_audience_4_5_6': 'ЦА-4-5-6',
-        'price_target_audience_5_6': 'Цена ЦА 5-6',
-        'price_target_audience_4_5_6': 'Цена ЦА 4-5-6',
-
-        'budget': 'Бюджет',
-        'reoccurences': 'Кол-во дублей',
-        'reoccurences_percentage': '% дублей',
-        'sell_percent': '% продаж',
-
-        'lead_number': 'Кол-во лидов',
-        'turnover': 'Оборот',
-        'romi': 'ROMI',
-        'cv_receipt': 'CV счет',
-
-        'in_process': '% В обработке',
-        'reached': '% Дозвон',
-        'appointment': '% Назначен zoom',
-        'not_reached': '% Недозвон',
-        'zoom_turnover': 'Цена проведенного zoom',
-
-        'margin': 'Маржа'
-    })}
-
+            df_category.loc[i, 'Оборот на лида (на обработанного лида)'] = df_category.loc[i, 'Оборот'] / temp_df[
+                temp_df['status_amo'] == 'Обработанная заявка из Теплые продажи'].shape[0]
+            df_category.loc[i, 'Оборот на разговор'] = df_category.loc[i, 'Оборот'] / temp_df[
+                temp_df['status_amo'].isin(was_conversation_status)].shape[0]
+            df_category.loc[i, 'CV обр.лид/оплата'] = \
+            temp_df[temp_df['status_amo'] == 'Обработанная заявка из Теплые продажи'].shape[0] / \
+            temp_df[temp_df['payment_amount'] != 0].shape[0] \
+                if temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
+            df_category.loc[i, 'CV разговор/оплата'] = \
+            temp_df[temp_df['status_amo'].isin(was_conversation_status)].shape[0] / \
+            temp_df[temp_df['payment_amount'] != 0].shape[0] \
+                if temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
+            # lead_df.loc[i, 'CPO'] = round(temp_df[temp_df['payment_amount'] != 0].sum() / temp_df[temp_df['payment_amount'] != 0].shape[0], 2)
+            # lead_df.loc[i, '% лидов (доля от общего)'] = round(temp_df.shape[0]/result.shape[0]*100, 2)
+            # lead_df.loc[i, '% Оборот (доля от общего)'] = round(temp_df['payment_amount'].sum()/result['payment_amount'].sum(), 2)
+            # lead_df.loc[i, '% Оплат (доля от общего)'] = round(temp_df[temp_df['payment_amount'].isin(payment_status)].shape[0]/result[result['payment_amount'].isin(payment_status)].shape[0], 2)
+            # lead_df.loc[i, '% Затрат (доля от общего)'] = round(lead_df.loc[i, 'Бюджет'] + lead_df.loc[i, 'Расход на ОП']/\
+            #                                                     (result['channel_expense'].sum() + \
+            #                                                      ((result['payment_amount'].sum() * 0.6 + 150 * result[result['payment_amount'] != 0].shape[0] + 27 * result[result['payment_amount'] != 0].shape[0] \
+            #                                                       + 20 * result[result['payment_amount'] != 0].shape[0]) * 1.4)*100), 2)
+        else:
+            pass
+    return {'Источники трафика': df_category}

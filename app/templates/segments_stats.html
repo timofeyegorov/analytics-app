@@ -6,7 +6,7 @@
 <div class="d-flex flex-column">
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
-        <form method='get' action='/traffic_sourses'>
+        <form method='get' action='/segments_stats'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
             <input type='hidden' name='tab' value="{{ tab if tab else 1 }}" >
@@ -16,7 +16,7 @@
     {% else %}
         <h1>Сегменты статистика</h1>
         <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' action='/traffic_sources'>
+        <form method='get' action='/segments_stats'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
             <input type='hidden' name='tab' id="tab" value="{{ tab if tab else 1 }}"> 

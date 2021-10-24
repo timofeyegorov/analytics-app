@@ -1,12 +1,7 @@
 from config import config
 import pandas as pd
 import pymysql
-import pickle as pkl
-from uuid import uuid4 as uuid
-import httplib2
-import apiclient.discovery
-from oauth2client.service_account import ServiceAccountCredentials
-from .preprocessing import preprocess_target_audience, preprocess_dataframe
+from .preprocessing import preprocess_dataframe
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
@@ -15,7 +10,10 @@ def connect():
 
 def get_leads_data():
     conn, cursor = connect()
-    query = "SELECT * FROM leads"
+    query = "SELECT * FROM leads WHERE traffic_channel NOT IN ('https://neural-university.ru/terra_ai_education_new',\
+                                                               'https://neural-university.ru/python_new',\
+                                                               'https://neural-university.ru/python_analysis_2',\
+                                                               'https://neural-university.ru/python_data_analysis')"
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
@@ -129,7 +127,6 @@ def get_times():
     arr = [d['time'] for d in data]
     conn.close()
     return arr
-
 
 # Подключаем библиотеки
 

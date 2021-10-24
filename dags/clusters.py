@@ -1,11 +1,15 @@
-from database import get_target_audience, get_leads_data
-
+from app.database import get_target_audience, get_leads_data
+import os
 import numpy as np
 import pandas as pd
 import pickle as pkl
+from config import DATA_FOLDER
 
 def get_clusters(df):
-  target_audience = get_target_audience()
+  df.reset_index(inplace=True, drop=True)
+  # target_audience = get_target_audience()
+  with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    target_audience = pkl.load(f)
 
   countries_unique = list(df[df['quiz_answers1'].isin(target_audience)]['quiz_answers1'].unique()) \
                   + list(df[~df['quiz_answers1'].isin(target_audience)]['quiz_answers1'].unique())

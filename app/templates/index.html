@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %} Обороты {% endblock %}
+{% block title %} Главная {% endblock %}
 {% block content %}
     <div class="card p-2 w-25 justify-content-center">
         <h3 class="text-center">Меню</h3>
@@ -14,6 +14,7 @@
         </div>
         <div class="m-2 d-flex justify-content-center">
             <a href="/trafficologists" class="btn btn-success m-1">Трафикологи</a>
+            <a href="/crops" class="btn btn-success m-1">Посевы</a>
             <a href="/target_audience" class="btn btn-success m-1">Целевая аудитория</a>
         </div>
         <div class="m-2 d-flex justify-content-center">
@@ -21,14 +22,15 @@
         </div>
 
     </div>
-
+    <a href ='https://docs.google.com/spreadsheets/d/1oQuX7eA5eijO98Ht_wO9O1noR20yJB73YiKfAnvQQ1g/' target="_blank">Google таблица с данными</a>
     <div id="leads-dynamics-plot">
 
     </div>
 
-    <script>
-        console.log("{{ fig_leads_dynamics() }}".replaceAll('&#34;', "\""))
-        let plot = JSON.parse("{{ fig_leads_dynamics() }}".replaceAll('&#34;', "\""));
-        Plotly.newPlot('leads-dynamics-plot', plot.data, plot.layout);
-    </script>
+
 {% endblock %}
+<!--    <script>-->
+<!--        console.log("{{ fig_leads_dynamics() }}".replaceAll('&#34;', "\""))-->
+<!--        let plot = JSON.parse("{{ fig_leads_dynamics() }}".replaceAll('&#34;', "\""));-->
+<!--        Plotly.newPlot('leads-dynamics-plot', plot.data, plot.layout);-->
+<!--    </script>-->

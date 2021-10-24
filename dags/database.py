@@ -11,6 +11,10 @@ try:
     from .preprocessing import preprocess_target_audience, preprocess_dataframe
 except ImportError:
     from preprocessing import preprocess_dataframe, preprocess_target_audience
+try:
+    from config import CREDENTIALS_FILE
+except ImportError:
+    from config import CREDENTIALS_FILE
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
@@ -18,8 +22,15 @@ def connect():
     return connection, cursor
 
 def get_leads_data():
+    '''
+        Get, filter and preprocess leads table from mysql database
+    :return: leads dataframe prepeared for reports building
+    '''
     conn, cursor = connect()
-    query = "SELECT * FROM leads"
+    query = "SELECT * FROM leads WHERE traffic_channel NOT IN ('https://neural-university.ru/terra_ai_education_new',\
+                                                               'https://neural-university.ru/python_new',\
+                                                               'https://neural-university.ru/python_analysis_2',\
+                                                               'https://neural-university.ru/python_data_analysis')"
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
@@ -54,7 +65,7 @@ def get_trafficologists():
     return pd.DataFrame(data)
 
 def get_target_audience():
-    CREDENTIALS_FILE = '/data/projects/analytic/python/analytics-app/dags/analytics-322510-46607fe39c6c.json'  # Имя файла с закрытым ключом, вы должны подставить свое
+    # Имя файла с закрытым ключом, вы должны подставить свое
     spreadsheet_id = '1_kytD9tww-2ETFOp46Av75PndibaoFzgHKV46fxHEWY'
     # Читаем ключи из файла
     credentials = ServiceAccountCredentials.from_json_keyfile_name(

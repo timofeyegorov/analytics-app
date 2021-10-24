@@ -2,7 +2,11 @@
 {% block title %}Целевая аудитория{% endblock %}
 {% block content %}
 <div class='d-flex flex-column'>
-    <h1>Список целевой аудитории</h1>
+    <h1>Актуальный список целевой аудитории</h1>
+        <p>
+            Для изменения списка ЦА перейдите в
+            <a href ='https://docs.google.com/spreadsheets/d/1oQuX7eA5eijO98Ht_wO9O1noR20yJB73YiKfAnvQQ1g/edit#gid=972066203' target="_blank"> Google таблицу<a>
+        </p>
     <div><a href="/" class="btn btn-success">В меню</a></div>
     <ul class="m-2">
         {% for item in target_audience %}

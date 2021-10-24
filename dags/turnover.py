@@ -1,34 +1,41 @@
-from database import get_target_audience, get_leads_data
+from app.database import get_target_audience, get_leads_data
 
 import pandas as pd
 import numpy as np
 import pickle as pkl
+import os
+from config import DATA_FOLDER
 
 # Функция подсчета показателей по подкатегориям каждой категории и лендингам
 def get_turnover(df):
-  target_audience = get_target_audience()
-  
+  df.reset_index(inplace=True, drop=True)
+
+  with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    target_audience = pkl.load(f)
+
+  # target_audience = get_target_audience()
   for i in range(df.shape[0]):
-    df.loc[i, 'traffic_channel'] = df.loc[i, 'traffic_channel'].split('?')[0]
+      df.loc[i, 'traffic_channel'] = df.loc[i, 'traffic_channel'].split('?')[0]
+
   # Создаем списки с уникальными значениями по ленгдингам
   landings = df['traffic_channel'].unique().tolist()
 
-  for i in range(df.shape[0]):
-    target_class = 0
-    if df.loc[i, 'quiz_answers1'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers2'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers3'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers4'] in target_audience:
-      target_class += 1         
-    if df.loc[i, 'quiz_answers5'] in target_audience:
-      target_class += 1
-    if df.loc[i, 'quiz_answers6'] in target_audience:
-      target_class += 1
-
-    df.loc[i, 'target_class'] = target_class
+  # for i in range(df.shape[0]):
+  #   target_class = 0
+  #   if df.loc[i, 'quiz_answers1'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers2'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers3'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers4'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers5'] in target_audience:
+  #     target_class += 1
+  #   if df.loc[i, 'quiz_answers6'] in target_audience:
+  #     target_class += 1
+  #
+  #   df.loc[i, 'target_class'] = target_class
 
   def turnover_in(column_name):
     flag = True # Если считаем показатели по категориям
