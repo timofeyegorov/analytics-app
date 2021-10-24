@@ -149,3 +149,9 @@ def get_target_audience():
     ).execute()
 
     return preprocess_target_audience(values['values'][0])
+
+def get_status():
+    try:
+        return pd.read_csv('data/status.csv')
+    except FileNotFoundError:
+        return pd.read_csv('dags/data/status.csv')
