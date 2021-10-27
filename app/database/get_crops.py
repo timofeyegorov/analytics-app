@@ -7,6 +7,8 @@ import pickle as pkl
 from config import DATA_FOLDER, CREDENTIALS_FILE
 import os
 from urllib import parse
+from urllib.parse import urlparse, urlsplit
+import numpy as np
 
 def get_crops():
     spreadsheet_id = '1dHxep6G9uQ9HSSwhKOzrXZiJX9d5a0wlY6SPSyLh1Qg'
