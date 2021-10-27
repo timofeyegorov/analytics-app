@@ -18,22 +18,6 @@ def accounts_delete():
     delete_account(id)
     return redirect('/trafficologists')
 
-@app.route('/trafficologists')
-def trafficologist_page(trafficologist_error=None, account_error=None):
-    with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
-        trafficologists = pkl.load(f)
-    # accounts = get_accounts()
-    # trafficologists = get_trafficologists()
-    # trafficologists2 = get_trafficologists()
-    # print(trafficologists)
-    return render_template("trafficologists.html", 
-        tables=[trafficologists.to_html()],
-        ) #,
-        # trafficologists=zip(trafficologists.id, trafficologists.name),
-        # trafficologists2=zip(trafficologists2.id, trafficologists2.name),
-        # trafficologist_error=trafficologist_error,
-        # account_error=account_error)
-
 @app.route('/trafficologists/add', methods=['post'])
 def add_trafficologist_request():
     name = request.form.get('name')

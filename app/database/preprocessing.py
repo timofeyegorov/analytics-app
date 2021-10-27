@@ -42,16 +42,27 @@ def preprocess_dataframe(df):
 
 	with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
 		traff_data = pkl.load(f)
+
 	# Анализируем ссылки каждого лида на то, какой трафиколог привел этого лида
 	links_list = []  # Сохраняем в список ссылки, не содержащие метки аккаунтов (в таком случае неизвестно, кто привел лида)
 	for el in list(traff_data['label']):  # Проходимся по всем метка которые есть
 		for i in range(df.shape[0]):  # Проходим по всему датасету
 			try:  # Пробуем проверить, есть ли элемент в ссылке
 				if el in df.loc[i, 'traffic_channel']:  # Если элемент (метка) есть
-					df.loc[i, 'trafficologist'] = traff_data[traff_data['label'] == el]['name'].values[
-						0]  # Заносим имя трафиколога по в ячейку по значению метки
-					df.loc[i, 'account'] = traff_data[traff_data['label'] == el]['title'].values[
-						0]  # Заносим кабинет трафиколога по в ячейку по значению метки
+					df.loc[i, 'trafficologist'] = traff_data[traff_data['label'] == el]['name'].values[0]  # Заносим имя трафиколога по в ячейку по значению метки
+					df.loc[i, 'account'] = traff_data[traff_data['label'] == el]['title'].values[0]  # Заносим кабинет трафиколога по в ячейку по значению метки
+			except TypeError:  # Если в ячейке нет ссылки, а проставлен 0
+				links_list.append(df.loc[i, 'traffic_channel'])
+
+	with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'rb') as f:
+		crops_data = pkl.load(f)
+
+	for el in crops_data:  # Проходимся по всем метка которые есть
+		for i in range(df.shape[0]):  # Проходим по всему датасету
+			try:  # Пробуем проверить, есть ли элемент в ссылке
+				if el in df.loc[i, 'traffic_channel']:  # Если элемент (метка) есть
+					df.loc[i, 'trafficologist'] = el  # Заносим имя трафиколога по в ячейку по значению метки
+					df.loc[i, 'account'] = el  # Заносим кабинет трафиколога по в ячейку по значению метки
 			except TypeError:  # Если в ячейке нет ссылки, а проставлен 0
 				links_list.append(df.loc[i, 'traffic_channel'])
 

@@ -8,7 +8,6 @@ from config import DATA_FOLDER, CREDENTIALS_FILE
 import os
 from urllib import parse
 from urllib.parse import urlparse, urlsplit
-import numpy as np
 
 def get_crops():
     spreadsheet_id = '1dHxep6G9uQ9HSSwhKOzrXZiJX9d5a0wlY6SPSyLh1Qg'
@@ -55,14 +54,17 @@ def get_crops():
     crops_links = crops['Ссылка'].unique()
     crops_list = []
     for link in crops_links:
-         crops_list.append(parse.parse_qsl(urlsplit(link).query)[-1][1])
-
+        last_param = parse.parse_qsl(urlsplit(link).query)[-1]
+        crops_list.append(last_param[0] + '=' + last_param[-1])
+    crops_list = set(crops_list)
+    crops_list = list(crops_list)
     with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'wb') as f:
-        pkl.dump(np.unique(crops_list), f)
+        pkl.dump(crops_list, f)
     return None
 
 if __name__ == '__main__':
     get_crops()
-    # with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'rb') as f:
-    #     crops = pkl.load(f)
-    # print(crops)
+    with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'rb') as f:
+        crops = pkl.load(f)
+    print(crops)
+    print(type(crops))

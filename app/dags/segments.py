@@ -16,6 +16,8 @@ def calculate_segments(df):
 
   with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
     traff_data = pkl.load(f)
+  with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'rb') as f:
+    crops_data = pkl.load(f)
   # target_audience = get_target_audience()
   # traff_data = get_accounts()
   # try:
@@ -194,7 +196,7 @@ def calculate_segments(df):
       df_segment_val.loc[idx, 'Сегмент'] = categories_names[column_category]
       df_segment_val.loc[idx, 'Все'] = df[df[column_category].isin(target_audience)].shape[0]
 
-      df_segment.loc[idx, 'Сегмент'] = column_category
+      df_segment.loc[idx, 'Сегмент'] = categories_names[column_category]
       df_segment.loc[idx, 'Все'] = round(df[df[column_category].isin(target_audience)].shape[0]/df.shape[0]*100, 0)
 
       for traff_name in created_columns:
@@ -246,7 +248,7 @@ if __name__ == '__main__':
   path = RESULTS_FOLDER
   df = pd.read_csv(os.path.join(path, 'leads.csv'))
   df = df[:1000]
-  res = get_segments(df)
+  res = calculate_segments(df)
   print(res['Страны, абсолютные значения'])
   print()
   print(res['Страны, относительные значения'])

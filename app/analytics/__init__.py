@@ -58,7 +58,7 @@ def turnover():
     date_payment_end = request.args.get('date_payment_end')
     tab = request.args.get('tab')
     if date_request_start or date_request_end or date_payment_start or date_payment_end:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         table.date_payment = pd.to_datetime(table.date_payment)
         if date_request_start:
@@ -94,7 +94,7 @@ def turnover():
             tab=tab
         )
     tables, ta = get_turnover()
-    print(3)
+
     return render_template(
         'turnover.html', 
         tables=tables,
@@ -112,7 +112,7 @@ def clusters():
     date_end = request.args.get('date_end')
     tab = request.args.get('tab')
     if date_start or date_end:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
@@ -137,7 +137,7 @@ def traffic_sources():
     date_end = request.args.get('date_end')
     tab = request.args.get('tab')
     if date_start or date_end:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
@@ -160,7 +160,7 @@ def segments_stats():
     date_end = request.args.get('date_end')
     tab = request.args.get('tab')
     if date_start or date_end:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
@@ -182,7 +182,7 @@ def leads_ta_stats():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
     if date_start is not None or date_end is not None:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
@@ -203,7 +203,7 @@ def landings():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
     if date_start or date_end:
-        table = pd.read_csv('dags/results/leads.csv')
+        table = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
         table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]

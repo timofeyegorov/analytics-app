@@ -1,11 +1,20 @@
-from app.database import get_target_audience
+from app.database.get_target_audience import get_target_audience
 
 import pandas as pd
+import os
 import pickle as pkl
+from config import DATA_FOLDER
 from collections import defaultdict
 
 def calculate_landings(tabl):
-  countries, ages, jobs, earnings, trainings, times = get_target_audience()
+  with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    target_audience = pkl.load(f)
+  countries = tabl[tabl['quiz_answers1'].isin(target_audience)]
+  ages = tabl[tabl['quiz_answers2'].isin(target_audience)]
+  jobs = tabl[tabl['quiz_answers3'].isin(target_audience)]
+  earnings = tabl[tabl['quiz_answers4'].isin(target_audience)]
+  trainings = tabl[tabl['quiz_answers5'].isin(target_audience)]
+  times = tabl[tabl['quiz_answers6'].isin(target_audience)]
   CAlist = [countries, ages, jobs, earnings, trainings, times]
 
   def go(result):
