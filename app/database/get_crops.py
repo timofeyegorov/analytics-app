@@ -15,7 +15,7 @@ def get_crops():
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
         ['https://www.googleapis.com/auth/spreadsheets',
-         'https://www.googleapis.com/auth/drive'])
+        'https://www.googleapis.com/auth/drive'])
 
     httpAuth = credentials.authorize(httplib2.Http()) # Авторизуемся в системе
     service = apiclient.discovery.build('sheets', 'v4', http = httpAuth) # Выбираем работу с таблицами и 4 версию API
@@ -41,18 +41,20 @@ def get_crops():
     crops = crops[(crops['Дата'] != '') & (crops['Дата'] != 'None')]
     crops = crops[(crops['Бюджет'] != '') & (crops['Бюджет'] != 'None')]
     crops.reset_index(drop=True, inplace=True)
-    # crops['Дата'] = pd.to_datetime(crops['Дата'], format="%d.%m.%Y")
-    # crops['Метка'] = 'Неизвестно'
-    # for label in traff_data.label.unique().tolist():
-    #   for idx, link_ in enumerate(crops['Ссылка']):
-    #     o = urlparse(link_).query
-    #     if label == o:
-    #       crops.loc[idx, 'Метка'] = label
-    # crops.drop(columns='Ссылка', inplace = True)
 
-    # Получаем список уникальных имен посевов
     crops_links = crops['Ссылка'].unique()
     crops_list = []
+<<<<<<< HEAD
+    for link in crops_links[:2]:
+        o = parse.urlparse(link).query
+        params = parse.parse_qs(o)
+        utm_source = params['utm_source']
+        crops_list.append(f"utm_source={utm_source[0]}")
+    return crops
+# crops.to_csv('crops_expences.csv', index=False, encoding='cp1251')
+# with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'wb') as f:
+    # pkl.dump(crops_list, f)
+=======
     for link in crops_links:
         last_param = parse.parse_qsl(urlsplit(link).query)[-1]
         crops_list.append(last_param[0] + '=' + last_param[-1])
@@ -68,3 +70,4 @@ if __name__ == '__main__':
         crops = pkl.load(f)
     print(crops)
     print(type(crops))
+>>>>>>> origin/branch_3

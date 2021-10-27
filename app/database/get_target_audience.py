@@ -9,7 +9,7 @@ import pickle as pkl
 import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
-from config import CREDENTIALS_FILE, DATA_FOLDER
+from config import CREDENTIALS_FILE, DATA_FOLDER, RESULTS_FOLDER
 from pprint import pprint
 # dictionary for cleaning target audience where keys are recordings needs to be overwritten by recordings in values
 change_dict = {'23 - 30': '24 - 30', '25 - 30': '26 - 30', '30 - 40': '31 - 40', '40 - 50': '41 - 50', '50 - 60': '51 - 60',
@@ -57,12 +57,10 @@ def get_target_audience():
     ).execute()
 
     target_audience = preprocess_target_audience(values['values'][0])
-    with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'wb') as f:
-        pkl.dump(target_audience, f)
-    return None
+    return target_audience
 
 if __name__ == '__main__':
     get_target_audience()
-    with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'target_audience.pkl'), 'rb') as f:
         ta = pkl.load(f)
     print(ta)
