@@ -37,6 +37,22 @@ def data():
     data.traffic_channel = data.traffic_channel.str.split('?').str[0]
     return render_template('leads.html', tables={'Leads': data.drop(columns=['id'])})
 
+@app.route('/trafficologists')
+def trafficologist_page(trafficologist_error=None, account_error=None):
+    with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+        trafficologists = pkl.load(f)
+    # accounts = get_accounts()
+    # trafficologists = get_trafficologists()
+    # trafficologists2 = get_trafficologists()
+    # print(trafficologists)
+    return render_template("trafficologists.html",
+        tables=[trafficologists.to_html()],
+        ) #,
+        # trafficologists=zip(trafficologists.id, trafficologists.name),
+        # trafficologists2=zip(trafficologists2.id, trafficologists2.name),
+        # trafficologist_error=trafficologist_error,
+        # account_error=account_error)
+
 @app.route('/target_audience')
 def target_audience():
     with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
@@ -50,6 +66,22 @@ def crops():
         crops = pkl.load(f)
     # return render_template('target_audience.html', target_audience=get_target_audience())
     return render_template('crops.html', crops=crops)
+
+@app.route('/statuses')
+def statuses_page():
+    with open(os.path.join(DATA_FOLDER, 'statuses.pkl'), 'rb') as f:
+        statuses = pkl.load(f)
+    # accounts = get_accounts()
+    # trafficologists = get_trafficologists()
+    # trafficologists2 = get_trafficologists()
+    # print(trafficologists)
+    return render_template("statuses.html",
+        tables=[statuses.to_html()],
+        ) #,
+        # trafficologists=zip(trafficologists.id, trafficologists.name),
+        # trafficologists2=zip(trafficologists2.id, trafficologists2.name),
+        # trafficologist_error=trafficologist_error,
+        # account_error=account_error)
 
 from .auth import *
 from .analytics import *

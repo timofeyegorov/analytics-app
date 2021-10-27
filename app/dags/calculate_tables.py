@@ -18,6 +18,7 @@ from app.database.get_crops import get_crops
 from app.database.get_target_audience import get_target_audience
 from app.database.get_trafficologists import get_trafficologists
 from app.database.get_expenses import get_trafficologists_expenses
+from app.database.get_statuses import get_statuses
 from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
@@ -47,8 +48,11 @@ def log_execution_time(param_name):
 
 @log_execution_time('load_crops')
 def load_crops():
-    crops = get_crops()
-    crops.to_csv(os.path.join(RESULTS_FOLDER, 'crops.csv'), index=False)
+    crops, crops_list = get_crops()
+    with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'wb') as f:
+        pkl.dump(crops, f)
+    with open(os.path.join(RESULTS_FOLDER, 'crops_list.pkl'), 'wb') as f:
+        pkl.dump(crops_list, f)
 
 @log_execution_time('load_trafficologists_expenses')
 def load_trafficologists_expenses():
@@ -65,79 +69,98 @@ def load_target_audience():
 @log_execution_time('load_trafficologists')
 def load_trafficologists():
     trafficologists = get_trafficologists()
-    trafficologists.to_csv(os.path.join(RESULTS_FOLDER, 'trafficologists.csv'), index=False)
+    with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'wb') as f:
+        pkl.dump(trafficologists, f)
+
+@log_execution_time('load_statuses')
+def load_status():
+    statuses = get_statuses()
+    with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'wb') as f:
+        pkl.dump(statuses, f)
 
 @log_execution_time('load_data')
 def load_data():
     data = get_leads_data()
-    data.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'), index=False)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+        pkl.dump(data, f)
     return None
 
 @log_execution_time('calculate_channel_expense')
 def calculate_channel_expense():
-    leads = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
-    crops = pd.read_csv(os.path.join(RESULTS_FOLDER, 'crops.csv'))
-    trafficologists = pd.read_csv(os.path.join(RESULTS_FOLDER, 'trafficologists.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        leads = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
+        crops = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+        trafficologists = pkl.load(f)
     leads = calculate_crops_expenses(leads, crops)
     leads = calculate_trafficologists_expenses(leads, trafficologists)
-    leads.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+        pkl.dump(leads, f)
     
 
 @log_execution_time('segments')
 def segments():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     segments = calculate_segments(data)
-    with open(os.path.join(RESULTS_FOLDER, 'segments.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'wb') as f:
         pkl.dump(segments, f)
     return 'Success'
 
 
 @log_execution_time('clusters')
 def clusters():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     clusters = calculate_clusters(data)
-    with open(os.path.join(RESULTS_FOLDER, 'clusters.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'clusters.pkl'), 'wb') as f:
         pkl.dump(clusters, f)
     return 'Success'
 
 
 @log_execution_time('landings')
 def landings():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     landings = calculate_landings(data)
-    with open(os.path.join(RESULTS_FOLDER, 'landings.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'landings.pkl'), 'wb') as f:
         pkl.dump(landings, f)
 
 
 @log_execution_time('segments_stats')
 def segments_stats():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     segments_stats = calculate_segments_stats(data)
-    with open(os.path.join(RESULTS_FOLDER, 'segments_stats.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'segments_stats.pkl'), 'wb') as f:
         pkl.dump(segments_stats, f)
 
 
 @log_execution_time('turnover')
 def turnover():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     turnover = calculate_turnover(data)
-    with open(os.path.join(RESULTS_FOLDER, 'turnover.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'turnover.pkl'), 'wb') as f:
         pkl.dump(turnover, f)
 
 
 @log_execution_time('traffic_sources')
 def traffic_sources():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     traffic_sources = calculate_turnover(data)
-    with open(os.path.join(RESULTS_FOLDER, 'traffic_sources.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'traffic_sources.pkl'), 'wb') as f:
         pkl.dump(traffic_sources, f)
 
 
 @log_execution_time('lead_ta_stats')
 def leads_ta_stats():
-    data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
     leads_ta_stats = calculate_turnover(data)
-    with open(os.path.join(RESULTS_FOLDER, 'leads_ta_stats.csv'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'leads_ta_stats.pkl'), 'wb') as f:
         pkl.dump(leads_ta_stats, f)
 
 dag = DAG('calculate_cache', description='Calculates tables',
