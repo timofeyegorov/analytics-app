@@ -1,7 +1,11 @@
 from config import config
 import pandas as pd
 import pymysql
-from .preprocessing import preprocess_dataframe
+import httplib2
+import apiclient.discovery
+from oauth2client.service_account import ServiceAccountCredentials
+from config import CREDENTIALS_FILE
+from .preprocessing import preprocess_dataframe, preprocess_target_audience
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
@@ -131,7 +135,6 @@ def get_times():
 # Подключаем библиотеки
 
 def get_target_audience():
-    CREDENTIALS_FILE = 'analytics-322510-46607fe39c6c.json'  # Имя файла с закрытым ключом, вы должны подставить свое
     spreadsheet_id = '1_kytD9tww-2ETFOp46Av75PndibaoFzgHKV46fxHEWY'
     # Читаем ключи из файла
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
