@@ -14,6 +14,11 @@ config = {
     'roistat': {
         'api_key': '5f89e56872aff50d17343d2ec1bf6b77',
         'project_id': '150173',
+    },
+    'redis': {
+        'host': 'localhost',
+        'port': '6379',
+        'db': '1',
     }
 }
 

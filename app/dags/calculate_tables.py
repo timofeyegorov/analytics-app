@@ -1,4 +1,4 @@
-from datetime import datetime
+from logging import log
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.dummy_operator import DummyOperator
@@ -8,6 +8,8 @@ import json
 import pandas as pd
 import os
 import sys
+import redis
+import datetime
 
 sys.path.append(Variable.get('APP_FOLDER'))
 
@@ -21,31 +23,57 @@ from app.database.preprocessing import calculate_trafficologists_expenses, calcu
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
 
-from config import RESULTS_FOLDER
+from config import RESULTS_FOLDER, config
 
+redis_config = config['redis']
+redis_db = redis.StrictRedis(
+    host=redis_config['host'],
+    port=redis_config['port'],
+    charset='utf-8',
+    db=redis_config['db'],
+)
+
+def log_execution_time(param_name):
+    def decorator(func):
+        def wrapper():
+            try:
+                func()
+                last_updated = datetime.datetime.now().isoformat()
+                redis_db.hmset(param_name, {'status': 'ok', 'last_updated': last_updated})
+            except Exception as e:
+                redis_db.hmset(param_name, {'status': 'fail', 'message': str(e)})
+        return wrapper
+    return decorator
+
+@log_execution_time('load_crops')
 def load_crops():
     crops = get_crops()
     crops.to_csv(os.path.join(RESULTS_FOLDER, 'crops.csv'), index=False)
 
+@log_execution_time('load_trafficologists_expenses')
 def load_trafficologists_expenses():
     expenses = get_trafficologists_expenses()
     with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'w') as f:
         json.dump(expenses, f)
 
+@log_execution_time('load_target_audience')
 def load_target_audience():
     target_audience = get_target_audience()
     with open(os.path.join(RESULTS_FOLDER, 'target_audience.pkl'), 'wb') as f:
         pkl.dump(target_audience, f)
     
+@log_execution_time('load_trafficologists')
 def load_trafficologists():
     trafficologists = get_trafficologists()
     trafficologists.to_csv(os.path.join(RESULTS_FOLDER, 'trafficologists.csv'), index=False)
 
+@log_execution_time('load_data')
 def load_data():
     data = get_leads_data()
     data.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'), index=False)
     return None
 
+@log_execution_time('calculate_channel_expense')
 def calculate_channel_expense():
     leads = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     crops = pd.read_csv(os.path.join(RESULTS_FOLDER, 'crops.csv'))
@@ -55,6 +83,7 @@ def calculate_channel_expense():
     leads.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     
 
+@log_execution_time('segments')
 def segments():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     segments = calculate_segments(data)
@@ -62,6 +91,8 @@ def segments():
         pkl.dump(segments, f)
     return 'Success'
 
+
+@log_execution_time('clusters')
 def clusters():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     clusters = calculate_clusters(data)
@@ -69,30 +100,40 @@ def clusters():
         pkl.dump(clusters, f)
     return 'Success'
 
+
+@log_execution_time('landings')
 def landings():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     landings = calculate_landings(data)
     with open(os.path.join(RESULTS_FOLDER, 'landings.csv'), 'wb') as f:
         pkl.dump(landings, f)
 
+
+@log_execution_time('segments_stats')
 def segments_stats():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     segments_stats = calculate_segments_stats(data)
     with open(os.path.join(RESULTS_FOLDER, 'segments_stats.csv'), 'wb') as f:
         pkl.dump(segments_stats, f)
 
+
+@log_execution_time('turnover')
 def turnover():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     turnover = calculate_turnover(data)
     with open(os.path.join(RESULTS_FOLDER, 'turnover.csv'), 'wb') as f:
         pkl.dump(turnover, f)
 
+
+@log_execution_time('traffic_sources')
 def traffic_sources():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     traffic_sources = calculate_turnover(data)
     with open(os.path.join(RESULTS_FOLDER, 'traffic_sources.csv'), 'wb') as f:
         pkl.dump(traffic_sources, f)
 
+
+@log_execution_time('lead_ta_stats')
 def leads_ta_stats():
     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
     leads_ta_stats = calculate_turnover(data)
@@ -101,7 +142,7 @@ def leads_ta_stats():
 
 dag = DAG('calculate_cache', description='Calculates tables',
           schedule_interval='0 */4 * * *',
-          start_date=datetime(2017, 3, 20), catchup=False)
+          start_date=datetime.datetime(2017, 3, 20), catchup=False)
 
 crops_operator = PythonOperator(task_id='load_crops', python_callable=load_crops, dag=dag)
 trafficologists_operator = PythonOperator(task_id='load_trafficologists', python_callable=load_trafficologists, dag=dag)
