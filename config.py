@@ -1,7 +1,7 @@
 config = {
     'database': {
-        'user': 'analytic',
-        'password': '-6>X%XWu$`6wJwy4',
+        'user': 'newuser',
+        'password': 'your_password',
         'host': 'localhost',
         'db': 'analytic',
         'charset': 'utf8'
@@ -22,6 +22,10 @@ config = {
     }
 }
 
-DATA_FOLDER = '/data/projects/analytic/python/analytics-app/app/dags/data'
-RESULTS_FOLDER = '/data/projects/analytic/python/analytics-app/app/dags/results'
-CREDENTIALS_FILE = '/data/projects/analytic/python/analytics-app/analytics-322510-46607fe39c6c.json'
+# DATA_FOLDER = '/data/projects/analytic/python/analytics-app/dags/data'
+# RESULTS_FOLDER = '/data/projects/analytic/python/analytics-app/dags/results'
+# CREDENTIALS_FILE = '/data/projects/analytic/python/analytics-app/analytics-322510-46607fe39c6c.json'
+
+DATA_FOLDER = r'C:\Users\User\PycharmProjects\analytics-app\app\dags\data'
+RESULTS_FOLDER = r'C:\Users\User\PycharmProjects\analytics-app\app\results'
+CREDENTIALS_FILE = r'C:\Users\User\PycharmProjects\analytics-app-new\analytics-322510-46607fe39c6c.json'

@@ -179,7 +179,7 @@ def segments_stats():
 def leads_ta_stats():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
-    if date_start is not None or date_end is not None:
+    if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
         table.date_request = pd.to_datetime(table.date_request)

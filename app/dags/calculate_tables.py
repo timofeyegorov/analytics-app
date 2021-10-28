@@ -150,7 +150,7 @@ def turnover():
 def traffic_sources():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)
-    traffic_sources = calculate_turnover(data)
+    traffic_sources = calculate_traffic_sources(data)
     with open(os.path.join(RESULTS_FOLDER, 'traffic_sources.pkl'), 'wb') as f:
         pkl.dump(traffic_sources, f)
 
@@ -159,7 +159,7 @@ def traffic_sources():
 def leads_ta_stats():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)
-    leads_ta_stats = calculate_turnover(data)
+    leads_ta_stats = calculate_leads_ta_stats(data)
     with open(os.path.join(RESULTS_FOLDER, 'leads_ta_stats.pkl'), 'wb') as f:
         pkl.dump(leads_ta_stats, f)
 

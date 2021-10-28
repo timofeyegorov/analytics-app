@@ -5,7 +5,7 @@ import pickle as pkl
 import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
-from config import CREDENTIALS_FILE, DATA_FOLDER
+from config import CREDENTIALS_FILE, RESULTS_FOLDER
 
 def get_statuses():
     """
@@ -30,12 +30,12 @@ def get_statuses():
     statuses = values['values']
     statuses = pd.DataFrame(statuses[1:], columns=statuses[0])
     statuses.replace(to_replace=[None], value='-', inplace=True)  # Заменяем значения [None]
-    with open(os.path.join(DATA_FOLDER, 'statuses.pkl'), 'wb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'wb') as f:
         pkl.dump(statuses, f)
     return None
 
 if __name__ == '__main__':
     get_statuses()
-    with open(os.path.join(DATA_FOLDER, 'statuses.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'rb') as f:
         statuses = pkl.load(f)
     print(statuses)

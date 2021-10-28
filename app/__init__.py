@@ -4,7 +4,7 @@ import pandas as pd
 from flask import Flask, request, render_template
 from .database.auth import check_token
 from .database import get_leads_data, get_target_audience
-from config import DATA_FOLDER
+from config import RESULTS_FOLDER
 import os
 import pickle as pkl
 
@@ -39,7 +39,7 @@ def data():
 
 @app.route('/trafficologists')
 def trafficologist_page(trafficologist_error=None, account_error=None):
-    with open(os.path.join(DATA_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'rb') as f:
         trafficologists = pkl.load(f)
     # accounts = get_accounts()
     # trafficologists = get_trafficologists()
@@ -55,21 +55,21 @@ def trafficologist_page(trafficologist_error=None, account_error=None):
 
 @app.route('/target_audience')
 def target_audience():
-    with open(os.path.join(DATA_FOLDER, 'target_audience.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'target_audience.pkl'), 'rb') as f:
         target_audience = pkl.load(f)
     # return render_template('target_audience.html', target_audience=get_target_audience())
     return render_template('target_audience.html', target_audience=target_audience)
 
 @app.route('/crops')
 def crops():
-    with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
         crops = pkl.load(f)
     # return render_template('target_audience.html', target_audience=get_target_audience())
     return render_template('crops.html', crops=crops)
 
 @app.route('/statuses')
 def statuses_page():
-    with open(os.path.join(DATA_FOLDER, 'statuses.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'rb') as f:
         statuses = pkl.load(f)
     # accounts = get_accounts()
     # trafficologists = get_trafficologists()

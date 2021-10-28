@@ -44,25 +44,19 @@ def get_crops():
 
     crops_links = crops['Ссылка'].unique()
     crops_list = []
-<<<<<<< HEAD
-    for link in crops_links[:2]:
-        o = parse.urlparse(link).query
-        params = parse.parse_qs(o)
-        utm_source = params['utm_source']
-        crops_list.append(f"utm_source={utm_source[0]}")
-    return crops
-# crops.to_csv('crops_expences.csv', index=False, encoding='cp1251')
-# with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'wb') as f:
-    # pkl.dump(crops_list, f)
-=======
+
+    # for link in crops_links[:2]:
+    #     o = parse.urlparse(link).query
+    #     params = parse.parse_qs(o)
+    #     utm_source = params['utm_source']
+    #     crops_list.append(f"utm_source={utm_source[0]}")
+
     for link in crops_links:
         last_param = parse.parse_qsl(urlsplit(link).query)[-1]
         crops_list.append(last_param[0] + '=' + last_param[-1])
     crops_list = set(crops_list)
     crops_list = list(crops_list)
-    with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'wb') as f:
-        pkl.dump(crops_list, f)
-    return None
+    return crops, crops_list
 
 if __name__ == '__main__':
     get_crops()
@@ -70,4 +64,3 @@ if __name__ == '__main__':
         crops = pkl.load(f)
     print(crops)
     print(type(crops))
->>>>>>> origin/branch_3

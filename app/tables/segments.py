@@ -12,43 +12,6 @@ def calculate_segments(df):
     traff_data = pkl.load(f)
   with open(os.path.join(RESULTS_FOLDER, 'crops_list.pkl'), 'rb') as f:
     crops_data = pkl.load(f)
-  # target_audience = get_target_audience()
-  # traff_data = get_accounts()
-  # try:
-  #   df.insert(19, 'trafficologist', 'Неизвестно')                # Добавляем столбец trafficologist для записи имени трафиколога
-  #   df.insert(20, 'account', 'Неизвестно 1')                       # Добавляем столбец account для записи аккаунта трафиколога
-  #   df.insert(21, 'target_class', 0)
-  # except ValueError:
-  #   pass
-  #
-  # df.index = np.arange(len(df))
-  # # Анализируем ссылки каждого лида на то, какой трафиколог привел этого лида
-  # links_list = [] # Сохраняем в список ссылки, не содержащие метки аккаунтов (в таком случае неизвестно, кто привел лида)
-  # for el in list(traff_data['label']): # Проходимся по всем метка которые есть
-  #   for i in range(df.shape[0]): # Проходим по всему датасету
-  #     try: # Пробуем проверить, есть ли элемент в ссылке
-  #       if el in df.loc[i, 'traffic_channel']: # Если элемент (метка) есть
-  #         df.loc[i, 'trafficologist'] = traff_data[traff_data['label'] == el]['name'].values[0] # Заносим имя трафиколога по в ячейку по значению метки
-  #         df.loc[i, 'account'] = traff_data[traff_data['label'] == el]['title'].values[0] # Заносим кабинет трафиколога по в ячейку по значению метки
-  #     except TypeError: # Если в ячейке нет ссылки, а проставлен 0
-  #       links_list.append(df.loc[i, 'traffic_channel'])
-  #
-  # for i in range(df.shape[0]):
-  #   target_class = 0
-  #   if df.loc[i, 'quiz_answers1'] in target_audience:
-  #     target_class += 1
-  #   if df.loc[i, 'quiz_answers2'] in target_audience:
-  #     target_class += 1
-  #   if df.loc[i, 'quiz_answers3'] in target_audience:
-  #     target_class += 1
-  #   if df.loc[i, 'quiz_answers4'] in target_audience:
-  #     target_class += 1
-  #   if df.loc[i, 'quiz_answers5'] in target_audience:
-  #     target_class += 1
-  #   if df.loc[i, 'quiz_answers6'] in target_audience:
-  #     target_class += 1
-  #
-  #   df.loc[i, 'target_class'] = target_class
 
   # Получаем массив трафикологов в отфильтрованном датасете
   filtered_trafficologists = df['trafficologist'].unique()
