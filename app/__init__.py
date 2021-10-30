@@ -62,7 +62,7 @@ def target_audience():
 
 @app.route('/crops')
 def crops():
-    with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'crops_list.pkl'), 'rb') as f:
         crops = pkl.load(f)
     # return render_template('target_audience.html', target_audience=get_target_audience())
     return render_template('crops.html', crops=crops)

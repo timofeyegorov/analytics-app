@@ -21,7 +21,10 @@ def get_leads_data():
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
-    return preprocess_dataframe(pd.DataFrame(data))
+    df = preprocess_dataframe(pd.DataFrame(data))
+    df['payment_amount'] = df['payment_amount'].astype(float)
+    df['channel_expense'] = df['channel_expense'].astype(float)
+    return df
 
 def get_trafficologist_data():
     conn, cursor = connect()

@@ -43,6 +43,7 @@ def log_execution_time(param_name):
                 redis_db.hmset(param_name, {'status': 'ok', 'last_updated': last_updated})
             except Exception as e:
                 redis_db.hmset(param_name, {'status': 'fail', 'message': str(e)})
+                raise e
         return wrapper
     return decorator
 
@@ -171,13 +172,14 @@ crops_operator = PythonOperator(task_id='load_crops', python_callable=load_crops
 trafficologists_operator = PythonOperator(task_id='load_trafficologists', python_callable=load_trafficologists, dag=dag)
 target_audience_operator = PythonOperator(task_id='load_target_audience', python_callable=load_target_audience, dag=dag) 
 expenses_operator = PythonOperator(task_id='load_expenenses', python_callable=load_trafficologists_expenses, dag=dag)
+statuses_operator = PythonOperator(task_id='load_statuses', python_callable=load_status, dag=dag)
 
 channel_expense_operator = PythonOperator(task_id='channel_expense', python_callable=calculate_channel_expense, dag=dag)
 
 clean_data_operator = PythonOperator(task_id='clean_data', python_callable=load_data, dag=dag)
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)
-# landings_operator = PythonOperator(task_id='landings', python_callable=landings, dag=dag)
+landings_operator = PythonOperator(task_id='landings', python_callable=landings, dag=dag)
 segments_stats_operator = PythonOperator(task_id='segments_stats', python_callable=segments_stats, dag=dag)
 turnover_operator = PythonOperator(task_id='turnover', python_callable=turnover, dag=dag)
 leads_ta_stats = PythonOperator(task_id='leads_ta_stats', python_callable=leads_ta_stats, dag=dag)
@@ -187,12 +189,13 @@ crops_operator >> clean_data_operator
 trafficologists_operator >> clean_data_operator
 target_audience_operator >> clean_data_operator
 expenses_operator >> clean_data_operator
+statuses_operator >> clean_data_operator
 
 clean_data_operator >> channel_expense_operator
 
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator
-# clean_data_operator >> landings_operator
+channel_expense_operator >> landings_operator
 channel_expense_operator >> segments_stats_operator
 channel_expense_operator >> turnover_operator
 channel_expense_operator >> leads_ta_stats

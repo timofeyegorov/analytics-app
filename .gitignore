@@ -4,3 +4,4 @@ logs/
 *standalone*
 webserver_config.py
 *pkl
+*json

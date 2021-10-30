@@ -88,12 +88,11 @@ def turnover():
             # date_payment_end=date_payment_end,
             tab=tab
         )
-    tables, ta = get_turnover()
+    tables = get_turnover()
 
     return render_template(
         'turnover.html', 
         tables=tables,
-        ta=ta,
         # date_request_start=date_request_start,
         # date_request_end=date_request_end,
         # date_payment_start=date_payment_start,

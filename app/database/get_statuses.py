@@ -30,9 +30,9 @@ def get_statuses():
     statuses = values['values']
     statuses = pd.DataFrame(statuses[1:], columns=statuses[0])
     statuses.replace(to_replace=[None], value='-', inplace=True)  # Заменяем значения [None]
-    with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'wb') as f:
-        pkl.dump(statuses, f)
-    return None
+    # with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'wb') as f:
+    #    pkl.dump(statuses, f)
+    return statuses
 
 if __name__ == '__main__':
     get_statuses()
