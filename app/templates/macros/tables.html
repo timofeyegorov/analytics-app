@@ -7,7 +7,7 @@
 
     <!-- <div>
         <button id="selectAll" class="btn btn-primary">Выбрать все столбцы</button>
-        <button id="resetAll" class="btn btn-primary">Убрать все столбцы</button> 
+        <button id="resetAll" class="btn btn-primary">Убрать все столбцы</button>
     </div>
     <div>
         {% for column in (tables.values()|first).columns[skip:] %}
@@ -34,7 +34,7 @@
                 element.classList.toggle('col-disabled');
             }
             button.classList.toggle('btn-warning');
-            button.classList.toggle('btn-success');          
+            button.classList.toggle('btn-success');
         });
         {% endfor %}
 

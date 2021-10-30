@@ -81,12 +81,12 @@ def leads_ta_stats():
     return 'Success'
 
 if __name__=='__main__':
-    # load_data()
-    # segments()
-    # turnover()
-    # clusters()
-    # landings()
-    # traffic_sources()
-    # segments_stats()
-    # leads_ta_stats()
+    load_data()
+    segments()
+    turnover()
+    clusters()
+    landings()
+    traffic_sources()
+    segments_stats()
+    leads_ta_stats()
     pass

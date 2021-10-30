@@ -2,7 +2,7 @@ import numpy as np
 import pickle as pkl
 import pandas as pd
 import os
-from config import DATA_FOLDER, RESULTS_FOLDER
+from config import RESULTS_FOLDER
 
 def calculate_leads_ta_stats(df):
     """
@@ -10,7 +10,7 @@ def calculate_leads_ta_stats(df):
     :return: dataframe report
     """
     df.reset_index(inplace=True, drop=True)
-    with open(os.path.join((DATA_FOLDER), 'statuses.pkl'), 'rb') as f:
+    with open(os.path.join((RESULTS_FOLDER), 'statuses.pkl'), 'rb') as f:
         status = pkl.load(f)
 
     payment_status = status[status['Продажа'] == ' +'][

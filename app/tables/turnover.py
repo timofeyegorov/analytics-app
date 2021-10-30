@@ -66,7 +66,7 @@ def calculate_turnover(df):
     for i in range(len(subcategories)):
 
       df_turnover.iloc[i,0] = subcategories[i] # Заполняем столбец Сегмент
-  
+
       df_turnover.iloc[i,1] = df[df[column_name]==subcategories[i]].shape[0] # Заполняем столбец Анкет
 
       if df[df[column_name]==subcategories[i]].shape[0] !=0 : # Заполняем столбцы Оборот, Оборот на анкету и CV
@@ -75,26 +75,26 @@ def calculate_turnover(df):
                                 // df[df[column_name]==subcategories[i]].shape[0]
         df_turnover.iloc[i,5] = round(df[(df[column_name]==subcategories[i]) & (df['payment_amount']!=0)].shape[0]\
                                 /df[df[column_name]==subcategories[i]].shape[0]*100, 1)
- 
+
       # Заполняем столбец Оплат
       df_turnover.iloc[i,4] = df[(df[column_name]==subcategories[i]) & (df['payment_amount']!=0)].shape[0]
 
       if df_turnover.iloc[i,5] != 0: # Заполняем столбец Чек
         df_turnover.iloc[i,6] = int(round(df[df[column_name]==subcategories[i]]['payment_amount'].sum()/df[(df[column_name]==subcategories[i]) & (df['payment_amount']!=0)].shape[0], 0))
-      else:  
+      else:
         df_turnover.iloc[i,6] = 0
     if flag:
       df_turnover.iloc[i+1,0] = 'ЦА'
       # if targ_idx != 0:
-      
+
       df_turnover.iloc[i+1,1] = df_turnover.iloc[:targ_idx,1].sum()
       df_turnover.iloc[i+1,2] = df_turnover.iloc[:targ_idx,2].sum()
-      
+
       if df_turnover.iloc[i+1,1] != 0:
         df_turnover.iloc[i+1,3] = int(round(df_turnover.iloc[i+1,2]/df_turnover.iloc[i+1,1], 0))
       else:
         df_turnover.iloc[i+1,3] = 0
-      
+
       df_turnover.iloc[i+1,4] = df_turnover.iloc[:targ_idx,4].sum()
       df_turnover.iloc[i+1,5] = round(df_turnover.iloc[i+1,4]/df_turnover.iloc[i+1,1]*100, 1)
       if df_turnover.iloc[i+1,4] != 0:
@@ -156,12 +156,12 @@ def calculate_turnover(df):
         df_turnover_ca.iloc[1,3] = 0
 
       if df_turnover['Оборот на анкету'].iloc[-1] != 0:
-        mnozhitel = round(df_turnover['Оборот на анкету'].iloc[-2]/df_turnover['Оборот на анкету'].iloc[-1],1)  
+        mnozhitel = round(df_turnover['Оборот на анкету'].iloc[-2]/df_turnover['Оборот на анкету'].iloc[-1],1)
       else:
-        mnozhitel = 0  
+        mnozhitel = 0
 
       return [df_turnover, df_turnover_ca, mnozhitel]
-    else: 
+    else:
       return df_turnover
 
   countries_df = turnover_in('quiz_answers1')
@@ -171,7 +171,7 @@ def calculate_turnover(df):
   trainings_df = turnover_in('quiz_answers5')
   times_df = turnover_in('quiz_answers6')
   landings_df = turnover_in('traffic_channel')
-  
+
 
   data_ta = np.zeros((8, 2)).astype('int')
   df_ta = pd.DataFrame(data_ta, columns=['Абс', '%'])
@@ -203,11 +203,11 @@ def calculate_turnover(df):
         '% Анкет': round(temp_df_ankets_ca.shape[0] / df.shape[0] * 100 \
                            if df.shape[0] != 0 else 0, 1),
 
-        'Оборот': temp_df_ankets_ca['payment_amount'].sum(),
+        'Оборот': round(temp_df_ankets_ca['payment_amount'].sum(), 1),
         '% Оборот': round(temp_df_ankets_ca['payment_amount'].sum() / df['payment_amount'].sum() * 100 \
                             if df['payment_amount'].sum() != 0 else 0, 1),
 
-        'Оборот на анкету': temp_df_ankets_ca['payment_amount'].sum() / temp_df_ankets_ca.shape[0] \
+        'Оборот на анкету': round(temp_df_ankets_ca['payment_amount'].sum() / temp_df_ankets_ca.shape[0], 1) \
           if temp_df_ankets_ca.shape[0] != 0 else 0,
 
         'Оплат': temp_df_ankets_ca[temp_df_ankets_ca['payment_amount'] != 0].shape[0],
@@ -221,8 +221,8 @@ def calculate_turnover(df):
           temp_df_ankets_ca[temp_df_ankets_ca['payment_amount'] != 0].shape[0] / temp_df_ankets_ca.shape[0] * 100 \
             if temp_df_ankets_ca.shape[0] != 0 else 0, 1),
 
-        'Чек': temp_df_ankets_ca['payment_amount'].sum() /
-               temp_df_ankets_ca[temp_df_ankets_ca['payment_amount'] != 0].shape[0] \
+        'Чек': round(temp_df_ankets_ca['payment_amount'].sum() /
+               temp_df_ankets_ca[temp_df_ankets_ca['payment_amount'] != 0].shape[0], 1) \
           if temp_df_ankets_ca[temp_df_ankets_ca['payment_amount'] != 0].shape[0] != 0 else 0
       }
       output_df = output_df.append(new_row, ignore_index=True)
@@ -239,5 +239,18 @@ def calculate_turnover(df):
           'Обучение':trainings_df,
           'Время':times_df,
           'traffic_channel':landings_df,
-          'Оборот на ЦА': turnover_ta}, df_ta
+          'Оборот на ЦА': turnover_ta,
+          'ЦА': df_ta}
 
+
+if __name__=='__main__':
+  with open(os.path.join((RESULTS_FOLDER), 'leads.pkl'), 'rb') as f:
+    data = pkl.load(f)
+
+    res, ta = calculate_turnover(data[:2000])
+    print(type(res))
+    print(len(res))
+    for item in res.values():
+      # print(item)
+      print(type(item[0]), type(item[1]), type(item[2]))
+    print()
