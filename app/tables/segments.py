@@ -17,6 +17,7 @@ def calculate_segments(df):
   filtered_trafficologists = df['trafficologist'].unique()
   # Создаем список с трафикологами и названиями их кабинетов - это будут заголовки колонок результирующей таблицы
   created_columns = []
+
   for name in filtered_trafficologists:
     created_columns.append(name)
     # Проверяем, что у трафиколога более 1 кабинета, чтобы не дублировать инфу, если кабинет только один
@@ -207,8 +208,4 @@ if __name__ == '__main__':
     df = pkl.load(f)
   df = df[:1000]
   res = calculate_segments(df)
-  print(res['Страны, абсолютные значения'])
-  print()
-  print(res['Страны, относительные значения'])
-  print()
-  print(res['Попадание в ЦА по категориям, абсолютные значения'])
+  print(res)

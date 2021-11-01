@@ -191,11 +191,11 @@ def calculate_segments_stats(df):
                                         1) \
           if output_df.loc[i, 'Расход общий (ОП+бюджет)'] != 0 else -1
 
-        output_df.loc[i, 'Маржа'] = float(temp_df['payment_amount'].sum()) \
-                                    - float(output_df.loc[i, 'Расход общий (ОП+бюджет)'])
-        output_df.loc[i, 'Маржа %'] = float(output_df.loc[i, 'Маржа']) \
-                                      / float(output_df.loc[i, 'Оборот']) \
-          if output_df.loc[i, 'Оборот'] != 0 else 0
+        output_df.loc[i, 'Маржа'] = round(float(temp_df['payment_amount'].sum()) \
+                                    - float(output_df.loc[i, 'Расход общий (ОП+бюджет)']), 1)
+        output_df.loc[i, 'Маржа %'] = round(float(output_df.loc[i, 'Маржа']) \
+                                      / float(output_df.loc[i, 'Оборот']), 1) \
+                                    if output_df.loc[i, 'Оборот'] != 0 else 0
 
         output_df.loc[i, 'Цена Разговора'] = round(temp_df['channel_expense'].sum() / \
                                                    temp_df[temp_df['status_amo'].isin(conversation_status)].shape[0], 1) \

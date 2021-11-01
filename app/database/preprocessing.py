@@ -58,7 +58,7 @@ def preprocess_dataframe(df):
 			except TypeError:  # Если в ячейке нет ссылки, а проставлен 0
 				links_list.append(df.loc[i, 'traffic_channel'])
 
-	with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
+	with open(os.path.join(RESULTS_FOLDER, 'crops_list.pkl'), 'rb') as f:
 		crops_data = pkl.load(f)
 
 	for el in crops_data:  # Проходимся по всем метка которые есть

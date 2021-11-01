@@ -90,10 +90,10 @@ def calculate_leads_ta_stats(df):
             output_df.loc[i, 'ROI'] = round((output_df.loc[i, 'Оборот'] / output_df.loc[i, 'Расход общий (ОП+бюджет)']) - 1, 1) \
                                                             if output_df.loc[i, 'Расход общий (ОП+бюджет)'] != 0 else -1
 
-            output_df.loc[i, 'Маржа'] = float(temp_df['payment_amount'].sum())\
-                                        - float(output_df.loc[i, 'Расход общий (ОП+бюджет)'])
-            output_df.loc[i, 'Маржа %'] = float(output_df.loc[i, 'Маржа']) \
-                                          / float(output_df.loc[i, 'Оборот']) \
+            output_df.loc[i, 'Маржа'] = round(float(temp_df['payment_amount'].sum())\
+                                        - float(output_df.loc[i, 'Расход общий (ОП+бюджет)']), 1)
+            output_df.loc[i, 'Маржа %'] = round(float(output_df.loc[i, 'Маржа']) \
+                                          / float(output_df.loc[i, 'Оборот']), 1) \
                                           if output_df.loc[i, 'Оборот'] != 0 else 0
 
             output_df.loc[i, 'Цена Разговора'] = round(temp_df['channel_expense'].sum() / \
@@ -159,7 +159,12 @@ def calculate_leads_ta_stats(df):
         if col not in ['% в работе', '% дозвонов', '% офферов', '% счетов', '% продаж',
                        'Цена лида', 'Средний чек',
                        'Средний чек', '% расходов на трафик (доля от Расход общий)', '% расходов на ОП (доля от Расход общий)',
-                       'ROI ?', 'ROMI', 'ROSI', 'ROI']:
+                       'ROI ?', 'ROMI', 'ROSI', 'ROI',
+                       'Маржа %', 'Цена Разговора', 'Цена Оффера', 'Цена Счета',
+                       'Оборот на лида (на обработанного лида)',
+                       'Оборот на разговор', 'CV обр.лид/оплата', 'CV разговор/оплата', 'CPO',
+                       '% лидов (доля от общего)', '% Оборот (доля от общего)',
+                       '% Оплат (доля от общего)', '% Затрат (доля от общего)']:
             try:
                 output_df.loc[7, col] = output_df.loc[5, col] + output_df.loc[6, col]
                 output_df.loc[8, col] = output_df.loc[:6, col].sum()
@@ -239,19 +244,115 @@ def calculate_leads_ta_stats(df):
             output_df.loc[8, 'ROSI'] = round((output_df['Оборот'][0:7].sum() / output_df['Расход на ОП'][0:7].sum()) - 1, 1)
             output_df.loc[8, 'ROI'] = round((output_df['Оборот'][0:7].sum() / output_df['Расход общий (ОП+бюджет)'][0:7].sum()) - 1, 1)
 
-        elif col == 'Маржа':
+        elif col == 'Маржа %':
             output_df.loc[7, 'Маржа %'] = float(output_df['Маржа'][5:7].sum()) \
                                           / float(output_df['Оборот'][5:7].sum()) \
                                           if output_df['Оборот'][5:7].sum() != 0 else 0
             output_df.loc[8, 'Маржа %'] = float(output_df['Маржа'][:7].sum()) \
                                           / float(output_df['Оборот'][:7].sum()) \
                                           if output_df['Оборот'][:7].sum() != 0 else 0
+        elif col == 'Цена Разговора':
+            output_df.loc[7, 'Цена Разговора'] = round(df[df['channel_expense'].isin([5,6])].sum() / \
+                df[(df['status_amo'].isin([5,6])) & (df['status_amo'].isin(conversation_status))].shape[0], 1) \
+                if df[(df['status_amo'].isin([5,6])) & (df['status_amo'].isin(conversation_status))].shape[0] != 0 else 0
+            output_df.loc[8, 'Цена Разговора'] = round(df[df['channel_expense'].isin([5,6])].sum() / \
+                df[(df['status_amo'].isin([5,6])) & (df['status_amo'].isin(conversation_status))].shape[0], 1) \
+                if df[(df['status_amo'].isin([5,6])) & (df['status_amo'].isin(conversation_status))].shape[0] != 0 else 0
+        elif col == 'Цена Оффера':
+            output_df.loc[7, 'Цена Оффера'] = round(df[df['channel_expense'].isin(5,6)].sum() / \
+                                                df[(df['channel_expense'].isin(5,6)) & (df['status_amo'].isin(offer_status))].shape[0], 1) \
+                                                if df[(df['channel_expense'].isin(5,6)) & (df['status_amo'].isin(offer_status))].shape[0] != 0 else 0
+            output_df.loc[8, 'Цена Оффера'] = round(df['channel_expense'].sum() / \
+                                                df[df['status_amo'].isin(offer_status)].shape[0], 1) \
+                                                if df[df['status_amo'].isin(offer_status)].shape[0] != 0 else 0
+        elif col == 'Цена Счета':
+            output_df.loc[i, 'Цена Счета'] = round(temp_df['channel_expense'].sum() / \
+                                             temp_df[temp_df['status_amo'].isin(bill_status)].shape[0], 1) \
+                                             if temp_df[temp_df['status_amo'].isin(bill_status)].shape[0] != 0 else 0
+            output_df.loc[i, 'Цена Счета'] = round(temp_df['channel_expense'].sum() / \
+                                             temp_df[temp_df['status_amo'].isin(bill_status)].shape[0], 1) \
+                                             if temp_df[temp_df['status_amo'].isin(bill_status)].shape[0] != 0 else 0
 
+        # elif col == 'Оборот на лида (на обработанного лида)':
+        #     pass
+        # elif col == 'Оборот на разговор':
+        #     pass
+        # elif col == 'CV обр.лид/оплата':
+        #     pass
+        # elif col == 'CV разговор/оплата':
+        #     pass
+        # elif col == 'CPO':
+        #     pass
+        # elif col == '% лидов (доля от общего)':
+        #     pass
+        # elif col == '% Оборот (доля от общего)':
+        #     pass
+        # elif col == '% Оплат (доля от общего)':
+        #     pass
+        # elif col == '% Затрат (доля от общего)':
+        #     pass
+            """
+
+
+
+            output_df.loc[i, 'Цена Оффера'] = round(temp_df['channel_expense'].sum() / \
+                                              temp_df[temp_df['status_amo'].isin(offer_status)].shape[0], 1) \
+                                              if temp_df[temp_df['status_amo'].isin(offer_status)].shape[0] != 0 else 0
+
+            output_df.loc[i, 'Цена Счета'] = round(temp_df['channel_expense'].sum() / \
+                                             temp_df[temp_df['status_amo'].isin(bill_status)].shape[0], 1) \
+                                             if temp_df[temp_df['status_amo'].isin(bill_status)].shape[0] != 0 else 0
+
+            output_df.loc[i, 'Оборот на лида (на обработанного лида)'] = round(float(output_df.loc[i, 'Оборот']) /\
+                                                                         finished_leads, 1) \
+                                                                         if finished_leads != 0 else 0
+
+            output_df.loc[i, 'Оборот на разговор'] = round(float(output_df.loc[i, 'Оборот']) / \
+                                        temp_df[temp_df['status_amo'].isin(conversation_status)].shape[0], 1) \
+                                        if temp_df[temp_df['status_amo'].isin(conversation_status)].shape[0] != 0 else 0
+
+            output_df.loc[i, 'CV обр.лид/оплата'] = round(finished_leads \
+                                                    / temp_df[temp_df['payment_amount'] != 0].shape[0], 1) \
+                                                    if temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
+
+            output_df.loc[i, 'CV разговор/оплата'] = \
+                                            round(temp_df[temp_df['status_amo'].isin(conversation_status)].shape[0] \
+                                            / temp_df[temp_df['payment_amount'] != 0].shape[0], 1)\
+                                            if temp_df[temp_df['payment_amount'] != 0].shape[0] != 0 else 0
+
+
+            output_df.loc[i, 'CPO'] = round(output_df.loc[i, 'Расход общий (ОП+бюджет)'] \
+                                      / temp_df[temp_df['status_amo'].isin(payment_status)].shape[0], 1) \
+                                      if temp_df[temp_df['status_amo'].isin(payment_status)].shape[0] != 0 else 0
+
+            output_df.loc[i, '% лидов (доля от общего)'] = round(temp_df.shape[0]/df.shape[0]*100, 1)
+            output_df.loc[i, '% Оборот (доля от общего)'] = round(float(temp_df['payment_amount'].sum()) \
+                                                                  /float(df['payment_amount'].sum()), 1) \
+                                                                  if df['payment_amount'].sum() != 0 else 0
+            output_df.loc[i, '% Оплат (доля от общего)'] = \
+                                                round(temp_df[temp_df['status_amo'].isin(payment_status)].shape[0] \
+                                                /df[df['status_amo'].isin(payment_status)].shape[0], 1) \
+                                                if df[df['status_amo'].isin(payment_status)].shape[0] != 0 else 0
+
+            output_df.loc[i, '% Затрат (доля от общего)'] = \
+                                            round(float(output_df.loc[i, 'Расход общий (ОП+бюджет)']) / \
+                                            (float(df['channel_expense'].sum()) + \
+                                            ((float(df['payment_amount'].sum()) * 0.06 \
+                                              + 150 * float(df[df['payment_amount'] != 0].shape[0]) \
+                                              + 27 * float(df[df['payment_amount'] != 0].shape[0]) \
+                                              + 20 * float(df[df['payment_amount'] != 0].shape[0])) * 1.4)) * 100, 1) \
+                                              if (float(df['channel_expense'].sum()) + \
+                                              ((float(df['payment_amount'].sum()) * 0.6 \
+                                              + 150 * float(df[df['payment_amount'] != 0].shape[0]) \
+                                              + 27 * float(df[df['payment_amount'] != 0].shape[0]) \
+                                              + 20 * float(df[df['payment_amount'] != 0].shape[0])) * 1.4) != 0) else 0
+            """
     output_df.rename(index={7: '5-6'}, inplace = True)
     output_df.rename(index={8: 'Sum'}, inplace=True)
     # print(df[df['payment_amount']])
     return {'Статистика лиды': output_df}
 
-# if __name__=='__main__':
-#     data = pd.read_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'))
-#     result = calculate_leads_ta_stats(data)
+if __name__=='__main__':
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    result = calculate_leads_ta_stats(data)

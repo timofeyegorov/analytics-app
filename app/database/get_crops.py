@@ -59,8 +59,7 @@ def get_crops():
     return crops, crops_list
 
 if __name__ == '__main__':
-    get_crops()
-    with open(os.path.join(DATA_FOLDER, 'crops.pkl'), 'rb') as f:
-        crops = pkl.load(f)
+    crops, crops_list = get_crops()
     print(crops)
     print(type(crops))
+    print(crops_list)
