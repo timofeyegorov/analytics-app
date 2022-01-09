@@ -114,19 +114,22 @@ def preprocess_target_audience(target_audience):
 	return target_audience
 
 def calculate_crops_expenses(leads, crops):
-    crops['Метка'] = crops['Ссылка'].str.split('?').apply(lambda x: x[-1]).str.split('&').apply(lambda x: x[-1])
-    crops['Бюджет'] = crops['Бюджет'].str.replace(' ', '').astype(int)
-    crops = crops.groupby(['Метка'], as_index=False)['Бюджет'].sum()
-    leads.date_request = pd.to_datetime(leads.date_request)
-    for i, row in crops.iterrows():
-        label = row['Метка']
-        cost = row['Бюджет']
+    try:
+        crops['Метка'] = crops['Ссылка'].str.split('?').apply(lambda x: x[-1]).str.split('&').apply(lambda x: x[-1])
+        crops['Бюджет'] = crops['Бюджет'].str.replace(' ', '').astype(int)
+        crops = crops.groupby(['Метка'], as_index=False)['Бюджет'].sum()
+        leads.date_request = pd.to_datetime(leads.date_request)
+        for i, row in crops.iterrows():
+            label = row['Метка']
+            cost = row['Бюджет']
 
-        leads_to_correct = leads[leads['traffic_channel'].str.contains(label)]
-        if len(leads_to_correct) > 0:
-            cost_per_lead = cost / len(leads_to_correct)
-            leads.loc[leads['traffic_channel'].str.contains(label), 'channel_expense'] = cost_per_lead
-    return leads
+            leads_to_correct = leads[leads['traffic_channel'].str.contains(label)]
+            if len(leads_to_correct) > 0:
+                cost_per_lead = cost / len(leads_to_correct)
+                leads.loc[leads['traffic_channel'].str.contains(label), 'channel_expense'] = cost_per_lead
+        return leads
+    except:
+        return leads
 
 def calculate_trafficologists_expenses(leads, traff):
 	with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r') as f:
