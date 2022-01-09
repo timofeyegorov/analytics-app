@@ -59,7 +59,7 @@ def get_crops():
         crops_list = list(crops_list)
         return crops, crops_list
     except:
-        return pd.DataFrame(), []
+        return pd.DataFrame(columns=['Дата', 'Бюджет', 'Метка']), []
 
 if __name__ == '__main__':
     crops, crops_list = get_crops()
