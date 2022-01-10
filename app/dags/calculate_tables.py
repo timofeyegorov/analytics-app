@@ -23,7 +23,7 @@ from app.database.preprocessing import calculate_trafficologists_expenses, calcu
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
-
+from app.tables import calculate_channels_summary
 from config import RESULTS_FOLDER, config
 
 redis_config = config['redis']
@@ -99,6 +99,14 @@ def calculate_channel_expense():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
     
+@log_execution_time('channels_summary')
+def channels_summary():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    channels_summary = calculate_channels_summary(data)
+    with open(os.path.join(RESULTS_FOLDER, 'channels_summary.pkl'), 'wb') as f:
+        pkl.dump(channels_summary, f)
+    return 'Success'
 
 @log_execution_time('segments')
 def segments():
@@ -177,6 +185,7 @@ statuses_operator = PythonOperator(task_id='load_statuses', python_callable=load
 channel_expense_operator = PythonOperator(task_id='channel_expense', python_callable=calculate_channel_expense, dag=dag)
 
 clean_data_operator = PythonOperator(task_id='clean_data', python_callable=load_data, dag=dag)
+channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)
 landings_operator = PythonOperator(task_id='landings', python_callable=landings, dag=dag)
@@ -193,6 +202,7 @@ statuses_operator >> clean_data_operator
 
 clean_data_operator >> channel_expense_operator
 
+channel_expense_operator >> channels_summary_operator
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator
 channel_expense_operator >> landings_operator
