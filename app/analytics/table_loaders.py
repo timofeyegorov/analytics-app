@@ -2,6 +2,11 @@ import os
 import pickle as pkl
 from config import RESULTS_FOLDER
 
+def get_channels_summary():
+    with open(os.path.join(RESULTS_FOLDER, 'channels_summary.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    return data
+
 def get_segments():
   with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'rb') as f:
     data = pkl.load(f)

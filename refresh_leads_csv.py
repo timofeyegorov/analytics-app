@@ -23,6 +23,13 @@ def load_data():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(data, f)
     return 'Success'
+def channels_summary():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    channels_summary = calculate_channels_summary(data)
+    with open(os.path.join(RESULTS_FOLDER, 'channels_summary.pkl'), 'wb') as f:
+        pkl.dump(channels_summary, f)
+    return 'Success'
 
 def segments():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:

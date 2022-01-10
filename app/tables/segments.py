@@ -202,7 +202,6 @@ def calculate_segments(df):
           'Попадание в ЦА по категориям, абсолютные значения': df_segment_val, 'Попадание в ЦА по категориям, относительные значения': df_segment}
 
 if __name__ == '__main__':
-  from config import RESULTS_FOLDER
   path = RESULTS_FOLDER
   with open(os.path.join(path, 'leads.pkl'), 'rb') as f:
     df = pkl.load(f)

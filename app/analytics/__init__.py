@@ -1,9 +1,11 @@
 from app import app
 from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
 from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
+from .table_loaders import get_channels_summary
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
+from app.tables import calculate_channels_summary
 
 from config import config
 from config import RESULTS_FOLDER
@@ -19,6 +21,31 @@ import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 import pickle as pkl
+
+@app.route('/channels_summary')
+def channels_summary():
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+    if date_start or date_end:
+        with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+            table = pkl.load(f)
+        table.date_request = pd.to_datetime(table.date_request)
+        if date_start:
+            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if len(table) == 0:
+            return render_template('channels_summary.html', error='Нет данных для заданного периода')
+        tables = calculate_channels_summary(table)
+        return render_template(
+            'channels_summary.html',
+            tables=tables, date_start=date_start, date_end=date_end
+        )
+    tables = get_channels_summary()
+    return render_template(
+        'channels_summary.html',
+        tables=tables, # date_start=date_start, date_end=date_end
+    )
 
 @app.route('/segments')
 def segments():
