@@ -18,7 +18,7 @@ def calculate_channels_summary(df):
         temp_.append(round(temp_[2] / temp_[1], 1))  # Оборот на лида
         temp_.append(round(df[df['trafficologist'] == el]['channel_expense'].sum(), 1))  # Трафик
         temp_.append(temp_[1] * 250 + temp_[2] * 0.35)  # Остальное
-        temp_.append(temp_[2] - temp_[4] - temp_[5])  # Прибыль
+        temp_.append(round(temp_[2] - temp_[4] - temp_[5], 1))  # Прибыль
         temp_.append(round((temp_[3] / (temp_[4] + temp_[5]) - 1) * 100, 1))  # ROI
         temp_.append(round(temp_[7] / (1 + temp_[7]) * 100, 1))  # Маржинальность
         values.append(temp_)
