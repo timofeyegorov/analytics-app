@@ -164,7 +164,7 @@ def traffic_sources():
         pkl.dump(traffic_sources, f)
 
 
-@log_execution_time('lead_ta_stats')
+@log_execution_time('leads_ta_stats')
 def leads_ta_stats():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)

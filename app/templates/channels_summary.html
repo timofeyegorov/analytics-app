@@ -17,7 +17,7 @@
     {% else %}
         <h1>Источники - сводная таблица</h1>
         <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' id='filters' action='/segments'>
+        <form method='get' id='filters' action='/channels_summary'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
             <button class="btn btn-primary">Обновить</button>
