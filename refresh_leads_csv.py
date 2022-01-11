@@ -6,6 +6,12 @@
 '''
 
 from app.database import *
+from app.database.get_crops import get_crops
+from app.database.get_expenses import get_trafficologists_expenses
+from app.database.get_statuses import get_statuses
+from app.database.get_target_audience import get_target_audience
+from app.database.get_trafficologists import get_trafficologists
+
 from app.tables import calculate_clusters
 from app.tables import calculate_segments
 from app.tables import calculate_landings
@@ -13,16 +19,47 @@ from app.tables import calculate_turnover
 from app.tables import calculate_segments_stats
 from app.tables import calculate_leads_ta_stats
 from app.tables import calculate_traffic_sources
+from app.tables import calculate_channels_summary
 import os
 import pickle as pkl
 from config import RESULTS_FOLDER
+import json
+
+def load_crops():
+    crops, crops_list = get_crops()
+    with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'wb') as f:
+        pkl.dump(crops, f)
+    with open(os.path.join(RESULTS_FOLDER, 'crops_list.pkl'), 'wb') as f:
+        pkl.dump(crops_list, f)
+
+def load_trafficologists_expenses():
+    expenses = get_trafficologists_expenses()
+    with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'w') as f:
+        json.dump(expenses, f)
+
+def load_target_audience():
+    target_audience = get_target_audience()
+    with open(os.path.join(RESULTS_FOLDER, 'target_audience.pkl'), 'wb') as f:
+        pkl.dump(target_audience, f)
+
+def load_trafficologists():
+    trafficologists = get_trafficologists()
+    with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'wb') as f:
+        pkl.dump(trafficologists, f)
+
+def load_status():
+    statuses = get_statuses()
+    with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'wb') as f:
+        pkl.dump(statuses, f)
 
 def load_data():
     data = get_leads_data()
     # data.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'), index=False)
+    data = data[1500:2500]
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(data, f)
     return 'Success'
+
 def channels_summary():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)
@@ -88,7 +125,13 @@ def leads_ta_stats():
     return 'Success'
 
 if __name__=='__main__':
+    # load_crops()
+    # load_trafficologists_expenses()
+    # load_target_audience()
+    # load_trafficologists()
+    # load_status()
     load_data()
+    channels_summary()
     segments()
     turnover()
     clusters()

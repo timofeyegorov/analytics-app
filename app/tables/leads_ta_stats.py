@@ -259,9 +259,9 @@ def calculate_leads_ta_stats(df):
                 df[(df['status_amo'].isin([5,6])) & (df['status_amo'].isin(conversation_status))].shape[0], 1) \
                 if df[(df['status_amo'].isin([5,6])) & (df['status_amo'].isin(conversation_status))].shape[0] != 0 else 0
         elif col == 'Цена Оффера':
-            output_df.loc[7, 'Цена Оффера'] = round(df[df['channel_expense'].isin(5,6)].sum() / \
-                                                df[(df['channel_expense'].isin(5,6)) & (df['status_amo'].isin(offer_status))].shape[0], 1) \
-                                                if df[(df['channel_expense'].isin(5,6)) & (df['status_amo'].isin(offer_status))].shape[0] != 0 else 0
+            output_df.loc[7, 'Цена Оффера'] = round(df[df['channel_expense'].isin([5,6])].sum() / \
+                                                df[(df['channel_expense'].isin([5,6])) & (df['status_amo'].isin(offer_status))].shape[0], 1) \
+                                                if df[(df['channel_expense'].isin([5,6])) & (df['status_amo'].isin(offer_status))].shape[0] != 0 else 0
             output_df.loc[8, 'Цена Оффера'] = round(df['channel_expense'].sum() / \
                                                 df[df['status_amo'].isin(offer_status)].shape[0], 1) \
                                                 if df[df['status_amo'].isin(offer_status)].shape[0] != 0 else 0

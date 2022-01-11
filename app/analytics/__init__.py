@@ -26,7 +26,12 @@ import pickle as pkl
 def channels_summary():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
-    if date_start or date_end:
+    utm = request.args.get('utm')
+    try:
+        utm = utm.split()
+    except AttributeError as e:
+        utm = []
+    if date_start or date_end or utm:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
         table.date_request = pd.to_datetime(table.date_request)
@@ -34,6 +39,9 @@ def channels_summary():
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
             table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if utm:
+            for el in utm:
+                table = table[table['traffic_channel'].str.contains(el)]
         if len(table) == 0:
             return render_template('channels_summary.html', error='Нет данных для заданного периода')
         tables = calculate_channels_summary(table)

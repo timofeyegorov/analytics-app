@@ -34,6 +34,6 @@ config = {
 # RESULTS_FOLDER = '/data/projects/analytic/python/analytics-app/dags/results'
 # CREDENTIALS_FILE = '/data/projects/analytic/python/analytics-app/analytics-322510-46607fe39c6c.json'
 
-DATA_FOLDER = r'C:\Users\User\PycharmProjects\analytics-app\app\dags\data'
-RESULTS_FOLDER = r'C:\Users\User\PycharmProjects\analytics-app\app\results'
-CREDENTIALS_FILE = r'C:\Users\User\PycharmProjects\analytics-app-new\analytics-322510-46607fe39c6c.json'
+DATA_FOLDER = r'C:\Users\admin\PycharmProjects\analytics-app-main\app\dags\data'
+RESULTS_FOLDER = r'C:\Users\admin\PycharmProjects\analytics-app-main\app\results'
+CREDENTIALS_FILE = r'C:\Users\admin\PycharmProjects\analytics-app-main\analytics-322510-46607fe39c6c.json'

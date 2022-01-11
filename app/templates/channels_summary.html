@@ -20,6 +20,7 @@
         <form method='get' id='filters' action='/channels_summary'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
+            <input type='text' name='utm' value="{{ utm }}" placeholder="utm_source=yandex utm_medium=cpc etc.">
             <button class="btn btn-primary">Обновить</button>
             {{ reset_button() }}
         </form>
