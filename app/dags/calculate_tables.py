@@ -106,7 +106,7 @@ def calculate_channel_expense():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
 
-@log_execution_time('calculate_turnover_on_lead'):
+@log_execution_time('calculate_turnover_on_lead')
 def calculate_turnover_on_lead():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         leads = pkl.load(f)
