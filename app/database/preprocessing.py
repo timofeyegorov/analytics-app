@@ -153,6 +153,20 @@ def calculate_trafficologists_expenses(leads, traff):
 					leads.loc[mask, 'channel_expense'] = cost_per_lead
 	return leads
 
+def get_turnover_on_lead(leads, ca_payment_analytic):
+    leads.insert(10, 'turnover_on_lead', 0)
+    filtered_trafficologists = leads['trafficologist'].unique()
+
+    for i in range(ca_payment_analytic.shape[0]):
+        leads.loc[
+            (leads['quiz_answers2'] == ca_payment_analytic.values[i][0]) &
+            (leads['quiz_answers3'] == ca_payment_analytic.values[i][1]) &
+            (leads['quiz_answers4'] == ca_payment_analytic.values[i][2]) &
+            (leads['quiz_answers5'] == ca_payment_analytic.values[i][3]),
+            'turnover_on_lead'
+        ] = ca_payment_analytic.values[i][4]
+    return leads
+
 if __name__ == '__main__':
 	with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
 		df = pkl.load(f)

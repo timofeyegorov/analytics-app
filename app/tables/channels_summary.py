@@ -13,7 +13,7 @@ def calculate_channels_summary(df):
     temp_ = []
     temp_.append('СУММА:')
     temp_.append(df.shape[0])
-    temp_.append(round(df['payment_amount'].sum()))
+    temp_.append(df['turnover_on_lead'].sum()) # Оборот
     temp_.append(round(temp_[2] / temp_[1]))
     temp_.append(round(df['channel_expense'].sum()))
     temp_.append(round(temp_[1] * 250 + temp_[2] * 0.35))
@@ -25,7 +25,7 @@ def calculate_channels_summary(df):
         temp_ = []
         temp_.append(el)
         temp_.append(df[df['trafficologist'] == el].shape[0])  # Кол-во лидов
-        temp_.append(round(df[df['trafficologist'] == el]['payment_amount'].sum()))  # Оборот
+        temp_.append(df[df['trafficologist'] == el]['turnover_on_lead'].sum()) # Оборот
         temp_.append(round(temp_[2] / temp_[1]))  # Оборот на лида
         temp_.append(round(df[df['trafficologist'] == el]['channel_expense'].sum()))  # Трафик
         temp_.append(round(temp_[1] * 250 + temp_[2] * 0.35))  # Остальное

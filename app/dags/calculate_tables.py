@@ -19,7 +19,8 @@ from app.database.get_target_audience import get_target_audience
 from app.database.get_trafficologists import get_trafficologists
 from app.database.get_expenses import get_trafficologists_expenses
 from app.database.get_statuses import get_statuses
-from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
+from app.database.get_ca_payment_analytic import get_ca_payment_analytic
+from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses, get_turnover_on_lead
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
@@ -79,6 +80,12 @@ def load_status():
     with open(os.path.join(RESULTS_FOLDER, 'statuses.pkl'), 'wb') as f:
         pkl.dump(statuses, f)
 
+@log_execution_time('load_ca_payment_analytic')
+def load_ca_payment_analytic():
+    ca_payment_analytic = get_ca_payment_analytic()
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'wb') as f:
+        pkl.dump(ca_payment_analytic, f)
+
 @log_execution_time('load_data')
 def load_data():
     data = get_leads_data()
@@ -98,7 +105,17 @@ def calculate_channel_expense():
     leads = calculate_trafficologists_expenses(leads, trafficologists)
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
-    
+
+@log_execution_time('calculate_turnover_on_lead'):
+def calculate_turnover_on_lead():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        leads = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+        ca_payment_analytic = pkl.load(f)
+    leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+        pkl.dump(leads, f)
+
 @log_execution_time('channels_summary')
 def channels_summary():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
@@ -181,8 +198,10 @@ trafficologists_operator = PythonOperator(task_id='load_trafficologists', python
 target_audience_operator = PythonOperator(task_id='load_target_audience', python_callable=load_target_audience, dag=dag) 
 expenses_operator = PythonOperator(task_id='load_expenenses', python_callable=load_trafficologists_expenses, dag=dag)
 statuses_operator = PythonOperator(task_id='load_statuses', python_callable=load_status, dag=dag)
+ca_payment_analytic_operator = PythonOperator(task_id='load_ca_payment_analytic', python_callable=load_ca_payment_analytic, dag=dag)
 
 channel_expense_operator = PythonOperator(task_id='channel_expense', python_callable=calculate_channel_expense, dag=dag)
+turnover_on_lead_operator = PythonOperator(task_id='turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
 
 clean_data_operator = PythonOperator(task_id='clean_data', python_callable=load_data, dag=dag)
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
@@ -194,13 +213,19 @@ turnover_operator = PythonOperator(task_id='turnover', python_callable=turnover,
 leads_ta_stats = PythonOperator(task_id='leads_ta_stats', python_callable=leads_ta_stats, dag=dag)
 traffic_sources = PythonOperator(task_id='traffic_sources', python_callable=traffic_sources, dag=dag)
 
+
+
+
+
 crops_operator >> clean_data_operator
 trafficologists_operator >> clean_data_operator
 target_audience_operator >> clean_data_operator
 expenses_operator >> clean_data_operator
 statuses_operator >> clean_data_operator
+ca_payment_analytic_operator >> clean_data_operator
 
 clean_data_operator >> channel_expense_operator
+channel_expense_operator >> turnover_on_lead_operator
 
 channel_expense_operator >> channels_summary_operator
 channel_expense_operator >> segments_operator 
