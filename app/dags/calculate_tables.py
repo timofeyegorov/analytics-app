@@ -196,14 +196,14 @@ dag = DAG('calculate_cache', description='Calculates tables',
 crops_operator = PythonOperator(task_id='load_crops', python_callable=load_crops, dag=dag)
 trafficologists_operator = PythonOperator(task_id='load_trafficologists', python_callable=load_trafficologists, dag=dag)
 target_audience_operator = PythonOperator(task_id='load_target_audience', python_callable=load_target_audience, dag=dag) 
-expenses_operator = PythonOperator(task_id='load_expenenses', python_callable=load_trafficologists_expenses, dag=dag)
+expenses_operator = PythonOperator(task_id='load_trafficologists_expenses', python_callable=load_trafficologists_expenses, dag=dag)
 statuses_operator = PythonOperator(task_id='load_statuses', python_callable=load_status, dag=dag)
 ca_payment_analytic_operator = PythonOperator(task_id='load_ca_payment_analytic', python_callable=load_ca_payment_analytic, dag=dag)
 
-channel_expense_operator = PythonOperator(task_id='channel_expense', python_callable=calculate_channel_expense, dag=dag)
-turnover_on_lead_operator = PythonOperator(task_id='turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
+channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
+turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
 
-clean_data_operator = PythonOperator(task_id='clean_data', python_callable=load_data, dag=dag)
+clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_data, dag=dag)
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)

@@ -5,8 +5,7 @@ import pickle as pkl
 from config import RESULTS_FOLDER
 
 def calculate_channels_summary(df):
-    with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'rb') as f:
-        traff_data = pkl.load(f)
+
     # Получаем массив трафикологов в отфильтрованном датасете
     filtered_trafficologists = df['trafficologist'].unique()
     values = []
@@ -18,8 +17,8 @@ def calculate_channels_summary(df):
     temp_.append(round(df['channel_expense'].sum()))
     temp_.append(round(temp_[1] * 250 + temp_[2] * 0.35))
     temp_.append(round(temp_[2] - temp_[4] - temp_[5]))
-    temp_.append(round((temp_[2] / (temp_[4] + temp_[5]) - 1) * 100))
-    temp_.append(round(temp_[7] / (1 + temp_[7]) * 100))
+    temp_.append(round((temp_[3] / (temp_[4] + temp_[5]) - 1) * 100)  if (temp_[4] + temp_[5]) != 0 else 0)
+    temp_.append(round(temp_[7] / (1 + temp_[7]) * 100) if (1 + temp_[7]) != 0 else 0)
     values.append(temp_)
     for el in filtered_trafficologists:
         temp_ = []
@@ -30,8 +29,8 @@ def calculate_channels_summary(df):
         temp_.append(round(df[df['trafficologist'] == el]['channel_expense'].sum()))  # Трафик
         temp_.append(round(temp_[1] * 250 + temp_[2] * 0.35))  # Остальное
         temp_.append(round(temp_[2] - temp_[4] - temp_[5]))  # Прибыль
-        temp_.append(round((temp_[2] / (temp_[4] + temp_[5]) - 1) * 100)  if (temp_[4] + temp_[5]) != 0 else 0)  # ROI
-        temp_.append(round(temp_[7] / (1 + temp_[7]) * 100)  if (1 + temp_[7]) != 0 else 0)  # Маржинальность
+        temp_.append(round((temp_[3] / (temp_[4] + temp_[5]) - 1) * 100) if (temp_[4] + temp_[5]) != 0 else 0)  # ROI
+        temp_.append(round(temp_[7] / (1 + temp_[7]) * 100) if (1 + temp_[7]) != 0 else 0)  # Маржинальность
         values.append(temp_)
     output_df = pd.DataFrame(columns=['Канал', 'Лидов', 'Оборот*', 'Оборот на лида', 'Трафик', 'Остальное', 'Прибыль', 'ROI',
                                'Маржинальность'],
