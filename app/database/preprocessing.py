@@ -168,10 +168,12 @@ def get_turnover_on_lead(leads, ca_payment_analytic):
     return leads
 
 if __name__ == '__main__':
-	with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-		df = pkl.load(f)
-	df = preprocess_dataframe(df)
-	print(df)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        leads = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+        ca_payment_analytic = pkl.load(f)
+    leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    print(leads['turnover_on_lead'])
 
 
 

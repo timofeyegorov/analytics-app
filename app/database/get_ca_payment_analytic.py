@@ -4,7 +4,7 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import pickle as pkl
-from config import DATA_FOLDER, CREDENTIALS_FILE
+from config import DATA_FOLDER, CREDENTIALS_FILE, RESULTS_FOLDER
 import os
 from urllib import parse
 from urllib.parse import urlparse, urlsplit
@@ -78,7 +78,7 @@ def get_ca_payment_analytic():
                             (payments_analytic['Возраст'] == age)
                             ].values[0][5]
                 except IndexError as e:
-                    print(e)
+                    continue
                 for earning in temp_earning:
                     # print(payments_analytic[
                     #         (payments_analytic['Профессия'] == profession) &
@@ -107,4 +107,5 @@ def get_ca_payment_analytic():
                                          data=values)
 if __name__ == '__main__':
     out_df = get_ca_payment_analytic()
-    print(out_df)
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'wb') as f:
+        pkl.dump(out_df, f)

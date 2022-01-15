@@ -55,7 +55,7 @@ def load_status():
 def load_data():
     data = get_leads_data()
     # data.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'), index=False)
-    data = data[1500:2500]
+    # data = data[1500:2500]
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(data, f)
     return 'Success'
