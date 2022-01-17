@@ -3,6 +3,8 @@ from pprint import pprint
 from config import config
 import datetime
 import json
+import os
+from config import RESULTS_FOLDER
 
 def get_trafficologists_expenses():
     base_url = 'https://cloud.roistat.com/api/v1/'
@@ -52,6 +54,9 @@ def get_trafficologists_expenses():
     return expenses
 
 if __name__=='__main__':
-    with open('expenses.json', 'r', encoding='cp1251') as f:
+    expenses = get_trafficologists_expenses()
+    with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'w') as f:
+        json.dump(expenses, f)
+    with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r', encoding='cp1251') as f:
         expenses = json.load(f)
     pprint(expenses)

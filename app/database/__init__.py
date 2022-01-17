@@ -21,7 +21,8 @@ def get_leads_data():
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
-    df = preprocess_dataframe(pd.DataFrame(data))
+    data = pd.DataFrame(data)
+    df = preprocess_dataframe(data)
     df['payment_amount'] = df['payment_amount'].astype(float)
     df['channel_expense'] = df['channel_expense'].astype(float)
     return df

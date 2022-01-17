@@ -223,11 +223,11 @@ target_audience_operator >> clean_data_operator
 expenses_operator >> clean_data_operator
 statuses_operator >> clean_data_operator
 ca_payment_analytic_operator >> clean_data_operator
-
 clean_data_operator >> channel_expense_operator
 clean_data_operator >> turnover_on_lead_operator
 
-channel_expense_operator >> channels_summary_operator
+turnover_on_lead_operator >> channels_summary_operator
+
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator
 channel_expense_operator >> landings_operator
