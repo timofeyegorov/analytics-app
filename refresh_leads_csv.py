@@ -20,6 +20,8 @@ from app.tables import calculate_segments_stats
 from app.tables import calculate_leads_ta_stats
 from app.tables import calculate_traffic_sources
 from app.tables import calculate_channels_summary
+from app.tables import calculate_channels_detailed
+from app.database.preprocessing import get_turnover_on_lead
 import os
 import pickle as pkl
 from config import RESULTS_FOLDER
@@ -55,10 +57,19 @@ def load_status():
 def load_data():
     data = get_leads_data()
     # data.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'), index=False)
-    # data = data[1500:2500]
+    # data = data[32630:32650]
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(data, f)
     return 'Success'
+
+def calculate_turnover_on_lead():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        leads = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+        ca_payment_analytic = pkl.load(f)
+    leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+        pkl.dump(leads, f)
 
 def channels_summary():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
@@ -66,6 +77,14 @@ def channels_summary():
     channels_summary = calculate_channels_summary(data)
     with open(os.path.join(RESULTS_FOLDER, 'channels_summary.pkl'), 'wb') as f:
         pkl.dump(channels_summary, f)
+    return 'Success'
+
+def channels_detailed():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    channels_detailed = calculate_channels_detailed(data)
+    with open(os.path.join(RESULTS_FOLDER, 'channels_detailed.pkl'), 'wb') as f:
+        pkl.dump(channels_detailed, f)
     return 'Success'
 
 def segments():
@@ -126,17 +145,27 @@ def leads_ta_stats():
 
 if __name__=='__main__':
     # load_crops()
+    # print(1)
     # load_trafficologists_expenses()
+    # print(2)
     # load_target_audience()
+    # print(3)
     # load_trafficologists()
+    # print(4)
     # load_status()
-    load_data()
-    channels_summary()
-    segments()
-    turnover()
-    clusters()
-    landings()
-    traffic_sources()
-    segments_stats()
-    leads_ta_stats()
+    # print(5)
+    # load_data()
+    # print(6)
+    # calculate_turnover_on_lead()
+    # print(7)
+    # channels_summary()
+    # print(8)
+    channels_detailed()
+    # segments()
+    # turnover()
+    # clusters()
+    # landings()
+    # traffic_sources()
+    # segments_stats()
+    # leads_ta_stats()
     pass

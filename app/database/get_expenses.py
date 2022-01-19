@@ -54,9 +54,9 @@ def get_trafficologists_expenses():
     return expenses
 
 if __name__=='__main__':
-    expenses = get_trafficologists_expenses()
-    with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'w') as f:
-        json.dump(expenses, f)
+    # expenses = get_trafficologists_expenses()
+    # with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'w') as f:
+    #     json.dump(expenses, f)
     with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r', encoding='cp1251') as f:
         expenses = json.load(f)
     pprint(expenses)

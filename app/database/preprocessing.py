@@ -39,6 +39,7 @@ def preprocess_dataframe(df):
                                   'до 5 часов в неделю',
                                   'более 10 часов в неделю']))
        ]
+    df.reset_index(drop=True, inplace=True)
 
     # В категории (столбце) Сколько_вам_лет меняем значение подкатегорий
     df.loc[df['quiz_answers2']=='23 - 30', 'quiz_answers2'] = '24 - 30'
@@ -210,11 +211,14 @@ def get_turnover_on_lead(leads, ca_payment_analytic):
 if __name__ == '__main__':
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         leads = pkl.load(f)
-    leads = preprocess_dataframe(leads)
-    # with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
-    #     ca_payment_analytic = pkl.load(f)
-    # leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    # leads = preprocess_dataframe(leads)
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+        ca_payment_analytic = pkl.load(f)
+    leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+        pkl.dump(leads, f)
     print(leads)
+
 
 
 

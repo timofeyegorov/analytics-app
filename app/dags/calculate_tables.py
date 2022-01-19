@@ -24,7 +24,7 @@ from app.database.preprocessing import calculate_trafficologists_expenses, calcu
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
-from app.tables import calculate_channels_summary
+from app.tables import calculate_channels_summary, calculate_channels_detailed
 from config import RESULTS_FOLDER, config
 
 redis_config = config['redis']
@@ -125,6 +125,15 @@ def channels_summary():
         pkl.dump(channels_summary, f)
     return 'Success'
 
+@log_execution_time('channels_detailed')
+def channels_detailed():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    channels_detailed = calculate_channels_detailed(data)
+    with open(os.path.join(RESULTS_FOLDER, 'channels_detailed.pkl'), 'wb') as f:
+        pkl.dump(channels_detailed, f)
+    return 'Success'
+
 @log_execution_time('segments')
 def segments():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
@@ -205,6 +214,7 @@ turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead',
 
 clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_data, dag=dag)
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
+channels_detailed_operator = PythonOperator(task_id='channels_detailed', python_callable=channels_detailed, dag=dag)
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)
 landings_operator = PythonOperator(task_id='landings', python_callable=landings, dag=dag)
@@ -227,6 +237,7 @@ clean_data_operator >> channel_expense_operator
 clean_data_operator >> turnover_on_lead_operator
 
 turnover_on_lead_operator >> channels_summary_operator
+turnover_on_lead_operator >> channels_detailed_operator
 
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator

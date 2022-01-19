@@ -1,11 +1,11 @@
 from app import app
 from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
 from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
-from .table_loaders import get_channels_summary
+from .table_loaders import get_channels_summary, get_channels_detailed
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
-from app.tables import calculate_channels_summary
+from app.tables import calculate_channels_summary, calculate_channels_detailed
 
 from config import config
 from config import RESULTS_FOLDER
@@ -53,6 +53,18 @@ def channels_summary():
     return render_template(
         'channels_summary.html',
         tables=tables, # date_start=date_start, date_end=date_end
+    )
+
+@app.route('/channels_detailed')
+def channels_detailed():
+    tab = request.args.get('tab')
+
+    tables = get_channels_detailed()
+
+    return render_template(
+        'channels_detailed.html',
+        tables=tables,
+        tab=tab
     )
 
 @app.route('/segments')

@@ -7,6 +7,11 @@ def get_channels_summary():
         data = pkl.load(f)
     return data
 
+def get_channels_detailed():
+    with open(os.path.join(RESULTS_FOLDER, 'channels_detailed.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    return data
+
 def get_segments():
   with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'rb') as f:
     data = pkl.load(f)
