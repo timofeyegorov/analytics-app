@@ -11,6 +11,7 @@ from app.database.get_expenses import get_trafficologists_expenses
 from app.database.get_statuses import get_statuses
 from app.database.get_target_audience import get_target_audience
 from app.database.get_trafficologists import get_trafficologists
+from app.database.get_ca_payment_analytic import get_ca_payment_analytic
 
 from app.tables import calculate_clusters
 from app.tables import calculate_segments
@@ -56,11 +57,14 @@ def load_status():
 
 def load_data():
     data = get_leads_data()
-    # data.to_csv(os.path.join(RESULTS_FOLDER, 'leads.csv'), index=False)
-    # data = data[32630:32650]
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(data, f)
     return 'Success'
+
+def load_ca_payment_analytic():
+    out_df = get_ca_payment_analytic()
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'wb') as f:
+        pkl.dump(out_df, f)
 
 def calculate_turnover_on_lead():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
@@ -144,22 +148,23 @@ def leads_ta_stats():
     return 'Success'
 
 if __name__=='__main__':
-    # load_crops()
-    # print(1)
-    # load_trafficologists_expenses()
-    # print(2)
-    # load_target_audience()
-    # print(3)
-    # load_trafficologists()
-    # print(4)
-    # load_status()
-    # print(5)
-    # load_data()
-    # print(6)
-    # calculate_turnover_on_lead()
-    # print(7)
-    # channels_summary()
-    # print(8)
+    load_crops()
+    print(1)
+    load_trafficologists_expenses()
+    print(2)
+    load_target_audience()
+    print(3)
+    load_trafficologists()
+    print(4)
+    load_status()
+    print(5)
+    load_data()
+    load_ca_payment_analytic()
+    print(6)
+    calculate_turnover_on_lead()
+    print(7)
+    channels_summary()
+    print(8)
     channels_detailed()
     # segments()
     # turnover()

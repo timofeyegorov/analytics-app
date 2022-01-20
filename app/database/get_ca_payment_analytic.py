@@ -9,9 +9,6 @@ import os
 from urllib import parse
 from urllib.parse import urlparse, urlsplit
 
-
-
-
 def get_ca_payment_analytic():
     spreadsheet_id = '1wGckyRyZH--5NPg1f7KWVKYA_NfZvkRY0mhmFVflpZI'
     # Читаем ключи из файла

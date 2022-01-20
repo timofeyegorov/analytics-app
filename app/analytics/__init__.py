@@ -34,8 +34,8 @@ def channels_summary():
     if date_start or date_end or utm:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
+        #table.date_request = pd.to_datetime(table.date_request)
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
