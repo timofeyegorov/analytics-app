@@ -7,10 +7,13 @@
         {% macro table(header, row, loop) -%}
             <div class="tab-pane fade {{'show active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
                 {% if (header != 'traffic_channel') and (header != 'Оборот на ЦА') and (header != 'ЦА') %}
+                <h1>Маржинальность</h1>
                     {{ row[0]['Маржинальность'].to_html() |safe }}
                     <hr>
+                <h1>ROI</h1>
                     {{ row[1]['ROI'].to_html() |safe }}
                     <hr>
+                <h1>Оборот на лида</h1>
                     {{ row[2]['Оборот на лида'].to_html() |safe }}
                 {% else %}
                     {{ row |safe }}
