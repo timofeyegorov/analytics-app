@@ -23,6 +23,7 @@ from app.tables import calculate_traffic_sources
 from app.tables import calculate_channels_summary
 from app.tables import calculate_channels_detailed
 from app.database.preprocessing import get_turnover_on_lead
+from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
 import os
 import pickle as pkl
 from config import RESULTS_FOLDER
@@ -60,6 +61,18 @@ def load_data():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(data, f)
     return 'Success'
+
+def calculate_channel_expense():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        leads = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
+        crops = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+        trafficologists = pkl.load(f)
+    leads = calculate_crops_expenses(leads, crops)
+    leads = calculate_trafficologists_expenses(leads, trafficologists)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+        pkl.dump(leads, f)
 
 def load_ca_payment_analytic():
     out_df = get_ca_payment_analytic()
@@ -148,25 +161,26 @@ def leads_ta_stats():
     return 'Success'
 
 if __name__=='__main__':
-    load_crops()
-    print(1)
-    load_trafficologists_expenses()
-    print(2)
-    load_target_audience()
-    print(3)
-    load_trafficologists()
-    print(4)
-    load_status()
-    print(5)
+    # load_crops()
+    # print(1)
+    # load_trafficologists_expenses()
+    # print(2)
+    # load_target_audience()
+    # print(3)
+    # load_trafficologists()
+    # print(4)
+    # load_status()
+    # print(5)
     load_data()
+    calculate_channel_expense()
     load_ca_payment_analytic()
     print(6)
     calculate_turnover_on_lead()
     print(7)
     channels_summary()
-    print(8)
-    channels_detailed()
-    # segments()
+    # print(8)
+    # channels_detailed()
+    # # segments()
     # turnover()
     # clusters()
     # landings()
@@ -174,3 +188,7 @@ if __name__=='__main__':
     # segments_stats()
     # leads_ta_stats()
     pass
+with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+    table = pkl.load(f)
+    print(table['channel_expense'].shape)
+    print(table[(table['date_request'] >= '2021-11-01') & (table['date_request'] <= '2021-11-30')]['channel_expense'].sum())

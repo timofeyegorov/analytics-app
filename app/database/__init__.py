@@ -23,6 +23,7 @@ def get_leads_data():
     conn.close()
     data = pd.DataFrame(data)
     df = preprocess_dataframe(data)
+    df['channel_expense'].fillna(0, inplace=True)
     df['payment_amount'] = df['payment_amount'].astype(float)
     df['channel_expense'] = df['channel_expense'].astype(float)
     return df
@@ -162,3 +163,4 @@ def get_status():
         return pd.read_csv('data/status.csv')
     except FileNotFoundError:
         return pd.read_csv('dags/data/status.csv')
+
