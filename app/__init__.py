@@ -79,7 +79,7 @@ def expenses():
                         expenses[i]['dateFrom'],
                         ])
     exp = pd.DataFrame(exp, columns=['Ройстат', 'Расход', 'Дата'])
-    exp['Дата'] = pd.to_datetime(exp['Дата'])
+    exp['Дата'] = pd.to_datetime(exp['Дата']).dt.normalize()
     output_dict = {'Кол-во записей - ': exp.shape,
                     'Расход с 01.11 по 30.11 - ':
                     round(exp[(exp['Дата'] >= '2021-11-01') & (exp['Дата'] <= '2021-11-30')]['Расход'].sum()),

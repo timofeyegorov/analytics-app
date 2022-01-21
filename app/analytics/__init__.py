@@ -35,7 +35,7 @@ def channels_summary():
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
@@ -59,9 +59,7 @@ def channels_summary():
 @app.route('/channels_detailed')
 def channels_detailed():
     tab = request.args.get('tab')
-
     tables = get_channels_detailed()
-
     return render_template(
         'channels_detailed.html',
         tables=tables,
@@ -76,7 +74,7 @@ def segments():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
@@ -104,8 +102,8 @@ def turnover():
     if date_request_start or date_request_end or date_payment_start or date_payment_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
-        table.date_payment = pd.to_datetime(table.date_payment)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.date_payment = pd.to_datetime(table.date_payment).dt.normalize()
         if date_request_start:
             table = table[table.date_request >= datetime.strptime(date_request_start, '%Y-%m-%d')]
         if date_request_end:
@@ -156,7 +154,7 @@ def clusters():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
@@ -182,7 +180,7 @@ def traffic_sources():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
@@ -206,7 +204,7 @@ def segments_stats():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
@@ -229,7 +227,7 @@ def leads_ta_stats():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
@@ -251,7 +249,7 @@ def landings():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request)
+        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
         if date_start:
             table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
