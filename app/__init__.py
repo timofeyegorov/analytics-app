@@ -4,6 +4,7 @@ import pandas as pd
 from flask import Flask, request, render_template
 from .database.auth import check_token
 from .database import get_leads_data, get_target_audience
+import json
 from config import RESULTS_FOLDER
 import os
 import pickle as pkl
@@ -66,6 +67,38 @@ def crops():
         crops = pkl.load(f)
     # return render_template('target_audience.html', target_audience=get_target_audience())
     return render_template('crops.html', crops=crops)
+
+@app.route('/expenses')
+def expenses():
+    with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r', encoding='cp1251') as f:
+        expenses = json.load(f)
+    exp = []
+    for i in range(len(expenses)):
+        for k, v in expenses[i]['items'].items():
+            exp.append([k, v,
+                        expenses[i]['dateFrom'],
+                        ])
+    exp = pd.DataFrame(exp, columns=['Ройстат', 'Расход', 'Дата'])
+    exp['Дата'] = pd.to_datetime(exp['Дата'])
+    output_dict = {'Кол-во записей - ': exp.shape,
+                    'Расход с 01.11 по 30.11 - ':
+                    round(exp[(exp['Дата'] >= '2021-11-01') & (exp['Дата'] <= '2021-11-30')]['Расход'].sum()),
+                    'Расход с 01.12 по 31.12 - ':
+                    round(exp[(exp['Дата'] >= '2021-12-01') & (exp['Дата'] <= '2021-12-31')]['Расход'].sum()),
+                    'Расход по facebook32 с 01.11 по 30.11 - ': round(
+                    exp[(exp['Ройстат'] == 'Facebook 32') & (exp['Дата'] >= '2021-11-01') & (exp['Дата'] <= '2021-11-30')][
+                   'Расход'].sum()),
+                    'Расход по Михаил с 01.11 по 30.11 - ':
+                    round(exp[((exp['Ройстат'] == 'Facebook Michail Zh (ИП2)') | (exp['Ройстат'] == 'Facebook 31')) & \
+                    (exp['Дата'] >= '2021-11-01') & (exp['Дата'] <= '2021-11-30')]['Расход'].sum()),
+                    'Расход по facebook32 с 01.12 по 31.12 - ': round(
+                    exp[(exp['Ройстат'] == 'Facebook 32') & (exp['Дата'] >= '2021-12-01') & (exp['Дата'] <= '2021-12-31')][
+                        'Расход'].sum()),
+                    'Расход по Михаил с 01.12 по 31.12 - ':
+                    round(exp[((exp['Ройстат'] == 'Facebook Michail Zh (ИП2)') | (exp['Ройстат'] == 'Facebook 31')) & \
+                                (exp['Дата'] >= '2021-12-01') & (exp['Дата'] <= '2021-12-31')]['Расход'].sum())}
+    # return render_template('target_audience.html', target_audience=get_target_audience())
+    return render_template('expenses.html', exp=output_dict)
 
 @app.route('/statuses')
 def statuses_page():
