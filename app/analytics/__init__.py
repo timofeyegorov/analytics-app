@@ -35,11 +35,11 @@ def channels_summary():
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if utm:
             for el in utm:
                 table = table[table['traffic_channel'].str.contains(el)]

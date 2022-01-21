@@ -100,6 +100,7 @@ def channels_detailed():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)
     channels_detailed = calculate_channels_detailed(data)
+    print(channels_detailed)
     with open(os.path.join(RESULTS_FOLDER, 'channels_detailed.pkl'), 'wb') as f:
         pkl.dump(channels_detailed, f)
     return 'Success'
@@ -171,15 +172,15 @@ if __name__=='__main__':
     # print(4)
     # load_status()
     # print(5)
-    load_data()
-    calculate_channel_expense()
-    load_ca_payment_analytic()
-    print(6)
-    calculate_turnover_on_lead()
-    print(7)
-    channels_summary()
+    # load_data()
+    # calculate_channel_expense()
+    # load_ca_payment_analytic()
+    # print(6)
+    # calculate_turnover_on_lead()
+    # print(7)
+    # channels_summary()
     # print(8)
-    # channels_detailed()
+    channels_detailed()
     # # segments()
     # turnover()
     # clusters()
@@ -188,7 +189,7 @@ if __name__=='__main__':
     # segments_stats()
     # leads_ta_stats()
     pass
-with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-    table = pkl.load(f)
-    print(table['channel_expense'].shape)
-    print(table[(table['date_request'] >= '2021-11-01') & (table['date_request'] <= '2021-11-30')]['channel_expense'].sum())
+# with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+#     table = pkl.load(f)
+#     print(table['channel_expense'].shape)
+#     print(table[(table['date_request'] >= '2021-11-01') & (table['date_request'] <= '2021-11-30')]['channel_expense'].sum())
