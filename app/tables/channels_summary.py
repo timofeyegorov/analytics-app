@@ -21,6 +21,7 @@ def calculate_channels_summary(df):
     temp_.append(round(temp_[2] - temp_[4] - temp_[5])) # Прибыль
     temp_.append(round((temp_[2] / (temp_[4] + temp_[5]) - 1) * 100)  if (temp_[4] + temp_[5]) != 0 else 0) # ROI
     temp_.append(round((temp_[7] / 100) / (1 + (temp_[7] / 100)) * 100) if (1 + (temp_[7] / 100)) != 0 else 0) # Маржинальность
+    temp_.append(round(temp_[4] / temp_[1])) # Цена лида = Трафик / Количество лидов
     values.append(temp_)
     for el in filtered_trafficologists:
         temp_ = []
@@ -36,6 +37,7 @@ def calculate_channels_summary(df):
         temp_.append(round(temp_[2] - temp_[4] - temp_[5]))  # Прибыль
         temp_.append(round((temp_[2] / (temp_[4] + temp_[5]) - 1) * 100) if (temp_[4] + temp_[5]) != 0 else 0)  # ROI
         temp_.append(round((temp_[7] / 100) / (1 + (temp_[7] / 100)) * 100) if (1 + (temp_[7] / 100)) != 0 else 0)  # Маржинальность
+        temp_.append(round(temp_[4] / temp_[1]))  # Цена лида = Трафик / Количество лидов
         values.append(temp_)
     output_df = pd.DataFrame(columns=['Канал', 'Лидов', 'Оборот*', 'Оборот на лида', 'Трафик', 'Остальное', 'Прибыль', 'ROI',
                                'Маржинальность'],

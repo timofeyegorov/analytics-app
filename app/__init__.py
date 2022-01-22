@@ -96,7 +96,9 @@ def expenses():
                         'Расход'].sum()),
                     'Расход по Михаил с 01.12 по 31.12 - ':
                     round(exp[((exp['Ройстат'] == 'Facebook Michail Zh (ИП2)') | (exp['Ройстат'] == 'Facebook 31')) & \
-                                (exp['Дата'] >= '2021-12-01') & (exp['Дата'] <= '2021-12-31')]['Расход'].sum())}
+                                (exp['Дата'] >= '2021-12-01') & (exp['Дата'] <= '2021-12-31')]['Расход'].sum()),
+                   'Расход за январь': round(exp[(exp['Дата'] >= '2022-01-01') & (exp['Дата'] <= '2022-01-31')]['Расход'].sum())
+                   }
     # return render_template('target_audience.html', target_audience=get_target_audience())
     return render_template('expenses.html', exp=output_dict)
 
