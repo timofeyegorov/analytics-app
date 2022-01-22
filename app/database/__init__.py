@@ -6,6 +6,9 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 from config import CREDENTIALS_FILE
 from .preprocessing import preprocess_dataframe, preprocess_target_audience
+from config import RESULTS_FOLDER
+import os
+import pickle as pkl
 
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
@@ -22,6 +25,10 @@ def get_leads_data():
     data = cursor.fetchall()
     conn.close()
     data = pd.DataFrame(data)
+    with open(os.path.join(RESULTS_FOLDER, 'additional_leads.pkl'), 'rb') as f:
+        additional_leads = pkl.load(f)
+    data = pd.concat([data, additional_leads], axis=0)
+    data.fillna(0, inplace=True)
     df = preprocess_dataframe(data)
     df['channel_expense'].fillna(0, inplace=True)
     df['payment_amount'] = df['payment_amount'].astype(float)

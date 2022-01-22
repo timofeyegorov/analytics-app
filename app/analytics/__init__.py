@@ -74,11 +74,11 @@ def segments():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('segments.html', error='Нет данных для заданного периода')
         tables = calculate_segments(table)
@@ -102,12 +102,12 @@ def turnover():
     if date_request_start or date_request_end or date_payment_start or date_payment_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         table.date_payment = pd.to_datetime(table.date_payment).dt.normalize()
         if date_request_start:
-            table = table[table.date_request >= datetime.strptime(date_request_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_request_start, '%Y-%m-%d')]
         if date_request_end:
-            table = table[table.date_request <= datetime.strptime(date_request_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_request_end, '%Y-%m-%d')]
         if date_payment_start:
             table = table[table.date_payment >= datetime.strptime(date_payment_start, '%Y-%m-%d')]
         if date_payment_end:
@@ -154,11 +154,11 @@ def clusters():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('clusters.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
         tables = calculate_clusters(table)
@@ -180,11 +180,11 @@ def traffic_sources():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('traffic_sources.html', error='Not enough data', date_start=date_start, date_end=date_end, tab=tab)
         table = calculate_traffic_sources(table)
@@ -204,11 +204,11 @@ def segments_stats():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('segments_stats.html', error='Not enough data', tab=tab, date_start=date_start, date_end=date_end)
         tables = calculate_segments_stats(table)
@@ -227,11 +227,11 @@ def leads_ta_stats():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('leads_ta_stats.html', error='Not enough data', date_start=date_start, date_end=date_end)
         table = calculate_leads_ta_stats(table)
@@ -249,11 +249,11 @@ def landings():
     if date_start or date_end:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        table.date_request = pd.to_datetime(table.date_request).dt.normalize()
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.date_request >= datetime.strptime(date_start, '%Y-%m-%d')]
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
-            table = table[table.date_request <= datetime.strptime(date_end, '%Y-%m-%d')]
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
         if len(table) == 0:
             return render_template('landings.html', error='Нет данных для заданного периода')
         table = calculate_landings(table)

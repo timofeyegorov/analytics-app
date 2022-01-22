@@ -143,7 +143,7 @@ def calculate_crops_expenses(leads, crops):
         crops['Метка'] = crops['Ссылка'].str.split('?').apply(lambda x: x[-1]).str.split('&').apply(lambda x: x[-1])
         crops['Бюджет'] = crops['Бюджет'].str.replace(' ', '').astype(int)
         crops = crops.groupby(['Метка'], as_index=False)['Бюджет'].sum()
-        leads.date_request = pd.to_datetime(leads.date_request)
+        leads.created_at = pd.to_datetime(leads.created_at)
         for i, row in crops.iterrows():
             label = row['Метка']
             cost = row['Бюджет']
@@ -160,7 +160,7 @@ def calculate_trafficologists_expenses(leads, traff):
     with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r') as f:
         data = json.load(f)
 
-    leads.date_request = pd.to_datetime(leads.date_request)
+    leads.created_at = pd.to_datetime(leads.created_at)
 
     for value in data:
         date = parser.parse(value['dateFrom'])
@@ -169,9 +169,9 @@ def calculate_trafficologists_expenses(leads, traff):
             if len(row) > 0:
                 label = row.iloc[0].label
                 mask = (leads.traffic_channel.str.contains(label) &
-                        (leads.date_request.dt.day == date.day) &
-                        (leads.date_request.dt.month == date.month) &
-                        (leads.date_request.dt.year == date.year))
+                        (leads.created_at.dt.day == date.day) &
+                        (leads.created_at.dt.month == date.month) &
+                        (leads.created_at.dt.year == date.year))
                 leads_to_correct = leads[mask]
                 if len(leads_to_correct) > 0:
                     cost_per_lead = cost / len(leads_to_correct)
