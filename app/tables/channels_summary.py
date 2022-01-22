@@ -40,6 +40,6 @@ def calculate_channels_summary(df):
         temp_.append(round(temp_[4] / temp_[1]))  # Цена лида = Трафик / Количество лидов
         values.append(temp_)
     output_df = pd.DataFrame(columns=['Канал', 'Лидов', 'Оборот*', 'Оборот на лида', 'Трафик', 'Остальное', 'Прибыль', 'ROI',
-                               'Маржинальность'],
+                               'Маржинальность', 'Цена лида'],
                       data=values)
     return {'Источники - сводная таблица': output_df}
