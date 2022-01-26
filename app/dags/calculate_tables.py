@@ -25,7 +25,8 @@ from app.database.preprocessing import calculate_trafficologists_expenses, calcu
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
-from app.tables import calculate_channels_summary, calculate_channels_detailed
+from app.tables import calculate_channels_summary, calculate_channels_detailed, calculate_payments_accumulation
+
 from config import RESULTS_FOLDER, config
 
 redis_config = config['redis']
@@ -146,7 +147,7 @@ def channels_detailed():
 def payments_accumulation():
     with open(os.path.join(RESULTS_FOLDER, 'payments_table.pkl'), 'rb') as f:
         data = pkl.load(f)
-    payments_accumulation = calculate_channels_summary(data)
+    payments_accumulation = calculate_payments_accumulation(data)
     with open(os.path.join(RESULTS_FOLDER, 'payments_accumulation.pkl'), 'wb') as f:
         pkl.dump(payments_accumulation, f)
     return 'Success'
@@ -243,10 +244,6 @@ segments_stats_operator = PythonOperator(task_id='segments_stats', python_callab
 turnover_operator = PythonOperator(task_id='turnover', python_callable=turnover, dag=dag)
 leads_ta_stats = PythonOperator(task_id='leads_ta_stats', python_callable=leads_ta_stats, dag=dag)
 traffic_sources = PythonOperator(task_id='traffic_sources', python_callable=traffic_sources, dag=dag)
-
-
-
-
 
 crops_operator >> clean_data_operator
 trafficologists_operator >> clean_data_operator
