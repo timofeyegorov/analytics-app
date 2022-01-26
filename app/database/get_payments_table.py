@@ -33,7 +33,7 @@ def get_payments_table():
     payments_table['Дата заявки'] = pd.to_datetime(payments_table['Дата заявки'], format='%d.%m.%Y')
     payments_table['Дата оплаты'] = pd.to_datetime(payments_table['Дата оплаты'], format='%d.%m.%Y')
     payments_table.sort_values(by=['Дата заявки'], inplace=True)
-    payments_table = payments_table[payments_table['Дата заявки'] >= '2021-01-04']
+    payments_table = payments_table[payments_table['Дата заявки'] >= '2021-03-01']
     payments_table.reset_index(drop=True, inplace=True)
     for i in range(payments_table.shape[0]):
         payments_table['Сумма оплаты'][i] = payments_table['Сумма оплаты'][i].replace(' ', '')
