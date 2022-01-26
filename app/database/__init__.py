@@ -28,6 +28,7 @@ def get_leads_data():
     with open(os.path.join(RESULTS_FOLDER, 'additional_leads.pkl'), 'rb') as f:
         additional_leads = pkl.load(f)
     data = pd.concat([data, additional_leads], axis=0)
+    data = data.sort_values(by='created_at')
     data.fillna(0, inplace=True)
     df = preprocess_dataframe(data)
     df['channel_expense'].fillna(0, inplace=True)

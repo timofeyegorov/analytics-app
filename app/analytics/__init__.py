@@ -1,7 +1,7 @@
 from app import app
 from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
 from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
-from .table_loaders import get_channels_summary, get_channels_detailed
+from .table_loaders import get_channels_summary, get_channels_detailed, get_payments_accumulation
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
@@ -53,7 +53,7 @@ def channels_summary():
     tables = get_channels_summary()
     return render_template(
         'channels_summary.html',
-        tables=tables, # date_start=date_start, date_end=date_end
+        tables=tables # date_start=date_start, date_end=date_end
     )
 
 @app.route('/channels_detailed')
@@ -64,6 +64,14 @@ def channels_detailed():
         'channels_detailed.html',
         tables=tables,
         tab=tab
+    )
+
+@app.route('/payments_accumulation')
+def payments_accumulation():
+    tables = get_payments_accumulation()
+    return render_template(
+        'payments_accumulation.html',
+        tables=tables
     )
 
 @app.route('/segments')

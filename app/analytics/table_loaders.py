@@ -12,6 +12,11 @@ def get_channels_detailed():
         data = pkl.load(f)
     return data
 
+def get_payments_accumulation():
+    with open(os.path.join(RESULTS_FOLDER, 'payments_accumulation.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    return data
+
 def get_segments():
   with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'rb') as f:
     data = pkl.load(f)
@@ -47,3 +52,8 @@ def get_leads_ta_stats():
   with open(os.path.join(RESULTS_FOLDER, 'leads_ta_stats.pkl'), 'rb') as f:
     data = pkl.load(f)
   return data
+
+if __name__ == '__main__':
+    df = get_payments_accumulation()
+    df2 = get_channels_summary()
+    print(type(df), type(df2))

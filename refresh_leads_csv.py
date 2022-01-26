@@ -12,6 +12,7 @@ from app.database.get_statuses import get_statuses
 from app.database.get_target_audience import get_target_audience
 from app.database.get_trafficologists import get_trafficologists
 from app.database.get_ca_payment_analytic import get_ca_payment_analytic
+from app.database.get_payments_table import get_payments_table
 
 from app.tables import calculate_clusters
 from app.tables import calculate_segments
@@ -22,6 +23,7 @@ from app.tables import calculate_leads_ta_stats
 from app.tables import calculate_traffic_sources
 from app.tables import calculate_channels_summary
 from app.tables import calculate_channels_detailed
+from app.tables import calculate_payments_accumulation
 from app.database.preprocessing import get_turnover_on_lead
 from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
 import os
@@ -79,6 +81,11 @@ def load_ca_payment_analytic():
     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'wb') as f:
         pkl.dump(out_df, f)
 
+def load_payments_table():
+    payments_table = get_payments_table()
+    with open(os.path.join(RESULTS_FOLDER, 'payments_table.pkl'), 'wb') as f:
+        pkl.dump(payments_table, f)
+
 def calculate_turnover_on_lead():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         leads = pkl.load(f)
@@ -103,6 +110,14 @@ def channels_detailed():
     print(channels_detailed)
     with open(os.path.join(RESULTS_FOLDER, 'channels_detailed.pkl'), 'wb') as f:
         pkl.dump(channels_detailed, f)
+    return 'Success'
+
+def payments_accumulation():
+    with open(os.path.join(RESULTS_FOLDER, 'payments_table.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    payments_accumulation = calculate_payments_accumulation(data)
+    with open(os.path.join(RESULTS_FOLDER, 'payments_accumulation.pkl'), 'wb') as f:
+        pkl.dump(payments_accumulation, f)
     return 'Success'
 
 def segments():
@@ -172,24 +187,26 @@ if __name__=='__main__':
     # print(4)
     # load_status()
     # print(5)
-    load_data()
+    # load_data()
     # calculate_channel_expense()
     # load_ca_payment_analytic()
+    load_payments_table()
     # print(6)
     # calculate_turnover_on_lead()
     # print(7)
     # channels_summary()
     # print(8)
     # channels_detailed()
-    # # segments()
+    payments_accumulation()
+    # segments()
     # turnover()
     # clusters()
     # landings()
     # traffic_sources()
     # segments_stats()
     # leads_ta_stats()
-    pass
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-        table = pkl.load(f)
-    # print(table['channel_expense'].shape)
-    print(table[(table['created_at'] >= '2021-05-01') & (table['created_at'] <= '2021-05-31')].shape)
+    # pass
+    # with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+    #     table = pkl.load(f)
+    # # print(table['channel_expense'].shape)
+    # print(table[(table['created_at'] >= '2021-05-01') & (table['created_at'] <= '2021-05-31')].shape)

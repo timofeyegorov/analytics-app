@@ -1,0 +1,16 @@
+{% from 'macros/buttons.html' import reset_button %}
+{% from 'macros/tables.html' import wide_table %}
+{% from 'macros/last_updated.html' import last_updated %}
+
+{% extends 'base.html' %}
+{% block title %}Оплаты - накопление по неделям{% endblock %}
+{% block content %}
+<div class='d-flex flex-column'>
+
+        <h1>Оплаты - накопление по неделям</h1>
+        <div><a href="/" class="btn btn-success">В меню</a></div>
+
+        {{ wide_table(tables) }}
+
+</div>
+{% endblock %}
