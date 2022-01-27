@@ -68,10 +68,11 @@ def channels_detailed():
 
 @app.route('/payments_accumulation')
 def payments_accumulation():
+    tab = request.args.get('tab')
     tables = get_payments_accumulation()
     return render_template(
         'payments_accumulation.html',
-        tables=tables
+        tables=tables, tab=tab
     )
 
 @app.route('/segments')

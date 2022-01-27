@@ -247,10 +247,10 @@ if __name__=='__main__':
   with open(os.path.join((RESULTS_FOLDER), 'leads.pkl'), 'rb') as f:
     data = pkl.load(f)
 
-    res, ta = calculate_turnover(data[:2000])
+    res = calculate_turnover(data[:2000])
     print(type(res))
     print(len(res))
     for item in res.values():
       # print(item)
-      print(type(item[0]), type(item[1]), type(item[2]))
+      print(type(item))
     print()

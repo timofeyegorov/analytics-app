@@ -5,6 +5,8 @@ from flask import Flask, request, render_template
 from .database.auth import check_token
 from .database import get_leads_data, get_target_audience
 import json
+from config import config
+import redis
 from config import RESULTS_FOLDER
 import os
 import pickle as pkl
@@ -22,6 +24,16 @@ import pickle as pkl
 #   return graphJSON
 
 app = Flask(__name__)
+
+redis_config = config['redis']
+redis_db = redis.StrictRedis(
+    host=redis_config['host'],
+    port=redis_config['port'],
+    charset='utf-8',
+    db=redis_config['db'],
+)
+
+app.jinja_env.globals['redis_db'] = redis_db
 
 @app.route('/')
 @app.route('/index')

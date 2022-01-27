@@ -94,53 +94,6 @@ def calculate_channels_detailed(df):
                             })
     return output_dict
 
-
-    # output_df = calculate_channels_by_date(df) # Получаем датасет с разбивкой данных по каждому трафикологу и дате
-    # filtered_trafficologists = df['trafficologist'].unique()  # Берем уникальных трафикологов
-    # values = []
-    # for traff in filtered_trafficologists:
-    #     filtered_df = output_df[output_df['Канал'] == traff]
-    #     start_date = filtered_df['Дата'][filtered_df.index[0]]
-    #     temp_values = [[0] * 33, [0] * 33, [0] * 33, [0] * 33]
-    #     for n in range(4):
-    #         temp_values[n][0] = traff
-    #         temp_values[n][-1] = start_date
-    #     for i in filtered_df.index:
-    #         if (start_date.month == filtered_df['Дата'][i].month) & (start_date.year == filtered_df['Дата'][i].year):
-    #             temp_values[0][filtered_df['Дата'][i].day] = filtered_df['Маржинальность'][i]
-    #             temp_values[1][filtered_df['Дата'][i].day] = filtered_df['ROI'][i]
-    #             temp_values[2][filtered_df['Дата'][i].day] = filtered_df['Оборот на лида'][i]
-    #             temp_values[3][filtered_df['Дата'][i].day] = filtered_df['Прибыль'][i]
-    #         else:
-    #             start_date = filtered_df['Дата'][i]
-    #             for n in range(4):
-    #                 values.append(temp_values[n])
-    #             temp_values = [[0] * 33, [0] * 33, [0] * 33, [0] * 33]
-    #             for n in range(4):
-    #                 temp_values[n][0] = traff
-    #                 temp_values[n][-1] = start_date
-    #             temp_values[0][filtered_df['Дата'][i].day] = filtered_df['Маржинальность'][i]
-    #             temp_values[1][filtered_df['Дата'][i].day] = filtered_df['ROI'][i]
-    #             temp_values[2][filtered_df['Дата'][i].day] = filtered_df['Оборот на лида'][i]
-    #             temp_values[3][filtered_df['Дата'][i].day] = filtered_df['Прибыль'][i]
-    #     for n in range(4):
-    #         values.append(temp_values[n])
-    # out_df = pd.DataFrame(values)
-    #
-    # output_dict = {}
-    # months_dict = {1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
-    #                5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
-    #                9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
-    #                }
-    # for date_ in out_df[32].unique():
-    #     output_dict.update({months_dict[pd.to_datetime(date_).month]:
-    #                             [{'Маржинальность': out_df[out_df[32] == date_].iloc[0::4,:-1]},
-    #                              {'ROI': out_df[out_df[32] == date_].iloc[1::4,:-1]},
-    #                              {'Оборот на лида': out_df[out_df[32] == date_].iloc[2::4,:-1]},
-    #                              {'Прибыль': out_df[out_df[32] == date_].iloc[3::4,:-1]}]
-    #                         })
-    # return output_dict
-
 def calculate_channels_by_date(df):
     '''
         Функция считает показатели по источникам в разбивке по дням,

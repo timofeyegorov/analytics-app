@@ -6,6 +6,7 @@ import json
 import os
 from config import RESULTS_FOLDER
 
+
 def get_trafficologists_expenses():
     base_url = 'https://cloud.roistat.com/api/v1/'
     api_key = config['roistat']['api_key']
@@ -16,7 +17,7 @@ def get_trafficologists_expenses():
     # dimensions = 'project/analytics/dimensions'
     # metrics = 'project/analytics/metrics'
 
-    start_date = datetime.date(2021, 6, 8)
+    start_date = datetime.date(2021, 3, 1)
     end_date = datetime.date.today()
     delta = datetime.timedelta(days=1)
 

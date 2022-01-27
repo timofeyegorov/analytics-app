@@ -190,7 +190,7 @@ if __name__=='__main__':
     # load_data()
     # calculate_channel_expense()
     # load_ca_payment_analytic()
-    load_payments_table()
+    # load_payments_table()
     # print(6)
     # calculate_turnover_on_lead()
     # print(7)
