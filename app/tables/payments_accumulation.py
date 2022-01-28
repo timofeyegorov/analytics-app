@@ -74,7 +74,7 @@ def payments_month_accumulation(payments_df):
 
         if (cur_order_date.month != cur_month) & (cur_order_date.year == cur_year):
             for i in range(1, 13 - cur_month):
-                temp_vals[i+1] = temp_vals[i+1] + temp_vals[i]
+                temp_vals[i + 1] = temp_vals[i + 1] + temp_vals[i]
             values.append(temp_vals)
             cur_month = cur_order_date.month
             cur_year = cur_order_date.year
@@ -85,9 +85,13 @@ def payments_month_accumulation(payments_df):
         filtered_payments_df = payments_df[payments_df['Дата заявки'] == cur_order_date]
         temp_unique_payment_dates = np.unique(filtered_payments_df['Дата оплаты'].tolist())
         for cur_payment_date in temp_unique_payment_dates:
-            temp_vals[cur_payment_date.month - cur_payment_date.month + 1] += filtered_payments_df[filtered_payments_df['Дата оплаты'] == cur_payment_date]['Сумма оплаты'].sum()
-    for i in range(1, 12 - cur_month):
-        temp_vals[i+1] = temp_vals[i+1] + temp_vals[i]
+            if cur_payment_date.month < cur_order_date.month:
+                pass
+            else:
+                temp_vals[cur_payment_date.month - cur_order_date.month + 1] += \
+                filtered_payments_df[filtered_payments_df['Дата оплаты'] == cur_payment_date]['Сумма оплаты'].sum()
+    for i in range(1, 13 - cur_month):
+        temp_vals[i + 1] = temp_vals[i + 1] + temp_vals[i]
     values.append(temp_vals)
 
     res_df = pd.DataFrame(columns=['Месяц'] + [i for i in range(1, 11)], data=values)
@@ -156,12 +160,18 @@ def roi_week_accumulation(payments_df):
 
     np_values = np_values[:, 2:].astype('float32')
     np_expenses = np_expenses[:, 2:].astype('float32')
-    vals = np_values / np_expenses * 100
+    vals = (np_values / np_expenses - 1) * 100
     vals[vals == np.inf] = 0
     vals = np.nan_to_num(vals)
     vals = np.around(vals, decimals=1)
     vals = np.concatenate((np_values_str, vals), axis=1)
-    res_df = pd.DataFrame(columns=['Месяц', 'Диапазон'] + [i for i in range(1, 45)], data=vals)
+
+    res_vals = []
+    for item in zip(vals, expenses):
+        res_vals.append(item[0])
+        res_vals.append(['', ''] + [round(item) for item in item[1][2:]])
+
+    res_df = pd.DataFrame(columns=['Месяц', 'Диапазон'] + [i for i in range(1, 45)], data=res_vals)
     return res_df
 
 def roi_month_accumulation(payments_df):
@@ -199,7 +209,7 @@ def roi_month_accumulation(payments_df):
             if cur_payment_date.month < cur_order_date.month:
                 pass
             else:
-                temp_vals[cur_payment_date.month - cur_payment_date.month + 1] += \
+                temp_vals[cur_payment_date.month - cur_order_date.month + 1] += \
                 filtered_payments_df[filtered_payments_df['Дата оплаты'] == cur_payment_date]['Сумма оплаты'].sum()
                 temp_exp[cur_payment_date.month - cur_order_date.month + 1] += \
                 exp[exp['Дата'] == str(cur_payment_date)[:10]]['Расход'].sum()
@@ -217,12 +227,18 @@ def roi_month_accumulation(payments_df):
 
     np_values = np_values[:, 1:].astype('float32')
     np_expenses = np_expenses[:, 1:].astype('float32')
-    vals = np_values / np_expenses * 100
+    vals = (np_values / np_expenses - 1) * 100
     vals[vals == np.inf] = 0
     vals = np.nan_to_num(vals)
     vals = np.around(vals, decimals=1)
     vals = np.concatenate((np_values_str, vals), axis=1)
-    res_df = pd.DataFrame(columns=['Месяц'] + [i for i in range(1, 11)], data=vals)
+
+    res_vals = []
+    for item in zip(vals, expenses):
+        res_vals.append(item[0])
+        res_vals.append([''] + [round(item) for item in item[1][1:]])
+
+    res_df = pd.DataFrame(columns=['Месяц'] + [i for i in range(1, 11)], data=res_vals)
     return res_df
 
 def calculate_payments_accumulation(df):
