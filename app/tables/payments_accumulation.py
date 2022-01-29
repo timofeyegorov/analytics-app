@@ -120,7 +120,7 @@ def roi_week_accumulation(payments_df):
         if (cur_order_date.week != cur_week) & (cur_order_date.year == cur_year):
             for i in range(2, 54 - cur_week):
                 temp_vals[i + 1] = temp_vals[i + 1] + temp_vals[i]
-                temp_exp[i + 1] = temp_exp[i + 1] + temp_exp[i]
+                temp_exp[i + 1] = temp_exp[2]
             values.append(temp_vals)
             expenses.append(temp_exp)
             cur_week = cur_order_date.week
@@ -149,7 +149,7 @@ def roi_week_accumulation(payments_df):
                 exp[exp['Дата'] == str(cur_payment_date)[:10]]['Расход'].sum()
     for i in range(2, 54 - cur_week):
         temp_vals[i + 1] = temp_vals[i + 1] + temp_vals[i]
-        temp_exp[i + 1] = temp_exp[i + 1] + temp_exp[i]
+        temp_exp[i + 1] = temp_exp[2]
     values.append(temp_vals)
     expenses.append(temp_exp)
 
@@ -192,7 +192,7 @@ def roi_month_accumulation(payments_df):
         if (cur_order_date.month != cur_month) & (cur_order_date.year == cur_year):
             for i in range(1, 13 - cur_month):
                 temp_vals[i + 1] = temp_vals[i + 1] + temp_vals[i]
-                temp_exp[i + 1] = temp_exp[i + 1] + temp_exp[i]
+                temp_exp[i + 1] = temp_exp[2]
             values.append(temp_vals)
             expenses.append(temp_exp)
             cur_month = cur_order_date.month
@@ -216,7 +216,7 @@ def roi_month_accumulation(payments_df):
 
     for i in range(1, 12 - cur_month):
         temp_vals[i + 1] = temp_vals[i + 1] + temp_vals[i]
-        temp_exp[i + 1] = temp_exp[i + 1] + temp_exp[i]
+        temp_exp[i + 1] = temp_exp[2]
     values.append(temp_vals)
     expenses.append(temp_exp)
 
@@ -253,12 +253,6 @@ def calculate_payments_accumulation(df):
             'Рои - накопление по месяцам': roi_month_acc}
 
 if __name__ == '__main__':
-    with open(os.path.join(RESULTS_FOLDER, 'payments_table.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'payments_accumulation.pkl'), 'rb') as f:
         data = pkl.load(f)
-    payments_accumulation = calculate_payments_accumulation(data)
-    print(type(payments_accumulation))
-    print(len(payments_accumulation))
-    for item in payments_accumulation.values():
-      # print(item)
-      print(type(item))
-    print()
+    print(data)

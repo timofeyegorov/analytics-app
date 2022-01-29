@@ -10,6 +10,60 @@ from config import RESULTS_FOLDER
 import os
 import pickle as pkl
 
+def load_sheet(spreadsheetId, sheetName, majorDimension, startRow=1, headers=True):
+    """
+        Read sheet by name from google spreadsheet
+        input:
+            spreadsheetId - id таблицы
+            sheetName - имя листа
+            majorDimension - размерность считывания (строки/столбцы)
+            startRow - стартовая строка с данными
+            headers - считывать 0-ю строку как заголовок
+        output:
+            df - датафрейм с данными из считанного листа таблицы
+    """
+    # Читаем ключи из файла
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        ['https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'])
+
+    httpAuth = credentials.authorize(httplib2.Http()) # Авторизуемся в системе
+    service = apiclient.discovery.build('sheets', 'v4', http = httpAuth) # Выбираем работу с таблицами и 4 версию API
+
+    values = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheetId,
+        range=sheetName,
+        majorDimension=majorDimension
+    ).execute()
+    values = values['values']
+    if headers:
+        df = pd.DataFrame(values[startRow:], columns=values[0])
+    else:
+        df = pd.DataFrame(values[startRow:], columns=None)
+    return df
+
+def write_sheet(spreadsheetId, startCell, endCell, majorDimension, values):
+    # Читаем ключи из файла
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        ['https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'])
+
+    httpAuth = credentials.authorize(httplib2.Http()) # Авторизуемся в системе
+    service = apiclient.discovery.build('sheets', 'v4', http = httpAuth) # Выбираем работу с таблицами и 4 версию API
+    results = service.spreadsheets().values().batchUpdate(spreadsheetId=spreadsheetId, body={
+        "valueInputOption": "USER_ENTERED",
+        # Данные воспринимаются, как вводимые пользователем (считается значение формул)
+        "data": [
+            {"range": startCell + ':' + endCell,
+            "majorDimension": majorDimension,  # Сначала заполнять строки, затем столбцы
+            "values": values
+            }
+        ]
+    }).execute()
+    return None
+
 def connect():
     connection = pymysql.connections.Connection(**config['database'])
     cursor = connection.cursor(pymysql.cursors.DictCursor)

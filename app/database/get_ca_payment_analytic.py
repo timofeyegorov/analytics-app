@@ -10,6 +10,7 @@ from urllib import parse
 from urllib.parse import urlparse, urlsplit
 
 def get_ca_payment_analytic():
+    # https://docs.google.com/spreadsheets/d/1wGckyRyZH--5NPg1f7KWVKYA_NfZvkRY0mhmFVflpZI/edit#gid=0
     spreadsheet_id = '1wGckyRyZH--5NPg1f7KWVKYA_NfZvkRY0mhmFVflpZI'
     # Читаем ключи из файла
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
