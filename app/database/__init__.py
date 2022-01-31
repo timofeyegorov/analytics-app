@@ -10,7 +10,7 @@ from config import RESULTS_FOLDER
 import os
 import pickle as pkl
 
-def load_sheet(spreadsheetId, sheetName, majorDimension, startRow=1, headers=True):
+def load_sheet(spreadsheetId, sheetName, majorDimension, startRow=1, headers=True, additional_columns=0):
     """
         Read sheet by name from google spreadsheet
         input:
@@ -38,7 +38,7 @@ def load_sheet(spreadsheetId, sheetName, majorDimension, startRow=1, headers=Tru
     ).execute()
     values = values['values']
     if headers:
-        df = pd.DataFrame(values[startRow:], columns=values[0])
+        df = pd.DataFrame(values[startRow:], columns=values[0] + [''] * additional_columns)
     else:
         df = pd.DataFrame(values[startRow:], columns=None)
     return df

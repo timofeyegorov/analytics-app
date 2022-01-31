@@ -10,7 +10,8 @@ from urllib import parse
 from urllib.parse import urlparse, urlsplit
 
 def get_payments_table():
-    spreadsheet_id = '1j_JK0jLGctDhIx3PJHjznTgYEKeAZQikxX1eSOnO5dg'
+    # spreadsheet_id = '1j_JK0jLGctDhIx3PJHjznTgYEKeAZQikxX1eSOnO5dg'
+    spreadsheet_id = '1eip2KZjKGn2HchudDrItNKXFRU9bbGwfBoOjm2Kxe6k'
     # Читаем ключи из файла
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
@@ -28,6 +29,9 @@ def get_payments_table():
     ).execute()
     values = values['values']
     payments_table = pd.DataFrame(values[1:], columns=values[0] + [''])
+    # print(payments_table['Сумма оплаты'][416], type(payments_table['Сумма оплаты'][418]),
+    #       payments_table['Сумма оплаты'][416].replace(',', '.').replace('\xa0', ''),
+    #       type(payments_table['Сумма оплаты'][416].replace(',', '.').replace(u'\xa0', '')))
     payments_table = payments_table[payments_table['Дата заявки'] != '']
     payments_table = payments_table[payments_table['Сумма оплаты'] != '']
     payments_table['Дата заявки'] = pd.to_datetime(payments_table['Дата заявки'], format='%d.%m.%Y')
@@ -36,7 +40,7 @@ def get_payments_table():
     payments_table = payments_table[payments_table['Дата заявки'] >= '2021-03-01']
     payments_table.reset_index(drop=True, inplace=True)
     for i in range(payments_table.shape[0]):
-        payments_table['Сумма оплаты'][i] = payments_table['Сумма оплаты'][i].replace(' ', '')
+        payments_table['Сумма оплаты'][i] = payments_table['Сумма оплаты'][i].replace(' ', '').replace(',00', '').replace(u'\xa0', '')
     payments_table['Сумма оплаты'] = payments_table['Сумма оплаты'].astype(int)
     return payments_table
 

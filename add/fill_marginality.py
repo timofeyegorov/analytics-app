@@ -5,8 +5,6 @@ import os
 import pickle as pkl
 from config import RESULTS_FOLDER
 from app.database import load_sheet, write_sheet
-df = load_sheet(spreadsheetId='1zTeURPPE-xKKz-E81nPTwd4XMvAV-Uw9lN8qXyKybaA',
-                sheetName='leads-1118292_2022-01-28', majorDimension='ROWS')
 
 def get_turnover_on_lead(leads, ca_payment_analytic):
     leads.insert(10, 'turnover_on_lead', 0)
@@ -34,9 +32,10 @@ def get_turnover_on_lead(leads, ca_payment_analytic):
     return leads
 
 if __name__ == '__main__':
-    df = load_sheet(spreadsheetId='1zTeURPPE-xKKz-E81nPTwd4XMvAV-Uw9lN8qXyKybaA',
-                       sheetName='leads-1118292_2022-01-28',
-                       majorDimension='ROWS')
+    df = load_sheet(spreadsheetId='1DuRrQ3XPT1HlY_nVEvD6jCW6DEbO-t0SRw9vEEso2N8',
+                       sheetName='Лист1',
+                       majorDimension='ROWS', startRow=1, additional_columns=1)
+
     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
         ca_payment_analytic = pkl.load(f)
     df.loc[df[
@@ -58,7 +57,7 @@ if __name__ == '__main__':
     # write_sheet(spreadsheetId='1zTeURPPE-xKKz-E81nPTwd4XMvAV-Uw9lN8qXyKybaA',
     #             startCell='O1', endCell='O1000',
     #             majorDimension='ROWS', values=df['Маржинальность'].tolist())
-    print(df['Маржинальность'].tolist())
+
     import httplib2
     import apiclient.discovery
     from oauth2client.service_account import ServiceAccountCredentials
@@ -70,7 +69,7 @@ if __name__ == '__main__':
 
     httpAuth = credentials.authorize(httplib2.Http()) # Авторизуемся в системе
     service = apiclient.discovery.build('sheets', 'v4', http = httpAuth) # Выбираем работу с таблицами и 4 версию API
-    results = service.spreadsheets().values().batchUpdate(spreadsheetId='1zTeURPPE-xKKz-E81nPTwd4XMvAV-Uw9lN8qXyKybaA', body={
+    results = service.spreadsheets().values().batchUpdate(spreadsheetId='1DuRrQ3XPT1HlY_nVEvD6jCW6DEbO-t0SRw9vEEso2N8', body={
         "valueInputOption": "USER_ENTERED",
         # Данные воспринимаются, как вводимые пользователем (считается значение формул)
         "data": [
