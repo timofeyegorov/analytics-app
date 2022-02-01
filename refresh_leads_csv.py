@@ -23,8 +23,8 @@ from app.tables import calculate_leads_ta_stats
 from app.tables import calculate_traffic_sources
 from app.tables import calculate_channels_summary
 from app.tables import calculate_channels_detailed
-from app.tables import calculate_payments_accumulation
-from app.database.preprocessing import get_turnover_on_lead
+from app.tables import calculate_payments_accumulation, calculate_marginality
+from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
 import os
 import pickle as pkl
@@ -92,6 +92,7 @@ def calculate_turnover_on_lead():
     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
         ca_payment_analytic = pkl.load(f)
     leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    leads = get_marginality(leads)
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
 
@@ -118,6 +119,14 @@ def payments_accumulation():
     payments_accumulation = calculate_payments_accumulation(data)
     with open(os.path.join(RESULTS_FOLDER, 'payments_accumulation.pkl'), 'wb') as f:
         pkl.dump(payments_accumulation, f)
+    return 'Success'
+
+def marginality():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    marginality = calculate_marginality(data)
+    with open(os.path.join(RESULTS_FOLDER, 'marginality.pkl'), 'wb') as f:
+        pkl.dump(marginality, f)
     return 'Success'
 
 def segments():
@@ -197,7 +206,8 @@ if __name__=='__main__':
     # channels_summary()
     # print(8)
     # channels_detailed()
-    payments_accumulation()
+    # payments_accumulation()
+    marginality()
     # segments()
     # turnover()
     # clusters()

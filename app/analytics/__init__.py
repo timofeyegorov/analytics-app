@@ -1,7 +1,7 @@
 from app import app
 from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
 from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
-from .table_loaders import get_channels_summary, get_channels_detailed, get_payments_accumulation
+from .table_loaders import get_channels_summary, get_channels_detailed, get_payments_accumulation, get_marginality
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
@@ -72,6 +72,15 @@ def payments_accumulation():
     tables = get_payments_accumulation()
     return render_template(
         'payments_accumulation.html',
+        tables=tables, tab=tab
+    )
+
+@app.route('/marginality')
+def marginality():
+    tab = request.args.get('tab')
+    tables = get_marginality()
+    return render_template(
+        'marginality.html',
         tables=tables, tab=tab
     )
 

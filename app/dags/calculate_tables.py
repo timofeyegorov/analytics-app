@@ -21,11 +21,11 @@ from app.database.get_expenses import get_trafficologists_expenses
 from app.database.get_statuses import get_statuses
 from app.database.get_ca_payment_analytic import get_ca_payment_analytic
 from app.database.get_payments_table import get_payments_table
-from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses, get_turnover_on_lead
+from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses, get_turnover_on_lead, get_marginality
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
-from app.tables import calculate_channels_summary, calculate_channels_detailed, calculate_payments_accumulation
+from app.tables import calculate_channels_summary, calculate_channels_detailed, calculate_payments_accumulation, calculate_marginality
 
 from config import RESULTS_FOLDER, config
 
@@ -121,9 +121,18 @@ def calculate_turnover_on_lead():
     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
         ca_payment_analytic = pkl.load(f)
     leads = get_turnover_on_lead(leads, ca_payment_analytic)
+    leads = get_marginality(leads)
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
 
+@log_execution_time('marginality')
+def marginality():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    marginality = calculate_marginality(data)
+    with open(os.path.join(RESULTS_FOLDER, 'marginality.pkl'), 'wb') as f:
+        pkl.dump(marginality, f)
+    return 'Success'
 
 @log_execution_time('channels_summary')
 def channels_summary():
@@ -237,6 +246,7 @@ turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead',
 clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_data, dag=dag)
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
 channels_detailed_operator = PythonOperator(task_id='channels_detailed', python_callable=channels_detailed, dag=dag)
+marginality_operator = PythonOperator(task_id='marginality', python_callable=marginality, dag=dag)
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)
 landings_operator = PythonOperator(task_id='landings', python_callable=landings, dag=dag)
@@ -259,6 +269,7 @@ clean_data_operator >> turnover_on_lead_operator
 turnover_on_lead_operator >> payments_accumulation_operator
 turnover_on_lead_operator >> channels_summary_operator
 turnover_on_lead_operator >> channels_detailed_operator
+turnover_on_lead_operator >> marginality_operator
 
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator

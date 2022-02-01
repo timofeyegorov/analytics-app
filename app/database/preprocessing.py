@@ -209,6 +209,11 @@ def get_turnover_on_lead(leads, ca_payment_analytic):
             ] = ca_payment_analytic.values[i][4]
     return leads
 
+def get_marginality(leads):
+    leads['channel_expense2'] = leads['channel_expense']
+    leads.loc[leads['channel_expense2'] == 0, 'channel_expense2'] = 400 * 1.2
+    return leads
+
 if __name__ == '__main__':
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         leads = pkl.load(f)

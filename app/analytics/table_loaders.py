@@ -17,6 +17,11 @@ def get_payments_accumulation():
         data = pkl.load(f)
     return data
 
+def get_marginality():
+    with open(os.path.join(RESULTS_FOLDER, 'marginality.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    return data
+
 def get_segments():
   with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'rb') as f:
     data = pkl.load(f)
