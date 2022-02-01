@@ -8,3 +8,4 @@ from .segments_stats import calculate_segments_stats
 from .channels_summary import calculate_channels_summary
 from .channels_detailed import calculate_channels_detailed
 from .payments_accumulation import calculate_payments_accumulation
+from .marginality import calculate_marginality

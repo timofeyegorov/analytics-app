@@ -1,0 +1,21 @@
+{% from 'macros/buttons.html' import reset_button %}
+{% from 'macros/tables.html' import wide_table %}
+
+{% extends 'base.html' %}
+{% block title %}Маржинальность{% endblock %}
+{% block content %}
+<div class='d-flex flex-column'>
+
+    <h1>Маржинальность</h1>
+        <br>
+    <h3>Общее число</h3>
+        <hr>
+        {{ tables['Общее число'].to_html() |safe }}
+        <br>
+    <h3>Процент</h3>
+        <hr>
+        {{ tables['Процент'].to_html() |safe }}
+
+
+</div>
+{% endblock %}
