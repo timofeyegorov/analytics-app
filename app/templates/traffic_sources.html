@@ -1,6 +1,13 @@
+{% from 'macros/last_updated.html' import last_updated %}
+
 {% extends 'base.html' %}
 {% block title %} Источники трафика {% endblock %}
 {% block content %}
+
+<style>
+    table thead th { position: sticky; top: 0; z-index: 1; }
+</style>
+
 <div class="d-flex flex-column">
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>

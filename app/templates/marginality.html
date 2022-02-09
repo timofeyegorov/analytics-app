@@ -1,9 +1,11 @@
 {% from 'macros/buttons.html' import reset_button %}
 {% from 'macros/tables.html' import wide_table %}
+{% from 'macros/last_updated.html' import last_updated %}
 
 {% extends 'base.html' %}
 {% block title %}Маржинальность{% endblock %}
 {% block content %}
+
 <div class='d-flex flex-column'>
 
     <h1>Маржинальность</h1>
@@ -11,11 +13,22 @@
     <h3>Общее число</h3>
         <hr>
         {{ tables['Общее число'].to_html() |safe }}
+        <div class="m-2 w-100 justify-content-center">
+            <form method='get' action='/getPlotCSV'>
+                <input type="hidden" name="value" value="marginality, Общее число"/>
+                <button class="btn btn-primary">Скачать отчет в csv</button>
+            </form>
+        </div>
         <br>
     <h3>Процент</h3>
         <hr>
         {{ tables['Процент'].to_html() |safe }}
-
+        <div class="m-2 w-100 justify-content-center">
+            <form method='get' action='/getPlotCSV'>
+                <input type="hidden" name="value" value="marginality, Процент"/>
+                <button class="btn btn-primary">Скачать отчет в csv</button>
+            </form>
+        </div>
 
 </div>
 {% endblock %}

@@ -133,11 +133,6 @@ def calculate_channels_by_date(df):
     return output_df
 
 if __name__ == '__main__':
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+    with open(os.path.join(RESULTS_FOLDER, 'channels_detailed.pkl'), 'rb') as f:
         result = pkl.load(f)
-    # print(leads.shape)
-    # print(leads.columns)
-    # result_df = calculate_channels_detailed(leads)
-    # print(result_df)
-    x = calculate_channels_detailed(result)
-    print(x)
+    print(result)
