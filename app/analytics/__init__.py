@@ -12,7 +12,7 @@ from config import RESULTS_FOLDER
 
 import os
 import numpy as np
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, Response
 from datetime import datetime
 from urllib.parse import urlencode
 import requests
@@ -22,16 +22,52 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 import pickle as pkl
 
-@app.route('/channels_summary')
+@app.route("/getPlotCSV")
+def getPlotCSV():
+    marginality = request.args.get('value')
+    if ', ' in marginality:
+        report, subname = marginality.split(', ')
+        with open(os.path.join(RESULTS_FOLDER, report + '.pkl'), 'rb') as f:
+            df = pkl.load(f)
+            df = df[subname]
+        return Response(
+            df.to_csv(),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                         f"attachment; filename={report}.csv"})
+    else:
+        report = marginality
+        with open(os.path.join(RESULTS_FOLDER, report + '.pkl'), 'rb') as f:
+            df = pkl.load(f)
+        return Response(
+            df.to_csv(),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                         f"attachment; filename={report}.csv"})
+
+@app.route('/channels_summary', methods=['GET', 'POST'])
 def channels_summary():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
-    utm = request.args.get('utm')
-    try:
-        utm = utm.split()
-    except AttributeError as e:
-        utm = []
-    if date_start or date_end or utm:
+
+    utm = []
+    utm_value = []
+    for i in range(10):
+        utm_temp = request.args.get('utm_' + str(i))
+        if utm_temp is None:
+            utm_temp = ''
+
+        utm_value_temp = request.args.get('utm_value_' + str(i))
+        if utm_value_temp is None:
+            utm_value_temp = ''
+
+        utm.append(utm_temp)
+        utm_value.append(utm_value_temp)
+
+    utm_unique = np.unique(utm)
+    utm_value_unique = np.unique(utm_value)
+
+    if date_start or date_end or (len(utm_unique) != 1) or (len(utm_value_unique) != 1):
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
@@ -40,20 +76,22 @@ def channels_summary():
             table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
             table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
-        if utm:
-            for el in utm:
+        for i in range(10):
+            if (utm[i] != ['']) or (utm_value[i] != ['']):
+                el = utm[i] + '=' + utm_value[i]
                 table = table[table['traffic_channel'].str.contains(el)]
         if len(table) == 0:
             return render_template('channels_summary.html', error='Нет данных для заданного периода')
         tables = calculate_channels_summary(table)
         return render_template(
             'channels_summary.html',
-            tables=tables, date_start=date_start, date_end=date_end
+            tables=tables, date_start=date_start, date_end=date_end,
+            # utm=utm, utm_value=utm_value
         )
     tables = get_channels_summary()
     return render_template(
         'channels_summary.html',
-        tables=tables # date_start=date_start, date_end=date_end
+        tables=tables, #utm=utm, utm_value=utm_value # date_start=date_start, date_end=date_end
     )
 
 @app.route('/channels_detailed')

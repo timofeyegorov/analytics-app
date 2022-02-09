@@ -3,20 +3,49 @@
 {% extends 'base.html' %}
 {% block title %} Источники - детализированные отчеты {% endblock %}
 {% block content %}
+
+<style>
+    table thead th { position: sticky; top: 0; z-index: 1; }
+</style>
+
 <div class="d-flex flex-column">
         {% macro table(header, row, loop) -%}
             <div class="tab-pane fade {{'show active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
                 {% if (header != 'traffic_channel') and (header != 'Оборот на ЦА') and (header != 'ЦА') %}
                 <h1>Маржинальность</h1>
                     {{ row[0]['Маржинальность'].to_html() |safe }}
+                    <div class="m-2 w-100 justify-content-center">
+                        <form method='get' action='/getPlotCSV'>
+                            <input type="hidden" name="value" value=f"channels_detailed, {row[0]}Маржинальность"/>
+                            <button class="btn btn-primary">Скачать отчет в csv</button>
+                        </form>
+                    </div>
                     <hr>
                 <h1>ROI</h1>
                     {{ row[1]['ROI'].to_html() |safe }}
+                    <div class="m-2 w-100 justify-content-center">
+                        <form method='get' action='/getPlotCSV'>
+                            <input type="hidden" name="value" value="channels_detailed, ROI"/>
+                            <button class="btn btn-primary">Скачать отчет в csv</button>
+                        </form>
+                    </div>
                     <hr>
                 <h1>Оборот на лида</h1>
                     {{ row[2]['Оборот на лида'].to_html() |safe }}
+                    <div class="m-2 w-100 justify-content-center">
+                        <form method='get' action='/getPlotCSV'>
+                            <input type="hidden" name="value" value="channels_detailed, Оборот на лида"/>
+                            <button class="btn btn-primary">Скачать отчет в csv</button>
+                        </form>
+                    </div>
                 <h1>Прибыль</h1>
                     {{ row[3]['Прибыль'].to_html() |safe }}
+                    <div class="m-2 w-100 justify-content-center">
+                        <form method='get' action='/getPlotCSV'>
+                            <input type="hidden" name="value" value="channels_detailed, Прибыль"/>
+                            <button class="btn btn-primary">Скачать отчет в csv</button>
+                        </form>
+                    </div>
                 {% else %}
                     {{ row |safe }}
                 {% endif %}
@@ -24,11 +53,6 @@
         {%- endmacro %}
 
         {{ tabs(tables, table, tab) }}
-
-
-
-
-
 </div>
 
 {% endblock %}

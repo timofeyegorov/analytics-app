@@ -5,6 +5,11 @@
 {% extends 'base.html' %}
 {% block title %}Источники - сводная таблица{% endblock %}
 {% block content %}
+<style>
+    table thead th { position: sticky; top: 0; z-index: 1; }
+</style>
+
+<!--<div>{{ utm }} - {{ utm_value }}</div>-->
 <div class='d-flex flex-column'>
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
@@ -21,11 +26,27 @@
         <form method='get' id='filters' action='/channels_summary'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
-            <input type='text' name='utm' value="{{ utm }}" placeholder="utm_source=yandex utm_medium=cpc etc.">
-            <button class="btn btn-primary">Обновить</button>
+            <br>
+            <div class="filter-some" id="some-0">
+                 <!-- <select name='utm' class="utm">
+                    {% for el in utms %}
+                        <option value="{{ utm }}">{{ el }}</option>
+                    {% endfor %}
+                </select>
+                <select name='utm_value' class="utm-values">
+                    {% for el2 in utm_values %}
+                        <option value="{{ utm_value }}">{{ el2 }}</option>
+                    {% endfor %}
+                </select> -->
+            </div>
+
+
+            <button id="btn-add-some" type="button">Добавить</button>
+
+            <button class="btn btn-primary" id="btn-update">Обновить</button>
             {{ reset_button() }}
         </form>
-        {{ wide_table(tables) }}        
+        {{ wide_table(tables) }}
 
 
         <!-- {% for header, table in tables.items() %}
@@ -34,4 +55,92 @@
         {% endfor %}  -->
     {% endif %}
 </div>
+<div class="m-2 w-100 justify-content-center">
+    <form method='get' action='/getPlotCSV'>
+        <input type="hidden" name="value" value="channels_summary, Источники - сводная таблица"/>
+        <button class="btn btn-primary">Скачать отчет в csv</button>
+    </form>
+</div>
+<script>
+
+function insertAfter(newNode, existingNode) {
+    existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
+}
+function insertBefore(newNode, existingNode) {
+    existingNode.parentNode.insertBefore(newNode, existingNode);
+}
+
+function createSelect(array, name,id=0) {
+    const currElem = document.createElement('select');
+    currElem.classList.add(name);
+    currElem.name = `${name}_${id}`;
+    array.forEach(e=>{
+        const currOpt = document.createElement('option');
+        currOpt.textContent = e;
+        currOpt.value = e;
+        currElem.append(currOpt);
+    });
+
+
+    return currElem;
+}
+
+function changeValues(elem, name, id=0) {
+    elem.name = `${name}_${id}`;
+}
+
+
+   const utms = ['','utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', ''];
+   const utm_values = ['','cpc', 'email', 'facebook', ''];
+   const someFilt = document.querySelector('.filter-some');
+   if (!someFilt.querySelector('.utm')) {
+    someFilt.append(createSelect(utms, 'utm'));
+   }
+   if (!someFilt.querySelector('.utm_value')) {
+    someFilt.append(createSelect(utm_values, 'utm_value'));
+   }
+
+
+document.getElementById('btn-add-some').addEventListener('click',()=>{
+
+
+
+    const update = document.getElementById('btn-update');
+    const someFilt = document.querySelectorAll('.filter-some');
+    console.log(someFilt);
+    let currElem = someFilt[someFilt.length-1];
+    const elem = currElem.cloneNode(true);
+    const currNum = Number(currElem.id.match(/\d+/g))+1;
+    elem.id = `some-${currNum}`;
+
+
+    changeValues(elem.querySelector('.utm'), 'utm', currNum);
+    changeValues(elem.querySelector('.utm_value'), 'utm_value', currNum);
+
+    const btnDelss = elem.querySelector('button.btn.btn-danger');
+    if (btnDelss) {
+        btnDelss.remove();
+    }
+    const btnDel = document.createElement('button');
+    btnDel.classList.add('btn','btn-danger');
+    btnDel.type="button";
+    btnDel.textContent = 'Удалить';
+    elem.append(btnDel);
+
+    btnDel.addEventListener('click', ()=>{
+        const someFilt = document.querySelectorAll('.filter-some');
+        let i = 0;
+        Array.from(someFilt).forEach(e=>{
+            changeValues(elem.querySelector('.utm'), 'utm', i);
+            changeValues(elem.querySelector('.utm_value'), 'utm_value', i);
+            i++;
+        });
+        elem.remove();
+    });
+
+    insertBefore(elem, update);
+
+});
+
+ </script>
 {% endblock %}
