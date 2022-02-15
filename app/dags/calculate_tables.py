@@ -166,7 +166,7 @@ def audience_type():
     audience_type = calculate_audience_tables()
     with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
         pkl.dump(audience_type, f)
-    return 'Success'
+    return None
 
 @log_execution_time('segments')
 def segments():
