@@ -24,6 +24,7 @@ from app.tables import calculate_traffic_sources
 from app.tables import calculate_channels_summary
 from app.tables import calculate_channels_detailed
 from app.tables import calculate_payments_accumulation, calculate_marginality
+from app.tables import calculate_audience_tables
 from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
 import os
@@ -129,6 +130,13 @@ def marginality():
         pkl.dump(marginality, f)
     return 'Success'
 
+def audience_type():
+    audience_type = calculate_audience_tables()
+    print(channels_detailed)
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
+        pkl.dump(audience_type, f)
+    return 'Success'
+
 def segments():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)
@@ -207,7 +215,8 @@ if __name__=='__main__':
     # print(8)
     # channels_detailed()
     # payments_accumulation()
-    marginality()
+    # marginality()
+    audience_type()
     # segments()
     # turnover()
     # clusters()

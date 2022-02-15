@@ -22,6 +22,11 @@ def get_marginality():
         data = pkl.load(f)
     return data
 
+def get_audience_type():
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    return data
+
 def get_segments():
   with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'rb') as f:
     data = pkl.load(f)

@@ -21,12 +21,12 @@ from app.database.get_expenses import get_trafficologists_expenses
 from app.database.get_statuses import get_statuses
 from app.database.get_ca_payment_analytic import get_ca_payment_analytic
 from app.database.get_payments_table import get_payments_table
-from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses, get_turnover_on_lead, get_marginality
-
+from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
+from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
-from app.tables import calculate_channels_summary, calculate_channels_detailed, calculate_payments_accumulation, calculate_marginality
-
+from app.tables import calculate_channels_summary, calculate_channels_detailed, calculate_payments_accumulation
+from app.tables import calculate_marginality, calculate_audience_tables
 from config import RESULTS_FOLDER, config
 
 redis_config = config['redis']
@@ -161,6 +161,13 @@ def payments_accumulation():
         pkl.dump(payments_accumulation, f)
     return 'Success'
 
+@log_execution_time('audience_type')
+def audience_type():
+    audience_type = calculate_audience_tables()
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
+        pkl.dump(audience_type, f)
+    return 'Success'
+
 @log_execution_time('segments')
 def segments():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
@@ -247,6 +254,8 @@ clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_d
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
 channels_detailed_operator = PythonOperator(task_id='channels_detailed', python_callable=channels_detailed, dag=dag)
 marginality_operator = PythonOperator(task_id='marginality', python_callable=marginality, dag=dag)
+audience_type_operator = PythonOperator(task_id='audience_type', python_callable=audience_type, dag=dag)
+
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)
 landings_operator = PythonOperator(task_id='landings', python_callable=landings, dag=dag)
@@ -270,6 +279,7 @@ turnover_on_lead_operator >> payments_accumulation_operator
 turnover_on_lead_operator >> channels_summary_operator
 turnover_on_lead_operator >> channels_detailed_operator
 turnover_on_lead_operator >> marginality_operator
+turnover_on_lead_operator >> audience_type_operator
 
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator
