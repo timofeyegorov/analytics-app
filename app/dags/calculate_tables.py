@@ -246,7 +246,6 @@ payments_table_operator = PythonOperator(task_id='load_payments_table', python_c
 
 payments_accumulation_operator = PythonOperator(task_id='payments_accumulation', python_callable=payments_accumulation, dag=dag)
 
-
 channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
 turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
 
@@ -274,12 +273,12 @@ payments_table_operator >> clean_data_operator
 
 clean_data_operator >> channel_expense_operator
 clean_data_operator >> turnover_on_lead_operator
+clean_data_operator >> audience_type_operator
 
 turnover_on_lead_operator >> payments_accumulation_operator
 turnover_on_lead_operator >> channels_summary_operator
 turnover_on_lead_operator >> channels_detailed_operator
 turnover_on_lead_operator >> marginality_operator
-turnover_on_lead_operator >> audience_type_operator
 
 channel_expense_operator >> segments_operator 
 channel_expense_operator >> clusters_operator
