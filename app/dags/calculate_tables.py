@@ -275,6 +275,7 @@ clean_data_operator >> channel_expense_operator
 clean_data_operator >> turnover_on_lead_operator
 clean_data_operator >> audience_type_operator
 
+
 turnover_on_lead_operator >> payments_accumulation_operator
 turnover_on_lead_operator >> channels_summary_operator
 turnover_on_lead_operator >> channels_detailed_operator
