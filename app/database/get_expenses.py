@@ -40,6 +40,7 @@ def get_trafficologists_expenses():
         url = f'{base_url}project/analytics/data{auth_}'
         # url = f'{base_url}{dimensions}{auth_}'
         response = requests.post(url=url, json=params)
+        print(response.status_code)
         channels = response.json()['data'][0]['items']
         channels_dict = {}
         for channel in channels:
