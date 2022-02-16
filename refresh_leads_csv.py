@@ -217,6 +217,7 @@ if __name__=='__main__':
     # payments_accumulation()
     # marginality()
     audience_type()
+    print(55)
     # segments()
     # turnover()
     # clusters()
