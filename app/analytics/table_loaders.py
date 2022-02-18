@@ -27,6 +27,11 @@ def get_audience_type():
         data = pkl.load(f)
     return data
 
+def get_audience_type_percent():
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_percent.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    return data
+
 def get_segments():
   with open(os.path.join(RESULTS_FOLDER, 'segments.pkl'), 'rb') as f:
     data = pkl.load(f)

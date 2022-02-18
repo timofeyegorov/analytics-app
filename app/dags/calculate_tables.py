@@ -163,9 +163,11 @@ def payments_accumulation():
 
 @log_execution_time('audience_type')
 def audience_type():
-    audience_type = calculate_audience_tables()
+    audience_type, audience_type_percent = calculate_audience_tables()
     with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
         pkl.dump(audience_type, f)
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_percent.pkl'), 'wb') as f:
+        pkl.dump(audience_type_percent, f)
     return 'Success'
 
 @log_execution_time('segments')

@@ -131,10 +131,12 @@ def marginality():
     return 'Success'
 
 def audience_type():
-    audience_type = calculate_audience_tables()
+    audience_type, audience_type_percent = calculate_audience_tables()
     print(channels_detailed)
     with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
         pkl.dump(audience_type, f)
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_percent.pkl'), 'wb') as f:
+        pkl.dump(audience_type_percent, f)
     return 'Success'
 
 def segments():

@@ -97,10 +97,10 @@ def calculate_type_combination_by_date(df, subcategory, column):
                 if answer == 'Да/нет':
                     if el != 'Другое':
                         temp_.append(
-                            df[(df[column] == el) & (df['quiz_answers5'].isin(['Да, работа', 'Да, проект'])) & (df['created_at'] == date_)].shape[0])  # Кол-во лидов
+                            df[(df[column] == el) & (df['created_at'] == date_)].shape[0])  # Кол-во лидов
                     else:
                         temp_.append(
-                            df[(~df[column].isin(subcategory)) & (df['quiz_answers5'].isin(['Да, работа', 'Да, проект'])) & (df['created_at'] == date_)].shape[0])  # Кол-во лидов
+                            df[(~df[column].isin(subcategory)) & (df['created_at'] == date_)].shape[0])  # Кол-во лидов
                 else:
                     if el != 'Другое':
                         temp_.append(
@@ -155,6 +155,115 @@ def calculate_audience_type_combination(df, subcategory, column):
                             })
     return output_dict
 
+def calculate_audience_type_percent(df, subcategory, column):
+    output_df = calculate_type_by_date(df, subcategory, column) # Получаем датасет с разбивкой данных по каждому трафикологу и дате
+
+    values = []
+    for category in subcategory:
+
+        filtered_df = output_df[output_df['Тип'] == category]
+        start_date = filtered_df['Дата'][filtered_df.index[0]]
+        temp_values = [0] * 33
+
+        temp_values[0] = category
+        temp_values[-1] = start_date
+
+        for i in filtered_df.index:
+            if (start_date.month == filtered_df['Дата'][i].month) & (
+                    start_date.year == filtered_df['Дата'][i].year):
+                temp_values[filtered_df['Дата'][i].day] = round(filtered_df['Лидов'][i] / output_df[output_df['Дата'] == output_df['Дата'][i]]['Лидов'].sum() * 100) if output_df[output_df['Дата'] == output_df['Дата'][i]]['Лидов'].sum() != 0 else 0
+            else:
+                start_date = filtered_df['Дата'][i]
+                values.append(temp_values)
+                temp_values = [0] * 33
+                temp_values[0] = category
+                temp_values[-1] = start_date
+                temp_values[filtered_df['Дата'][i].day] = round(filtered_df['Лидов'][i] / output_df[output_df['Дата'] == output_df['Дата'][i]]['Лидов'].sum() * 100) if output_df[output_df['Дата'] == output_df['Дата'][i]]['Лидов'].sum() != 0 else 0
+
+        values.append(temp_values)
+
+    out_df = pd.DataFrame(values)
+    output_dict = {}
+    months_dict = {1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+                   5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+                   9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+                   }
+
+    for date_ in out_df[32].unique():
+        output_dict.update({str(pd.to_datetime(date_).year) + '_' + (str(0) + str(pd.to_datetime(date_).month))[-2:] + '_' + months_dict[pd.to_datetime(date_).month]:
+                                out_df[out_df[32] == date_]
+                            })
+    return output_dict
+
+def calculate_audience_type_combination_percent(df, subcategory, column):
+    output_df = calculate_type_combination_by_date(df, subcategory, column) # Получаем датасет с разбивкой данных по каждому трафикологу и дате
+
+    values = []
+    for category in output_df['Тип'].unique():
+        if 'Да/нет' in category:
+            filtered_df = output_df[output_df['Тип'] == category]
+            start_date = filtered_df['Дата'][filtered_df.index[0]]
+            temp_values = [0] * 33
+
+            temp_values[0] = category
+            temp_values[-1] = start_date
+
+            for i in filtered_df.index:
+                if (start_date.month == filtered_df['Дата'][i].month) & (
+                        start_date.year == filtered_df['Дата'][i].year):
+                    temp_values[filtered_df['Дата'][i].day] = round(filtered_df['Лидов'][i] / filtered_df['Лидов'][i] * 100) if filtered_df['Лидов'][i] != 0 else 0
+                else:
+                    start_date = filtered_df['Дата'][i]
+                    values.append(temp_values)
+                    temp_values = [0] * 33
+                    temp_values[0] = category
+                    temp_values[-1] = start_date
+                    temp_values[filtered_df['Дата'][i].day] = round(filtered_df['Лидов'][i] / filtered_df['Лидов'][i] * 100) if filtered_df['Лидов'][i] != 0 else 0
+            values.append(temp_values)
+
+        else:
+            filtered_df = output_df[output_df['Тип'] == category]
+            start_date = filtered_df['Дата'][filtered_df.index[0]]
+            temp_values = [0] * 33
+
+            temp_values[0] = category
+            temp_values[-1] = start_date
+
+            for i in filtered_df.index:
+                if (start_date.month == filtered_df['Дата'][i].month) & (
+                        start_date.year == filtered_df['Дата'][i].year):
+                    temp_values[filtered_df['Дата'][i].day] = round(filtered_df['Лидов'][i] / output_df[(output_df['Дата'] == output_df['Дата'][i]) & (output_df['Тип'] != 'IT сфера, Да/нет') & \
+                                                                (output_df['Тип'] != 'Связано с числами, Да/нет') & \
+                                                                (output_df['Тип'] != 'Гуманитарий, Да/нет') & \
+                                                                (output_df['Тип'] != 'Предприниматель, руководитель, Да/нет') & \
+                                                                (output_df['Тип'] != 'Другое, Да/нет')]['Лидов'].sum() * 100) if output_df[(output_df['Дата'] == output_df['Дата'][i]) & (output_df['Тип'] != 'Да/нет')]['Лидов'].sum() != 0 else 0
+                else:
+                    start_date = filtered_df['Дата'][i]
+                    values.append(temp_values)
+                    temp_values = [0] * 33
+                    temp_values[0] = category
+                    temp_values[-1] = start_date
+                    temp_values[filtered_df['Дата'][i].day] = round(filtered_df['Лидов'][i] / output_df[(output_df['Дата'] == output_df['Дата'][i]) & (output_df['Тип'] != 'IT сфера, Да/нет') & \
+                                                                (output_df['Тип'] != 'Связано с числами, Да/нет') & \
+                                                                (output_df['Тип'] != 'Гуманитарий, Да/нет') & \
+                                                                (output_df['Тип'] != 'Предприниматель, руководитель, Да/нет') & \
+                                                                (output_df['Тип'] != 'Другое, Да/нет')]['Лидов'].sum() * 100) if output_df[(output_df['Дата'] == output_df['Дата'][i]) & (output_df['Тип'] != 'Да/нет')]['Лидов'].sum() != 0 else 0
+
+            values.append(temp_values)
+
+    out_df = pd.DataFrame(values)
+    output_dict = {}
+    months_dict = {1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+                   5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+                   9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+                   }
+
+    for date_ in out_df[32].unique():
+        output_dict.update({str(pd.to_datetime(date_).year) + '_' + (str(0) + str(pd.to_datetime(date_).month))[-2:] + '_' + months_dict[pd.to_datetime(date_).month]:
+                                out_df[out_df[32] == date_]
+                            })
+    return output_dict
+
 def calculate_audience_tables():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         leads = pkl.load(f)
@@ -170,6 +279,16 @@ def calculate_audience_tables():
     p_bus = calculate_audience_type_combination(leads, ['Предприниматель, руководитель'], 'quiz_answers3')
     p_ano = calculate_audience_type_combination(leads, ['Другое'], 'quiz_answers3')
 
+    profession_tables_percent = calculate_audience_type_percent(leads, profession, 'quiz_answers3')
+    education_tables_percent = calculate_audience_type_percent(leads, education, 'quiz_answers5')
+    age_tables_percent = calculate_audience_type_percent(leads, age, 'quiz_answers2')
+    earning_tables_percent = calculate_audience_type_percent(leads, earning, 'quiz_answers4')
+
+    p_it_percent = calculate_audience_type_combination_percent(leads, ['IT сфера'], 'quiz_answers3')
+    p_dig_percent = calculate_audience_type_combination_percent(leads, ['Связано с числами'], 'quiz_answers3')
+    p_gum_percent = calculate_audience_type_combination_percent(leads, ['Гуманитарий'], 'quiz_answers3')
+    p_bus_percent = calculate_audience_type_combination_percent(leads, ['Предприниматель, руководитель'], 'quiz_answers3')
+    p_ano_percent = calculate_audience_type_combination_percent(leads, ['Другое'], 'quiz_answers3')
 
     month_list = np.unique(
         list(profession_tables.keys()) + \
@@ -185,6 +304,7 @@ def calculate_audience_tables():
         ).tolist()
 
     output_dict = {}
+    output_dict_percent = {}
     for month in month_list:
         output_dict.update(
             {
@@ -201,4 +321,19 @@ def calculate_audience_tables():
                 ]
             }
         )
-    return output_dict
+        output_dict_percent.update(
+            {
+                month: [
+                    {'Профессия': profession_tables_percent[month]},
+                    {'Образование': education_tables_percent[month]},
+                    {'Возраст': age_tables_percent[month]},
+                    {'Заработок': earning_tables_percent[month]},
+                    {'IT сфера': p_it_percent[month]},
+                    {'Связано с числами': p_dig_percent[month]},
+                    {'Гуманитарий': p_gum_percent[month]},
+                    {'Предприниматель, руководитель': p_bus_percent[month]},
+                    {'Другое': p_ano_percent[month]}
+                ]
+            }
+        )
+    return output_dict, output_dict_percent
