@@ -2,7 +2,7 @@ from app import app
 from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
 from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
 from .table_loaders import get_channels_summary, get_channels_detailed, get_payments_accumulation
-from .table_loaders import get_marginality, get_audience_type
+from .table_loaders import get_marginality, get_audience_type, get_audience_type_percent
 
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
@@ -129,6 +129,16 @@ def audience_type():
     tables = get_audience_type()
     return render_template(
         'audience_type.html',
+        tables=tables,
+        tab=tab
+    )
+
+@app.route('/audience_type_percent')
+def audience_type_percent():
+    tab = request.args.get('tab')
+    tables = get_audience_type_percent()
+    return render_template(
+        'audience_type_percent.html',
         tables=tables,
         tab=tab
     )
