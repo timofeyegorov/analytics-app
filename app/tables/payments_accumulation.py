@@ -242,6 +242,7 @@ def roi_week_accumulation(payments_df):
 
     res_df = pd.DataFrame(columns=['Месяц', 'Диапазон', 'Расход'] + [i for i in range(1, 52)], data=vals)
     # res_df['Расход'] = round(res_df['Расход'], 0)
+    res_df.replace('-100.0', '0', inplace=True)
     return res_df
 
 def roi_month_accumulation(payments_df):
@@ -324,6 +325,7 @@ def roi_month_accumulation(payments_df):
     vals = np.concatenate((np_values_str, vals), axis=1)
 
     res_df = pd.DataFrame(columns=['Месяц', 'Расход'] + [i for i in range(1, 12)], data=vals)
+    res_df.replace('-100.0', '0', inplace=True)
     return res_df
 
 def calculate_payments_accumulation(df):
