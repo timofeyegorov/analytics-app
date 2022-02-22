@@ -31,7 +31,7 @@ def payments_week_accumulation(payments_df):
     last_day_week = (unique_order_dates[0] - timedelta(days=unique_order_dates[0].weekday()) + timedelta(days=6)).day
     temp_vals[1] = str(first_day_week) + ' - ' + str(last_day_week)
     idx = 0
-
+    # Проходим по всем уникальныи датам
     for cur_order_date in unique_order_dates:
         if (cur_order_date.week != cur_week) & (cur_order_date.year == cur_year):
             for i in range(2, 54 - cur_week + 4):
@@ -74,10 +74,14 @@ def payments_week_accumulation(payments_df):
                 last_day_week = (cur_order_date - timedelta(days=cur_order_date.weekday()) + timedelta(days=6)).day
                 temp_vals[1] = str(first_day_week) + ' - ' + str(last_day_week)
 
+        # Если не попадаем в условия выше фильтруем датасет по текущей дате заявки
         filtered_payments_df = payments_df[payments_df['Дата заявки'] == cur_order_date]
+        # Получаем все уникальные даты оплат по текущей дате заявки
         temp_unique_payment_dates = np.unique(filtered_payments_df['Дата оплаты'].tolist())
+        # Проходим по каждой дате оплаты
         for cur_payment_date in temp_unique_payment_dates:
-            if cur_payment_date.week < cur_order_date.week:
+            if (cur_payment_date.week < cur_order_date.week) & \
+                (cur_payment_date.year == cur_order_date.year):
                 pass
             else:
                 temp_vals[cur_payment_date.week - cur_order_date.week + 2] += \

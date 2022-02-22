@@ -1,79 +1,186 @@
+{% from 'macros/buttons.html' import reset_button %}
 {% from 'macros/tables.html' import tabs %}
 {% from 'macros/last_updated.html' import last_updated %}
 
 {% extends 'base.html' %}
-{% block title %} Источники - детализированные отчеты {% endblock %}
+{% block title %} Статистика по типам ЦА {% endblock %}
 {% block content %}
 
 <style>
     table thead th { position: sticky; top: 0; z-index: 1; }
 </style>
 
-<div><a href="/" class="btn btn-success">В меню</a></div>
-<br/>
+{% if error %}
+    <h1 style="color: red">{{ error }}</h1>
+    <div><a href="/" class="btn btn-success">В меню</a></div>
+    <form method='get' action='/audience_type'>
+        <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
+        <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
+        <button class="btn btn-primary">Обновить</button>
+        {{ reset_button() }}
+    </form>
+{% else %}
+    <h1>Источники - сводная таблица</h1>
+    <div><a href="/" class="btn btn-success">В меню</a></div> <br/>
     <a href="/audience_type" class="btn btn-dark">Абсолютные</a>
     <a href="/audience_type_percent" class="btn btn-outline-dark">Относительные</a>
-<div class="d-flex flex-column">
-        {% macro table(header, row, loop) -%}
-            <div class="tab-pane fade {{'show active' if loop.index == 7 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
-                {% if (header != 'traffic_channel') and (header != 'Оборот на ЦА') and (header != 'ЦА') %}
+    <form method='get' id='filters' action='/audience_type'>
+        <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
+        <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
+        <br>
+        <div class="filter-some" id="some-0">
+        </div>
 
-                <h1>Профессия</h1>
-                    {{ row[0]['Профессия'].to_html() |safe }}
-                    <div class="m-2 w-100 justify-content-center">
-                        <form method='get' action='/getPlotCSV'>
-                            <input type="hidden" name="value" value=f"channels_detailed, {row[0]}Маржинальность"/>
-                            <button class="btn btn-primary">Скачать отчет в csv</button>
-                        </form>
+
+        <button id="btn-add-some" type="button">Добавить</button>
+
+        <button class="btn btn-primary" id="btn-update">Обновить</button>
+        {{ reset_button() }}
+    </form>
+
+        <div class="d-flex flex-column">
+                {% macro table(header, row, loop) -%}
+                    <div class="tab-pane fade {{'show active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
+                        {% if (header != 'traffic_channel') and (header != 'Оборот на ЦА') and (header != 'ЦА') %}
+
+                        <h1>Профессия</h1>
+                            {{ row[0]['Профессия'].to_html() |safe }}
+                            <div class="m-2 w-100 justify-content-center">
+                                <form method='get' action='/getPlotCSV'>
+                                    <input type="hidden" name="value" value=f"channels_detailed, {row[0]}Маржинальность"/>
+                                    <button class="btn btn-primary">Скачать отчет в csv</button>
+                                </form>
+                            </div>
+                            <hr>
+
+                        <h1>Образование</h1>
+                            {{ row[1]['Образование'].to_html() |safe }}
+                            <div class="m-2 w-100 justify-content-center">
+                                <form method='get' action='/getPlotCSV'>
+                                    <input type="hidden" name="value" value="channels_detailed, ROI"/>
+                                    <button class="btn btn-primary">Скачать отчет в csv</button>
+                                </form>
+                            </div>
+                            <hr>
+
+                        <h1>Возраст</h1>
+                            {{ row[2]['Возраст'].to_html() |safe }}
+                            <div class="m-2 w-100 justify-content-center">
+                                <form method='get' action='/getPlotCSV'>
+                                    <input type="hidden" name="value" value="channels_detailed, Оборот на лида"/>
+                                    <button class="btn btn-primary">Скачать отчет в csv</button>
+                                </form>
+                            </div>
+
+                        <h1>Заработок</h1>
+                            {{ row[3]['Заработок'].to_html() |safe }}
+                            <div class="m-2 w-100 justify-content-center">
+                                <form method='get' action='/getPlotCSV'>
+                                    <input type="hidden" name="value" value="channels_detailed, Прибыль"/>
+                                    <button class="btn btn-primary">Скачать отчет в csv</button>
+                                </form>
+                            </div>
+
+                        <h1>IT сфера</h1>
+                            {{ row[4]['IT сфера'].to_html() |safe }}
+                        <h1>Связано с числами</h1>
+                            {{ row[5]['Связано с числами'].to_html() |safe }}
+                        <h1>Гуманитарий</h1>
+                            {{ row[6]['Гуманитарий'].to_html() |safe }}
+                        <h1>Предприниматель, руководитель</h1>
+                            {{ row[7]['Предприниматель, руководитель'].to_html() |safe }}
+                        <h1>Другое</h1>
+                            {{ row[8]['Другое'].to_html() |safe }}
+
+                        {% else %}
+                            {{ row |safe }}
+                        {% endif %}
                     </div>
-                    <hr>
+                {%- endmacro %}
 
-                <h1>Образование</h1>
-                    {{ row[1]['Образование'].to_html() |safe }}
-                    <div class="m-2 w-100 justify-content-center">
-                        <form method='get' action='/getPlotCSV'>
-                            <input type="hidden" name="value" value="channels_detailed, ROI"/>
-                            <button class="btn btn-primary">Скачать отчет в csv</button>
-                        </form>
-                    </div>
-                    <hr>
+                {{ tabs(tables, table, tab) }}
+        </div>
+{% endif %}
+        <script>
 
-                <h1>Возраст</h1>
-                    {{ row[2]['Возраст'].to_html() |safe }}
-                    <div class="m-2 w-100 justify-content-center">
-                        <form method='get' action='/getPlotCSV'>
-                            <input type="hidden" name="value" value="channels_detailed, Оборот на лида"/>
-                            <button class="btn btn-primary">Скачать отчет в csv</button>
-                        </form>
-                    </div>
+        function insertAfter(newNode, existingNode) {
+            existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
+        }
+        function insertBefore(newNode, existingNode) {
+            existingNode.parentNode.insertBefore(newNode, existingNode);
+        }
 
-                <h1>Заработок</h1>
-                    {{ row[3]['Заработок'].to_html() |safe }}
-                    <div class="m-2 w-100 justify-content-center">
-                        <form method='get' action='/getPlotCSV'>
-                            <input type="hidden" name="value" value="channels_detailed, Прибыль"/>
-                            <button class="btn btn-primary">Скачать отчет в csv</button>
-                        </form>
-                    </div>
+        function createSelect(array, name,id=0) {
+            const currElem = document.createElement('select');
+            currElem.classList.add(name);
+            currElem.name = `${name}_${id}`;
+            array.forEach(e=>{
+                const currOpt = document.createElement('option');
+                currOpt.textContent = e;
+                currOpt.value = e;
+                currElem.append(currOpt);
+            });
 
-                <h1>IT сфера</h1>
-                    {{ row[4]['IT сфера'].to_html() |safe }}
-                <h1>Связано с числами</h1>
-                    {{ row[5]['Связано с числами'].to_html() |safe }}
-                <h1>Гуманитарий</h1>
-                    {{ row[6]['Гуманитарий'].to_html() |safe }}
-                <h1>Предприниматель, руководитель</h1>
-                    {{ row[7]['Предприниматель, руководитель'].to_html() |safe }}
-                <h1>Другое</h1>
-                    {{ row[8]['Другое'].to_html() |safe }}
 
-                {% else %}
-                    {{ row |safe }}
-                {% endif %}
-            </div>
-        {%- endmacro %}
+            return currElem;
+        }
 
-        {{ tabs(tables, table, tab) }}
-</div>
+        function changeValues(elem, name, id=0) {
+            elem.name = `${name}_${id}`;
+        }
 
+
+           const utms = ['', 'utm_vk', 'utm_source', 'utm_term', 'utm_content', 'utm_medium', 'utm_posev', 'utm_term', 'utm_campaign', 'utm_referrer'];
+           const utm_values = ['','cpc', 'email', 'facebook', ''];
+           const someFilt = document.querySelector('.filter-some');
+           if (!someFilt.querySelector('.utm')) {
+            someFilt.append(createSelect(utms, 'utm'));
+           }
+           if (!someFilt.querySelector('.utm_value')) {
+            someFilt.append(createSelect(utm_values, 'utm_value'));
+           }
+
+
+        document.getElementById('btn-add-some').addEventListener('click',()=>{
+
+
+
+            const update = document.getElementById('btn-update');
+            const someFilt = document.querySelectorAll('.filter-some');
+            console.log(someFilt);
+            let currElem = someFilt[someFilt.length-1];
+            const elem = currElem.cloneNode(true);
+            const currNum = Number(currElem.id.match(/\d+/g))+1;
+            elem.id = `some-${currNum}`;
+
+
+            changeValues(elem.querySelector('.utm'), 'utm', currNum);
+            changeValues(elem.querySelector('.utm_value'), 'utm_value', currNum);
+
+            const btnDelss = elem.querySelector('button.btn.btn-danger');
+            if (btnDelss) {
+                btnDelss.remove();
+            }
+            const btnDel = document.createElement('button');
+            btnDel.classList.add('btn','btn-danger');
+            btnDel.type="button";
+            btnDel.textContent = 'Удалить';
+            elem.append(btnDel);
+
+            btnDel.addEventListener('click', ()=>{
+                const someFilt = document.querySelectorAll('.filter-some');
+                let i = 0;
+                Array.from(someFilt).forEach(e=>{
+                    changeValues(elem.querySelector('.utm'), 'utm', i);
+                    changeValues(elem.querySelector('.utm_value'), 'utm_value', i);
+                    i++;
+                });
+                elem.remove();
+            });
+
+            insertBefore(elem, update);
+
+        });
+
+        </script>
 {% endblock %}

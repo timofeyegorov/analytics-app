@@ -7,7 +7,7 @@ from .table_loaders import get_marginality, get_audience_type, get_audience_type
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
 from app.tables import calculate_channels_summary, calculate_channels_detailed
-
+from app.tables.audience_type import calculate_audience_tables_by_date, calculate_audience_type_result, calculate_audience_type_percent_result
 from config import config
 from config import RESULTS_FOLDER
 
@@ -22,6 +22,8 @@ import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 import pickle as pkl
+import json
+import html
 
 @app.route("/getPlotCSV")
 def getPlotCSV():
@@ -126,21 +128,101 @@ def marginality():
 @app.route('/audience_type')
 def audience_type():
     tab = request.args.get('tab')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+    utm = []
+    utm_value = []
+    for i in range(10):
+        utm_temp = request.args.get('utm_' + str(i))
+        if utm_temp is None:
+            utm_temp = ''
+
+        utm_value_temp = request.args.get('utm_value_' + str(i))
+        if utm_value_temp is None:
+            utm_value_temp = ''
+
+        utm.append(utm_temp)
+        utm_value.append(utm_value_temp)
+
+    utm_unique = np.unique(utm)
+    utm_value_unique = np.unique(utm_value)
+
+    if date_start or date_end or (len(utm_unique) != 1) or (len(utm_value_unique) != 1):
+        with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+            table = pkl.load(f)
+        # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+        if date_start:
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
+        for i in range(10):
+            if (utm[i] != ['']) or (utm_value[i] != ['']):
+                el = utm[i] + '=' + utm_value[i]
+                table = table[table['traffic_channel'].str.contains(el)]
+        if len(table) == 0:
+            return render_template('audience_type.html', error='Нет данных для заданного периода')
+        table = calculate_audience_tables_by_date(table)
+        tables = calculate_audience_type_result(table)
+        return render_template(
+            'audience_type.html',
+            tables=tables, date_start=date_start, date_end=date_end, tab=tab
+            # utm=utm, utm_value=utm_value
+        )
     tables = get_audience_type()
     return render_template(
         'audience_type.html',
-        tables=tables,
-        tab=tab
+        tables=tables, tab=tab
     )
 
 @app.route('/audience_type_percent')
 def audience_type_percent():
     tab = request.args.get('tab')
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+    utm = []
+    utm_value = []
+    for i in range(10):
+        utm_temp = request.args.get('utm_' + str(i))
+        if utm_temp is None:
+            utm_temp = ''
+
+        utm_value_temp = request.args.get('utm_value_' + str(i))
+        if utm_value_temp is None:
+            utm_value_temp = ''
+
+        utm.append(utm_temp)
+        utm_value.append(utm_value_temp)
+
+    utm_unique = np.unique(utm)
+    utm_value_unique = np.unique(utm_value)
+
+    if date_start or date_end or (len(utm_unique) != 1) or (len(utm_value_unique) != 1):
+        with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+            table = pkl.load(f)
+        # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+        if date_start:
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
+        for i in range(10):
+            if (utm[i] != ['']) or (utm_value[i] != ['']):
+                el = utm[i] + '=' + utm_value[i]
+                table = table[table['traffic_channel'].str.contains(el)]
+        if len(table) == 0:
+            return render_template('audience_type_percent.html', error='Нет данных для заданного периода')
+        table = calculate_audience_tables_by_date(table)
+        tables = calculate_audience_type_percent_result(table)
+        return render_template(
+            'audience_type_percent.html',
+            tables=tables, date_start=date_start, date_end=date_end, tab=tab
+            # utm=utm, utm_value=utm_value
+        )
     tables = get_audience_type_percent()
     return render_template(
         'audience_type_percent.html',
-        tables=tables,
-        tab=tab
+        tables=tables, tab=tab
     )
 
 @app.route('/segments')

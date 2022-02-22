@@ -24,7 +24,8 @@ from app.tables import calculate_traffic_sources
 from app.tables import calculate_channels_summary
 from app.tables import calculate_channels_detailed
 from app.tables import calculate_payments_accumulation, calculate_marginality
-from app.tables import calculate_audience_tables
+from app.tables import calculate_audience_tables_by_date, calculate_audience_type_result, calculate_audience_type_percent_result
+
 from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.database.preprocessing import calculate_trafficologists_expenses, calculate_crops_expenses
 import os
@@ -130,11 +131,26 @@ def marginality():
         pkl.dump(marginality, f)
     return 'Success'
 
+def audience_type_by_date():
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    audience_type_by_date = calculate_audience_tables_by_date(data)
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_by_date.pkl'), 'wb') as f:
+        pkl.dump(audience_type_by_date, f)
+    return 'Success'
+
 def audience_type():
-    audience_type, audience_type_percent = calculate_audience_tables()
-    print(channels_detailed)
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_by_date.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    audience_type = calculate_audience_type_result(data)
     with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
         pkl.dump(audience_type, f)
+    return 'Success'
+
+def audience_type_percent():
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_by_date.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    audience_type_percent = calculate_audience_type_percent_result(data)
     with open(os.path.join(RESULTS_FOLDER, 'audience_type_percent.pkl'), 'wb') as f:
         pkl.dump(audience_type_percent, f)
     return 'Success'
@@ -218,7 +234,10 @@ if __name__=='__main__':
     # channels_detailed()
     # payments_accumulation()
     # marginality()
+    print('counting audience_type ...')
+    audience_type_by_date()
     audience_type()
+    audience_type_percent()
     print(55)
     # segments()
     # turnover()
