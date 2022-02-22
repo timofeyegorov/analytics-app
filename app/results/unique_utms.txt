@@ -1,0 +1,8 @@
+utm_vk
+utm_source
+utm_term
+utm_content
+utm_medium
+utm_posev
+utm_campaign
+utm_referrer
