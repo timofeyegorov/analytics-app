@@ -276,7 +276,10 @@ clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_d
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
 channels_detailed_operator = PythonOperator(task_id='channels_detailed', python_callable=channels_detailed, dag=dag)
 marginality_operator = PythonOperator(task_id='marginality', python_callable=marginality, dag=dag)
+
+audience_type_by_date_operator = PythonOperator(task_id='audience_type_by_date', python_callable=audience_type_by_date, dag=dag)
 audience_type_operator = PythonOperator(task_id='audience_type', python_callable=audience_type, dag=dag)
+audience_type_percent_operator = PythonOperator(task_id='audience_type_percent', python_callable=audience_type_percent, dag=dag)
 
 segments_operator = PythonOperator(task_id='segments', python_callable=segments, dag=dag)
 clusters_operator = PythonOperator(task_id='clusters', python_callable=clusters, dag=dag)
@@ -296,8 +299,10 @@ payments_table_operator >> clean_data_operator
 
 clean_data_operator >> channel_expense_operator
 clean_data_operator >> turnover_on_lead_operator
-clean_data_operator >> audience_type_operator
 
+clean_data_operator >> audience_type_by_date_operator
+clean_data_operator >> audience_type_operator
+clean_data_operator >> audience_type_percent_operator
 
 turnover_on_lead_operator >> payments_accumulation_operator
 turnover_on_lead_operator >> channels_summary_operator

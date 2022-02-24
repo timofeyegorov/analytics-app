@@ -59,6 +59,32 @@ if __name__=='__main__':
     # expenses = get_trafficologists_expenses()
     # with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'w') as f:
     #     json.dump(expenses, f)
-    with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r', encoding='cp1251') as f:
-        expenses = json.load(f)
-    pprint(expenses)
+    # with open(os.path.join(RESULTS_FOLDER, 'expenses.json'), 'r', encoding='cp1251') as f:
+    #     expenses = json.load(f)
+    # pprint(expenses)
+
+    start_date = datetime.date(2022, 1, 25)
+    end_date = datetime.date.today()
+    delta = datetime.timedelta(days=1)
+    cur_day_start = start_date.strftime('%Y-%m-%d') + "T00:00:00+0300"
+    cur_day_end = start_date.strftime('%Y-%m-%d') + "T23:59:59+0300"
+
+    base_url = 'https://cloud.roistat.com/api/v1/'
+    api_key = config['roistat']['api_key']
+    project_id = config['roistat']['project_id']
+    auth_ = f'?key={api_key}&project={project_id}'
+    params = {
+        "dimensions": ["marker_level_1"],
+        "metrics": ["marketing_cost", "visitsCost"],
+        "period": {
+            "from": cur_day_start,
+            "to": cur_day_end
+        }
+    }
+    url = f'{base_url}project/analytics/data{auth_}'
+    # url = f'{base_url}{dimensions}{auth_}'
+    response = requests.post(url=url, json=params)
+    print(response.status_code)
+    channels = response.json()
+
+    pprint(channels)
