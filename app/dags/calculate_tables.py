@@ -26,7 +26,10 @@ from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
 from app.tables import calculate_channels_summary, calculate_channels_detailed, calculate_payments_accumulation
-from app.tables import calculate_marginality, calculate_audience_tables
+from app.tables import calculate_marginality
+from app.tables import calculate_audience_tables_by_date
+from app.tables import calculate_audience_type_result
+from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER, config
 
 redis_config = config['redis']
@@ -161,13 +164,29 @@ def payments_accumulation():
         pkl.dump(payments_accumulation, f)
     return 'Success'
 
-@log_execution_time('audience_type')
-def audience_type():
+@log_execution_time('audience_type_by_date')
+def audience_type_by_date():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
         data = pkl.load(f)
-    audience_type, audience_type_percent = calculate_audience_tables(data)
+    audience_type_by_date = calculate_audience_tables_by_date(data)
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_by_date.pkl'), 'wb') as f:
+        pkl.dump(audience_type_by_date, f)
+    return 'Success'
+
+@log_execution_time('audience_type')
+def audience_type():
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_by_date.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    audience_type = calculate_audience_type_result(data)
     with open(os.path.join(RESULTS_FOLDER, 'audience_type.pkl'), 'wb') as f:
         pkl.dump(audience_type, f)
+    return 'Success'
+
+@log_execution_time('audience_type_percent')
+def audience_type_percent():
+    with open(os.path.join(RESULTS_FOLDER, 'audience_type_by_date.pkl'), 'rb') as f:
+        data = pkl.load(f)
+    audience_type_percent = calculate_audience_type_percent_result(data)
     with open(os.path.join(RESULTS_FOLDER, 'audience_type_percent.pkl'), 'wb') as f:
         pkl.dump(audience_type_percent, f)
     return 'Success'
