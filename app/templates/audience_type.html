@@ -101,86 +101,94 @@
                 {{ tabs(tables, table, tab) }}
         </div>
 {% endif %}
-        <script>
+<script>
+function insertAfter(newNode, existingNode) {
+  existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
+}
+function insertBefore(newNode, existingNode) {
+  existingNode.parentNode.insertBefore(newNode, existingNode);
+}
 
-        function insertAfter(newNode, existingNode) {
-            existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
-        }
-        function insertBefore(newNode, existingNode) {
-            existingNode.parentNode.insertBefore(newNode, existingNode);
-        }
+function createSelect(array, name, id = 0) {
+  const currElem = document.createElement("select");
+  currElem.classList.add(name);
+  currElem.name = `${name}_${id}`;
+  array.forEach((e) => {
+    const currOpt = document.createElement("option");
+    currOpt.textContent = e;
+    currOpt.value = e;
+    currElem.append(currOpt);
+  });
 
-        function createSelect(array, name,id=0) {
-            const currElem = document.createElement('select');
-            currElem.classList.add(name);
-            currElem.name = `${name}_${id}`;
-            array.forEach(e=>{
-                const currOpt = document.createElement('option');
-                currOpt.textContent = e;
-                currOpt.value = e;
-                currElem.append(currOpt);
-            });
+  return currElem;
+}
 
-
-            return currElem;
-        }
-
-        function changeValues(elem, name, id=0) {
-            elem.name = `${name}_${id}`;
-        }
-
-
-           const utms = ['', 'utm_vk', 'utm_source', 'utm_term', 'utm_content', 'utm_medium', 'utm_posev', 'utm_term', 'utm_campaign', 'utm_referrer'];
-           const utm_values = ['','cpc', 'email', 'facebook', ''];
-           const someFilt = document.querySelector('.filter-some');
-           if (!someFilt.querySelector('.utm')) {
-            someFilt.append(createSelect(utms, 'utm'));
-           }
-           if (!someFilt.querySelector('.utm_value')) {
-            someFilt.append(createSelect(utm_values, 'utm_value'));
-           }
+              function createInput(name, id = 0) {
+                const currElem = document.createElement("input");
+                currElem.classList.add(name);
+                currElem.name = `${name}_${id}`;
+                return currElem;
+              }
 
 
-        document.getElementById('btn-add-some').addEventListener('click',()=>{
+function changeValues(elem, name, id = 0) {
+  elem.name = `${name}_${id}`;
+}
 
+const utms = [
+  "",
+  "utm_vk",
+  "utm_source",
+  "utm_term",
+  "utm_content",
+  "utm_medium",
+  "utm_posev",
+  "utm_term",
+  "utm_campaign",
+  "utm_referrer",
+];
+const someFilt = document.querySelector(".filter-some");
+if (!someFilt.querySelector(".utm")) {
+  someFilt.append(createSelect(utms, "utm"));
+}
+if (!someFilt.querySelector(".utm_value")) {
+  someFilt.append(createInput("utm_value"));
+}
 
+document.getElementById("btn-add-some").addEventListener("click", () => {
+  const update = document.getElementById("btn-update");
+  const someFilt = document.querySelectorAll(".filter-some");
+  console.log(someFilt);
+  let currElem = someFilt[someFilt.length - 1];
+  const elem = currElem.cloneNode(true);
+  const currNum = Number(currElem.id.match(/\d+/g)) + 1;
+  elem.id = `some-${currNum}`;
 
-            const update = document.getElementById('btn-update');
-            const someFilt = document.querySelectorAll('.filter-some');
-            console.log(someFilt);
-            let currElem = someFilt[someFilt.length-1];
-            const elem = currElem.cloneNode(true);
-            const currNum = Number(currElem.id.match(/\d+/g))+1;
-            elem.id = `some-${currNum}`;
+  changeValues(elem.querySelector(".utm"), "utm", currNum);
+  changeValues(elem.querySelector(".utm_value"), "utm_value", currNum);
 
+  const btnDelss = elem.querySelector("button.btn.btn-danger");
+  if (btnDelss) {
+    btnDelss.remove();
+  }
+  const btnDel = document.createElement("button");
+  btnDel.classList.add("btn", "btn-danger");
+  btnDel.type = "button";
+  btnDel.textContent = "Удалить";
+  elem.append(btnDel);
 
-            changeValues(elem.querySelector('.utm'), 'utm', currNum);
-            changeValues(elem.querySelector('.utm_value'), 'utm_value', currNum);
+  btnDel.addEventListener("click", () => {
+    const someFilt = document.querySelectorAll(".filter-some");
+    let i = 0;
+    Array.from(someFilt).forEach((e) => {
+      changeValues(elem.querySelector(".utm"), "utm", i);
+      changeValues(elem.querySelector(".utm_value"), "utm_value", i);
+      i++;
+    });
+    elem.remove();
+  });
 
-            const btnDelss = elem.querySelector('button.btn.btn-danger');
-            if (btnDelss) {
-                btnDelss.remove();
-            }
-            const btnDel = document.createElement('button');
-            btnDel.classList.add('btn','btn-danger');
-            btnDel.type="button";
-            btnDel.textContent = 'Удалить';
-            elem.append(btnDel);
-
-            btnDel.addEventListener('click', ()=>{
-                const someFilt = document.querySelectorAll('.filter-some');
-                let i = 0;
-                Array.from(someFilt).forEach(e=>{
-                    changeValues(elem.querySelector('.utm'), 'utm', i);
-                    changeValues(elem.querySelector('.utm_value'), 'utm_value', i);
-                    i++;
-                });
-                elem.remove();
-            });
-
-            insertBefore(elem, update);
-
-        });
-
+  insertBefore(elem, update);
+});
         </script>
 {% endblock %}
