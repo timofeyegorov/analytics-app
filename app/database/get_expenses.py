@@ -40,7 +40,6 @@ def get_trafficologists_expenses():
         url = f'{base_url}project/analytics/data{auth_}'
         # url = f'{base_url}{dimensions}{auth_}'
         response = requests.post(url=url, json=params)
-        print(response.status_code)
         channels = response.json()['data'][0]['items']
         channels_dict = {}
         for channel in channels:
@@ -63,11 +62,14 @@ if __name__=='__main__':
     #     expenses = json.load(f)
     # pprint(expenses)
 
-    start_date = datetime.date(2022, 1, 25)
-    end_date = datetime.date.today()
+    start_date = datetime.date(2022, 5, 1)
+    end_date = datetime.date(2022, 5, 31)
+    #end_date = datetime.date.today()
     delta = datetime.timedelta(days=1)
     cur_day_start = start_date.strftime('%Y-%m-%d') + "T00:00:00+0300"
-    cur_day_end = start_date.strftime('%Y-%m-%d') + "T23:59:59+0300"
+    cur_day_end = end_date.strftime('%Y-%m-%d') + "T23:59:59+0300"
+
+    print(start_date, end_date, cur_day_start, cur_day_end)
 
     base_url = 'https://cloud.roistat.com/api/v1/'
     api_key = config['roistat']['api_key']
@@ -86,5 +88,6 @@ if __name__=='__main__':
     response = requests.post(url=url, json=params)
     print(response.status_code)
     channels = response.json()
-
+    with open('test_expenses.json', 'w') as f:
+        json.dump(channels,f)
     pprint(channels)
