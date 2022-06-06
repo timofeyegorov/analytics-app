@@ -50,24 +50,33 @@ def getPlotCSV():
 
 @app.route('/channels_summary', methods=['GET', 'POST'])
 def channels_summary():
-    utms = ['', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
+    utms = ['utm_source']
+    utms2 = ['', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
 
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
 
-    utm = ['']
-    utm_value = ['']
-    for i in range(1, 6):
-        temp_utm = request.args.get('utm_' + str(i))
-        temp_utm_value = request.args.get('utm_value_' + str(i))
-        print(temp_utm, temp_utm_value)
-        if (temp_utm is None) or (temp_utm_value is None):
-            continue
-        else:
-            utm.append(temp_utm)
-            utm_value += [temp_utm_value]
+    utm_1 = request.args.get('utm_1')
+    utm_value_1 = request.args.get('utm_value_1')
+    utm_2 = request.args.get('utm_2')
+    if utm_value_1 is None:
+        utm_value_1 = ''
+    if utm_2 is None:
+        utm_2 = ''
 
-    if date_start or date_end or (len(utm) != 1) or (len(utm_value) != 1) :
+    # utm = ['']
+    # utm_value = ['']
+    # for i in range(1, 6):
+    #     temp_utm = request.args.get('utm_' + str(i))
+    #     temp_utm_value = request.args.get('utm_value_' + str(i))
+    #     print(temp_utm, temp_utm_value)
+    #     if (temp_utm is None) or (temp_utm_value is None):
+    #         continue
+    #     else:
+    #         utm.append(temp_utm)
+    #         utm_value += [temp_utm_value]
+
+    if date_start or date_end or utm_value_1 or utm_2:
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
@@ -76,22 +85,23 @@ def channels_summary():
             table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
         if date_end:
             table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
-        if utm != ['']:
-            for i in range(1, len(utm)):
-                el = utm[i] + '=' + utm_value[i]
-                table = table[table['traffic_channel'].str.contains(el)]
+        if utm_value_1:
+           table = table[table['utm_source'] == utm_value_1]
         if len(table) == 0:
-            return render_template('channels_summary.html', utm=utm, utm_value=utm_value, error='Нет данных для заданного периода')
-        tables = calculate_channels_summary(table)
+            return render_template('channels_summary.html', error='Нет данных для заданного периода')
+        if utm_2:
+            tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
+        else:
+            tables = calculate_channels_summary(table)
         return render_template(
             'channels_summary.html',
             tables=tables, date_start=date_start, date_end=date_end,
-            utms=utms, utm=utm, utm_value=utm_value
+            utms=utms, utms2=utms2
         )
     tables = get_channels_summary()
     return render_template(
         'channels_summary.html',
-        tables=tables, utms=utms, utm=utm, utm_value=utm_value # date_start=date_start, date_end=date_end
+        tables=tables, utms=utms, utms2=utms2 # date_start=date_start, date_end=date_end
     )
 
 @app.route('/channels_detailed')
