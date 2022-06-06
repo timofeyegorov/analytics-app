@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import json
-
+from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 from dateutil import parser
 
@@ -116,6 +116,14 @@ def preprocess_dataframe(df):
             target_class += 1
         df.loc[i, 'target_class'] = target_class
 
+    # Добавляем значение метки в ссылке
+    df[['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']] = ''
+    for i, link in enumerate(df['traffic_channel']):
+        parsed_url = urlparse(link)
+        parsed_query = parse_qs(parsed_url.query)
+        for k in parsed_query.keys():
+            if k in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']:
+                df.loc[i, k] = parsed_query[k][0]
     return df
 
 change_dict = {'23 - 30': '24 - 30', '25 - 30': '26 - 30', '30 - 40': '31 - 40', '40 - 50': '41 - 50', '50 - 60': 				'51 - 60',

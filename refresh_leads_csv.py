@@ -32,6 +32,7 @@ import os
 import pickle as pkl
 from config import RESULTS_FOLDER
 import json
+import time
 
 def load_crops():
     crops, crops_list = get_crops()
@@ -211,16 +212,25 @@ def leads_ta_stats():
     return 'Success'
 
 if __name__=='__main__':
-    print('load data ...')
+    start_time = time.time()
+    print('loading data ...')
     load_crops()
+    print('loading crops ...')
     load_trafficologists_expenses()
+    print('loading expenses ...')
     load_target_audience()
+    print('loading target_audience ...')
     load_trafficologists()
+    print('loading trafficologists ...')
     load_status()
+    print('loading status ...')
     load_data()
+    print('loading data ...')
     load_ca_payment_analytic()
+    print('loading ca_payment_analytic ...')
     load_payments_table()
-    print('loading have finished correctly!')
+    print('loading payments_table ...')
+    print('loading data have finished correctly!')
 
     print('calculate_channel_expense ...')
     calculate_channel_expense()

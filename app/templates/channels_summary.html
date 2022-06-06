@@ -35,42 +35,11 @@
                     {% endfor %}
                 </select>
                 <input name='utm_value_1' class="utm-values">
-            </div>
-
-            <div>
                 <select name='utm_2' class="utms">
-                    {% for el in utms %}
-                        <option value="{{ utm_2 }}">{{ el }}</option>
+                    {% for el in utms2 %}
+                        <option value="{{ el }}">{{ el }}</option>
                     {% endfor %}
                 </select>
-                <input name='utm_value_2' class="utm-values">
-            </div>
-
-            <div>
-                <select name='utm_3' class="utms">
-                    {% for el in utms %}
-                        <option value="{{ utm_3 }}">{{ el }}</option>
-                    {% endfor %}
-                </select>
-                <input name='utm_value_3' class="utm-values">
-            </div>
-
-            <div>
-                <select name='utm_4' class="utms">
-                    {% for el in utms %}
-                        <option value="{{ utm_4 }}">{{ el }}</option>
-                    {% endfor %}
-                </select>
-                <input name='utm_value_4' class="utm-values">
-            </div>
-
-            <div>
-                <select name='utm_5' class="utms">
-                    {% for el in utms %}
-                        <option value="{{ utm_5 }}">{{ el }}</option>
-                    {% endfor %}
-                </select>
-                <input name='utm_value_5' class="utm-values">
             </div>
 
             <button class="btn btn-primary" id="btn-update">Обновить</button>
