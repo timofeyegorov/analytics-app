@@ -7,6 +7,7 @@ from .table_loaders import get_marginality, get_audience_type, get_audience_type
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
 from app.tables import calculate_channels_summary, calculate_channels_detailed
+from app.tables import calculate_channels_summary_detailed
 from app.tables.audience_type import calculate_audience_tables_by_date, calculate_audience_type_result, calculate_audience_type_percent_result
 from config import config
 from config import RESULTS_FOLDER
@@ -56,6 +57,89 @@ def channels_summary():
     date_start = request.args.get('date_start')
     date_end = request.args.get('date_end')
 
+    utm_source = request.args.get('utm_1')
+    utm_source_value = request.args.get('utm_value_1')
+    utm_2 = request.args.get('utm_2')
+    if utm_source_value is None:
+        utm_source_value = ''
+    if utm_2 is None:
+        utm_2 = ''
+
+    filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                'utms': {'utm_source': utm_source, 'utm_source_value': utm_source_value, 'utm_2': utm_2}
+                }
+    with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
+        json.dump(filter_data, f)
+    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+        table = pkl.load(f)
+
+    if date_start or date_end or utm_source_value or utm_2:
+        # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+        if date_start:
+            table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
+        if date_end:
+            table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
+        if utm_source_value:
+           table = table[table['utm_source'] == utm_source_value]
+        if len(table) == 0:
+            return render_template('channels_summary.html', error='Нет данных для заданного периода')
+        if utm_2:
+            tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
+        else:
+            tables = calculate_channels_summary(table)
+        with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
+            pkl.dump(table, f)
+        with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'wb') as f:
+            pkl.dump(tables, f)
+        return render_template(
+            'channels_summary.html',
+            tables=tables, date_start=date_start, date_end=date_end,
+            utms=utms, utms2=utms2, enumerate=enumerate
+        )
+    tables = get_channels_summary()
+    with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
+        pkl.dump(table, f)
+    with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'wb') as f:
+        pkl.dump(tables, f)
+    return render_template(
+        'channels_summary.html',
+        tables=tables, utms=utms, utms2=utms2, enumerate=enumerate # date_start=date_start, date_end=date_end
+    )
+
+@app.route('/channels_summary_detailed', methods=['GET', 'POST'])
+def channels_summary_detailed():
+    with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'rb') as f:
+        tables = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'rb') as f:
+        table = pkl.load(f)
+    with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'r') as f:
+        filter_data = json.load(f)
+
+    utms = ['utm_source']
+    utms2 = ['', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
+
+    utm_source = filter_data['utms']['utm_source']
+    utm_source_value = filter_data['utms']['utm_source_value']
+    utm_2 = filter_data['utms']['utm_2']
+    utm_2_value = request.args.get('channel')[2:]
+
+    channels_summary_detailed = calculate_channels_summary_detailed(table, utm_source, utm_source_value, utm_2, utm_2_value)
+
+    return render_template(
+        'channels_summary_detailed.html',
+        tables=tables, channels_summary_detailed=channels_summary_detailed, enumerate=enumerate,
+        utm_2_value=utm_2_value, utms=utms, utms2=utms2 # date_start=date_start, date_end=date_end
+    )
+
+@app.route('/channels_summary2', methods=['GET', 'POST'])
+def channels_summary2():
+    utms = ['utm_source']
+    utms2 = ['', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
+
+    date_start = request.args.get('date_start')
+    date_end = request.args.get('date_end')
+
     utm_1 = request.args.get('utm_1')
     utm_value_1 = request.args.get('utm_value_1')
     utm_2 = request.args.get('utm_2')
@@ -88,20 +172,21 @@ def channels_summary():
         if utm_value_1:
            table = table[table['utm_source'] == utm_value_1]
         if len(table) == 0:
-            return render_template('channels_summary.html', error='Нет данных для заданного периода')
+            return render_template('channels_summary2.html', error='Нет данных для заданного периода')
         if utm_2:
             tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
         else:
             tables = calculate_channels_summary(table)
         return render_template(
-            'channels_summary.html',
+            'channels_summary2.html',
             tables=tables, date_start=date_start, date_end=date_end,
-            utms=utms, utms2=utms2
+            utms=utms, utms2=utms2, enumerate=enumerate
+
         )
     tables = get_channels_summary()
     return render_template(
-        'channels_summary.html',
-        tables=tables, utms=utms, utms2=utms2 # date_start=date_start, date_end=date_end
+        'channels_summary2.html',
+        tables=tables, utms=utms, utms2=utms2, enumerate=enumerate# date_start=date_start, date_end=date_end
     )
 
 @app.route('/channels_detailed')
@@ -113,6 +198,7 @@ def channels_detailed():
         tables=tables,
         tab=tab
     )
+
 
 @app.route('/payments_accumulation')
 def payments_accumulation():
