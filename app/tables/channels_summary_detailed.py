@@ -12,9 +12,9 @@ def calculate_channels_summary_detailed(df, utm_source, utm_source_value, utm_2,
         signature = utm_2 + '=' + utm_2_value
         output_df = df[(df[utm_2] == utm_2_value)]
     elif utm_2 == '':
-        utm_2_value = df[df['trafficologist'] == utm_2_value]['utm_source'].unique()[0]
+        # utm_2_value = df[df['trafficologist'] == utm_2_value]['utm_source'].unique()[0]
         signature = utm_source + '=' + utm_2_value
-        output_df = df[(df[utm_source] == utm_2_value)]
+        output_df = df[(df['trafficologist'] == utm_2_value)]
     else:
         output_df = df[(df[utm_source] == utm_source_value) & (df[utm_2] == utm_2_value)]
         signature = utm_source + '=' + utm_source_value + '&' + utm_2 + '=' + utm_2_value
