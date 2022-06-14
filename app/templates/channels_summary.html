@@ -9,7 +9,6 @@
     table thead th { position: sticky; top: 0; z-index: 1; }
 </style>
 
-<div>{{ utm }} - {{ utm_value }}</div>
 <div class='d-flex flex-column'>
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
@@ -55,18 +54,42 @@
             <td style="background-color:#eeeeee"></td>
         </tr>
         {% for i, row in enumerate(tables['Источники - сводная таблица'].values) %}
+
+        {% if row[0] == utm_2_value %}
+            <tr>
+                <td style="font-weight: bold; background-color:#AFEEEE"> {{ i }} </td>
+                {% for col in row %}
+                <td style="font-weight: bold; background-color:#AFEEEE"> {{ col }} </td>
+                {% endfor %}
+                <td style="font-weight: bold; background-color:#AFEEEE">
+                    <form method='get' action="/channels_summary">
+                       <input type="submit" name="channel" value="+ {{row[0]}}" />
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+        {% if i == 0 %}
+            <tr>
+                <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
+                {% for col in row %}
+                <td> {{ col }} </td>
+                {% endfor %}
+                <td></td>
+            </tr>
+        {% else %}
             <tr>
                 <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
                 {% for col in row %}
                 <td> {{ col }} </td>
                 {% endfor %}
                 <td>
-    <!--            <button name="subject" type="submit" value="{{ col }}">HTML</button>-->
-                    <form method='get' action="/channels_summary_detailed">
+                    <form method='get' action="/channels_summary">
                        <input type="submit" name="channel" value="+ {{row[0]}}" />
                     </form>
                 </td>
             </tr>
+        {% endif %}
+        {% endif %}
         {% endfor %}
     </table>
 
@@ -78,5 +101,9 @@
         <button class="btn btn-primary">Скачать отчет в csv</button>
     </form>
 </div>
+
+{% if channels_summary_detailed != '' %}
+{{ wide_table(channels_summary_detailed)}}
+{% endif %}
 
 {% endblock %}
