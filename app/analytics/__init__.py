@@ -63,7 +63,6 @@ def channels_summary():
         # Загружаем значения фильтров
         with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'r') as f:
             filter_data = json.load(f)
-        print('Ветка 2', utm_2_value, filter_data, sep='\n')
         utm_source = filter_data['utms']['utm_source']
         if utm_source == '':
             utm_source = 'utm_source'
@@ -111,7 +110,6 @@ def channels_summary():
                              'utm_2': utm_2,
                              'utm_2_value': utm_2_value}
                     }
-        print('Ветка 1', utm_2_value, filter_data, sep='\n')
         with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
             json.dump(filter_data, f)
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
