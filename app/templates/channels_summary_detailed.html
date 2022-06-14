@@ -9,7 +9,6 @@
     table thead th { position: sticky; top: 0; z-index: 1; }
 </style>
 
-<div>{{ utm }} - {{ utm_value }}</div>
 <div class='d-flex flex-column'>
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
@@ -47,7 +46,6 @@
         </form>
 
     <table>
-
         <tr>
             <td style="background-color:#eeeeee"></td>
             {% for col in tables['Источники - сводная таблица'].columns %}
@@ -55,7 +53,6 @@
             {% endfor %}
             <td style="background-color:#eeeeee"></td>
         </tr>
-
         {% for i, row in enumerate(tables['Источники - сводная таблица'].values) %}
         {% if row[0] == utm_2_value %}
             <tr>
