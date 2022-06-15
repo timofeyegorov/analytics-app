@@ -152,35 +152,14 @@ def channels_summary():
             channels_summary_detailed='' # date_start=date_start, date_end=date_end
         )
 
-@app.route('/channels_summary_detailed', methods=['GET', 'POST'])
-def channels_summary_detailed():
-    with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'rb') as f:
-        tables = pkl.load(f)
-    with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'rb') as f:
-        table = pkl.load(f)
-    with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'r') as f:
-        filter_data = json.load(f)
-    print(filter_data)
-    utms = ['utm_source']
-    utms2 = ['', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
-
-    utm_source = filter_data['utms']['utm_source']
-    utm_source_value = filter_data['utms']['utm_source_value']
-    utm_2 = filter_data['utms']['utm_2']
-    utm_2_value = request.args.get('channel')[2:]
-
-    if utm_source is None:
-        utm_source = 'utm_source'
-        utm_source_value = utm_2_value
-    print(utm_source, utm_source_value, utm_2, utm_2_value)
-    if utm_source_value is None:
-        utm_source_value = request.args.get('channel')[2:]
-    channels_summary_detailed = calculate_channels_summary_detailed(table, utm_source, utm_source_value, utm_2, utm_2_value)
-
+@app.route('/channels_detailed')
+def channels_detailed():
+    tab = request.args.get('tab')
+    tables = get_channels_detailed()
     return render_template(
-        'channels_summary_detailed.html',
-        tables=tables, channels_summary_detailed=channels_summary_detailed, enumerate=enumerate,
-        utm_2_value=utm_2_value, utms=utms, utms2=utms2 # date_start=date_start, date_end=date_end
+        'channels_detailed.html',
+        tables=tables,
+        tab=tab
     )
 
 @app.route('/payments_accumulation')
