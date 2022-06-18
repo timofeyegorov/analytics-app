@@ -71,30 +71,27 @@ def channels_summary():
 
         channels_summary_detailed = calculate_channels_summary_detailed(table, utm_source, utm_source_value, utm_2,
                                                                         utm_2_value)
-        utms = ['utm_source']
-        utms2 = ['', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
+        utms = ['канал', 'utm_source']
+        utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term']
         return render_template(
             'channels_summary.html',
             tables=tables, channels_summary_detailed=channels_summary_detailed, enumerate=enumerate,
-            utm_2_value=utm_2_value, utms=utms, utms2=utms2
+            utm_2_value=utm_2_value, utms=utms, utms2=utms2, filter_data=filter_data
             # date_start=date_start, date_end=date_end
         )
-
+    # Если жмем на общую фильтрацию
     except TypeError:
+        # Значние доп кнопки - пустое
         utm_2_value = ''
-
-        utms = ['utm_source']
-        utms2 = ['', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
-
+        utms = ['канал', 'utm_source']
+        utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term']
+        # Получаем значения остальных значений полей
         date_start = request.args.get('date_start')
         date_end = request.args.get('date_end')
-
         utm_source = request.args.get('utm_1')
         utm_source_value = request.args.get('utm_value_1')
         utm_2 = request.args.get('utm_2')
 
-        if utm_source is None:
-            utm_source = ''
         if utm_source_value is None:
             utm_source_value = ''
         if utm_2 is None:
@@ -103,13 +100,13 @@ def channels_summary():
             date_start = ''
         if date_end is None:
             date_end = ''
-
+        # Сохраняем значения полей в списке
         filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
-                    'utms': {'utm_source': utm_source,
-                             'utm_source_value': utm_source_value,
-                             'utm_2': utm_2,
-                             'utm_2_value': utm_2_value}
-                    }
+                       'utms': {'utm_source': utm_source,
+                                'utm_source_value': utm_source_value,
+                                'utm_2': utm_2,
+                                'utm_2_value': utm_2_value}}
+
         with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
             json.dump(filter_data, f)
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
@@ -123,9 +120,14 @@ def channels_summary():
             if date_end:
                 table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
             if utm_source_value:
-               table = table[table['utm_source'] == utm_source_value]
+                if utm_source == 'канал':
+                    table = table[table['trafficologist'] == utm_source_value]
+                else:
+                    table = table[table[utm_source] == utm_source_value]
             if len(table) == 0:
-                return render_template('channels_summary.html', error='Нет данных для заданного периода')
+                return render_template('channels_summary.html',
+                                       filter_data=filter_data,
+                                       error='Нет данных для заданного периода', channels_summary_detailed='')
             if utm_2:
                 tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
             else:
@@ -139,7 +141,7 @@ def channels_summary():
                 'channels_summary.html',
                 tables=tables, date_start=date_start, date_end=date_end,
                 utms=utms, utms2=utms2, enumerate=enumerate,
-                channels_summary_detailed=''
+                channels_summary_detailed='', filter_data=filter_data
             )
         tables = get_channels_summary()
         with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
@@ -149,7 +151,7 @@ def channels_summary():
         return render_template(
             'channels_summary.html',
             tables=tables, utms=utms, utms2=utms2, enumerate=enumerate,
-            channels_summary_detailed='' # date_start=date_start, date_end=date_end
+            channels_summary_detailed='', filter_data=filter_data # date_start=date_start, date_end=date_end
         )
 
 @app.route('/channels_detailed')

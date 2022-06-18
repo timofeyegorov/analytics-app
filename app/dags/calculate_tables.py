@@ -100,9 +100,12 @@ def load_payments_table():
 @log_execution_time('load_data')
 def load_data():
     data = get_leads_data()
+    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+        ca_payment_analytic = pkl.load(f)
+    leads = get_turnover_on_lead(data, ca_payment_analytic)
+    leads = get_marginality(leads)
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
-        pkl.dump(data, f)
-    return None
+        pkl.dump(leads, f)
 
 @log_execution_time('calculate_channel_expense')
 def calculate_channel_expense():
@@ -117,16 +120,16 @@ def calculate_channel_expense():
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
 
-@log_execution_time('calculate_turnover_on_lead')
-def calculate_turnover_on_lead():
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-        leads = pkl.load(f)
-    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
-        ca_payment_analytic = pkl.load(f)
-    leads = get_turnover_on_lead(leads, ca_payment_analytic)
-    leads = get_marginality(leads)
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
-        pkl.dump(leads, f)
+# @log_execution_time('calculate_turnover_on_lead')
+# def calculate_turnover_on_lead():
+#     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+#         leads = pkl.load(f)
+#     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+#         ca_payment_analytic = pkl.load(f)
+#     leads = get_turnover_on_lead(leads, ca_payment_analytic)
+#     leads = get_marginality(leads)
+#     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+#         pkl.dump(leads, f)
 
 @log_execution_time('marginality')
 def marginality():
@@ -270,7 +273,7 @@ payments_table_operator = PythonOperator(task_id='load_payments_table', python_c
 payments_accumulation_operator = PythonOperator(task_id='payments_accumulation', python_callable=payments_accumulation, dag=dag)
 
 channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
-turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
+# turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
 
 clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_data, dag=dag)
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
@@ -298,7 +301,7 @@ ca_payment_analytic_operator >> clean_data_operator
 payments_table_operator >> clean_data_operator
 
 clean_data_operator >> channel_expense_operator
-clean_data_operator >> turnover_on_lead_operator
+# clean_data_operator >> turnover_on_lead_operator
 
 clean_data_operator >> audience_type_by_date_operator
 clean_data_operator >> audience_type_operator

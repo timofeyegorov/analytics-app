@@ -8,8 +8,14 @@
             let form = button.closest('form');
             let start_date = form.querySelector('[name=date_start]');
             let end_date = form.querySelector('[name=date_end]');
+            let utm_1 = form.querySelector('[name=utm_1]');
+            let utm_value_1 = form.querySelector('[name=utm_value_1]');
+            let utm_2 = form.querySelector('[name=utm_2]');
             start_date.value="";
             end_date.value="";
+            utm_1.value="";
+            utm_value_1.value="";
+            utm_2.value="";
             form.submit();
         });    
     </script>
