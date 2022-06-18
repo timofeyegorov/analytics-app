@@ -44,7 +44,10 @@ def calculate_channels_summary_detailed(df, utm_source, utm_source_value, utm_2,
                 output_df = df[(df[utm_source] == utm_source_value)]
         else:
             signature = utm_source + '=' + utm_source_value + '&' + utm_2 + '=' + utm_2_value
-            output_df = df[(df[utm_source] == utm_source_value) & (df[utm_2] == utm_2_value)]
+            if utm_source == 'канал':
+                output_df = df[(df['trafficologist'] == utm_source_value) & (df[utm_2] == utm_2_value)]
+            else:
+                output_df = df[(df[utm_source] == utm_source_value) & (df[utm_2] == utm_2_value)]
     output_df = output_df[['created_at', 'turnover_on_lead', 'quiz_answers1', 'quiz_answers2', 'quiz_answers3', 'quiz_answers4', 'quiz_answers5']]
     output_df.reset_index(drop=True, inplace=True)
     return {'Лиды в разбивке по: ' + signature: output_df}
