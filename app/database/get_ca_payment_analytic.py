@@ -1,3 +1,7 @@
+"""
+    Модель для подсчета
+"""
+
 # Подключаем библиотеки
 import httplib2
 import apiclient.discovery

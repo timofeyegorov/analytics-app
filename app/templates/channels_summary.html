@@ -30,13 +30,21 @@
             <div class="filter-some" id="some-0">
                 <select name='utm_1' class="utms">
                     {% for el in utms %}
+                    {% if el==filter_data['utms']['utm_source'] %}
+                        <option value="{{ el }}" selected="selected">{{ el }}</option>
+                    {% else %}
                         <option value="{{ el }}">{{ el }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
-                <input name='utm_value_1' class="utm-values">
+                <input name='utm_value_1' value="{{ filter_data['utms']['utm_source_value'] }}" class="utm-values">
                 <select name='utm_2' class="utms">
                     {% for el in utms2 %}
+                    {% if el==filter_data['utms']['utm_2'] %}
+                        <option value="{{ el }}" selected="selected">{{ el }}</option>
+                    {% else %}
                         <option value="{{ el }}">{{ el }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
             </div>
@@ -74,7 +82,11 @@
                 {% for col in row %}
                 <td> {{ col }} </td>
                 {% endfor %}
-                <td></td>
+                <td>
+                    <form method='get' action="/channels_summary">
+                       <input type="submit" name="channel" value="+ все лиды" />
+                    </form>
+                </td>
             </tr>
         {% else %}
             <tr>
