@@ -101,16 +101,6 @@ def channels_summary():
             date_start = ''
         if date_end is None:
             date_end = ''
-        # Сохраняем значения полей в списке
-        filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
-                       'utms': {'utm_source': utm_source,
-                                'source': source,
-                                'utm_2': utm_2,
-                                'utm_2_value': utm_2_value},
-                       'unique_sources': unique_sources}
-
-        with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
-            json.dump(filter_data, f)
 
         if date_start or date_end or utm_source or source or utm_2:
             # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
@@ -131,6 +121,16 @@ def channels_summary():
                 tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
             else:
                 tables = calculate_channels_summary(table)
+            unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
+            # Сохраняем значения полей в списке
+            filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                           'utms': {'utm_source': utm_source,
+                                    'source': source,
+                                    'utm_2': utm_2,
+                                    'utm_2_value': utm_2_value},
+                           'unique_sources': unique_sources}
+            with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
+                json.dump(filter_data, f)
             with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
                 pkl.dump(table, f)
             with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'wb') as f:
@@ -142,6 +142,14 @@ def channels_summary():
                 utms2=utms2, enumerate=enumerate,
                 channels_summary_detailed='', filter_data=filter_data
             )
+        unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
+        # Сохраняем значения полей в списке
+        filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                       'utms': {'utm_source': utm_source,
+                                'source': source,
+                                'utm_2': utm_2,
+                                'utm_2_value': utm_2_value},
+                       'unique_sources': unique_sources}
         tables = get_channels_summary()
         with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
             pkl.dump(table, f)

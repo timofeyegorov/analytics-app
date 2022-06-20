@@ -102,34 +102,41 @@ def load_data():
     data = get_leads_data()
     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
         ca_payment_analytic = pkl.load(f)
-    leads = get_turnover_on_lead(data, ca_payment_analytic)
-    leads = get_marginality(leads)
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
-        pkl.dump(leads, f)
-
-@log_execution_time('calculate_channel_expense')
-def calculate_channel_expense():
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-        leads = pkl.load(f)
     with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
         crops = pkl.load(f)
     with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'rb') as f:
         trafficologists = pkl.load(f)
+
+    leads = get_turnover_on_lead(data, ca_payment_analytic)
+    leads = get_marginality(leads)
     leads = calculate_crops_expenses(leads, crops)
     leads = calculate_trafficologists_expenses(leads, trafficologists)
     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
         pkl.dump(leads, f)
 
-@log_execution_time('calculate_turnover_on_lead')
-def calculate_turnover_on_lead():
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-        leads = pkl.load(f)
-    with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
-        ca_payment_analytic = pkl.load(f)
-    leads = get_turnover_on_lead(leads, ca_payment_analytic)
-    leads = get_marginality(leads)
-    with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
-        pkl.dump(leads, f)
+# @log_execution_time('calculate_channel_expense')
+# def calculate_channel_expense():
+#     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+#         leads = pkl.load(f)
+#     with open(os.path.join(RESULTS_FOLDER, 'crops.pkl'), 'rb') as f:
+#         crops = pkl.load(f)
+#     with open(os.path.join(RESULTS_FOLDER, 'trafficologists.pkl'), 'rb') as f:
+#         trafficologists = pkl.load(f)
+#     leads = calculate_crops_expenses(leads, crops)
+#     leads = calculate_trafficologists_expenses(leads, trafficologists)
+#     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+#         pkl.dump(leads, f)
+
+# @log_execution_time('calculate_turnover_on_lead')
+# def calculate_turnover_on_lead():
+#     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+#         leads = pkl.load(f)
+#     with open(os.path.join(RESULTS_FOLDER, 'ca_payment_analytic.pkl'), 'rb') as f:
+#         ca_payment_analytic = pkl.load(f)
+#     leads = get_turnover_on_lead(leads, ca_payment_analytic)
+#     leads = get_marginality(leads)
+#     with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'wb') as f:
+#         pkl.dump(leads, f)
 
 @log_execution_time('marginality')
 def marginality():
@@ -272,8 +279,8 @@ payments_table_operator = PythonOperator(task_id='load_payments_table', python_c
 
 payments_accumulation_operator = PythonOperator(task_id='payments_accumulation', python_callable=payments_accumulation, dag=dag)
 
-channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
-turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
+# channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
+# turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
 
 clean_data_operator = PythonOperator(task_id='load_data', python_callable=load_data, dag=dag)
 channels_summary_operator = PythonOperator(task_id='channels_summary', python_callable=channels_summary, dag=dag)
@@ -300,22 +307,33 @@ statuses_operator >> clean_data_operator
 ca_payment_analytic_operator >> clean_data_operator
 payments_table_operator >> clean_data_operator
 
-clean_data_operator >> channel_expense_operator
-clean_data_operator >> turnover_on_lead_operator
+# clean_data_operator >> channel_expense_operator
+#  clean_data_operator >> turnover_on_lead_operator
 
 clean_data_operator >> audience_type_by_date_operator
 clean_data_operator >> audience_type_operator
 clean_data_operator >> audience_type_percent_operator
 
-turnover_on_lead_operator >> payments_accumulation_operator
-turnover_on_lead_operator >> channels_summary_operator
-turnover_on_lead_operator >> channels_detailed_operator
-turnover_on_lead_operator >> marginality_operator
+clean_data_operator >> payments_accumulation_operator
+clean_data_operator >> channels_summary_operator
+clean_data_operator >> channels_detailed_operator
+clean_data_operator >> marginality_operator
+# turnover_on_lead_operator >> payments_accumulation_operator
+# turnover_on_lead_operator >> channels_summary_operator
+# turnover_on_lead_operator >> channels_detailed_operator
+# turnover_on_lead_operator >> marginality_operator
 
-channel_expense_operator >> segments_operator 
-channel_expense_operator >> clusters_operator
-channel_expense_operator >> landings_operator
-channel_expense_operator >> segments_stats_operator
-channel_expense_operator >> turnover_operator
-channel_expense_operator >> leads_ta_stats
-channel_expense_operator >> traffic_sources
+clean_data_operator >> segments_operator
+clean_data_operator >> clusters_operator
+clean_data_operator >> landings_operator
+clean_data_operator >> segments_stats_operator
+clean_data_operator >> turnover_operator
+clean_data_operator >> leads_ta_stats
+clean_data_operator >> traffic_sources
+# channel_expense_operator >> segments_operator
+# channel_expense_operator >> clusters_operator
+# channel_expense_operator >> landings_operator
+# channel_expense_operator >> segments_stats_operator
+# channel_expense_operator >> turnover_operator
+# channel_expense_operator >> leads_ta_stats
+# channel_expense_operator >> traffic_sources
