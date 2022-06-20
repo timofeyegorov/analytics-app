@@ -308,7 +308,7 @@ ca_payment_analytic_operator >> clean_data_operator
 payments_table_operator >> clean_data_operator
 
 # clean_data_operator >> channel_expense_operator
-# clean_data_operator >> turnover_on_lead_operator
+#  clean_data_operator >> turnover_on_lead_operator
 
 clean_data_operator >> audience_type_by_date_operator
 clean_data_operator >> audience_type_operator
