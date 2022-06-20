@@ -64,36 +64,37 @@ def channels_summary():
         with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'r') as f:
             filter_data = json.load(f)
         utm_source = filter_data['utms']['utm_source']
-        if utm_source == '':
-            utm_source = 'utm_source'
-        utm_source_value = filter_data['utms']['utm_source_value']
+        source = filter_data['utms']['source']
         utm_2 = filter_data['utms']['utm_2']
 
-        channels_summary_detailed = calculate_channels_summary_detailed(table, utm_source, utm_source_value, utm_2,
+        channels_summary_detailed = calculate_channels_summary_detailed(table, utm_source, source, utm_2,
                                                                         utm_2_value)
-        utms = ['канал', 'utm_source']
         utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term']
         return render_template(
             'channels_summary.html',
             tables=tables, channels_summary_detailed=channels_summary_detailed, enumerate=enumerate,
-            utm_2_value=utm_2_value, utms=utms, utms2=utms2, filter_data=filter_data
+            utm_2_value=utm_2_value, utms2=utms2, filter_data=filter_data
             # date_start=date_start, date_end=date_end
         )
     # Если жмем на общую фильтрацию
     except TypeError:
-        # Значние доп кнопки - пустое
+        # Значние доп кнопки - пустое - загружаем таблицу лидов
+        with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
+            table = pkl.load(f)
+        unique_sources = [''] + table['account'].unique().tolist() # Список уникальных трафиколгов
         utm_2_value = ''
-        utms = ['канал', 'utm_source']
-        utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term']
+        utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'] # Список меток для разбики
         # Получаем значения остальных значений полей
         date_start = request.args.get('date_start')
         date_end = request.args.get('date_end')
-        utm_source = request.args.get('utm_1')
-        utm_source_value = request.args.get('utm_value_1')
-        utm_2 = request.args.get('utm_2')
-
-        if utm_source_value is None:
-            utm_source_value = ''
+        utm_source = request.args.get('utm_source') # Значение utm_source
+        source = request.args.get('source') # Имя канала
+        utm_2 = request.args.get('utm_2') # Значение utm для разбивки
+        # Если значение полей None - меняем их на ''
+        if utm_source is None:
+            utm_source = ''
+        if source is None:
+            source = ''
         if utm_2 is None:
             utm_2 = ''
         if date_start is None:
@@ -103,30 +104,28 @@ def channels_summary():
         # Сохраняем значения полей в списке
         filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
                        'utms': {'utm_source': utm_source,
-                                'utm_source_value': utm_source_value,
+                                'source': source,
                                 'utm_2': utm_2,
-                                'utm_2_value': utm_2_value}}
+                                'utm_2_value': utm_2_value},
+                       'unique_sources': unique_sources}
 
         with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
             json.dump(filter_data, f)
-        with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
-            table = pkl.load(f)
 
-        if date_start or date_end or utm_source_value or utm_2:
+        if date_start or date_end or utm_source or source or utm_2:
             # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
             table.created_at = pd.to_datetime(table.created_at).dt.normalize()
             if date_start:
                 table = table[table.created_at >= datetime.strptime(date_start, '%Y-%m-%d')]
             if date_end:
                 table = table[table.created_at <= datetime.strptime(date_end, '%Y-%m-%d')]
-            if utm_source_value:
-                if utm_source == 'канал':
-                    table = table[table['trafficologist'] == utm_source_value]
-                else:
-                    table = table[table[utm_source] == utm_source_value]
+            if utm_source:
+                table = table[table['utm_source'] == utm_source]
+            elif source:
+                table = table[table['account'] == source]
             if len(table) == 0:
                 return render_template('channels_summary.html',
-                                       filter_data=filter_data,
+                                       filter_data=filter_data, utms2=utms2,
                                        error='Нет данных для заданного периода', channels_summary_detailed='')
             if utm_2:
                 tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
@@ -140,7 +139,7 @@ def channels_summary():
             return render_template(
                 'channels_summary.html',
                 tables=tables, date_start=date_start, date_end=date_end,
-                utms=utms, utms2=utms2, enumerate=enumerate,
+                utms2=utms2, enumerate=enumerate,
                 channels_summary_detailed='', filter_data=filter_data
             )
         tables = get_channels_summary()
@@ -150,7 +149,7 @@ def channels_summary():
             pkl.dump(tables, f)
         return render_template(
             'channels_summary.html',
-            tables=tables, utms=utms, utms2=utms2, enumerate=enumerate,
+            tables=tables, utms2=utms2, enumerate=enumerate,
             channels_summary_detailed='', filter_data=filter_data # date_start=date_start, date_end=date_end
         )
 

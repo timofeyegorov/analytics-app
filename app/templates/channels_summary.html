@@ -16,6 +16,34 @@
         <form method='get' action='/channels_summary'>
             <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
             <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
+                        <br>
+
+            <div class="filter-some" id="some-0">
+                <div><b>Utm_source</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;<b>Кабинет (label)</b></div>
+<!--                <div><b>Канал</b></div>-->
+                <input name='utm_source' value="{{ filter_data['utms']['utm_source'] }}" class="utm-values">
+                <select name='source' class="utms">
+                    {% for el in filter_data['unique_sources'] %}
+                    {% if el==filter_data['utms']['source'] %}
+                        <option value="{{ el }}" selected="selected">{{ el }}</option>
+                    {% else %}
+                        <option value="{{ el }}">{{ el }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+
+                <select name='utm_2' class="utms">
+                    {% for el in utms2 %}
+                    {% if el==filter_data['utms']['utm_2'] %}
+                        <option value="{{ el }}" selected="selected">{{ el }}</option>
+                    {% else %}
+                        <option value="{{ el }}">{{ el }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
             <button class="btn btn-primary">Обновить</button>
             {{ reset_button() }}
         </form>
@@ -28,16 +56,21 @@
             <br>
 
             <div class="filter-some" id="some-0">
-                <select name='utm_1' class="utms">
-                    {% for el in utms %}
-                    {% if el==filter_data['utms']['utm_source'] %}
+                <div><b>Utm_source</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;<b>Кабинет (label)</b></div>
+<!--                <div><b>Канал</b></div>-->
+                <input name='utm_source' value="{{ filter_data['utms']['utm_source'] }}" class="utm-values">
+                <select name='source' class="utms">
+                    {% for el in filter_data['unique_sources'] %}
+                    {% if el==filter_data['utms']['source'] %}
                         <option value="{{ el }}" selected="selected">{{ el }}</option>
                     {% else %}
                         <option value="{{ el }}">{{ el }}</option>
                     {% endif %}
                     {% endfor %}
                 </select>
-                <input name='utm_value_1' value="{{ filter_data['utms']['utm_source_value'] }}" class="utm-values">
+
                 <select name='utm_2' class="utms">
                     {% for el in utms2 %}
                     {% if el==filter_data['utms']['utm_2'] %}
