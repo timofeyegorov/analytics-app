@@ -84,6 +84,7 @@ def channels_summary():
         # Значние доп кнопки - пустое - загружаем таблицу лидов
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
+        unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
         utm_2_value = ''
         utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'] # Список меток для разбики
         # Получаем значения остальных значений полей
@@ -103,7 +104,12 @@ def channels_summary():
             date_start = ''
         if date_end is None:
             date_end = ''
-
+        filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                       'utms': {'utm_source': utm_source,
+                                'source': source,
+                                'utm_2': utm_2,
+                                'utm_2_value': utm_2_value},
+                       'unique_sources': unique_sources}
         if date_start or date_end or utm_source or source or utm_2:
             # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
             table.created_at = pd.to_datetime(table.created_at).dt.normalize()
@@ -117,7 +123,7 @@ def channels_summary():
                 table = table[table['account'] == source]
             if len(table) == 0:
                 return render_template('channels_summary.html',
-                                       filter_data='', utms2=utms2, additional_df='',
+                                       filter_data=filter_data, utms2=utms2, additional_df='',
                                        error='Нет данных для заданного периода', channels_summary_detailed_df='')
             if utm_2:
                 tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
