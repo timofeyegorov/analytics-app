@@ -6,7 +6,7 @@ from .leads_ta_stats import calculate_leads_ta_stats
 from .traffic_sources import calculate_traffic_sources
 from .segments_stats import calculate_segments_stats
 from .channels_summary import calculate_channels_summary
-from .channels_summary_detailed import calculate_channels_summary_detailed
+from .channels_summary_detailed import calculate_channels_summary_detailed, additional_table
 from .channels_detailed import calculate_channels_detailed
 from .payments_accumulation import calculate_payments_accumulation
 from .marginality import calculate_marginality

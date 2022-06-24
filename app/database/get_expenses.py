@@ -62,8 +62,8 @@ if __name__=='__main__':
     #     expenses = json.load(f)
     # pprint(expenses)
 
-    start_date = datetime.date(2022, 5, 1)
-    end_date = datetime.date(2022, 5, 31)
+    start_date = datetime.date(2022, 6, 1)
+    end_date = datetime.date(2022, 6, 12)
     #end_date = datetime.date.today()
     delta = datetime.timedelta(days=1)
     cur_day_start = start_date.strftime('%Y-%m-%d') + "T00:00:00+0300"
