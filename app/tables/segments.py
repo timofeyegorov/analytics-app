@@ -42,7 +42,7 @@ def calculate_segments(df):
     # Создаем заготовки результирующих датасетов из нулей
     data_category = np.zeros((len(df[column_name].unique())+1, len(created_columns))).astype('int')
     template_df = pd.DataFrame(data_category, columns=created_columns)
-    df_category =  template_df.copy() # Датасет для процентного кол-ва лидов
+    df_category = template_df.copy() # Датасет для процентного кол-ва лидов
     df_category.insert(0, 'Все', 0) # Столбец для подсчета всех лидов (сумма по всем таргетологам)
     df_category.insert(0, column_name, 0) # Столбец названия подкатегорий указанной категории
 

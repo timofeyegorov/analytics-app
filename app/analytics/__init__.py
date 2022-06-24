@@ -7,7 +7,7 @@ from .table_loaders import get_marginality, get_audience_type, get_audience_type
 from app.tables import calculate_clusters, calculate_segments, calculate_landings, calculate_traffic_sources
 from app.tables import calculate_turnover, calculate_leads_ta_stats, calculate_segments_stats
 from app.tables import calculate_channels_summary, calculate_channels_detailed
-from app.tables import calculate_channels_summary_detailed
+from app.tables import calculate_channels_summary_detailed, additional_table
 from app.tables.audience_type import calculate_audience_tables_by_date, calculate_audience_type_result, calculate_audience_type_percent_result
 from config import config
 from config import RESULTS_FOLDER
@@ -69,10 +69,13 @@ def channels_summary():
 
         channels_summary_detailed = calculate_channels_summary_detailed(table, utm_source, source, utm_2,
                                                                         utm_2_value)
+        channels_summary_detailed_df = channels_summary_detailed['1']
+        additional_df = channels_summary_detailed['2']
         utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term']
         return render_template(
             'channels_summary.html',
-            tables=tables, channels_summary_detailed=channels_summary_detailed, enumerate=enumerate,
+            tables=tables, channels_summary_detailed_df=channels_summary_detailed_df, additional_df=additional_df,
+            enumerate=enumerate,
             utm_2_value=utm_2_value, utms2=utms2, filter_data=filter_data
             # date_start=date_start, date_end=date_end
         )
@@ -81,7 +84,6 @@ def channels_summary():
         # Значние доп кнопки - пустое - загружаем таблицу лидов
         with open(os.path.join(RESULTS_FOLDER, 'leads.pkl'), 'rb') as f:
             table = pkl.load(f)
-        unique_sources = [''] + table['account'].unique().tolist() # Список уникальных трафиколгов
         utm_2_value = ''
         utms2 = ['', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'] # Список меток для разбики
         # Получаем значения остальных значений полей
@@ -115,8 +117,8 @@ def channels_summary():
                 table = table[table['account'] == source]
             if len(table) == 0:
                 return render_template('channels_summary.html',
-                                       filter_data=filter_data, utms2=utms2,
-                                       error='Нет данных для заданного периода', channels_summary_detailed='')
+                                       filter_data='', utms2=utms2, additional_df='',
+                                       error='Нет данных для заданного периода', channels_summary_detailed_df='')
             if utm_2:
                 tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
             else:
@@ -135,12 +137,19 @@ def channels_summary():
                 pkl.dump(table, f)
             with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'wb') as f:
                 pkl.dump(tables, f)
-
+            unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
+            # Сохраняем значения полей в списке
+            filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                           'utms': {'utm_source': utm_source,
+                                    'source': source,
+                                    'utm_2': utm_2,
+                                    'utm_2_value': utm_2_value},
+                           'unique_sources': unique_sources}
             return render_template(
                 'channels_summary.html',
                 tables=tables, date_start=date_start, date_end=date_end,
-                utms2=utms2, enumerate=enumerate,
-                channels_summary_detailed='', filter_data=filter_data
+                utms2=utms2, enumerate=enumerate, additional_df='',
+                channels_summary_detailed_df='', filter_data=filter_data
             )
         unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
         # Сохраняем значения полей в списке
@@ -158,7 +167,7 @@ def channels_summary():
         return render_template(
             'channels_summary.html',
             tables=tables, utms2=utms2, enumerate=enumerate,
-            channels_summary_detailed='', filter_data=filter_data # date_start=date_start, date_end=date_end
+            channels_summary_detailed_df='', additional_df='', filter_data=filter_data # date_start=date_start, date_end=date_end
         )
 
 @app.route('/channels_detailed')

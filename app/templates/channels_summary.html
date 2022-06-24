@@ -147,8 +147,12 @@
     </form>
 </div>
 
-{% if channels_summary_detailed != '' %}
-{{ wide_table(channels_summary_detailed)}}
+{% if additional_df != '' %}
+{{ wide_table(additional_df)}}
+{% endif %}
+
+{% if channels_summary_detailed_df != '' %}
+{{ wide_table(channels_summary_detailed_df)}}
 {% endif %}
 
 {% endblock %}
