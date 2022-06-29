@@ -8,8 +8,13 @@ def additional_table(df):
     with open(os.path.join(RESULTS_FOLDER, 'target_audience.pkl'), 'rb') as f:
         target_audience = pkl.load(f)
     column_names = ['quiz_answers2', 'quiz_answers3', 'quiz_answers4', 'quiz_answers5']
-    result = []
+    subcategory_names = {'quiz_answers2': 'Возраст', 'quiz_answers3': 'Профессия', 'quiz_answers4': 'Доход',
+                         'quiz_answers5': 'Обучение'}
+    output = {}
     for column_name in column_names:
+        result = [[subcategory_names[column_name] + ', Подкатегория',
+                   subcategory_names[column_name] + ', Абс. знач.',
+                   subcategory_names[column_name] + ', Процент']]
         if (column_name == df.columns[3]):
             subcategories = list(df[column_name].unique())
             subcategories.sort()
@@ -41,10 +46,24 @@ def additional_table(df):
             temp_vals = []
             temp_vals.append(subcategory)
             temp_vals.append(df[df[column_name] == subcategory].shape[0])
-            temp_vals.append(int(round(df[df[column_name] == subcategory].shape[0] / df.shape[0] * 100, 0)))
+            temp_vals.append(str(int(round(df[df[column_name] == subcategory].shape[0] / df.shape[0] * 100, 0))) + ' %')
             result.append(temp_vals)
-    output_df = pd.DataFrame(result)
-    return output_df
+        output.update({column_name: pd.DataFrame(result)})
+        # output.update({column_name: result})
+    res = pd.concat([output['quiz_answers2'], output['quiz_answers3'],
+                     output['quiz_answers4'],
+                     output['quiz_answers5']], axis=1)
+    res.columns = res.iloc[0, :].values
+    res = res.iloc[1:, :]
+    res.reset_index(drop=True, inplace=True)
+    res.fillna('', inplace=True)
+    # create tuples from MultiIndex
+    a = res.columns.str.split(', ', expand=True).values
+    # print(a)
+
+    # swap values in NaN and replace NAN to ''
+    res.columns = pd.MultiIndex.from_tuples([('', x[0]) if pd.isnull(x[1]) else x for x in a])
+    return res
 
 def calculate_channels_summary_detailed(df, utm_source, source, utm_2, utm_2_value):
     if (utm_source == '') & (source == '') & (utm_2 == ''):
