@@ -51,6 +51,16 @@ def getPlotCSV():
 
 @app.route('/channels_summary', methods=['GET', 'POST'])
 def channels_summary():
+    columns_dict = {'Канал': 'canal',
+                    'Лидов': 'lead',
+                    'Оборот*': 'turnover',
+                    'Оборот на лида': 'turnover_on_lead',
+                    'Трафик': 'traffic',
+                    'Остальное': 'other',
+                    'Прибыль': 'profit',
+                    'ROI': 'roi',
+                    'Маржинальность': 'marginality',
+                    'Цена лида': 'lead_cost'}
     try:
         # Если мини-форма по кнопке в столце возвращает значение
         utm_2_value = request.args.get('channel')[2:]
@@ -93,6 +103,7 @@ def channels_summary():
         utm_source = request.args.get('utm_source') # Значение utm_source
         source = request.args.get('source') # Имя канала
         utm_2 = request.args.get('utm_2') # Значение utm для разбивки
+        column = request.args.get('sort')
         # Если значение полей None - меняем их на ''
         if utm_source is None:
             utm_source = ''
@@ -109,7 +120,9 @@ def channels_summary():
                                 'source': source,
                                 'utm_2': utm_2,
                                 'utm_2_value': utm_2_value},
-                       'unique_sources': unique_sources}
+                       'unique_sources': unique_sources,
+                       'column': column,
+                       'columns_dict': columns_dict}
         if date_start or date_end or utm_source or source or utm_2:
             # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
             table.created_at = pd.to_datetime(table.created_at).dt.normalize()
@@ -136,7 +149,9 @@ def channels_summary():
                                     'source': source,
                                     'utm_2': utm_2,
                                     'utm_2_value': utm_2_value},
-                           'unique_sources': unique_sources}
+                           'unique_sources': unique_sources,
+                           'column': column,
+                           'columns_dict': columns_dict}
             with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
                 json.dump(filter_data, f)
             with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
@@ -150,7 +165,9 @@ def channels_summary():
                                     'source': source,
                                     'utm_2': utm_2,
                                     'utm_2_value': utm_2_value},
-                           'unique_sources': unique_sources}
+                           'unique_sources': unique_sources,
+                           'column': column,
+                           'columns_dict': columns_dict}
             return render_template(
                 'channels_summary.html',
                 tables=tables, date_start=date_start, date_end=date_end,
@@ -164,7 +181,9 @@ def channels_summary():
                                 'source': source,
                                 'utm_2': utm_2,
                                 'utm_2_value': utm_2_value},
-                       'unique_sources': unique_sources}
+                       'unique_sources': unique_sources,
+                       'column': column,
+                       'columns_dict': columns_dict}
         tables = get_channels_summary()
         with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
             pkl.dump(table, f)
