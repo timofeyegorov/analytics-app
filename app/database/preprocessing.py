@@ -68,6 +68,7 @@ def preprocess_dataframe(df):
     df.loc[df['quiz_answers3'] == 'IT сфера (разработчик, тестировщик, администратор и т.п.)', 'quiz_answers3'] = 'IT сфера'
 
     df.insert(19, 'trafficologist', 'Неизвестно')  # Добавляем столбец trafficologist для записи имени трафиколога
+    # 'Неизвестно' - канал с utm-меткой по которой не определяется трафиколог
     df.insert(20, 'account', 'Неизвестно 1')  # Добавляем столбец account для записи аккаунта трафиколога
     df.insert(21, 'target_class', 0)
 
@@ -81,6 +82,9 @@ def preprocess_dataframe(df):
                 if el in df.loc[i, 'traffic_channel']:  # Если элемент (метка) есть
                     df.loc[i, 'trafficologist'] = traff_data[traff_data['label'] == el]['name'].values[0]  # Заносим имя трафиколога по в ячейку по значению метки
                     df.loc[i, 'account'] = traff_data[traff_data['label'] == el]['title'].values[0]  # Заносим кабинет трафиколога по в ячейку по значению метки
+                else:
+                    if 'utm' not in df.loc[i, 'traffic_channel']:
+                        df.loc[i, 'account'] = 'Неизвестно 2' # Канал совсем без utm-метки
             except TypeError:  # Если в ячейке нет ссылки, а проставлен 0
                 links_list.append(df.loc[i, 'traffic_channel'])
 
