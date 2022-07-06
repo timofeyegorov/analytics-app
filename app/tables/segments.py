@@ -88,6 +88,7 @@ def calculate_segments(df):
 
       # Проходим в цикле по каждому таргетологу и его кабинету
       for traff_name in created_columns:
+
         df_category_val.loc[idx, traff_name] = df[(df[column_name] == subcategory_name) & ((df['trafficologist'] == traff_name) | (df['account'] == traff_name))].shape[0]
         df_category.loc[idx, traff_name] = round((df_category_val.loc[idx, traff_name]/(df[(df['trafficologist'] == traff_name) | (df['account'] == traff_name)].shape[0]))*100, 0).astype('int')
 

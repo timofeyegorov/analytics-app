@@ -61,6 +61,22 @@ def channels_summary():
                     'ROI': 'roi',
                     'Маржинальность': 'marginality',
                     'Цена лида': 'lead_cost'}
+    # try:
+    #     # Если мини-форма по кнопке в столце возвращает значение
+    #     sort_val = request.args.get('sort')
+    #     print(sort_val)
+    #     # Загружаем текущую разбивку по лидам для повторного отображения
+    #     with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'rb') as f:
+    #         tables = pkl.load(f)
+    #     tables = tables['Источники - сводная таблица'].sort_values(by=[columns_dict[sort_val]])
+    #     return render_template(
+    #         'channels_summary.html',
+    #         tables=tables, additional_df='',
+    #         enumerate=enumerate
+    #         # date_start=date_start, date_end=date_end
+    #     )
+    #
+    # except ValueError:
     try:
         # Если мини-форма по кнопке в столце возвращает значение
         utm_2_value = request.args.get('channel')[2:]
@@ -142,6 +158,10 @@ def channels_summary():
                 tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
             else:
                 tables = calculate_channels_summary(table)
+            # delta = (datetime.strptime(date_end, '%Y-%m-%d') - datetime.strptime(date_start, '%Y-%m-%d'))
+            # tables['Источники - сводная таблица'].insert(2, 'Лидов в день', 'Нет данных')
+            # tables['Источники - сводная таблица']['Лидов в день'] = \
+            #     round(tables['Источники - сводная таблица']['Лидов'] / delta.days, 1)
             unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
             # Сохраняем значения полей в списке
             filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},

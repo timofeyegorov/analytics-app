@@ -91,10 +91,10 @@
             <td style="background-color:#eeeeee"></td>
             {% for col in tables['Источники - сводная таблица'].columns %}
                 <td style="font-weight: bold; background-color:#eeeeee">
-                    {{ col }}
-<!--                    <form method='get' action="/channels_summary">-->
-<!--                       <input type="submit" name="sort" value="{{ col }}" />-->
-<!--                    </form>-->
+<!--                    {{ col }}-->
+                    <form method='get' action="/channels_summary">
+                       <input type="submit" name="sort" value="{{ col }}" />
+                    </form>
                 </td>
             {% endfor %}
             <td style="background-color:#eeeeee"></td>
