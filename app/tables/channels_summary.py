@@ -29,7 +29,7 @@ def calculate_channels_summary(df, mode='standart', utm=None):
     temp_.append(round(temp_[2] - temp_[4] - temp_[5])) # Прибыль
     temp_.append(round(temp_[6] / temp_[1])) # "Прибыль на лида" = Прибыль / Количество лидов
     temp_.append(round((temp_[2] / (temp_[4] + temp_[5]) - 1) * 100)  if (temp_[4] + temp_[5]) != 0 else 0) # ROI
-    temp_.append(round((temp_[7] / 100) / (1 + (temp_[7] / 100)) * 100) if (1 + (temp_[7] / 100)) != 0 else 0) # Маржинальность
+    temp_.append(round((temp_[8] / 100) / (1 + (temp_[8] / 100)) * 100) if (1 + (temp_[8] / 100)) != 0 else 0) # Маржинальность
     temp_.append(round(temp_[4] / temp_[1])) # Цена лида = Трафик / Количество лидов
     values.append(temp_)
     for el in iterable_variable:
@@ -46,7 +46,7 @@ def calculate_channels_summary(df, mode='standart', utm=None):
         temp_.append(round(temp_[2] - temp_[4] - temp_[5]))  # Прибыль
         temp_.append(round(temp_[6] / temp_[1]))  # "Прибыль на лида" = Прибыль / Количество лидов
         temp_.append(round((temp_[2] / (temp_[4] + temp_[5]) - 1) * 100) if (temp_[4] + temp_[5]) != 0 else 0)  # ROI
-        temp_.append(round((temp_[7] / 100) / (1 + (temp_[7] / 100)) * 100) if (1 + (temp_[7] / 100)) != 0 else 0)  # Маржинальность
+        temp_.append(round((temp_[8] / 100) / (1 + (temp_[8] / 100)) * 100) if (1 + (temp_[8] / 100)) != 0 else 0)  # Маржинальность
         temp_.append(round(temp_[4] / temp_[1]))  # Цена лида = Трафик / Количество лидов
         values.append(temp_)
     output_df = pd.DataFrame(columns=['Канал', 'Лидов', 'Оборот*', 'Оборот на лида', 'Трафик', 'Остальное', 'Прибыль',
@@ -54,3 +54,7 @@ def calculate_channels_summary(df, mode='standart', utm=None):
                                'Маржинальность', 'Цена лида'],
                       data=values)
     return {'Источники - сводная таблица': output_df}
+
+# def check_expenses_and_leads(df):
+#     unique_trafficologists = df['trafficologist'].unique().tolist()
+#     for trafficologist in unique_trafficologists:
