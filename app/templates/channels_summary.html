@@ -3,7 +3,9 @@
 {% from 'macros/last_updated.html' import last_updated %}
 
 {% extends 'base.html' %}
+
 {% block title %}Источники - сводная таблица{% endblock %}
+
 {% block content %}
 <style>
     table thead th { position: sticky; top: 0; z-index: 1; }
@@ -86,9 +88,9 @@
             {{ reset_button() }}
         </form>
 
-    <table>
+    <table class="{% if need_short_table %}table_short{% if request.cookies.get('table_short') == 'true' %} short{% endif %}{% endif %}">
         <tr>
-            <td style="background-color:#eeeeee"></td>
+            <td style="background-color:#eeeeee">{% if need_short_table %}<button class="short-full-btn"></button>{% endif %}</td>
             {% for col in tables['Источники - сводная таблица'].columns %}
                 <td style="font-weight: bold; background-color:#eeeeee">
                     {{ col }}
@@ -130,7 +132,7 @@
             <tr>
                 <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
                 {% for col in row %}
-                <td> {{ col }} </td>
+                <td{% if is_tuple(col) %} style="{{ col.0 }}:{{ col.1 }}"{% endif %}> {% if not is_tuple(col) %}{{ col }}{% endif %} </td>
                 {% endfor %}
                 <td>
                     <form method='get' action="/channels_summary">
@@ -161,3 +163,11 @@
 {% endif %}
 
 {% endblock %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='css/channels_summary.css') }}" rel="stylesheet">
+{% endblock css %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/channels_summary.js') }}"></script>
+{% endblock js %}
