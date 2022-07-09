@@ -104,6 +104,7 @@ def get_table_one_campaign(campaign, table, **kwargs):
 
 @app.route("/channels_summary", methods=["GET", "POST"])
 def channels_summary():
+<<<<<<< Updated upstream
     columns_dict = {
         "Канал": "canal",
         "Лидов": "lead",
@@ -117,6 +118,34 @@ def channels_summary():
         "Цена лида": "lead_cost",
     }
     need_short_table = False
+=======
+    columns_dict = {'Канал': 'canal',
+                    'Лидов': 'lead',
+                    'Оборот*': 'turnover',
+                    'Оборот на лида': 'turnover_on_lead',
+                    'Трафик': 'traffic',
+                    'Остальное': 'other',
+                    'Прибыль': 'profit',
+                    'ROI': 'roi',
+                    'Маржинальность': 'marginality',
+                    'Цена лида': 'lead_cost'}
+    # try:
+    #     # Если мини-форма по кнопке в столце возвращает значение
+    #     sort_val = request.args.get('sort')
+    #     print(sort_val)
+    #     # Загружаем текущую разбивку по лидам для повторного отображения
+    #     with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'rb') as f:
+    #         tables = pkl.load(f)
+    #     tables = tables['Источники - сводная таблица'].sort_values(by=[columns_dict[sort_val]])
+    #     return render_template(
+    #         'channels_summary.html',
+    #         tables=tables, additional_df='',
+    #         enumerate=enumerate
+    #         # date_start=date_start, date_end=date_end
+    #     )
+    #
+    # except ValueError:
+>>>>>>> Stashed changes
     try:
         # Если мини-форма по кнопке в столбце возвращает значение
         utm_2_value = request.args.get("channel")[2:]
@@ -205,6 +234,7 @@ def channels_summary():
             elif source:
                 table = table[table["account"] == source]
             if len(table) == 0:
+<<<<<<< Updated upstream
                 return render_template(
                     "channels_summary.html",
                     filter_data=filter_data,
@@ -232,6 +262,50 @@ def channels_summary():
 
             tables = calculate_channels_summary(
                 table, column_unique=column_unique, data_month=data_month
+=======
+                return render_template('channels_summary.html',
+                                       filter_data=filter_data, utms2=utms2, additional_df='',
+                                       error='Нет данных для заданного периода', channels_summary_detailed_df='')
+            if utm_2:
+                tables = calculate_channels_summary(table, mode='utm_breakdown', utm=utm_2)
+            else:
+                tables = calculate_channels_summary(table)
+            # delta = (datetime.strptime(date_end, '%Y-%m-%d') - datetime.strptime(date_start, '%Y-%m-%d'))
+            # tables['Источники - сводная таблица'].insert(2, 'Лидов в день', 'Нет данных')
+            # tables['Источники - сводная таблица']['Лидов в день'] = \
+            #     round(tables['Источники - сводная таблица']['Лидов'] / delta.days, 1)
+            unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
+            # Сохраняем значения полей в списке
+            filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                           'utms': {'utm_source': utm_source,
+                                    'source': source,
+                                    'utm_2': utm_2,
+                                    'utm_2_value': utm_2_value},
+                           'unique_sources': unique_sources,
+                           'column': column,
+                           'columns_dict': columns_dict}
+            with open(os.path.join(RESULTS_FOLDER, 'filter_data.txt'), 'w') as f:
+                json.dump(filter_data, f)
+            with open(os.path.join(RESULTS_FOLDER, 'current_leads.pkl'), 'wb') as f:
+                pkl.dump(table, f)
+            with open(os.path.join(RESULTS_FOLDER, 'current_channel_summary.pkl'), 'wb') as f:
+                pkl.dump(tables, f)
+            unique_sources = [''] + table['account'].unique().tolist()  # Список уникальных трафиколгов
+            # Сохраняем значения полей в списке
+            filter_data = {'filter_dates': {'date_start': date_start, 'date_end': date_end},
+                           'utms': {'utm_source': utm_source,
+                                    'source': source,
+                                    'utm_2': utm_2,
+                                    'utm_2_value': utm_2_value},
+                           'unique_sources': unique_sources,
+                           'column': column,
+                           'columns_dict': columns_dict}
+            return render_template(
+                'channels_summary.html',
+                tables=tables, date_start=date_start, date_end=date_end,
+                utms2=utms2, enumerate=enumerate, additional_df='',
+                channels_summary_detailed_df='', filter_data=filter_data
+>>>>>>> Stashed changes
             )
 
             # Список уникальных трафиколгов
