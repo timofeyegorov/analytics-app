@@ -1,0 +1,29 @@
+table.table_short.short > tbody > tr > td:nth-child(4),
+table.table_short.short > tbody > tr > td:nth-child(6),
+table.table_short.short > tbody > tr > td:nth-child(7),
+table.table_short.short > tbody > tr > td:nth-child(10) {
+    display:none;
+}
+table.table_short > tbody > tr > td:nth-child(13),
+table.table_short > tbody > tr > td:nth-child(14),
+table.table_short > tbody > tr > td:nth-child(15),
+table.table_short > tbody > tr > td:nth-child(16),
+table.table_short > tbody > tr > td:nth-child(17) {
+    display:none;
+}
+table.table_short.short > tbody > tr > td:nth-child(13),
+table.table_short.short > tbody > tr > td:nth-child(14),
+table.table_short.short > tbody > tr > td:nth-child(15),
+table.table_short.short > tbody > tr > td:nth-child(16),
+table.table_short.short > tbody > tr > td:nth-child(17) {
+    display:table-cell;
+}
+table.table_short .short-full-btn:before {
+    display:block;
+    content:'> <';
+    white-space:nowrap;
+    font-weight:bold;
+}
+table.table_short.short .short-full-btn:before {
+    content:'< >';
+}
