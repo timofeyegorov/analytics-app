@@ -313,7 +313,9 @@ class CalculateTarget(Calculate):
         return
 
 
-def calculate_channels_summary(df, column_unique: str, data_month: dict = None):
+def calculate_channels_summary(
+    df, column_unique: str = "trafficologist", data_month: dict = None
+):
     if not data_month:
         data_month = {}
 
