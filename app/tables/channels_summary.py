@@ -186,7 +186,7 @@ class Calculate:
     @property
     def lead_price(self) -> int:
         if self._lead_price is None:
-            self._lead_price = round(self.traffic / self.leads)
+            self._lead_price = round(self.traffic / self.leads) if self.leads else 0
         return self._lead_price
 
 
