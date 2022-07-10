@@ -194,21 +194,31 @@ class CalculateTotal(Calculate):
     @property
     def leads(self) -> int:
         if self._leads is None:
-            self._leads = self._data.shape[0]
+            self._leads = self._data.shape[0] if self._data is not None else 0
         return self._leads
 
     @property
     def turnover(self) -> int:
         if self._turnover is None:
-            self._turnover = round(self._data["turnover_on_lead"].sum())
+            self._turnover = (
+                round(self._data["turnover_on_lead"].sum())
+                if self._data is not None
+                else 0
+            )
         return self._turnover
 
     @property
     def traffic(self) -> int:
         if self._traffic is None:
-            self._traffic = round(
-                self._data["channel_expense"].sum() * 1.2
-                + self._data[self._data["channel_expense"] == 0].shape[0] * 400 * 1.2
+            self._traffic = (
+                round(
+                    self._data["channel_expense"].sum() * 1.2
+                    + self._data[self._data["channel_expense"] == 0].shape[0]
+                    * 400
+                    * 1.2
+                )
+                if self._data is not None
+                else 0
             )
         return self._traffic
 
@@ -237,33 +247,45 @@ class CalculateTarget(Calculate):
     @property
     def leads(self) -> int:
         if self._leads is None:
-            self._leads = self._data[self._data[self._column] == self.name].shape[0]
+            self._leads = (
+                self._data[self._data[self._column] == self.name].shape[0]
+                if self._data is not None
+                else 0
+            )
         return self._leads
 
     @property
     def turnover(self) -> int:
         if self._turnover is None:
-            self._turnover = round(
-                self._data[self._data[self._column] == self.name][
-                    "turnover_on_lead"
-                ].sum()
+            self._turnover = (
+                round(
+                    self._data[self._data[self._column] == self.name][
+                        "turnover_on_lead"
+                    ].sum()
+                )
+                if self._data is not None
+                else 0
             )
         return self._turnover
 
     @property
     def traffic(self) -> int:
         if self._traffic is None:
-            self._traffic = round(
-                self._data[self._data[self._column] == self.name][
-                    "channel_expense"
-                ].sum()
-                * 1.2
-                + self._data[
-                    (self._data[self._column] == self.name)
-                    & (self._data["channel_expense"] == 0)
-                ].shape[0]
-                * 400
-                * 1.2
+            self._traffic = (
+                round(
+                    self._data[self._data[self._column] == self.name][
+                        "channel_expense"
+                    ].sum()
+                    * 1.2
+                    + self._data[
+                        (self._data[self._column] == self.name)
+                        & (self._data["channel_expense"] == 0)
+                    ].shape[0]
+                    * 400
+                    * 1.2
+                )
+                if self._data is not None
+                else 0
             )
         return self._traffic
 
