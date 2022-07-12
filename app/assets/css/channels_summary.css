@@ -18,6 +18,31 @@ table.table_short.short > tbody > tr > td:nth-child(16),
 table.table_short.short > tbody > tr > td:nth-child(17) {
     display:table-cell;
 }
+table.table_short > tbody > tr > td.colored {
+    font-weight:bold !important;
+    border-color:inherit !important;
+}
+table.table_short > tbody > tr > td.high {
+    color:#4caf50 !important;
+    background:rgba(76,175,80,.1) !important;
+}
+table.table_short > tbody > tr > td.middle {
+    color:#2196f3 !important;
+    background:rgba(33,150,243,.1) !important;
+}
+table.table_short > tbody > tr > td.low {
+    color:#f44336 !important;
+    background:rgba(244,67,54,.1) !important;
+}
+table.table_short > tbody > tr > td.suppose {
+    color:#4caf50 !important;
+}
+table.table_short > tbody > tr > td.pending {
+    color:#2196f3 !important;
+}
+table.table_short > tbody > tr > td.disable {
+    color:#f44336 !important;
+}
 table.table_short .short-full-btn:before {
     display:block;
     content:'> <';
