@@ -76,9 +76,9 @@ def getPlotCSV():
         )
 
 
-def get_table_one_campaign(campaign, table, **kwargs):
+def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     table.created_at = pd.to_datetime(table.created_at).dt.normalize()
-    table = table[table["utm_campaign"] == campaign]
+    table = table[table[column_unique] == campaign]
 
     date_start = kwargs.get("date_start")
     date_end = kwargs.get("date_end")
@@ -116,7 +116,6 @@ def channels_summary():
         "Маржинальность": "marginality",
         "Цена лида": "lead_cost",
     }
-    need_short_table = False
     try:
         # Если мини-форма по кнопке в столбце возвращает значение
         utm_2_value = request.args.get("channel")[2:]
@@ -145,7 +144,6 @@ def channels_summary():
         return render_template(
             "channels_summary.html",
             tables=tables,
-            need_short_table=need_short_table,
             channels_summary_detailed_df=channels_summary_detailed_df,
             additional_df=additional_df,
             enumerate=enumerate,
@@ -155,7 +153,7 @@ def channels_summary():
             # date_start=date_start, date_end=date_end
         )
     # Если жмем на общую фильтрацию
-    except TypeError:
+    except TypeError as _e:
         # Значение доп. кнопки - пустое - загружаем таблицу лидов
         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
             table = pkl.load(f)
@@ -189,7 +187,6 @@ def channels_summary():
         }
 
         if date_start or date_end or utm_source or source or utm_2:
-            need_short_table = True
             # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
             table.created_at = pd.to_datetime(table.created_at).dt.normalize()
             if date_start:
@@ -208,7 +205,6 @@ def channels_summary():
                 return render_template(
                     "channels_summary.html",
                     filter_data=filter_data,
-                    need_short_table=need_short_table,
                     utms2=utms2,
                     additional_df="",
                     error="Нет данных для заданного периода",
@@ -223,6 +219,7 @@ def channels_summary():
             for campaign in table[column_unique].unique():
                 data_month[campaign] = get_table_one_campaign(
                     campaign,
+                    column_unique,
                     table_month_data.copy(True),
                     date_start=date_start,
                     date_end=date_end,
@@ -279,7 +276,6 @@ def channels_summary():
             return render_template(
                 "channels_summary.html",
                 tables=tables,
-                need_short_table=need_short_table,
                 date_start=date_start,
                 date_end=date_end,
                 utms2=utms2,
@@ -316,7 +312,6 @@ def channels_summary():
         return render_template(
             "channels_summary.html",
             tables=tables,
-            need_short_table=need_short_table,
             utms2=utms2,
             enumerate=enumerate,
             channels_summary_detailed_df="",

@@ -88,9 +88,9 @@
             {{ reset_button() }}
         </form>
 
-    <table class="{% if need_short_table %}table_short{% if request.cookies.get('table_short') == 'true' %} short{% endif %}{% endif %}">
+    <table class="table_short{% if request.cookies.get('table_short') == 'true' %} short{% endif %}">
         <tr>
-            <td style="background-color:#eeeeee">{% if need_short_table %}<button class="short-full-btn"></button>{% endif %}</td>
+            <td style="background-color:#eeeeee"><button class="short-full-btn"></button></td>
             {% for col in tables['Источники - сводная таблица'].columns %}
                 <td style="font-weight: bold; background-color:#eeeeee">
 <!--                    {{ col }}-->
@@ -107,7 +107,7 @@
             <tr>
                 <td style="font-weight: bold; background-color:#AFEEEE"> {{ i }} </td>
                 {% for col in row %}
-                <td style="font-weight: bold; background-color:#AFEEEE"> {{ col }} </td>
+                <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %} style="font-weight: bold; background-color:#AFEEEE"> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
                 {% endfor %}
                 <td style="font-weight: bold; background-color:#AFEEEE">
                     <form method='get' action="/channels_summary">
@@ -132,7 +132,7 @@
             <tr>
                 <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
                 {% for col in row %}
-                <td{% if is_tuple(col) %} style="{{ col.0 }}:{{ col.1 }}"{% endif %}> {% if not is_tuple(col) %}{{ col }}{% endif %} </td>
+                <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %}> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
                 {% endfor %}
                 <td>
                     <form method='get' action="/channels_summary">

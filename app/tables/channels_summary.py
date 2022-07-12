@@ -8,14 +8,14 @@ from pandas import DataFrame
 
 
 class StatusColor(str, Enum):
-    high = "8bc34a"
-    middle = "ffeb3b"
-    low = "f44336"
+    high = "high"
+    middle = "middle"
+    low = "low"
 
 
 class Action(str, Enum):
-    suppose = "Гипотезы"
-    disable = "Отключить"
+    suppose = "Оставить + 2 гипотезы"
+    disable = "Выключить + 2 гипотезы"
     pending = "Ждем статистику"
 
 
@@ -114,19 +114,17 @@ class Calculate:
             self.roi,
             self.marginality,
             self.lead_price,
-            ("background-color", f"#{self.positive_period.value}")
+            (self.profit_on_lead, self.positive_period.value)
             if self.positive_period
             else "",
-            ("background-color", f"#{self.positive_month.value}")
+            (self._data_month.profit_on_lead, self.positive_month.value)
             if self.positive_month
             else "",
-            ("background-color", f"#{self.activity_period.value}")
-            if self.activity_period
-            else "",
-            ("background-color", f"#{self.activity_month.value}")
+            (self.leads, self.activity_period.value) if self.activity_period else "",
+            (self._data_month.leads, self.activity_month.value)
             if self.activity_month
             else "",
-            self.action.value if self.action else "",
+            (self.action.value, self.action.name) if self.action else "",
         ]
 
     @property
