@@ -10,6 +10,11 @@ import redis
 from config import RESULTS_FOLDER
 import os
 import pickle as pkl
+from celery import Celery
+from celery.schedules import crontab
+from datetime import datetime, timedelta
+from app.plugins.tg_report import TGReportChannelsSummary
+
 
 # def fig_leads_dynamics():
 #   result = get_leads_data()
@@ -24,6 +29,8 @@ import pickle as pkl
 #   return graphJSON
 
 app = Flask(__name__, static_url_path="/assets", static_folder="assets")
+app.config.from_object("config")
+
 
 redis_config = config["redis"]
 redis_db = redis.StrictRedis(
@@ -34,6 +41,48 @@ redis_db = redis.StrictRedis(
 )
 
 app.jinja_env.globals["redis_db"] = redis_db
+
+
+celery_client = Celery(
+    app.name,
+    broker=app.config["CELERY_BROKER_URL"],
+    backend=app.config["CELERY_BACKEND_URL"],
+)
+celery_client.conf.update(
+    {
+        **app.config,
+        "beat_schedule": {
+            "report-channels-summary": {
+                "task": "app.report_channels_summary",
+                "schedule": crontab(minute="0", hour="11", day_of_week="1,4"),
+            }
+        },
+    }
+)
+
+
+@celery_client.task
+def report_channels_summary(debug: bool = False):
+    datetime_now = datetime.now()
+
+    if debug:
+        datetime_now = datetime_now - timedelta(weeks=2)
+        days_delta = 7
+    else:
+        if datetime_now.weekday() == 0:
+            days_delta = 4
+        elif datetime_now.weekday() == 3:
+            days_delta = 3
+        else:
+            days_delta = 0
+
+    time_kwargs = {"microsecond": 0, "second": 0, "minute": 0, "hour": 11}
+
+    date_from = datetime_now.replace(**time_kwargs) - timedelta(days=days_delta)
+    date_to = datetime_now.replace(**time_kwargs)
+
+    report = TGReportChannelsSummary(daterange=(date_from, date_to))
+    report.send()
 
 
 @app.route("/")
