@@ -5,3 +5,4 @@ logs/
 webserver_config.py
 *pkl
 *json
+/.idea/
