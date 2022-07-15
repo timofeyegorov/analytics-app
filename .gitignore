@@ -3,5 +3,5 @@ config.py
 logs/
 *standalone*
 webserver_config.py
-*pkl
-*json
+celerybeat-schedule
+/dags/results/

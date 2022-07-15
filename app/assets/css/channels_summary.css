@@ -1,54 +1,25 @@
-table.table_short.short > tbody > tr > td:nth-child(4),
-table.table_short.short > tbody > tr > td:nth-child(6),
-table.table_short.short > tbody > tr > td:nth-child(7),
-table.table_short.short > tbody > tr > td:nth-child(10) {
-    display:none;
-}
-table.table_short > tbody > tr > td:nth-child(13),
-table.table_short > tbody > tr > td:nth-child(14),
-table.table_short > tbody > tr > td:nth-child(15),
-table.table_short > tbody > tr > td:nth-child(16),
-table.table_short > tbody > tr > td:nth-child(17) {
-    display:none;
-}
-table.table_short.short > tbody > tr > td:nth-child(13),
-table.table_short.short > tbody > tr > td:nth-child(14),
-table.table_short.short > tbody > tr > td:nth-child(15),
-table.table_short.short > tbody > tr > td:nth-child(16),
-table.table_short.short > tbody > tr > td:nth-child(17) {
-    display:table-cell;
-}
-table.table_short > tbody > tr > td.colored {
+table > tbody > tr > td.colored {
     font-weight:bold !important;
     border-color:inherit !important;
 }
-table.table_short > tbody > tr > td.high {
+table > tbody > tr > td.high {
     color:#4caf50 !important;
     background:rgba(76,175,80,.1) !important;
 }
-table.table_short > tbody > tr > td.middle {
-    color:#2196f3 !important;
-    background:rgba(33,150,243,.1) !important;
+table > tbody > tr > td.middle {
+    color:#ff9800 !important;
+    background:rgba(255,152,0,.1) !important;
 }
-table.table_short > tbody > tr > td.low {
+table > tbody > tr > td.low {
     color:#f44336 !important;
     background:rgba(244,67,54,.1) !important;
 }
-table.table_short > tbody > tr > td.suppose {
+table > tbody > tr > td.suppose {
     color:#4caf50 !important;
 }
-table.table_short > tbody > tr > td.pending {
-    color:#2196f3 !important;
+table > tbody > tr > td.pending {
+    color:#ff9800 !important;
 }
-table.table_short > tbody > tr > td.disable {
+table > tbody > tr > td.disable {
     color:#f44336 !important;
-}
-table.table_short .short-full-btn:before {
-    display:block;
-    content:'> <';
-    white-space:nowrap;
-    font-weight:bold;
-}
-table.table_short.short .short-full-btn:before {
-    content:'< >';
 }

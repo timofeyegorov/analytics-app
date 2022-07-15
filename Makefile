@@ -71,3 +71,5 @@ clear_builder_cache:
 
 run_debug:
 	./debug.py
+
+containers_restart: remove build create start
