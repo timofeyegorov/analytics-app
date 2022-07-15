@@ -5,4 +5,4 @@ logs/
 webserver_config.py
 /.idea/
 celerybeat-schedule
-/dags/results/
+/app/dags/results/
