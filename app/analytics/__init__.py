@@ -116,6 +116,14 @@ def channels_summary():
         "Маржинальность": "marginality",
         "Цена лида": "lead_cost",
     }
+
+    date_start = request.args.get("date_start", default="")
+    date_end = request.args.get("date_end", default="")
+    utm_source = request.args.get("utm_source", default="")  # Значение utm_source
+    source = request.args.get("source", default="")  # Имя канала
+    utm_2 = request.args.get("utm_2")  # Значение utm для разбивки
+    column = request.args.get("sort")
+
     try:
         # Если мини-форма по кнопке в столбце возвращает значение
         utm_2_value = request.args.get("channel")[2:]
@@ -127,13 +135,27 @@ def channels_summary():
         # Загружаем отфильтрованную ранее базу лидов для расчета
         with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "rb") as f:
             table = pkl.load(f)
+
         # Загружаем значения фильтров
-        print(os.path.join(RESULTS_FOLDER, "filter_data.txt"))
-        with open(os.path.join(RESULTS_FOLDER, "filter_data.txt"), "r") as f:
-            filter_data = json.load(f)
-        utm_source = filter_data["utms"]["utm_source"]
-        source = filter_data["utms"]["source"]
-        utm_2 = filter_data["utms"]["utm_2"]
+        # print(os.path.join(RESULTS_FOLDER, "filter_data.txt"))
+        # with open(os.path.join(RESULTS_FOLDER, "filter_data.txt"), "r") as f:
+        #     filter_data = json.load(f)
+        # utm_source = filter_data["utms"]["utm_source"]
+        # source = filter_data["utms"]["source"]
+        # utm_2 = filter_data["utms"]["utm_2"]
+
+        filter_data = {
+            "filter_dates": {"date_start": date_start, "date_end": date_end},
+            "utms": {
+                "utm_source": utm_source,
+                "source": source,
+                "utm_2": utm_2 or "",
+                "utm_2_value": utm_2_value,
+            },
+            "unique_sources": [""] + table["account"].unique().tolist(),
+            "column": column,
+            "columns_dict": columns_dict,
+        }
 
         channels_summary_detailed = calculate_channels_summary_detailed(
             table, utm_source, source, utm_2, utm_2_value
@@ -144,6 +166,8 @@ def channels_summary():
         return render_template(
             "channels_summary.html",
             tables=tables,
+            date_start=date_start,
+            date_end=date_end,
             channels_summary_detailed_df=channels_summary_detailed_df,
             additional_df=additional_df,
             enumerate=enumerate,
@@ -164,14 +188,6 @@ def channels_summary():
 
         # Список меток для разбивки
         utms2 = ["", "utm_campaign", "utm_medium", "utm_content", "utm_term"]
-
-        # Получаем значения остальных значений полей
-        date_start = request.args.get("date_start", default="")
-        date_end = request.args.get("date_end", default="")
-        utm_source = request.args.get("utm_source", default="")  # Значение utm_source
-        source = request.args.get("source", default="")  # Имя канала
-        utm_2 = request.args.get("utm_2")  # Значение utm для разбивки
-        column = request.args.get("sort")
 
         filter_data = {
             "filter_dates": {"date_start": date_start, "date_end": date_end},
@@ -197,10 +213,14 @@ def channels_summary():
                 table = table[
                     table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
                 ]
+            unique_sources = table["account"].unique()
+
             if utm_source:
                 table = table[table["utm_source"] == utm_source]
+                unique_sources = table["account"].unique()
             elif source:
                 table = table[table["account"] == source]
+
             if len(table) == 0:
                 return render_template(
                     "channels_summary.html",
@@ -231,9 +251,6 @@ def channels_summary():
                 table, column_unique=column_unique, data_month=data_month
             )
 
-            # Список уникальных трафиколгов
-            unique_sources = [""] + table["account"].unique().tolist()
-
             # Сохраняем значения полей в списке
             filter_data = {
                 "filter_dates": {"date_start": date_start, "date_end": date_end},
@@ -243,7 +260,7 @@ def channels_summary():
                     "utm_2": utm_2 or "",
                     "utm_2_value": utm_2_value,
                 },
-                "unique_sources": unique_sources,
+                "unique_sources": [""] + unique_sources.tolist(),
                 "column": column,
                 "columns_dict": columns_dict,
             }
@@ -255,23 +272,6 @@ def channels_summary():
                 os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
             ) as f:
                 pkl.dump(tables, f)
-
-            # Список уникальных трафиколгов
-            unique_sources = [""] + table["account"].unique().tolist()
-
-            # Сохраняем значения полей в списке
-            filter_data = {
-                "filter_dates": {"date_start": date_start, "date_end": date_end},
-                "utms": {
-                    "utm_source": utm_source,
-                    "source": source,
-                    "utm_2": utm_2 or "",
-                    "utm_2_value": utm_2_value,
-                },
-                "unique_sources": unique_sources,
-                "column": column,
-                "columns_dict": columns_dict,
-            }
 
             return render_template(
                 "channels_summary.html",
