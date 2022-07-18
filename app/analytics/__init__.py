@@ -136,6 +136,9 @@ def channels_summary():
         with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "rb") as f:
             table = pkl.load(f)
 
+        with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
+            unique_sources = pkl.load(f)["account"].unique().tolist()
+
         # Загружаем значения фильтров
         # print(os.path.join(RESULTS_FOLDER, "filter_data.txt"))
         # with open(os.path.join(RESULTS_FOLDER, "filter_data.txt"), "r") as f:
@@ -152,7 +155,7 @@ def channels_summary():
                 "utm_2": utm_2 or "",
                 "utm_2_value": utm_2_value,
             },
-            "unique_sources": [""] + table["account"].unique().tolist(),
+            "unique_sources": [""] + unique_sources,
             "column": column,
             "columns_dict": columns_dict,
         }
