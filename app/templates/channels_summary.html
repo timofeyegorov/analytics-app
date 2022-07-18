@@ -86,65 +86,65 @@
 
             <button class="btn btn-primary" id="btn-update">Обновить</button>
             {{ reset_button() }}
+
+            <table>
+                <tr>
+                    <td style="background-color:#eeeeee"></td>
+                    {% for col in tables['Источники - сводная таблица'].columns %}
+                        <td style="font-weight: bold; background-color:#eeeeee">
+                            <form method='get' action="/channels_summary">
+                               <input type="submit" name="sort" value="{{ col }}" />
+                            </form>
+                        </td>
+                    {% endfor %}
+                    <td style="background-color:#eeeeee"></td>
+                </tr>
+                {% for i, row in enumerate(tables['Источники - сводная таблица'].values) %}
+
+                {% if row[0] == utm_2_value %}
+                    <tr>
+                        <td style="font-weight: bold; background-color:#AFEEEE"> {{ i }} </td>
+                        {% for col in row %}
+                            {% if loop.index0 == 0 %}
+                                <td class="colored {{ row.15.1 }}" style="font-weight: bold; background-color:#AFEEEE"> {{ col }} </td>
+                            {% else %}
+                                <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %} style="font-weight: bold; background-color:#AFEEEE"> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
+                            {% endif %}
+                        {% endfor %}
+                        <td style="font-weight: bold; background-color:#AFEEEE">
+                           <input type="submit" name="channel" value="+ {{row[0]}}" />
+                        </td>
+                    </tr>
+                {% else %}
+                {% if i == 0 %}
+                    <tr>
+                        <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
+                        {% for col in row %}
+                        <td> {{ col }} </td>
+                        {% endfor %}
+                        <td>
+                           <input type="submit" name="channel" value="+ все лиды" />
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
+                        {% for col in row %}
+                            {% if loop.index0 == 0 %}
+                                <td class="colored {{ row.15.1 }}"> {{ col }} </td>
+                            {% else %}
+                                <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %}> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
+                            {% endif %}
+                        {% endfor %}
+                        <td>
+                           <input type="submit" name="channel" value="+ {{row[0]}}" />
+                        </td>
+                    </tr>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+            </table>
         </form>
-
-    <table>
-        <tr>
-            <td style="background-color:#eeeeee"></td>
-            {% for col in tables['Источники - сводная таблица'].columns %}
-                <td style="font-weight: bold; background-color:#eeeeee">
-<!--                    {{ col }}-->
-                    <form method='get' action="/channels_summary">
-                       <input type="submit" name="sort" value="{{ col }}" />
-                    </form>
-                </td>
-            {% endfor %}
-            <td style="background-color:#eeeeee"></td>
-        </tr>
-        {% for i, row in enumerate(tables['Источники - сводная таблица'].values) %}
-
-        {% if row[0] == utm_2_value %}
-            <tr>
-                <td style="font-weight: bold; background-color:#AFEEEE"> {{ i }} </td>
-                {% for col in row %}
-                <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %} style="font-weight: bold; background-color:#AFEEEE"> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
-                {% endfor %}
-                <td style="font-weight: bold; background-color:#AFEEEE">
-                    <form method='get' action="/channels_summary">
-                       <input type="submit" name="channel" value="+ {{row[0]}}" />
-                    </form>
-                </td>
-            </tr>
-        {% else %}
-        {% if i == 0 %}
-            <tr>
-                <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
-                {% for col in row %}
-                <td> {{ col }} </td>
-                {% endfor %}
-                <td>
-                    <form method='get' action="/channels_summary">
-                       <input type="submit" name="channel" value="+ все лиды" />
-                    </form>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
-                {% for col in row %}
-                <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %}> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
-                {% endfor %}
-                <td>
-                    <form method='get' action="/channels_summary">
-                       <input type="submit" name="channel" value="+ {{row[0]}}" />
-                    </form>
-                </td>
-            </tr>
-        {% endif %}
-        {% endif %}
-        {% endfor %}
-    </table>
-
     {% endif %}
 </div>
 <div class="m-2 w-100 justify-content-center">
