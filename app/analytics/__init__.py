@@ -137,7 +137,15 @@ def channels_summary():
             table = pkl.load(f)
 
         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
-            unique_sources = pkl.load(f)["account"].unique().tolist()
+            unique_sources = pkl.load(f)
+            unique_sources.created_at = pd.to_datetime(
+                unique_sources.created_at
+            ).dt.normalize()
+            if date_start:
+                unique_sources = unique_sources[unique_sources.created_at >= date_start]
+            if date_end:
+                unique_sources = unique_sources[unique_sources.created_at <= date_end]
+            unique_sources = unique_sources["account"].unique().tolist()
 
         # Загружаем значения фильтров
         # print(os.path.join(RESULTS_FOLDER, "filter_data.txt"))
