@@ -214,6 +214,8 @@ def channels_summary():
         }
 
         if date_start or date_end or utm_source or source or utm_2:
+            column_unique = utm_2 or "trafficologist"
+
             # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
             table.created_at = pd.to_datetime(table.created_at).dt.normalize()
             if date_start:
@@ -224,11 +226,11 @@ def channels_summary():
                 table = table[
                     table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
                 ]
-            unique_sources = table["account"].unique()
+            unique_sources = table[column_unique].unique()
 
             if utm_source:
                 table = table[table["utm_source"] == utm_source]
-                unique_sources = table["account"].unique()
+                unique_sources = table[column_unique].unique()
             elif source:
                 table = table[table["account"] == source]
 
@@ -242,7 +244,6 @@ def channels_summary():
                     channels_summary_detailed_df="",
                 )
 
-            column_unique = utm_2 or "trafficologist"
             # Get month data for every channel
             with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
                 table_month_data = pkl.load(f)
