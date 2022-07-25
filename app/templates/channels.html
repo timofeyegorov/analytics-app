@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %} Каналы {% endblock %}
+
+{% block content %}
+<style>
+    table thead th { position: sticky; top: 0; z-index: 1; }
+</style>
+
+<h1>Каналы</h1>
+
+<div><a href="/" class="btn btn-success">В меню</a></div>
+<br/>
+
+<div class="d-flex flex-column">
+    {% if channels %}
+        <div id="gantt-channels">
+            <div class="items">
+                <ul>
+                    <li><input type="checkbox" checked="checked" id="channel-item-all" /><label for="channel-item-all">ВСЕ</label></li>
+                    {% for alias, name in channels.items() %}
+                        <li><input type="checkbox" checked="checked" id="channel-item--{{ alias }}" value="{{ alias }}" /><label for="channel-item--{{ alias }}">{{ name }}</label></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="gantt">
+                <div class="wrapper"></div>
+            </div>
+        </div>
+    {% else %}
+        Каналы не найдены
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">window.AnalyticsChannelsList = { {% for alias, group in tables.items() %}"{{ alias }}":{"name":"{{ group.name }}","dates":[{% for date in group.dates %}new Date({{ date }}),{% endfor %}],},{% endfor %} }</script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/channels.js') }}"></script>
+{% endblock js %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='css/channels.css') }}" rel="stylesheet" />
+{% endblock css %}

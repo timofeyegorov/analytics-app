@@ -2,6 +2,7 @@ from app import app
 from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
 from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
 from .table_loaders import (
+    get_channels,
     get_channels_summary,
     get_channels_detailed,
     get_payments_accumulation,
@@ -30,6 +31,8 @@ from config import config
 from config import RESULTS_FOLDER
 
 import os
+import re
+from transliterate import slugify
 import numpy as np
 from flask import render_template, request, redirect, Response
 from datetime import datetime, timedelta
@@ -337,6 +340,44 @@ def channels_detailed():
     tab = request.args.get("tab")
     tables = get_channels_detailed()
     return render_template("channels_detailed.html", tables=tables, tab=tab)
+
+
+@app.route("/channels")
+def channels():
+    tables = get_channels()
+    tables.created_at = pd.to_datetime(tables.created_at).dt.normalize()
+    tables = tables.sort_values(["created_at"]).groupby("account")
+    output = dict(
+        map(
+            lambda group: (
+                "_"
+                + slugify(
+                    re.sub(r"([^а-яА-Яa-zA-Z\d])", "_", group[0]),
+                    language_code="ru",
+                ),
+                {
+                    "name": group[0],
+                    "dates": list(
+                        map(
+                            lambda item: int(item / 1000000),
+                            group[1]["created_at"].unique().tolist(),
+                        )
+                    ),
+                },
+            ),
+            tables,
+        )
+    )
+    return render_template(
+        "channels.html",
+        channels=dict(
+            map(
+                lambda group: (group[0], group[1].get("name")),
+                output.items(),
+            )
+        ),
+        tables=output,
+    )
 
 
 @app.route("/payments_accumulation")
