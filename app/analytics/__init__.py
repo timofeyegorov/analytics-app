@@ -46,6 +46,11 @@ import pickle as pkl
 import json
 import html
 
+from .pickle_load import PickleLoader
+
+
+pickle_loader = PickleLoader()
+
 
 @app.context_processor
 def utility_processor():
@@ -229,11 +234,10 @@ def channels_summary():
                 table = table[
                     table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
                 ]
-            unique_sources = table[column_unique].unique()
+            unique_sources = table["account"].unique()
 
             if utm_source:
                 table = table[table["utm_source"] == utm_source]
-                unique_sources = table[column_unique].unique()
             elif source:
                 table = table[table["account"] == source]
 
