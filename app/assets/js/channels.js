@@ -4,13 +4,19 @@
 (($) => {
 
 
+    let month = [
+        ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"],
+        ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"],
+    ];
+
+
     $.fn.extend({
 
         AnalyticGanttChart: function() {
 
             if (!this.length) return this;
 
-            let _render_gantt = (gantt, container) => {
+            let _render_gantt = (gantt) => {
                 let channels = window.AnalyticsChannels.data;
                 let min = window.AnalyticsChannels.date_range[0],
                     max = window.AnalyticsChannels.date_range[1],
@@ -18,16 +24,16 @@
                     axis_y = $(`<div class="axis-y"></div>`),
                     board = $(`<div class="board"><div class="wrapper"><div class="gantt"></div></div></div>`);
                 let days_layout = $("<div></div>"),
-                    axis_x = $(`<div class="item axis-x"><div class="wrapper"></div></div>`);
+                    axis_x = $(`<div class="item axis-x"><div class="wrapper month"></div><div class="wrapper day"></div></div>`);
                 for (let i=0; i<days; i++) {
                     let day = new Date(min.getTime()+86400000*i),
                         d = day.getDate(),
-                        m = day.getMonth()+1,
-                        y = day.getFullYear();
-                    d = `${d}`.length === 1 ? `0${d}` : d;
-                    m = `${m}`.length === 1 ? `0${m}` : d;
+                        m = day.getMonth(),
+                        y = day.getFullYear(),
+                        title = i === 0 || d === 1 ? `${month[0][m]}, ${y}` : "";
                     days_layout.append($(`<span class="day _${day.getTime()}"></span>`));
-                    axis_x.children(".wrapper").append($(`<span class="day">${d}.${m}.${y}</span>`));
+                    axis_x.children(".wrapper.day").append($(`<span class="day">${d}</span>`));
+                    axis_x.children(".wrapper.month").append($(`<span class="day">${title}</span>`));
                 }
                 for (let name in channels) {
                     let channel = channels[name];
@@ -36,11 +42,9 @@
                     let line_days = days_layout.clone();
                     for (let index in channel.dates) {
                         let d = channel.dates[index].getDate(),
-                            m = channel.dates[index].getMonth()+1,
+                            m = channel.dates[index].getMonth(),
                             y = channel.dates[index].getFullYear();
-                        d = `${d}`.length === 1 ? `0${d}` : d;
-                        m = `${m}`.length === 1 ? `0${m}` : d;
-                        line_days.find(`span._${channel.dates[index].getTime()}`).addClass("colored").attr("title", `${d}.${m}.${y}`);
+                        line_days.find(`span._${channel.dates[index].getTime()}`).addClass("colored").attr("title", `${d} ${month[1][m]} ${y}`);
                     }
                     line.children(".wrapper").append(line_days.find("span"));
                     board.find(".wrapper > .gantt").append(line);
@@ -50,7 +54,7 @@
             }
 
             let _render = (container) => {
-                _render_gantt(container.find(".gantt > .wrapper"), container);
+                _render_gantt(container.find(".gantt > .wrapper"));
             }
 
             let _init = (container) => {

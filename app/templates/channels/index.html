@@ -7,17 +7,15 @@
     {% include 'base_links.html' %}
     <form action="{{ url_for('channels') }}">
         {% include 'channels/filters.html' %}
-        <div class="d-flex flex-column">
-            {% if data %}
-                <div id="gantt-channels">
-                    <div class="gantt">
-                        <div class="wrapper"></div>
-                    </div>
+        {% if data %}
+            <div id="gantt-channels">
+                <div class="gantt">
+                    <div class="wrapper"></div>
                 </div>
-            {% else %}
-                Данные отсутствуют
-            {% endif %}
-        </div>
+            </div>
+        {% else %}
+            Данные отсутствуют
+        {% endif %}
     </form>
 {% endblock %}
 

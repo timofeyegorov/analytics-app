@@ -1,5 +1,5 @@
 #gantt-channels {
-    width:100%;
+    padding:0 0 30px 0;
 }
 #gantt-channels > .items {
     margin:0 20px 0 0;
@@ -56,12 +56,6 @@
 label[for=channel-item-all] {
     font-weight:bold;
 }
-#gantt-channels {
-    padding:0 0 30px 0;
-}
-#gantt-channels > .gantt {
-    width:100%;
-}
 #gantt-channels > .gantt > .wrapper {
     display:-webkit-box;
     display:-moz-box;
@@ -94,7 +88,7 @@ label[for=channel-item-all] {
     user-select:none;
 }
 #gantt-channels > .gantt > .wrapper > .axis-y {
-    margin-top:82px;
+    margin-top:20px;
     border-bottom:1px solid #ccc;
 }
 #gantt-channels > .gantt > .wrapper > .axis-y > .item {
@@ -125,6 +119,9 @@ label[for=channel-item-all] {
     flex:1 1 auto;
     -webkit-align-self:auto
 }
+#gantt-channels > .gantt > .wrapper > .board > .wrapper {
+    width:fit-content;
+}
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item {
     height:21px;
     border-bottom:1px solid #eee;
@@ -141,6 +138,7 @@ label[for=channel-item-all] {
     display:inline-block;
     width:18px;
     height:18px;
+    line-height:18px;
 }
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item > .wrapper > .day.colored {
     background:#198754;
@@ -153,13 +151,14 @@ label[for=channel-item-all] {
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item.axis-x > .wrapper {
     width:auto;
     height:auto;
+    line-height:1;
 }
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item.axis-x > .wrapper > .day {
-    position:relative;
-    left:-30px;
-    top:-30px;
-    height:75px;
+    font-size:.625rem;
+    text-align:center;
+    vertical-align:top;
+}
+#gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item.axis-x > .wrapper.month > .day {
+    padding-left:5px;
     font-size:.75rem;
-    font-family:monospace;
-    transform:rotate(90deg);
 }
