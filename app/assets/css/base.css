@@ -7,3 +7,50 @@ td, th {
 table tr:hover {
     background:#eee;
 }
+
+.base-links,
+.filter-block,
+.filter-actions {
+    margin-bottom:.5rem;
+}
+.filter-block {
+    display:-webkit-box;
+    display:-moz-box;
+    display:-ms-flexbox;
+    display:-webkit-flex;
+    display:flex;
+    -webkit-box-direction:normal;
+    -moz-box-direction:normal;
+    -webkit-box-orient:horizontal;
+    -moz-box-orient:horizontal;
+    -webkit-flex-direction:row;
+    -ms-flex-direction:row;
+    flex-direction:row;
+    -webkit-flex-wrap:nowrap;
+    -ms-flex-wrap:nowrap;
+    flex-wrap:nowrap;
+    -webkit-box-pack:start;
+    -moz-box-pack:start;
+    -webkit-justify-content:flex-start;
+    -ms-flex-pack:start;
+    justify-content:flex-start;
+    -webkit-align-content:flex-start;
+    -ms-flex-line-pack:start;
+    align-content:flex-start;
+    -webkit-box-align:start;
+    -moz-box-align:start;
+    -webkit-align-items:flex-start;
+    -ms-flex-align:start;
+    align-items:flex-start;
+    gap:10px;
+}
+.filter-block > .field > label {
+    display:block;
+    font-weight:bold;
+}
+.filter-block > .field > input[type=date],
+.filter-block > .field > input[type=text],
+.filter-block > .field > select {
+    min-width:150px;
+    height:30px;
+}

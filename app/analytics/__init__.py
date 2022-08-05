@@ -46,6 +46,8 @@ import pickle as pkl
 import json
 import html
 
+from app import views
+
 from .pickle_load import PickleLoader
 
 
@@ -346,42 +348,7 @@ def channels_detailed():
     return render_template("channels_detailed.html", tables=tables, tab=tab)
 
 
-@app.route("/channels")
-def channels():
-    tables = get_channels()
-    tables.created_at = pd.to_datetime(tables.created_at).dt.normalize()
-    tables = tables.sort_values(["created_at"]).groupby("account")
-    output = dict(
-        map(
-            lambda group: (
-                "_"
-                + slugify(
-                    re.sub(r"([^а-яА-Яa-zA-Z\d])", "_", group[0]),
-                    language_code="ru",
-                ),
-                {
-                    "name": group[0],
-                    "dates": list(
-                        map(
-                            lambda item: int(item / 1000000),
-                            group[1]["created_at"].unique().tolist(),
-                        )
-                    ),
-                },
-            ),
-            tables,
-        )
-    )
-    return render_template(
-        "channels.html",
-        channels=dict(
-            map(
-                lambda group: (group[0], group[1].get("name")),
-                output.items(),
-            )
-        ),
-        tables=output,
-    )
+app.add_url_rule("/channels", view_func=views.ChannelsView.as_view("channels"))
 
 
 @app.route("/payments_accumulation")

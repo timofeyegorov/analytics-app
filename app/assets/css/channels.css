@@ -1,32 +1,5 @@
 #gantt-channels {
-    display:-webkit-box;
-    display:-moz-box;
-    display:-ms-flexbox;
-    display:-webkit-flex;
-    display:flex;
-    -webkit-box-direction:normal;
-    -moz-box-direction:normal;
-    -webkit-box-orient:horizontal;
-    -moz-box-orient:horizontal;
-    -webkit-flex-direction:row;
-    -ms-flex-direction:row;
-    flex-direction:row;
-    -webkit-flex-wrap:nowrap;
-    -ms-flex-wrap:nowrap;
-    flex-wrap:nowrap;
-    -webkit-box-pack:start;
-    -moz-box-pack:start;
-    -webkit-justify-content:flex-start;
-    -ms-flex-pack:start;
-    justify-content:flex-start;
-    -webkit-align-content:flex-start;
-    -ms-flex-line-pack:start;
-    align-content:flex-start;
-    -webkit-box-align:start;
-    -moz-box-align:start;
-    -webkit-align-items:flex-start;
-    -ms-flex-align:start;
-    align-items:flex-start;
+    width:100%;
 }
 #gantt-channels > .items {
     margin:0 20px 0 0;
@@ -88,6 +61,58 @@ label[for=channel-item-all] {
 }
 #gantt-channels > .gantt {
     width:100%;
+}
+#gantt-channels > .gantt > .wrapper {
+    display:-webkit-box;
+    display:-moz-box;
+    display:-ms-flexbox;
+    display:-webkit-flex;
+    display:flex;
+    -webkit-box-direction:normal;
+    -moz-box-direction:normal;
+    -webkit-box-orient:horizontal;
+    -moz-box-orient:horizontal;
+    -webkit-flex-direction:row;
+    -ms-flex-direction:row;
+    flex-direction:row;
+    -webkit-flex-wrap:nowrap;
+    -ms-flex-wrap:nowrap;
+    flex-wrap:nowrap;
+    -webkit-box-pack:start;
+    -moz-box-pack:start;
+    -webkit-justify-content:flex-start;
+    -ms-flex-pack:start;
+    justify-content:flex-start;
+    -webkit-align-content:flex-start;
+    -ms-flex-line-pack:start;
+    align-content:flex-start;
+    -webkit-box-align:start;
+    -moz-box-align:start;
+    -webkit-align-items:flex-start;
+    -ms-flex-align:start;
+    align-items:flex-start;
+    user-select:none;
+}
+#gantt-channels > .gantt > .wrapper > .axis-y {
+    margin-top:82px;
+    border-bottom:1px solid #ccc;
+}
+#gantt-channels > .gantt > .wrapper > .axis-y > .item {
+    line-height:20px;
+    padding:0 5px 0 0;
+    text-align:right;
+    font-size:.75rem;
+    white-space:nowrap;
+    border-top:1px solid #eee;
+}
+#gantt-channels > .gantt > .wrapper > .axis-y > .item:first-child {
+    border-color:#ccc;
+}
+#gantt-channels > .gantt > .wrapper > .board {
+    overflow:hidden;
+    overflow-x:scroll;
+    white-space:nowrap;
+    border-left:1px solid #ccc;
     -webkit-box-ordinal-group:1;
     -moz-box-ordinal-group:1;
     -webkit-order:0;
@@ -98,45 +123,14 @@ label[for=channel-item-all] {
     -webkit-flex:1 1 auto;
     -ms-flex:1 1 auto;
     flex:1 1 auto;
-    -webkit-align-self:auto;
-    -ms-flex-item-align:auto;
-    align-self:auto;
-}
-#gantt-channels > .gantt > .wrapper {
-    position:relative;
-    user-select:none;
-}
-#gantt-channels > .gantt > .wrapper > .axis-y {
-    position:absolute;
-    left:0;
-    top:0;
-}
-#gantt-channels > .gantt > .wrapper > .axis-y {
-    border-bottom:1px solid #ccc;
-    border-right:1px solid #ccc;
-}
-#gantt-channels > .gantt > .wrapper > .axis-y > .item {
-    line-height:20px;
-    padding:0 10px 0 0;
-    text-align:right;
-    font-size:.75rem;
-    white-space:nowrap;
-    border-top:1px solid #eee;
-}
-#gantt-channels > .gantt > .wrapper > .axis-y > .item:first-child {
-    border-color:#ccc;
-}
-#gantt-channels > .gantt > .wrapper > .board > .wrapper {
-    width:100%;
-    overflow:hidden;
-    overflow-x:scroll;
+    -webkit-align-self:auto
 }
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item {
     height:21px;
-    border-top:1px solid #eee;
+    border-bottom:1px solid #eee;
     padding:1px;
 }
-#gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item:first-child {
+#gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item:last-child {
     border-color:#ccc;
 }
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item > .wrapper {
@@ -154,7 +148,7 @@ label[for=channel-item-all] {
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item.axis-x {
     width:auto;
     height:auto;
-    border-top:1px solid #ccc;
+    border-bottom:1px solid #ccc;
 }
 #gantt-channels > .gantt > .wrapper > .board > .wrapper > .gantt > .item.axis-x > .wrapper {
     width:auto;
