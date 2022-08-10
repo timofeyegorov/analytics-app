@@ -155,7 +155,7 @@ def channels_summary():
                 unique_sources = unique_sources[unique_sources.created_at >= date_start]
             if date_end:
                 unique_sources = unique_sources[unique_sources.created_at <= date_end]
-            unique_sources = unique_sources["account"].unique().tolist()
+            unique_sources = unique_sources["trafficologist"].unique().tolist()
 
         # Загружаем значения фильтров
         # print(os.path.join(RESULTS_FOLDER, "filter_data.txt"))
@@ -194,8 +194,7 @@ def channels_summary():
             enumerate=enumerate,
             utm_2_value=utm_2_value,
             utms2=utms2,
-            filter_data=filter_data
-            # date_start=date_start, date_end=date_end
+            filter_data=filter_data,
         )
     # Если жмем на общую фильтрацию
     except TypeError as _e:
@@ -204,7 +203,7 @@ def channels_summary():
             table = pkl.load(f)
 
         # Список уникальных трафиколгов
-        unique_sources = [""] + table["account"].unique().tolist()
+        unique_sources = [""] + table["trafficologist"].unique().tolist()
         utm_2_value = ""
 
         # Список меток для разбивки
@@ -236,12 +235,12 @@ def channels_summary():
                 table = table[
                     table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
                 ]
-            unique_sources = table["account"].unique()
+            unique_sources = table["trafficologist"].unique()
 
             if utm_source:
                 table = table[table["utm_source"] == utm_source]
             elif source:
-                table = table[table["account"] == source]
+                table = table[table["trafficologist"] == source]
 
             if len(table) == 0:
                 return render_template(
@@ -307,7 +306,7 @@ def channels_summary():
             )
 
         # Список уникальных трафиколгов
-        unique_sources = [""] + table["account"].unique().tolist()
+        unique_sources = [""] + table["trafficologist"].unique().tolist()
 
         # Сохраняем значения полей в списке
         filter_data = {
