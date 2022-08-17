@@ -90,21 +90,16 @@ def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     table.created_at = pd.to_datetime(table.created_at).dt.normalize()
     table = table[table[column_unique] == campaign]
 
-    date_start = kwargs.get("date_start")
     date_end = kwargs.get("date_end")
     utm_source = kwargs.get("utm_source")
     source = kwargs.get("source")
 
-    if date_end:
-        table = table[
-            table.created_at
-            >= datetime.strptime(date_end, "%Y-%m-%d") - timedelta(days=30)
-        ]
-        table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
-    elif date_start:
-        dt_now = datetime.now()
-        table = table[table.created_at >= dt_now - timedelta(days=30)]
-        table = table[table.created_at <= dt_now]
+    date_end_filter = (
+        datetime.strptime(date_end, "%Y-%m-%d") if date_end else datetime.now()
+    )
+    table = table[table.created_at >= date_end_filter - timedelta(days=30)]
+    table = table[table.created_at <= date_end_filter]
+
     if utm_source:
         table = table[table["utm_source"] == utm_source]
     elif source:
@@ -222,91 +217,50 @@ def channels_summary():
             "columns_dict": columns_dict,
         }
 
-        if date_start or date_end or utm_source or source or utm_2:
-            column_unique = utm_2 or "trafficologist"
+        # if date_start or date_end or utm_source or source or utm_2:
+        column_unique = utm_2 or "trafficologist"
 
-            # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
-            table.created_at = pd.to_datetime(table.created_at).dt.normalize()
-            if date_start:
-                table = table[
-                    table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
-                ]
-            if date_end:
-                table = table[
-                    table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
-                ]
-            unique_sources = table["trafficologist"].unique()
+        # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
+        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+        if date_start:
+            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+        if date_end:
+            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+        unique_sources = table["trafficologist"].unique()
 
-            if utm_source:
-                table = table[table["utm_source"] == utm_source]
-            elif source:
-                table = table[table["trafficologist"] == source]
+        if utm_source:
+            table = table[table["utm_source"] == utm_source]
+        elif source:
+            table = table[table["trafficologist"] == source]
 
-            if len(table) == 0:
-                return render_template(
-                    "channels_summary.html",
-                    filter_data=filter_data,
-                    utms2=utms2,
-                    additional_df="",
-                    error="Нет данных для заданного периода",
-                    channels_summary_detailed_df="",
-                )
-
-            # Get month data for every channel
-            with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
-                table_month_data = pkl.load(f)
-            data_month = {}
-            for campaign in table[column_unique].unique():
-                data_month[campaign] = get_table_one_campaign(
-                    campaign,
-                    column_unique,
-                    table_month_data.copy(True),
-                    date_start=date_start,
-                    date_end=date_end,
-                    utm_source=utm_source,
-                    source=source,
-                )
-
-            tables = calculate_channels_summary(
-                table, column_unique=column_unique, data_month=data_month
-            )
-
-            # Сохраняем значения полей в списке
-            filter_data = {
-                "filter_dates": {"date_start": date_start, "date_end": date_end},
-                "utms": {
-                    "utm_source": utm_source,
-                    "source": source,
-                    "utm_2": utm_2 or "",
-                    "utm_2_value": utm_2_value,
-                },
-                "unique_sources": [""] + unique_sources.tolist(),
-                "column": column,
-                "columns_dict": columns_dict,
-            }
-            with open(os.path.join(RESULTS_FOLDER, "filter_data.txt"), "w") as f:
-                json.dump(filter_data, f)
-            with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "wb") as f:
-                pkl.dump(table, f)
-            with open(
-                os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
-            ) as f:
-                pkl.dump(tables, f)
-
+        if len(table) == 0:
             return render_template(
                 "channels_summary.html",
-                tables=tables,
-                date_start=date_start,
-                date_end=date_end,
-                utms2=utms2,
-                enumerate=enumerate,
-                additional_df="",
-                channels_summary_detailed_df="",
                 filter_data=filter_data,
+                utms2=utms2,
+                additional_df="",
+                error="Нет данных для заданного периода",
+                channels_summary_detailed_df="",
             )
 
-        # Список уникальных трафиколгов
-        unique_sources = [""] + table["trafficologist"].unique().tolist()
+        # Get month data for every channel
+        with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
+            table_month_data = pkl.load(f)
+        data_month = {}
+        for campaign in table[column_unique].unique():
+            data_month[campaign] = get_table_one_campaign(
+                campaign,
+                column_unique,
+                table_month_data.copy(True),
+                date_start=date_start,
+                date_end=date_end,
+                utm_source=utm_source,
+                source=source,
+            )
+
+        tables = calculate_channels_summary(
+            table, column_unique=column_unique, data_month=data_month
+        )
 
         # Сохраняем значения полей в списке
         filter_data = {
@@ -317,27 +271,64 @@ def channels_summary():
                 "utm_2": utm_2 or "",
                 "utm_2_value": utm_2_value,
             },
-            "unique_sources": unique_sources,
+            "unique_sources": [""] + unique_sources.tolist(),
             "column": column,
             "columns_dict": columns_dict,
         }
-
-        tables = get_channels_summary()
+        with open(os.path.join(RESULTS_FOLDER, "filter_data.txt"), "w") as f:
+            json.dump(filter_data, f)
         with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "wb") as f:
             pkl.dump(table, f)
         with open(
             os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
         ) as f:
             pkl.dump(tables, f)
+
         return render_template(
             "channels_summary.html",
             tables=tables,
+            date_start=date_start,
+            date_end=date_end,
             utms2=utms2,
             enumerate=enumerate,
-            channels_summary_detailed_df="",
             additional_df="",
-            filter_data=filter_data,  # date_start=date_start, date_end=date_end
+            channels_summary_detailed_df="",
+            filter_data=filter_data,
         )
+
+        # # Список уникальных трафиколгов
+        # unique_sources = [""] + table["trafficologist"].unique().tolist()
+        #
+        # # Сохраняем значения полей в списке
+        # filter_data = {
+        #     "filter_dates": {"date_start": date_start, "date_end": date_end},
+        #     "utms": {
+        #         "utm_source": utm_source,
+        #         "source": source,
+        #         "utm_2": utm_2 or "",
+        #         "utm_2_value": utm_2_value,
+        #     },
+        #     "unique_sources": unique_sources,
+        #     "column": column,
+        #     "columns_dict": columns_dict,
+        # }
+        #
+        # tables = get_channels_summary()
+        # with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "wb") as f:
+        #     pkl.dump(table, f)
+        # with open(
+        #     os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
+        # ) as f:
+        #     pkl.dump(tables, f)
+        # return render_template(
+        #     "channels_summary.html",
+        #     tables=tables,
+        #     utms2=utms2,
+        #     enumerate=enumerate,
+        #     channels_summary_detailed_df="",
+        #     additional_df="",
+        #     filter_data=filter_data,  # date_start=date_start, date_end=date_end
+        # )
 
 
 @app.route("/channels_detailed")

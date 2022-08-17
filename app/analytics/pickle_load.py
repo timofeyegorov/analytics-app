@@ -46,3 +46,8 @@ class PickleLoader:
     def ca_payment_analytic(self) -> pandas.DataFrame:
         data = self._load(self.pickle_files_path / "ca_payment_analytic.pkl")
         return data
+
+    @property
+    def target_audience(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "target_audience.pkl")
+        return data

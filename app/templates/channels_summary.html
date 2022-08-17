@@ -106,7 +106,7 @@
                         <td style="font-weight: bold; background-color:#AFEEEE"> {{ i }} </td>
                         {% for col in row %}
                             {% if loop.index0 == 0 %}
-                                <td class="colored {{ row.15.1 }}" style="font-weight: bold; background-color:#AFEEEE"> {{ col }} </td>
+                                <td class="colored {{ row.12.1 }}" style="font-weight: bold; background-color:#AFEEEE"> {{ col }} </td>
                             {% else %}
                                 <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %} style="font-weight: bold; background-color:#AFEEEE"> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
                             {% endif %}
@@ -131,7 +131,7 @@
                         <td style="font-weight: bold; background-color:#eeeeee"> {{ i }} </td>
                         {% for col in row %}
                             {% if loop.index0 == 0 %}
-                                <td class="colored {{ row.15.1 }}"> {{ col }} </td>
+                                <td class="colored {{ row.12.1 }}"> {{ col }} </td>
                             {% else %}
                                 <td{% if is_tuple(col) %} class="colored {{ col.1 }}"{% endif %}> {% if is_tuple(col) %}{{ col.0 }}{% else %}{{ col }}{% endif %} </td>
                             {% endif %}

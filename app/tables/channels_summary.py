@@ -14,8 +14,8 @@ class StatusColor(str, Enum):
 
 
 class Action(str, Enum):
-    suppose = "Оставить + 2 гипотезы"
-    disable = "Выключить + 2 гипотезы"
+    suppose = "Оставить"
+    disable = "Выключить"
     pending = "Ждем статистику"
 
 
@@ -23,19 +23,19 @@ class DataFrameTable(DataFrame):
     _columns: list = [
         "Канал",
         "Лидов",
-        "Оборот*",
-        "Оборот на лида",
-        "Трафик",
-        "Остальное",
+        "Оборот",
+        "IPL",
+        "Расход",
+        # "Остальное",
         "Прибыль",
-        "Прибыль на лида",
-        "ROI",
-        "Маржинальность",
-        "Цена лида",
-        "Плюсовость за период",
-        "Плюсовость за месяц",
-        "Активность за период",
-        "Активность за месяц",
+        "PPL",
+        # "ROI",
+        # "Маржинальность",
+        "CPL",
+        "PPL range",
+        "PPL 30d",
+        "Лидов range",
+        "Лидов 30d",
         "Действие",
     ]
 
@@ -83,8 +83,8 @@ class Calculate:
     _expenses: int = None
     _profit: int = None
     _profit_on_lead: int = None
-    _roi: int = None
-    _marginality: int = None
+    # _roi: int = None
+    # _marginality: int = None
     _lead_price: int = None
     _positive_period: StatusColor = None
     _positive_month: StatusColor = None
@@ -108,11 +108,11 @@ class Calculate:
             self.turnover,
             self.turnover_on_lead,
             self.traffic,
-            self.expenses,
+            # self.expenses,
             self.profit,
             self.profit_on_lead,
-            self.roi,
-            self.marginality,
+            # self.roi,
+            # self.marginality,
             self.lead_price,
             (self.profit_on_lead, self.positive_period.value)
             if self.positive_period
