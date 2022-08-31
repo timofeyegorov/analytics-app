@@ -13,9 +13,6 @@ from app.dags.decorators import log_execution_time
 from . import reader, writer
 
 
-sys.path.append(Variable.get("APP_FOLDER"))
-
-
 @log_execution_time("ads.getAccounts")
 def ads_get_accounts():
     method = "ads.getAccounts"
