@@ -47,7 +47,7 @@ from app.tables import calculate_audience_type_result
 from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
-from .decorators import log_execution_time
+from app.dags.decorators import log_execution_time
 
 
 @log_execution_time("load_crops")

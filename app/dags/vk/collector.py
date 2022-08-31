@@ -8,8 +8,8 @@ from airflow.operators.python import PythonOperator
 sys.path.append(Variable.get("APP_FOLDER"))
 
 from app.plugins.ads import vk
+from app.dags.decorators import log_execution_time
 
-from ..decorators import log_execution_time
 from . import reader, writer
 
 
