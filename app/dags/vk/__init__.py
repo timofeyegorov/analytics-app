@@ -1,9 +1,8 @@
 import os
 
-from .reader import VKReader
-from .writer import VKWriter
-
-from .. import DATA_PATH
+from app.dags import DATA_PATH
+from app.dags.vk.reader import VKReader
+from app.dags.vk.writer import VKWriter
 
 
 __all__ = ["reader", "writer"]

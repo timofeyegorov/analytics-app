@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 from transliterate import slugify
 
-from .data import AccountData
+from app.dags.vk.data import AccountData
 
 
 class VKWriter:
