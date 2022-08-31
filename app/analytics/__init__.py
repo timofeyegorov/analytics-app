@@ -736,6 +736,11 @@ def vacancies():
     return redirect(url)
 
 
+app.add_url_rule(
+    "/vk/create-ad", view_func=views.VKCreateAdView.as_view("vk_create_ad")
+)
+
+
 @app.route("/login/hh")
 def parse_vacancies():
     token = request.args.get("code")

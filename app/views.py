@@ -1,12 +1,14 @@
 import pandas
 
-from typing import Tuple, List, Dict
+from typing import List, Dict
 from datetime import datetime, timedelta, timezone
 
 from flask import request, render_template
 from flask.views import MethodView
 
+from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
+from app.dags.vk import reader as vk_reader
 
 
 pickle_loader = PickleLoader()
@@ -28,6 +30,16 @@ class TemplateView(MethodView):
             }
         )
         return render_template(self.get_template_name(), **context)
+
+
+class VKCreateAdView(TemplateView):
+    template_name = "vk/create-ad.html"
+    title = "Создать объявление в ВК"
+
+    def get(self):
+        output = vk_reader("ads.getAccounts") or []
+        print(output)
+        return self.render()
 
 
 class ChannelsView(TemplateView):

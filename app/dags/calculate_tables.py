@@ -1,17 +1,11 @@
-from logging import log
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 import pickle as pkl
 import json
-import pandas as pd
 import os
 import sys
-import redis
 import datetime
-
-sys.path.append(Variable.get("APP_FOLDER"))
 
 from app.database import get_leads_data
 from app.database.get_crops import get_crops
@@ -49,33 +43,12 @@ from app.tables import calculate_marginality
 from app.tables import calculate_audience_tables_by_date
 from app.tables import calculate_audience_type_result
 from app.tables import calculate_audience_type_percent_result
-from config import RESULTS_FOLDER, config
+from config import RESULTS_FOLDER
 
-redis_config = config["redis"]
-redis_db = redis.StrictRedis(
-    host=redis_config["host"],
-    port=redis_config["port"],
-    charset="utf-8",
-    db=redis_config["db"],
-)
+from .decorators import log_execution_time
 
 
-def log_execution_time(param_name):
-    def decorator(func):
-        def wrapper():
-            try:
-                func()
-                last_updated = datetime.datetime.now().isoformat()
-                redis_db.hmset(
-                    param_name, {"status": "ok", "last_updated": last_updated}
-                )
-            except Exception as e:
-                redis_db.hmset(param_name, {"status": "fail", "message": str(e)})
-                raise e
-
-        return wrapper
-
-    return decorator
+sys.path.append(Variable.get("APP_FOLDER"))
 
 
 @log_execution_time("load_crops")
