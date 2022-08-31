@@ -7,6 +7,8 @@ import os
 import sys
 import datetime
 
+sys.path.append(Variable.get("APP_FOLDER"))
+
 from app.database import get_leads_data
 from app.database.get_crops import get_crops
 from app.database.get_target_audience import get_target_audience
@@ -46,9 +48,6 @@ from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
 from .decorators import log_execution_time
-
-
-sys.path.append(Variable.get("APP_FOLDER"))
 
 
 @log_execution_time("load_crops")
