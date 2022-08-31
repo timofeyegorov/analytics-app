@@ -5,13 +5,12 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 
+sys.path.append(Variable.get("APP_FOLDER"))
+
 from app.plugins.ads import vk
 
 from ..decorators import log_execution_time
 from . import reader, writer
-
-
-sys.path.append(Variable.get("APP_FOLDER"))
 
 
 @log_execution_time("ads.getAccounts")
