@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, PositiveInt, EmailStr, NonNegativeInt
 
 
 class AccountAccessRoleTitleEnum(Enum):
@@ -57,4 +57,7 @@ class AccountData(BaseModel):
 
 
 class ClientData(BaseModel):
-    pass
+    id: PositiveInt
+    name: EmailStr
+    day_limit: NonNegativeInt
+    all_limit: NonNegativeInt
