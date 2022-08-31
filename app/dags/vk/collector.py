@@ -1,4 +1,6 @@
 import sys
+import time
+
 from datetime import datetime
 
 from airflow import DAG
@@ -21,8 +23,13 @@ def ads_get_accounts():
 
 @log_execution_time("ads.getClients")
 def ads_get_clients():
+    method = "ads.getClients"
     accounts = reader("ads.getAccounts")
-    print(accounts)
+    response = []
+    for account in accounts:
+        response += vk(method, account_id=account.account_id)
+        time.sleep(1)
+    writer(method, response)
 
 
 dag = DAG(

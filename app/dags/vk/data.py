@@ -54,3 +54,7 @@ class AccountData(BaseModel):
     account_name: str
     can_view_budget: bool
     ad_network_allowed_potentially: bool
+
+
+class ClientData(BaseModel):
+    pass
