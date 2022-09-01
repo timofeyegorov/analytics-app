@@ -737,7 +737,14 @@ def vacancies():
 
 
 app.add_url_rule(
-    "/vk/create-ad", view_func=views.VKCreateAdView.as_view("vk_create_ad")
+    "/vk/create-ad",
+    view_func=views.VKCreateAdView.as_view("vk_create_ad"),
+)
+app.add_url_rule(
+    "/api/vk/create-ad/dependes-fields",
+    view_func=views.ApiVKCreateAdDependesFieldsView.as_view(
+        "api_vk_create_ad_dependes_fields"
+    ),
 )
 
 

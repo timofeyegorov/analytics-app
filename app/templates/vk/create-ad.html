@@ -2,10 +2,27 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/vk/create-ad.js') }}"></script>
+{% endblock js %}
+
 {% block content %}
     <h1>{{ title }}</h1>
     {% include 'base_links.html' %}
-    <form action="{{ url_for('vk_create_ad') }}">
-
-    </form>
+    <div class="card p-2">
+        <form action="{{ url_for('vk_create_ad') }}" method="post">
+            <div class="m-2">
+                <label for="account_id">Кабинет</label>
+                <select class="form-control" name="account_id" id="account_id" disabled="disabled"></select>
+            </div>
+            <div class="m-2">
+                <label for="campaign_id">Кампания</label>
+                <select class="form-control" name="campaign_id" id="campaign_id" disabled="disabled"></select>
+            </div>
+        {{ client_choices }}
+            <div class="m-2">
+                <button class="btn btn-success">Создать</button>
+            </div>
+        </form>
+    </div>
 {% endblock %}

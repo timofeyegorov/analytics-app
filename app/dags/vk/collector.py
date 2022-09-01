@@ -27,7 +27,12 @@ def ads_get_clients():
     accounts = reader("ads.getAccounts")
     response = []
     for account in accounts:
-        response += vk(method, account_id=account.account_id)
+        response += list(
+            map(
+                lambda client: {"account_id": account.account_id, **client},
+                vk(method, account_id=account.account_id),
+            )
+        )
         time.sleep(1)
     writer(method, response)
 
