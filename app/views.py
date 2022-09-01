@@ -83,6 +83,15 @@ class ApiVKCreateAdDependesFieldsView(APIView):
         )
         campaigns = []
         if list(filter(lambda item: item[2], accounts)):
+            clients = vk_reader("ads.getClients")
+            for client in clients:
+                print(
+                    vk(
+                        "ads.getCampaigns",
+                        account_id=client.account_id,
+                        client_id=client.id,
+                    )
+                )
             campaign_id = int(data.get("campaign_id", 0))
             print("sssss")
         self.data = {

@@ -24,13 +24,31 @@ def ads_get_accounts():
 @log_execution_time("ads.getClients")
 def ads_get_clients():
     method = "ads.getClients"
-    accounts = reader("ads.getAccounts")
     response = []
-    for account in accounts:
+    for account in reader("ads.getAccounts"):
         response += list(
             map(
                 lambda client: {"account_id": account.account_id, **client},
                 vk(method, account_id=account.account_id),
+            )
+        )
+        time.sleep(1)
+    writer(method, response)
+
+
+@log_execution_time("ads.getCampaigns")
+def ads_get_campaigns():
+    method = "ads.getCampaigns"
+    response = []
+    for client in reader("ads.getClients"):
+        response += list(
+            map(
+                lambda client: {
+                    "account_id": client.account_id,
+                    "client_id": client.id,
+                    **client,
+                },
+                vk(method, account_id=client.account_id, client_id=client.id),
             )
         )
         time.sleep(1)
@@ -51,5 +69,9 @@ ads_get_accounts_operator = PythonOperator(
 ads_get_clients_operator = PythonOperator(
     task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
 )
+ads_get_campaigns_operator = PythonOperator(
+    task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
+)
 
 ads_get_accounts_operator >> ads_get_clients_operator
+ads_get_clients_operator >> ads_get_campaigns_operator
