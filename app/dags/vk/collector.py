@@ -43,10 +43,10 @@ def ads_get_campaigns():
     for client in reader("ads.getClients"):
         response += list(
             map(
-                lambda client: {
+                lambda campaign: {
                     "account_id": client.account_id,
                     "client_id": client.id,
-                    **client,
+                    **campaign,
                 },
                 vk(method, account_id=client.account_id, client_id=client.id),
             )
