@@ -10,16 +10,43 @@
     <h1>{{ title }}</h1>
     {% include 'base_links.html' %}
     <div class="card p-2">
-        <form action="{{ url_for('vk_create_ad') }}" method="post">
+        <form action="{{ url_for('vk_create_ad') }}" method="post" enctype="multipart/form-data">
+            {% if error %}
+                <div class="m-2"><p style="color: red">{{ error }}</p></div>
+            {% endif %}
             <div class="m-2">
                 <label for="account_id">Кабинет</label>
-                <select class="form-control" name="account_id" id="account_id" disabled="disabled"></select>
+                <select class="form-control" data-value="{{ fields.account_id }}" name="account_id" id="account_id" disabled="disabled"></select>
             </div>
             <div class="m-2">
                 <label for="campaign_id">Кампания</label>
-                <select class="form-control" name="campaign_id" id="campaign_id" disabled="disabled"></select>
+                <select class="form-control" data-value="{{ fields.campaign_id }}" name="campaign_id" id="campaign_id" disabled="disabled"></select>
             </div>
-        {{ client_choices }}
+            <div class="m-2">
+                <label for="cost_type">Способ оплаты</label>
+                <select class="form-control" data-value="{{ fields.cost_type }}" name="cost_type" id="cost_type" disabled="disabled"></select>
+            </div>
+            <div class="m-2">
+                <label for="ad_format">Формат</label>
+                <select class="form-control" data-value="{{ fields.ad_format }}" name="ad_format" id="ad_format" disabled="disabled"></select>
+            </div>
+            <div class="m-2">
+                <label for="link_url">Ссылка на рекламируемый объект</label>
+                <input class="form-control" data-value="{{ fields.link_url }}" name="link_url" id="link_url" value="" type="text" />
+            </div>
+            <div class="m-2">
+                <label for="title">Заголовок</label>
+                <input class="form-control" data-value="{{ fields.title }}" name="title" id="title" value="" type="text" />
+            </div>
+            <div class="m-2">
+                <label for="description">Описание</label>
+                <input class="form-control" data-value="{{ fields.description }}" name="description" id="description" value="" type="text" />
+            </div>
+            <div class="m-2">
+                <label for="photo">Основное изображение</label>
+                <input class="form-control" name="photo_file" id="photo_file" value="" type="file" />
+                <input class="form-control" data-value="{{ fields.photo }}" name="photo" id="photo" value="" type="text" readonly="readonly" />
+            </div>
             <div class="m-2">
                 <button class="btn btn-success">Создать</button>
             </div>

@@ -20,7 +20,13 @@ class VKAPI:
     def request(self, method: str, **kwargs) -> Union[dict, str]:
         response = requests.post(self.get_url(method), data=kwargs)
         try:
-            return response.json()
+            output = response.json()
+            error = output.get("response")
+            if isinstance(error, list) and error and error[0].get("error_code"):
+                raise Exception(
+                    f'[{error[0].get("error_code")}]: {error[0].get("error_desc")}'
+                )
+            return output
         except JSONDecodeError:
             return {"response": response.content.decode("utf8")}
 

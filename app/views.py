@@ -1,6 +1,9 @@
 import json
 import pandas
+import requests
+import tempfile
 
+from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl
@@ -53,17 +56,89 @@ class VKCreateAdView(TemplateView):
     template_name = "vk/create-ad.html"
     title = "Создать объявление в ВК"
 
-    def post(self):
-        params = {
-            "account_id": request.form.get("account_id"),
-            "data": json.dumps(
-                {
-                    "campaign_id": "",
+    def set_context(self, data: Dict[str, Any]):
+        for name, value in data.items():
+            self.context(name, value)
+
+    def form_context_add(self, **kwargs):
+        self.set_context(
+            {
+                "fields": {
+                    "account_id": kwargs.get("account_id", ""),
+                    "campaign_id": kwargs.get("campaign_id", ""),
+                    "cost_type": kwargs.get("cost_type", ""),
+                    "ad_format": kwargs.get("ad_format", ""),
+                    "link_url": kwargs.get("link_url", ""),
+                    "title": kwargs.get("title", ""),
+                    "description": kwargs.get("description", ""),
+                    "photo": kwargs.get("photo", ""),
                 }
+            }
+        )
+
+    def get_photo_url(self, file, ad_format: int) -> str:
+        upload_url = vk("ads.getUploadURL", ad_format=ad_format)
+        target = tempfile.NamedTemporaryFile(suffix=Path(file.filename).suffix)
+        target.writelines(file.stream.readlines())
+        with open(target.name, "rb") as target_ref:
+            response = requests.post(upload_url, files={"file": target_ref})
+            output = response.json()
+            if output.get("errcode"):
+                raise Exception(output)
+            return output.get("photo", "")
+
+    def get(self):
+        self.form_context_add()
+        return super().get()
+
+    def post(self):
+        account_id = request.form.get("account_id")
+        campaign_id = request.form.get("campaign_id")
+        cost_type = request.form.get("cost_type")
+        ad_format = request.form.get("ad_format")
+        link_url = request.form.get("link_url", "")
+        title = request.form.get("title", "")
+        description = request.form.get("description", "")
+        form_context = {
+            "account_id": account_id,
+            "campaign_id": campaign_id,
+            "cost_type": cost_type,
+            "ad_format": ad_format,
+            "link_url": link_url,
+            "title": title,
+            "description": description,
+        }
+        try:
+            photo = request.form.get(
+                "photo", self.get_photo_url(request.files.get("photo_file"), ad_format)
+            )
+            form_context.update({"photo": photo})
+        except Exception as error:
+            self.form_context_add(**form_context)
+            self.context("error", f"Основное изображение: {error}")
+            return self.render()
+        self.form_context_add(**form_context)
+        params = {
+            "account_id": int(account_id) if account_id else "",
+            "data": json.dumps(
+                [
+                    {
+                        "campaign_id": int(campaign_id) if campaign_id else "",
+                        "cost_type": int(cost_type) if cost_type else "",
+                        "ad_format": int(ad_format) if ad_format else "",
+                        "link_url": link_url,
+                        "title": title,
+                        "description": description,
+                        "photo": photo,
+                    }
+                ]
             ),
         }
-        # response = vk("ads.createAds", **params)
-        # print(response)
+        try:
+            response = vk("ads.createAds", **params)
+            print(response)
+        except Exception as error:
+            self.context("error", error)
         return self.render()
 
 
@@ -83,20 +158,41 @@ class ApiVKCreateAdDependesFieldsView(APIView):
         )
         campaigns = []
         if list(filter(lambda item: item[2], accounts)):
-            clients = vk_reader("ads.getClients")
-            for client in clients:
-                print(
-                    vk(
-                        "ads.getCampaigns",
-                        account_id=client.account_id,
-                        client_id=client.id,
-                    )
-                )
             campaign_id = int(data.get("campaign_id", 0))
-            print("sssss")
+            campaigns = [("", "", False)] + list(
+                map(
+                    lambda item: (
+                        item.id,
+                        item.name,
+                        item.id == campaign_id,
+                    ),
+                    list(
+                        filter(
+                            lambda campaign: campaign.account_id == account_id,
+                            vk_reader("ads.getCampaigns"),
+                        )
+                    ),
+                )
+            )
+        cost_type = int(data.get("cost_type", -1))
+        cost_types = [("", "", False)] + list(
+            map(
+                lambda item: (item.value, item.title, item.value == cost_type),
+                vk_data.CampaignCostTypeEnum,
+            )
+        )
+        ad_format = int(data.get("ad_format", -1))
+        ad_formats = [("", "", False)] + list(
+            map(
+                lambda item: (item.value, item.title, item.value == ad_format),
+                vk_data.CampaignAdFormatEnum,
+            )
+        )
         self.data = {
             "accounts": accounts,
             "campaigns": campaigns,
+            "cost_type": cost_types,
+            "ad_format": ad_formats,
         }
         return super().get()
 

@@ -86,6 +86,44 @@ class CampaignStatusEnum(Enum):
         return CampaignStatusTitleEnum[self.name].value
 
 
+class CampaignCostTypeTitleEnum(Enum):
+    _0 = "Оплата за переходы"
+    _1 = "Оплата за показы (включая цель «Максимум показов»)"
+    _3 = "Оптимизированная оплата за показы"
+
+
+class CampaignCostTypeEnum(Enum):
+    _0 = 0
+    _1 = 1
+    _3 = 3
+
+    @property
+    def title(self) -> str:
+        return CampaignCostTypeTitleEnum[self.name].value
+
+
+class CampaignAdFormatTitleEnum(Enum):
+    _1 = "Изображение и текст"
+    _2 = "Большое изображение"
+    _4 = "Продвижение сообществ или приложений, квадратное изображение"
+    _8 = "Специальный формат сообществ"
+    _9 = "Запись в сообществе"
+    _11 = "Адаптивный формат"
+
+
+class CampaignAdFormatEnum(Enum):
+    _1 = 1
+    _2 = 2
+    _4 = 4
+    _8 = 8
+    _9 = 9
+    _11 = 11
+
+    @property
+    def title(self) -> str:
+        return CampaignAdFormatTitleEnum[self.name].value
+
+
 class AccountData(BaseModel):
     access_role: AccountAccessRoleEnum
     account_id: PositiveInt
