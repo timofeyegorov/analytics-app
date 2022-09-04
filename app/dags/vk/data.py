@@ -309,6 +309,44 @@ class AdApprovedEnum(Enum):
         return AdApprovedTitleEnum[self.name].value
 
 
+class AdEventsRetargetingGroupsTitleEnum(Enum):
+    _1 = "Просмотр промопоста"
+    _2 = "Переход по ссылке или переход в сообщество"
+    _3 = "Переход в сообщество"
+    _4 = "Подписка на сообщество"
+    _5 = "Отписка от новостей сообщества"
+    _6 = "Скрытие или жалоба"
+    _10 = "Запуск видео"
+    _11 = "Досмотр видео до 3с"
+    _12 = "Досмотр видео до 25%"
+    _13 = "Досмотр видео до 50%"
+    _14 = "Досмотр видео до 75%"
+    _15 = "Досмотр видео до 100%"
+    _20 = "Лайк продвигаемой записи"
+    _21 = "Репост продвигаемой записи"
+
+
+class AdEventsRetargetingGroupsEnum(Enum):
+    _1 = 1
+    _2 = 2
+    _3 = 3
+    _4 = 4
+    _5 = 5
+    _6 = 6
+    _10 = 10
+    _11 = 11
+    _12 = 12
+    _13 = 13
+    _14 = 14
+    _15 = 15
+    _20 = 20
+    _21 = 21
+
+    @property
+    def title(self) -> str:
+        return AdEventsRetargetingGroupsTitleEnum[self.name].value
+
+
 class AccountData(BaseModel):
     access_role: AccountAccessRoleEnum
     account_id: PositiveInt
@@ -372,4 +410,4 @@ class AdData(BaseModel):
     disclaimer_supplements: Optional[PositiveInt]
     weekly_schedule_hours: Optional[str]
     weekly_schedule_use_holidays: Optional[bool]
-    events_retargeting_groups: Dict[PositiveInt, List[PositiveInt]]
+    events_retargeting_groups: Dict[PositiveInt, List[AdEventsRetargetingGroupsEnum]]
