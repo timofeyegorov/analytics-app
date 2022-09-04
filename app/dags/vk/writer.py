@@ -50,7 +50,8 @@ class VKWriter:
     def adsgetstatistics(self, file, statistics: List[Dict[str, Any]]):
         data = list(map(lambda statistic: StatisticData(**statistic), statistics))
         data = pandas.DataFrame(list(map(lambda item: item.dict(), data)))
-        data["impressions"] = data["impressions"].fillna(0).astype(float)
+        data["spent"] = data["spent"].fillna(0).astype(float)
+        data["impressions"] = data["impressions"].fillna(0).astype(int)
         data["clicks"] = data["clicks"].fillna(0).astype(int)
         data["reach"] = data["reach"].fillna(0).astype(int)
         data["uniq_views_count"] = data["uniq_views_count"].fillna(0).astype(int)

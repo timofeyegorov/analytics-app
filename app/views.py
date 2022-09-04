@@ -89,7 +89,7 @@ class VKStatisticsView(TemplateView):
         self.context("campaigns", self.campaigns)
         self.context("ads", self.ads)
         stats = vk_reader("ads.getStatistics")
-        stats["impressions"] = stats["impressions"].apply(lambda value: "%.2f" % value)
+        stats["spent"] = stats["spent"].apply(lambda value: "%.2f" % value)
         stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
         stats["effective_cost_per_click"] = stats["effective_cost_per_click"].apply(
             lambda value: "%.3f" % value
