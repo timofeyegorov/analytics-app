@@ -74,6 +74,44 @@ def ads_get_campaigns():
     writer(method, response)
 
 
+@log_execution_time("ads.getAds")
+def ads_get_ads():
+    method = "ads.getAds"
+    # accounts = reader("ads.getAccounts")
+    # clients = reader("ads.getClients")
+    response = []
+    # for account in accounts:
+    #     if account.account_type == data.AccountTypeEnum.agency:
+    #         account_clients = list(
+    #             filter(lambda client: client.account_id == account.account_id, clients)
+    #         )
+    #         for client in account_clients:
+    #             response += list(
+    #                 map(
+    #                     lambda campaign: {
+    #                         "account_id": client.account_id,
+    #                         "client_id": client.id,
+    #                         **campaign,
+    #                     },
+    #                     vk(method, account_id=account.account_id, client_id=client.id),
+    #                 )
+    #             )
+    #             time.sleep(1)
+    #     else:
+    #         response += list(
+    #             map(
+    #                 lambda campaign: {
+    #                     "account_id": client.account_id,
+    #                     "client_id": client.id,
+    #                     **campaign,
+    #                 },
+    #                 vk(method, account_id=account.account_id),
+    #             )
+    #         )
+    #         time.sleep(1)
+    writer(method, response)
+
+
 dag = DAG(
     "api_data_vk",
     description="Collect VK API data",
@@ -91,7 +129,12 @@ ads_get_clients_operator = PythonOperator(
 ads_get_campaigns_operator = PythonOperator(
     task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
 )
+ads_get_ads_operator = PythonOperator(
+    task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
+)
 
 ads_get_accounts_operator >> ads_get_clients_operator
 ads_get_accounts_operator >> ads_get_campaigns_operator
+ads_get_accounts_operator >> ads_get_ads_operator
 ads_get_clients_operator >> ads_get_campaigns_operator
+ads_get_clients_operator >> ads_get_ads_operator
