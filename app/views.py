@@ -57,6 +57,9 @@ class VKStatisticsView(TemplateView):
     title = "Статистика объявлений в ВК"
 
     def get(self):
+        stats = vk_reader("ads.getStatistics")
+        for ad in stats:
+            print(ad.stats)
         return super().get()
 
 

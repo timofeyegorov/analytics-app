@@ -1,3 +1,4 @@
+import pandas
 import pickle
 
 from pathlib import Path
@@ -48,4 +49,4 @@ class VKWriter:
 
     def adsgetstatistics(self, file, statistics: List[Dict[str, Any]]):
         data = list(map(lambda statistic: StatisticData(**statistic), statistics))
-        pickle.dump(data, file)
+        pickle.dump(pandas.DataFrame(list(map(lambda item: item.dict(), data))), file)

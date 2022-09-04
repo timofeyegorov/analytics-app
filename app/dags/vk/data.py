@@ -1,4 +1,5 @@
 from enum import Enum
+from datetime import datetime
 from typing import List, Dict, Optional
 from pydantic import (
     BaseModel,
@@ -464,8 +465,13 @@ class AdData(BaseModel):
     events_retargeting_groups: Dict[PositiveInt, List[AdEventsRetargetingGroupsEnum]]
 
 
-class StatisticStatData(BaseModel):
+class StatisticData(BaseModel):
+    ad_id: PositiveInt
+    account_id: PositiveInt
+    client_id: PositiveInt
+    campaign_id: PositiveInt
     day: str
+    date: datetime
     spent: Optional[PositiveFloat]
     impressions: Optional[PositiveInt]
     clicks: Optional[PositiveInt]
@@ -489,9 +495,3 @@ class StatisticStatData(BaseModel):
     conversion_sum: Optional[PositiveFloat]
     conversion_roas: Optional[PositiveFloat]
     conversion_cr: Optional[PositiveFloat]
-
-
-class StatisticData(BaseModel):
-    id: PositiveInt
-    type: StatisticsIdsTypeEnum
-    stats: List[StatisticStatData]

@@ -159,6 +159,7 @@ def ads_get_ads():
 def ads_get_statistics():
     method = "ads.getStatistics"
     ads = reader("ads.getAds")
+    ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
     response = []
     groups = list(map(lambda ad: (ad.id, ad.account_id), ads))
     data = pandas.DataFrame(groups, columns=("id", "account_id"))
@@ -207,13 +208,28 @@ def ads_get_statistics():
         date_from = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
         date_to = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
         time.sleep(1)
-        response += vk(
+        statistics = vk(
             method,
             period="day",
             date_from=date_from,
             date_to=date_to,
             **request_params,
         )
+        for statistic in statistics:
+            ad = ads_dict.get(statistic.get("id"))
+            response += list(
+                map(
+                    lambda stat: {
+                        **stat,
+                        "ad_id": ad.id,
+                        "account_id": ad.account_id,
+                        "client_id": ad.client_id,
+                        "campaign_id": ad.campaign_id,
+                        "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
+                    },
+                    statistic.get("stats"),
+                )
+            )
         time.sleep(1)
     writer(method, response)
 
