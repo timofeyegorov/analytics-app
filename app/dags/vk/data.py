@@ -359,8 +359,8 @@ class AdData(BaseModel):
     publisher_platforms: AdPublisherPlatformsEnum
     all_limit: NonNegativeInt
     day_limit: NonNegativeInt
-    autobidding: AdAutobiddingEnum
-    autobidding_max_cost: PositiveInt
+    autobidding: Optional[AdAutobiddingEnum]
+    autobidding_max_cost: Optional[PositiveInt]
     category1_id: PositiveInt
     category2_id: NonNegativeInt
     status: AdStatusEnum
