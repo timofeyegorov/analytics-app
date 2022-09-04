@@ -30,5 +30,6 @@ class VKWriter:
         pickle.dump(data, file)
 
     def adsgetads(self, file, ads: List[Dict[str, Any]]):
+        print(ads)
         data = list(map(lambda ad: AdData(**ad), ads))
         pickle.dump(data, file)
