@@ -7,6 +7,24 @@ td, th {
 table tr:hover {
     background:#eee;
 }
+table td.nowrap,
+table th.nowrap {
+    white-space:nowrap;
+}
+table td.nowrap > span.hint,
+table th.nowrap > span.hint {
+    display:block;
+    color:#999;
+    font-size:.75rem;
+}
+table td.font-monospace,
+table th.font-monospace {
+    font-family:monospace !important;
+}
+table td.text-right,
+table th.text-right {
+    text-align:right;
+}
 
 .base-links,
 .filter-block,

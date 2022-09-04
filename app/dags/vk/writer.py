@@ -49,4 +49,42 @@ class VKWriter:
 
     def adsgetstatistics(self, file, statistics: List[Dict[str, Any]]):
         data = list(map(lambda statistic: StatisticData(**statistic), statistics))
-        pickle.dump(pandas.DataFrame(list(map(lambda item: item.dict(), data))), file)
+        data = pandas.DataFrame(list(map(lambda item: item.dict(), data)))
+        data["impressions"] = data["impressions"].fillna(0).astype(float)
+        data["clicks"] = data["clicks"].fillna(0).astype(int)
+        data["reach"] = data["reach"].fillna(0).astype(int)
+        data["uniq_views_count"] = data["uniq_views_count"].fillna(0).astype(int)
+        data["link_external_clicks"] = (
+            data["link_external_clicks"].fillna(0).astype(int)
+        )
+        data["ctr"] = data["ctr"].fillna(0).astype(float)
+        data["effective_cost_per_click"] = (
+            data["effective_cost_per_click"].fillna(0).astype(float)
+        )
+        data["effective_cost_per_mille"] = (
+            data["effective_cost_per_mille"].fillna(0).astype(float)
+        )
+        data["effective_cpf"] = data["effective_cpf"].fillna(0).astype(float)
+        data["effective_cost_per_message"] = (
+            data["effective_cost_per_message"].fillna(0).astype(float)
+        )
+        data["message_sends"] = data["message_sends"].fillna(0).astype(int)
+        data["video_plays_unique_started"] = (
+            data["video_plays_unique_started"].fillna(0).astype(int)
+        )
+        data["video_plays_unique_3_seconds"] = (
+            data["video_plays_unique_3_seconds"].fillna(0).astype(int)
+        )
+        data["video_plays_unique_25_percents"] = (
+            data["video_plays_unique_25_percents"].fillna(0).astype(int)
+        )
+        data["video_plays_unique_50_percents"] = (
+            data["video_plays_unique_50_percents"].fillna(0).astype(int)
+        )
+        data["video_plays_unique_75_percents"] = (
+            data["video_plays_unique_75_percents"].fillna(0).astype(int)
+        )
+        data["video_plays_unique_100_percents"] = (
+            data["video_plays_unique_100_percents"].fillna(0).astype(int)
+        )
+        pickle.dump(data, file)

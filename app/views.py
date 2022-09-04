@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from urllib.parse import parse_qsl
 
 from flask import request, render_template
@@ -56,10 +57,53 @@ class VKStatisticsView(TemplateView):
     template_name = "vk/statistics.html"
     title = "Статистика объявлений в ВК"
 
+    @property
+    def accounts(self) -> Dict[int, vk_data.AccountData]:
+        return dict(
+            map(lambda item: (item.account_id, item), vk_reader("ads.getAccounts"))
+        )
+
+    @property
+    def clients(self) -> Dict[int, vk_data.ClientData]:
+        return dict(map(lambda item: (item.id, item), vk_reader("ads.getClients")))
+
+    @property
+    def campaigns(self) -> Dict[int, vk_data.CampaignData]:
+        return dict(map(lambda item: (item.id, item), vk_reader("ads.getCampaigns")))
+
+    @property
+    def ads(self) -> Dict[int, vk_data.AdData]:
+        return dict(map(lambda item: (item.id, item), vk_reader("ads.getAds")))
+
+    def get_args(self) -> Dict[str, Any]:
+        return {
+            "account": request.args.get("account_id") or None,
+            "client": request.args.get("client_id") or None,
+            "campaign": request.args.get("campaign_id") or None,
+        }
+
     def get(self):
+        args = self.get_args()
+        self.context("accounts", self.accounts)
+        self.context("clients", self.clients)
+        self.context("campaigns", self.campaigns)
+        self.context("ads", self.ads)
         stats = vk_reader("ads.getStatistics")
-        for ad in stats:
-            print(ad.stats)
+        stats["impressions"] = stats["impressions"].apply(lambda value: "%.2f" % value)
+        stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
+        stats["effective_cost_per_click"] = stats["effective_cost_per_click"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["effective_cost_per_mille"] = stats["effective_cost_per_mille"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["effective_cpf"] = stats["effective_cpf"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["effective_cost_per_message"] = stats["effective_cost_per_message"].apply(
+            lambda value: "%.2f" % value
+        )
+        self.context("stats", stats)
         return super().get()
 
 
