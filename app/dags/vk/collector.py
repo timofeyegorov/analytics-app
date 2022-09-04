@@ -63,8 +63,7 @@ def ads_get_campaigns():
             response += list(
                 map(
                     lambda campaign: {
-                        "account_id": client.account_id,
-                        "client_id": client.id,
+                        "account_id": account.account_id,
                         **campaign,
                     },
                     vk(method, account_id=account.account_id),
@@ -77,38 +76,37 @@ def ads_get_campaigns():
 @log_execution_time("ads.getAds")
 def ads_get_ads():
     method = "ads.getAds"
-    # accounts = reader("ads.getAccounts")
-    # clients = reader("ads.getClients")
+    accounts = reader("ads.getAccounts")
+    clients = reader("ads.getClients")
     response = []
-    # for account in accounts:
-    #     if account.account_type == data.AccountTypeEnum.agency:
-    #         account_clients = list(
-    #             filter(lambda client: client.account_id == account.account_id, clients)
-    #         )
-    #         for client in account_clients:
-    #             response += list(
-    #                 map(
-    #                     lambda campaign: {
-    #                         "account_id": client.account_id,
-    #                         "client_id": client.id,
-    #                         **campaign,
-    #                     },
-    #                     vk(method, account_id=account.account_id, client_id=client.id),
-    #                 )
-    #             )
-    #             time.sleep(1)
-    #     else:
-    #         response += list(
-    #             map(
-    #                 lambda campaign: {
-    #                     "account_id": client.account_id,
-    #                     "client_id": client.id,
-    #                     **campaign,
-    #                 },
-    #                 vk(method, account_id=account.account_id),
-    #             )
-    #         )
-    #         time.sleep(1)
+    for account in accounts:
+        if account.account_type == data.AccountTypeEnum.agency:
+            account_clients = list(
+                filter(lambda client: client.account_id == account.account_id, clients)
+            )
+            for client in account_clients:
+                response += list(
+                    map(
+                        lambda ad: {
+                            "account_id": client.account_id,
+                            "client_id": client.id,
+                            **ad,
+                        },
+                        vk(method, account_id=account.account_id, client_id=client.id),
+                    )
+                )
+                time.sleep(1)
+        else:
+            response += list(
+                map(
+                    lambda ad: {
+                        "account_id": account.account_id,
+                        **ad,
+                    },
+                    vk(method, account_id=account.account_id),
+                )
+            )
+            time.sleep(1)
     writer(method, response)
 
 

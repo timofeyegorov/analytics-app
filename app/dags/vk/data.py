@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from pydantic import BaseModel, PositiveInt, EmailStr, NonNegativeInt
 
 
@@ -144,7 +145,7 @@ class ClientData(BaseModel):
 
 class CampaignData(BaseModel):
     account_id: PositiveInt
-    client_id: PositiveInt
+    client_id: Optional[PositiveInt]
     id: PositiveInt
     type: CampaignTypeEnum
     name: str
@@ -153,3 +154,9 @@ class CampaignData(BaseModel):
     all_limit: NonNegativeInt
     start_time: NonNegativeInt
     stop_time: NonNegativeInt
+
+
+class AdData(BaseModel):
+    account_id: PositiveInt
+    client_id: Optional[PositiveInt]
+    id: PositiveInt
