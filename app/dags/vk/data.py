@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Dict, Optional
 from pydantic import BaseModel, PositiveInt, EmailStr, NonNegativeInt
 
 
@@ -372,4 +372,4 @@ class AdData(BaseModel):
     disclaimer_supplements: Optional[PositiveInt]
     weekly_schedule_hours: Optional[str]
     weekly_schedule_use_holidays: Optional[bool]
-    events_retargeting_groups: List[str]
+    events_retargeting_groups: Dict[PositiveInt, List[PositiveInt]]
