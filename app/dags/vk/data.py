@@ -225,6 +225,90 @@ class AdGoalTypeEnum(Enum):
         return AdGoalTypeTitleEnum[self.name].value
 
 
+class AdPlatformTitleEnum(Enum):
+    _0 = "ВКонтакте и сайты-партнёры"
+    _1 = "Только ВКонтакте"
+    all = "Все площадки"
+    desktop = "Полная версия сайта"
+    mobile = "Мобильный сайт и приложения"
+
+
+class AdPlatformEnum(Enum):
+    _0 = 0
+    _1 = 1
+    all = "all"
+    desktop = "desktop"
+    mobile = "mobile"
+
+    @property
+    def title(self) -> str:
+        return AdPlatformTitleEnum[self.name].value
+
+
+class AdPublisherPlatformsTitleEnum(Enum):
+    all = "Все площадки(по умолчанию)"
+    social = "Все соцсети(ВКонтакте и Одноклассники)"
+    vk = "Только ВКонтакте"
+
+
+class AdPublisherPlatformsEnum(Enum):
+    all = "all"
+    social = "social"
+    vk = "vk"
+
+    @property
+    def title(self) -> str:
+        return AdPublisherPlatformsTitleEnum[self.name].value
+
+
+class AdAutobiddingTitleEnum(Enum):
+    _0 = "Выключено"
+    _1 = "Включено (только для целей «Максимум показов» и «Максимум переходов»)"
+
+
+class AdAutobiddingEnum(Enum):
+    _0 = 0
+    _1 = 1
+
+    @property
+    def title(self) -> str:
+        return AdAutobiddingTitleEnum[self.name].value
+
+
+class AdStatusTitleEnum(Enum):
+    _0 = "Объявление остановлено"
+    _1 = "Объявление запущено"
+    _2 = "Объявление удалено"
+
+
+class AdStatusEnum(Enum):
+    _0 = 0
+    _1 = 1
+    _2 = 2
+
+    @property
+    def title(self) -> str:
+        return AdStatusTitleEnum[self.name].value
+
+
+class AdApprovedTitleEnum(Enum):
+    _0 = "Объявление не проходило модерацию"
+    _1 = "Объявление ожидает модерации"
+    _2 = "Объявление одобрено"
+    _3 = "Объявление отклонено"
+
+
+class AdApprovedEnum(Enum):
+    _0 = 0
+    _1 = 1
+    _2 = 2
+    _3 = 3
+
+    @property
+    def title(self) -> str:
+        return AdApprovedTitleEnum[self.name].value
+
+
 class AccountData(BaseModel):
     access_role: AccountAccessRoleEnum
     account_id: PositiveInt
@@ -267,3 +351,25 @@ class AdData(BaseModel):
     cpm: Optional[PositiveInt]
     ocpm: Optional[PositiveInt]
     goal_type: AdGoalTypeEnum
+    impressions_limit: PositiveInt
+    impressions_limited: PositiveInt
+    ad_platform: AdPlatformEnum
+    ad_platform_no_wall: PositiveInt
+    ad_platform_no_ad_network: PositiveInt
+    publisher_platforms: AdPublisherPlatformsEnum
+    all_limit: NonNegativeInt
+    day_limit: NonNegativeInt
+    autobidding: AdAutobiddingEnum
+    autobidding_max_cost: PositiveInt
+    category1_id: PositiveInt
+    category2_id: PositiveInt
+    status: AdStatusEnum
+    name: str
+    approved: AdApprovedEnum
+    video: PositiveInt
+    disclaimer_medical: PositiveInt
+    disclaimer_specialist: PositiveInt
+    disclaimer_supplements: PositiveInt
+    weekly_schedule_hours: str
+    weekly_schedule_use_holidays: bool
+    events_retargeting_groups: str
