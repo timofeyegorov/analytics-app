@@ -41,26 +41,36 @@ def ads_get_campaigns():
     method = "ads.getCampaigns"
     accounts = reader("ads.getAccounts")
     clients = reader("ads.getClients")
-    print("--------------------------------------------------")
-    print(accounts)
-    print(clients)
     response = []
-    print("----------------")
     for account in accounts:
-        print(account.account_type)
-    print("--------------------------------------------------")
-    # for client in reader("ads.getClients"):
-    #     response += list(
-    #         map(
-    #             lambda campaign: {
-    #                 "account_id": client.account_id,
-    #                 "client_id": client.id,
-    #                 **campaign,
-    #             },
-    #             vk(method, account_id=client.account_id, client_id=client.id),
-    #         )
-    #     )
-    #     time.sleep(1)
+        if account.account_type == data.AccountTypeEnum.agency:
+            account_clients = list(
+                filter(lambda client: client.account_id == account.account_id, clients)
+            )
+            for client in account_clients:
+                response += list(
+                    map(
+                        lambda campaign: {
+                            "account_id": client.account_id,
+                            "client_id": client.id,
+                            **campaign,
+                        },
+                        vk(method, account_id=account.account_id, client_id=client.id),
+                    )
+                )
+                time.sleep(1)
+        else:
+            response += list(
+                map(
+                    lambda campaign: {
+                        "account_id": client.account_id,
+                        "client_id": client.id,
+                        **campaign,
+                    },
+                    vk(method, account_id=account.account_id),
+                )
+            )
+            time.sleep(1)
     writer(method, response)
 
 
@@ -83,4 +93,5 @@ ads_get_campaigns_operator = PythonOperator(
 )
 
 ads_get_accounts_operator >> ads_get_clients_operator
+ads_get_accounts_operator >> ads_get_campaigns_operator
 ads_get_clients_operator >> ads_get_campaigns_operator

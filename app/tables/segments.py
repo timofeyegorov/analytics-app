@@ -134,17 +134,6 @@ def calculate_segments(df):
                         | (df["account"] == traff_name)
                     )
                 ].shape[0]
-                print(df_category_val.loc[idx, traff_name])
-                print(
-                    df_category_val.loc[idx, traff_name]
-                    / (
-                        df[
-                            (df["trafficologist"] == traff_name)
-                            | (df["account"] == traff_name)
-                        ].shape[0]
-                    )
-                    * 100
-                )
                 df_category.loc[idx, traff_name] = (
                     (
                         df_category_val.loc[idx, traff_name]
