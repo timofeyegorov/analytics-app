@@ -4,7 +4,13 @@ from pathlib import Path
 from typing import List, Dict, Any
 from transliterate import slugify
 
-from app.dags.vk.data import AccountData, ClientData, CampaignData, AdData
+from app.dags.vk.data import (
+    AccountData,
+    ClientData,
+    CampaignData,
+    TargetGroupData,
+    AdData,
+)
 
 
 class VKWriter:
@@ -29,7 +35,12 @@ class VKWriter:
         data = list(map(lambda campaign: CampaignData(**campaign), campaigns))
         pickle.dump(data, file)
 
+    def adsgettargetgroups(self, file, target_groups: List[Dict[str, Any]]):
+        data = list(
+            map(lambda target_group: TargetGroupData(**target_group), target_groups)
+        )
+        pickle.dump(data, file)
+
     def adsgetads(self, file, ads: List[Dict[str, Any]]):
-        print(ads)
         data = list(map(lambda ad: AdData(**ad), ads))
         pickle.dump(data, file)

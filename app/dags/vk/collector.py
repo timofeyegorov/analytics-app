@@ -73,6 +73,43 @@ def ads_get_campaigns():
     writer(method, response)
 
 
+@log_execution_time("ads.getTargetGroups")
+def ads_get_target_groups():
+    method = "ads.getTargetGroups"
+    accounts = reader("ads.getAccounts")
+    clients = reader("ads.getClients")
+    response = []
+    for account in accounts:
+        if account.account_type == data.AccountTypeEnum.agency:
+            account_clients = list(
+                filter(lambda client: client.account_id == account.account_id, clients)
+            )
+            for client in account_clients:
+                response += list(
+                    map(
+                        lambda target_group: {
+                            "account_id": client.account_id,
+                            "client_id": client.id,
+                            **target_group,
+                        },
+                        vk(method, account_id=client.account_id, client_id=client.id),
+                    )
+                )
+                time.sleep(1)
+        else:
+            response += list(
+                map(
+                    lambda target_group: {
+                        "account_id": account.account_id,
+                        **target_group,
+                    },
+                    vk(method, account_id=account.account_id),
+                )
+            )
+            time.sleep(1)
+    writer(method, response)
+
+
 @log_execution_time("ads.getAds")
 def ads_get_ads():
     method = "ads.getAds"
@@ -92,7 +129,7 @@ def ads_get_ads():
                             "client_id": client.id,
                             **ad,
                         },
-                        vk(method, account_id=account.account_id, client_id=client.id),
+                        vk(method, account_id=client.account_id, client_id=client.id),
                     )
                 )
                 time.sleep(1)
@@ -127,12 +164,18 @@ ads_get_clients_operator = PythonOperator(
 ads_get_campaigns_operator = PythonOperator(
     task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
 )
+ads_get_target_groups_operator = PythonOperator(
+    task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
+)
 ads_get_ads_operator = PythonOperator(
     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
 )
 
 ads_get_accounts_operator >> ads_get_clients_operator
 ads_get_accounts_operator >> ads_get_campaigns_operator
+ads_get_accounts_operator >> ads_get_target_groups_operator
 ads_get_accounts_operator >> ads_get_ads_operator
 ads_get_clients_operator >> ads_get_campaigns_operator
+ads_get_clients_operator >> ads_get_target_groups_operator
 ads_get_clients_operator >> ads_get_ads_operator
+ads_get_target_groups_operator >> ads_get_ads_operator

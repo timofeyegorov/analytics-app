@@ -387,6 +387,12 @@ class CampaignData(BaseModel):
     stop_time: NonNegativeInt
 
 
+class TargetGroupData(BaseModel):
+    account_id: PositiveInt
+    client_id: Optional[PositiveInt]
+    id: PositiveInt
+
+
 class AdData(BaseModel):
     account_id: PositiveInt
     client_id: Optional[PositiveInt]
