@@ -346,6 +346,10 @@ class AdEventsRetargetingGroupsEnum(Enum):
     _15 = 15
     _20 = 20
     _21 = 21
+    _22 = 22
+    _23 = 23
+    _24 = 24
+    _25 = 25
 
     @property
     def title(self) -> str:
