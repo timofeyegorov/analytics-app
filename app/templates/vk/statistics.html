@@ -19,6 +19,7 @@
     <table>
         <thead>
             <tr>
+                <th rowspan="2">#</th>
                 <th rowspan="2">Объявление</th>
                 <th rowspan="2">Кабинет</th>
                 <th rowspan="2">Клиент</th>
@@ -50,6 +51,7 @@
         <tbody>
             {% for index, stat in stats.iterrows() %}
                 <tr>
+                    <td>{{ index + 1 }}</td>
                     <td class="nowrap">{{ stat.ad_id }} <span class="hint">{{ ads[stat.ad_id].name }}</span></td>
                     <td class="nowrap">{{ stat.account_id }} <span class="hint">{{ accounts[stat.account_id].account_name }}</span></td>
                     <td class="nowrap">{{ stat.client_id }} <span class="hint">{{ clients[stat.client_id].name }}</span></td>
