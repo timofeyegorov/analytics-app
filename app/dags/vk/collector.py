@@ -11,7 +11,7 @@ sys.path.append(Variable.get("APP_FOLDER"))
 
 from app.plugins.ads import vk
 from app.dags.decorators import log_execution_time
-from app.dags.vk import reader, writer
+from app.dags.vk import reader, writer, data
 
 
 @log_execution_time("ads.getAccounts")
@@ -39,19 +39,28 @@ def ads_get_clients():
 @log_execution_time("ads.getCampaigns")
 def ads_get_campaigns():
     method = "ads.getCampaigns"
+    accounts = reader("ads.getAccounts")
+    clients = reader("ads.getClients")
+    print("--------------------------------------------------")
+    print(accounts)
+    print(clients)
     response = []
-    for client in reader("ads.getClients"):
-        response += list(
-            map(
-                lambda campaign: {
-                    "account_id": client.account_id,
-                    "client_id": client.id,
-                    **campaign,
-                },
-                vk(method, account_id=client.account_id, client_id=client.id),
-            )
-        )
-        time.sleep(1)
+    print("----------------")
+    for account in accounts:
+        print(account.account_type)
+    print("--------------------------------------------------")
+    # for client in reader("ads.getClients"):
+    #     response += list(
+    #         map(
+    #             lambda campaign: {
+    #                 "account_id": client.account_id,
+    #                 "client_id": client.id,
+    #                 **campaign,
+    #             },
+    #             vk(method, account_id=client.account_id, client_id=client.id),
+    #         )
+    #     )
+    #     time.sleep(1)
     writer(method, response)
 
 

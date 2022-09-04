@@ -52,6 +52,11 @@ class APIView(MethodView):
         return self.render()
 
 
+class VKStatisticsView(TemplateView):
+    template_name = "vk/statistics.html"
+    title = "Статистика объявлений в ВК"
+
+
 class VKCreateAdView(TemplateView):
     template_name = "vk/create-ad.html"
     title = "Создать объявление в ВК"
