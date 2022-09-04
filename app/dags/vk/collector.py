@@ -1,5 +1,7 @@
+import re
 import sys
 import time
+import pandas
 
 from datetime import datetime
 
@@ -156,7 +158,63 @@ def ads_get_ads():
 @log_execution_time("ads.getStatistics")
 def ads_get_statistics():
     method = "ads.getStatistics"
+    ads = reader("ads.getAds")
     response = []
+    groups = list(map(lambda ad: (ad.id, ad.account_id), ads))
+    data = pandas.DataFrame(groups, columns=("id", "account_id"))
+    for account_id, group in data.groupby("account_id"):
+        ids = ",".join(list(group["id"].astype(str)))
+        request_params = {
+            "account_id": account_id,
+            "ids_type": "ad",
+            "ids": ids,
+        }
+        daterange_match = vk(
+            method,
+            period="overall",
+            date_from=0,
+            date_to=0,
+            **request_params,
+        )
+        date_from = str(
+            min(
+                list(
+                    set(
+                        map(
+                            lambda item: int(
+                                re.sub(r"-+", "", item.get("stats")[0].get("day_from"))
+                            ),
+                            daterange_match,
+                        )
+                    )
+                )
+            )
+        )
+        date_to = str(
+            max(
+                list(
+                    set(
+                        map(
+                            lambda item: int(
+                                re.sub(r"-+", "", item.get("stats")[0].get("day_to"))
+                            ),
+                            daterange_match,
+                        )
+                    )
+                )
+            )
+        )
+        date_from = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
+        date_to = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
+        time.sleep(1)
+        response += vk(
+            method,
+            period="day",
+            date_from=date_from,
+            date_to=date_to,
+            **request_params,
+        )
+        time.sleep(1)
     writer(method, response)
 
 
@@ -198,5 +256,4 @@ ads_get_clients_operator >> ads_get_target_groups_operator
 ads_get_accounts_operator >> ads_get_ads_operator
 ads_get_clients_operator >> ads_get_ads_operator
 
-ads_get_accounts_operator >> ads_get_statistics_operator
 ads_get_ads_operator >> ads_get_statistics_operator

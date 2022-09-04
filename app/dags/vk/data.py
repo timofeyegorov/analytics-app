@@ -1,6 +1,13 @@
 from enum import Enum
 from typing import List, Dict, Optional
-from pydantic import BaseModel, PositiveInt, EmailStr, NonNegativeInt
+from pydantic import (
+    BaseModel,
+    PositiveInt,
+    PositiveFloat,
+    EmailStr,
+    NonNegativeInt,
+    NonNegativeFloat,
+)
 
 
 class AccountAccessRoleTitleEnum(Enum):
@@ -356,6 +363,24 @@ class AdEventsRetargetingGroupsEnum(Enum):
         return AdEventsRetargetingGroupsTitleEnum[self.name].value
 
 
+class StatisticsIdsTypeTitleEnum(Enum):
+    ad = "объявления"
+    campaign = "кампании"
+    client = "клиенты"
+    office = "кабинет"
+
+
+class StatisticsIdsTypeEnum(Enum):
+    ad = "ad"
+    campaign = "campaign"
+    client = "client"
+    office = "office"
+
+    @property
+    def title(self) -> str:
+        return StatisticsIdsTypeTitleEnum[self.name].value
+
+
 class AccountData(BaseModel):
     access_role: AccountAccessRoleEnum
     account_id: PositiveInt
@@ -439,5 +464,34 @@ class AdData(BaseModel):
     events_retargeting_groups: Dict[PositiveInt, List[AdEventsRetargetingGroupsEnum]]
 
 
+class StatisticStatData(BaseModel):
+    day: str
+    spent: Optional[PositiveFloat]
+    impressions: Optional[PositiveInt]
+    clicks: Optional[PositiveInt]
+    reach: Optional[PositiveInt]
+    join_rate: Optional[str]
+    uniq_views_count: Optional[PositiveFloat]
+    link_external_clicks: Optional[PositiveInt]
+    ctr: NonNegativeFloat
+    effective_cost_per_click: Optional[PositiveFloat]
+    effective_cost_per_mille: Optional[PositiveFloat]
+    effective_cpf: Optional[PositiveFloat]
+    effective_cost_per_message: Optional[PositiveFloat]
+    message_sends: Optional[PositiveInt]
+    video_plays_unique_started: Optional[PositiveInt]
+    video_plays_unique_3_seconds: Optional[PositiveInt]
+    video_plays_unique_25_percents: Optional[PositiveInt]
+    video_plays_unique_50_percents: Optional[PositiveInt]
+    video_plays_unique_75_percents: Optional[PositiveInt]
+    video_plays_unique_100_percents: Optional[PositiveInt]
+    conversion_count: Optional[PositiveFloat]
+    conversion_sum: Optional[PositiveFloat]
+    conversion_roas: Optional[PositiveFloat]
+    conversion_cr: Optional[PositiveFloat]
+
+
 class StatisticData(BaseModel):
-    pass
+    id: PositiveInt
+    type: StatisticsIdsTypeEnum
+    stats: List[StatisticStatData]
