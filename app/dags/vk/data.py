@@ -392,7 +392,7 @@ class TargetGroupData(BaseModel):
     client_id: Optional[PositiveInt]
     id: PositiveInt
     name: str
-    last_updated: PositiveInt
+    last_updated: NonNegativeInt
     is_audience: PositiveInt
     is_shared: NonNegativeInt
     audience_count: NonNegativeInt
