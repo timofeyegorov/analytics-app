@@ -394,14 +394,14 @@ class TargetGroupData(BaseModel):
     name: str
     last_updated: PositiveInt
     is_audience: PositiveInt
-    is_shared: PositiveInt
+    is_shared: NonNegativeInt
     audience_count: PositiveInt
-    lifetime: PositiveInt
-    file_source: PositiveInt
-    api_source: PositiveInt
-    lookalike_source: PositiveInt
-    pixel: str
-    domain: str
+    lifetime: NonNegativeInt
+    file_source: NonNegativeInt
+    api_source: NonNegativeInt
+    lookalike_source: NonNegativeInt
+    pixel: Optional[str]
+    domain: Optional[str]
 
 
 class AdData(BaseModel):

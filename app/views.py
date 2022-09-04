@@ -56,6 +56,9 @@ class VKStatisticsView(TemplateView):
     template_name = "vk/statistics.html"
     title = "Статистика объявлений в ВК"
 
+    def get(self):
+        return super().get()
+
 
 class VKCreateAdView(TemplateView):
     template_name = "vk/create-ad.html"
