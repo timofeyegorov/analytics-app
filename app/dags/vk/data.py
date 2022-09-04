@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, PositiveInt, EmailStr, NonNegativeInt
 
 
@@ -351,10 +351,10 @@ class AdData(BaseModel):
     cpm: Optional[PositiveInt]
     ocpm: Optional[PositiveInt]
     goal_type: AdGoalTypeEnum
-    impressions_limit: PositiveInt
-    impressions_limited: PositiveInt
+    impressions_limit: Optional[PositiveInt]
+    impressions_limited: Optional[PositiveInt]
     ad_platform: AdPlatformEnum
-    ad_platform_no_wall: PositiveInt
+    ad_platform_no_wall: Optional[PositiveInt]
     ad_platform_no_ad_network: PositiveInt
     publisher_platforms: AdPublisherPlatformsEnum
     all_limit: NonNegativeInt
@@ -362,14 +362,14 @@ class AdData(BaseModel):
     autobidding: AdAutobiddingEnum
     autobidding_max_cost: PositiveInt
     category1_id: PositiveInt
-    category2_id: PositiveInt
+    category2_id: NonNegativeInt
     status: AdStatusEnum
     name: str
     approved: AdApprovedEnum
-    video: PositiveInt
-    disclaimer_medical: PositiveInt
-    disclaimer_specialist: PositiveInt
-    disclaimer_supplements: PositiveInt
-    weekly_schedule_hours: str
-    weekly_schedule_use_holidays: bool
-    events_retargeting_groups: str
+    video: Optional[PositiveInt]
+    disclaimer_medical: Optional[PositiveInt]
+    disclaimer_specialist: Optional[PositiveInt]
+    disclaimer_supplements: Optional[PositiveInt]
+    weekly_schedule_hours: Optional[str]
+    weekly_schedule_use_holidays: Optional[bool]
+    events_retargeting_groups: List[str]
