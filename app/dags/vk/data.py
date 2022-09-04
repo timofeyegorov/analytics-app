@@ -310,6 +310,7 @@ class AdApprovedEnum(Enum):
 
 
 class AdEventsRetargetingGroupsTitleEnum(Enum):
+    _0 = "Отсутствует"
     _1 = "Просмотр промопоста"
     _2 = "Переход по ссылке или переход в сообщество"
     _3 = "Переход в сообщество"
@@ -327,6 +328,7 @@ class AdEventsRetargetingGroupsTitleEnum(Enum):
 
 
 class AdEventsRetargetingGroupsEnum(Enum):
+    _0 = 0
     _1 = 1
     _2 = 2
     _3 = 3
