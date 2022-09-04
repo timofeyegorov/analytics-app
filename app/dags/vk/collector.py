@@ -92,7 +92,12 @@ def ads_get_target_groups():
                             "client_id": client.id,
                             **target_group,
                         },
-                        vk(method, account_id=client.account_id, client_id=client.id),
+                        vk(
+                            method,
+                            account_id=client.account_id,
+                            client_id=client.id,
+                            extended=1,
+                        ),
                     )
                 )
                 time.sleep(1)
@@ -103,7 +108,7 @@ def ads_get_target_groups():
                         "account_id": account.account_id,
                         **target_group,
                     },
-                    vk(method, account_id=account.account_id),
+                    vk(method, account_id=account.account_id, extended=1),
                 )
             )
             time.sleep(1)

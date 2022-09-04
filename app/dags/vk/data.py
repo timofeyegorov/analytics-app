@@ -391,6 +391,17 @@ class TargetGroupData(BaseModel):
     account_id: PositiveInt
     client_id: Optional[PositiveInt]
     id: PositiveInt
+    name: str
+    last_updated: PositiveInt
+    is_audience: PositiveInt
+    is_shared: PositiveInt
+    audience_count: PositiveInt
+    lifetime: PositiveInt
+    file_source: PositiveInt
+    api_source: PositiveInt
+    lookalike_source: PositiveInt
+    pixel: str
+    domain: str
 
 
 class AdData(BaseModel):
