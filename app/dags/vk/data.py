@@ -395,7 +395,7 @@ class TargetGroupData(BaseModel):
     last_updated: PositiveInt
     is_audience: PositiveInt
     is_shared: NonNegativeInt
-    audience_count: PositiveInt
+    audience_count: NonNegativeInt
     lifetime: NonNegativeInt
     file_source: NonNegativeInt
     api_source: NonNegativeInt
