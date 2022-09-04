@@ -24,8 +24,9 @@ def ads_get_accounts():
 @log_execution_time("ads.getClients")
 def ads_get_clients():
     method = "ads.getClients"
+    accounts = reader("ads.getAccounts")
     response = []
-    for account in reader("ads.getAccounts"):
+    for account in accounts:
         response += list(
             map(
                 lambda client: {"account_id": account.account_id, **client},
@@ -152,6 +153,13 @@ def ads_get_ads():
     writer(method, response)
 
 
+@log_execution_time("ads.getStatistics")
+def ads_get_statistics():
+    method = "ads.getStatistics"
+    response = []
+    writer(method, response)
+
+
 dag = DAG(
     "api_data_vk",
     description="Collect VK API data",
@@ -175,12 +183,20 @@ ads_get_target_groups_operator = PythonOperator(
 ads_get_ads_operator = PythonOperator(
     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
 )
+ads_get_statistics_operator = PythonOperator(
+    task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
+)
 
 ads_get_accounts_operator >> ads_get_clients_operator
+
 ads_get_accounts_operator >> ads_get_campaigns_operator
-ads_get_accounts_operator >> ads_get_target_groups_operator
-ads_get_accounts_operator >> ads_get_ads_operator
 ads_get_clients_operator >> ads_get_campaigns_operator
+
+ads_get_accounts_operator >> ads_get_target_groups_operator
 ads_get_clients_operator >> ads_get_target_groups_operator
+
+ads_get_accounts_operator >> ads_get_ads_operator
 ads_get_clients_operator >> ads_get_ads_operator
-ads_get_target_groups_operator >> ads_get_ads_operator
+
+ads_get_accounts_operator >> ads_get_statistics_operator
+ads_get_ads_operator >> ads_get_statistics_operator

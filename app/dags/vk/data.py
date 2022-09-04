@@ -437,3 +437,7 @@ class AdData(BaseModel):
     weekly_schedule_hours: Optional[str]
     weekly_schedule_use_holidays: Optional[bool]
     events_retargeting_groups: Dict[PositiveInt, List[AdEventsRetargetingGroupsEnum]]
+
+
+class StatisticData(BaseModel):
+    pass
