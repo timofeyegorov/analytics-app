@@ -263,7 +263,7 @@ class AdData(BaseModel):
     campaign_id: PositiveInt
     ad_format: AdFormatEnum
     cost_type: AdCostTypeEnum
-    cpc: PositiveInt
-    cpm: PositiveInt
-    ocpm: PositiveInt
+    cpc: Optional[PositiveInt]
+    cpm: Optional[PositiveInt]
+    ocpm: Optional[PositiveInt]
     goal_type: AdGoalTypeEnum
