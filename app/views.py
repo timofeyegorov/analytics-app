@@ -53,9 +53,8 @@ class APIView(MethodView):
         return self.render()
 
 
-class VKHistoryView(TemplateView):
-    template_name = "vk/history.html"
-    title = "История объявлений в ВК"
+class StatsDataFrameMixinView(TemplateView):
+    stats: pandas.DataFrame
 
     @property
     def accounts(self) -> Dict[int, vk_data.AccountData]:
@@ -76,73 +75,51 @@ class VKHistoryView(TemplateView):
         return dict(map(lambda item: (item.id, item), vk_reader("ads.getAds")))
 
     @property
-    def stats(self) -> pandas.DataFrame:
-        stats = vk_reader("ads.getStatistics")
-        stats["spent"] = stats["spent"].apply(lambda value: "%.2f" % value)
-        stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
-        stats["effective_cost_per_click"] = stats["effective_cost_per_click"].apply(
-            lambda value: "%.3f" % value
-        )
-        stats["effective_cost_per_mille"] = stats["effective_cost_per_mille"].apply(
-            lambda value: "%.3f" % value
-        )
-        stats["effective_cpf"] = stats["effective_cpf"].apply(
-            lambda value: "%.3f" % value
-        )
-        stats["effective_cost_per_message"] = stats["effective_cost_per_message"].apply(
-            lambda value: "%.2f" % value
-        )
-        return stats
+    def ads_layout(self) -> Dict[int, vk_data.AdLayoutData]:
+        return dict(map(lambda item: (item.id, item), vk_reader("ads.getAdsLayout")))
+
+    def set_context(self, data: Dict[str, Any]):
+        for name, value in data.items():
+            self.context(name, value)
 
     def get(self):
         self.context("accounts", self.accounts)
         self.context("clients", self.clients)
         self.context("campaigns", self.campaigns)
         self.context("ads", self.ads)
+        self.context("ads_layout", self.ads_layout)
+
+        self.stats["spent"] = self.stats["spent"].apply(lambda value: "%.2f" % value)
+        self.stats["ctr"] = self.stats["ctr"].apply(lambda value: "%.3f" % value)
+        self.stats["effective_cost_per_click"] = self.stats[
+            "effective_cost_per_click"
+        ].apply(lambda value: "%.3f" % value)
+        self.stats["effective_cost_per_mille"] = self.stats[
+            "effective_cost_per_mille"
+        ].apply(lambda value: "%.3f" % value)
+        self.stats["effective_cpf"] = self.stats["effective_cpf"].apply(
+            lambda value: "%.3f" % value
+        )
+        self.stats["effective_cost_per_message"] = self.stats[
+            "effective_cost_per_message"
+        ].apply(lambda value: "%.2f" % value)
+
         self.context("stats", self.stats)
         return super().get()
 
 
-class VKStatisticsView(TemplateView):
+class VKHistoryView(StatsDataFrameMixinView):
+    template_name = "vk/history.html"
+    title = "История объявлений в ВК"
+
+    def get(self):
+        self.stats = vk_reader("ads.getStatistics")[:10]
+        return super().get()
+
+
+class VKStatisticsView(StatsDataFrameMixinView):
     template_name = "vk/statistics.html"
     title = "Статистика объявлений в ВК"
-
-    @property
-    def accounts(self) -> Dict[int, vk_data.AccountData]:
-        return dict(
-            map(lambda item: (item.account_id, item), vk_reader("ads.getAccounts"))
-        )
-
-    @property
-    def clients(self) -> Dict[int, vk_data.ClientData]:
-        return dict(map(lambda item: (item.id, item), vk_reader("ads.getClients")))
-
-    @property
-    def campaigns(self) -> Dict[int, vk_data.CampaignData]:
-        return dict(map(lambda item: (item.id, item), vk_reader("ads.getCampaigns")))
-
-    @property
-    def ads(self) -> Dict[int, vk_data.AdData]:
-        return dict(map(lambda item: (item.id, item), vk_reader("ads.getAds")))
-
-    @property
-    def stats(self) -> pandas.DataFrame:
-        stats = vk_reader("ads.getStatistics")
-        stats["spent"] = stats["spent"].apply(lambda value: "%.2f" % value)
-        stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
-        stats["effective_cost_per_click"] = stats["effective_cost_per_click"].apply(
-            lambda value: "%.3f" % value
-        )
-        stats["effective_cost_per_mille"] = stats["effective_cost_per_mille"].apply(
-            lambda value: "%.3f" % value
-        )
-        stats["effective_cpf"] = stats["effective_cpf"].apply(
-            lambda value: "%.3f" % value
-        )
-        stats["effective_cost_per_message"] = stats["effective_cost_per_message"].apply(
-            lambda value: "%.2f" % value
-        )
-        return stats
 
     def get_args(self) -> Dict[str, Any]:
         return {
@@ -151,10 +128,6 @@ class VKStatisticsView(TemplateView):
             "client": request.args.get("client_id") or None,
             "campaign": request.args.get("campaign_id") or None,
         }
-
-    def set_context(self, data: Dict[str, Any]):
-        for name, value in data.items():
-            self.context(name, value)
 
     def form_context_add(self, **kwargs):
         self.set_context(
@@ -166,18 +139,9 @@ class VKStatisticsView(TemplateView):
         )
 
     def get(self):
+        self.stats = vk_reader("ads.getStatistics")[:10]
         args = self.get_args()
-
         self.form_context_add(**args)
-
-        self.context("ads", self.ads)
-        self.context("accounts", self.accounts)
-        self.context("clients", self.clients)
-        self.context("campaigns", self.campaigns)
-
-        stats = self.stats
-        self.context("stats", stats)
-
         return super().get()
 
 

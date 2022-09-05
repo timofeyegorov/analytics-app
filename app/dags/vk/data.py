@@ -140,7 +140,10 @@ class AdFormatTitleEnum(Enum):
     _4 = "Продвижение сообществ или приложений, квадратное изображение"
     _5 = "Приложение в новостной ленте(устаревший)"
     _6 = "Мобильное приложение"
+    _7 = "Специальный формат приложений"
+    _8 = "Специальный формат сообществ"
     _9 = "Запись в сообществе"
+    _10 = "Витрина приложений"
     _11 = "Адаптивный формат"
     _12 = "Истории"
 
@@ -152,7 +155,10 @@ class AdFormatEnum(Enum):
     _4 = 4
     _5 = 5
     _6 = 6
+    _7 = 7
+    _8 = 8
     _9 = 9
+    _10 = 10
     _11 = 11
     _12 = 12
 
@@ -364,6 +370,72 @@ class AdEventsRetargetingGroupsEnum(Enum):
         return AdEventsRetargetingGroupsTitleEnum[self.name].value
 
 
+class AdRepeatVideoTitleEnum(Enum):
+    _0 = "Не зацикливать видео"
+    _1 = "Зацикливать видео"
+
+
+class AdRepeatVideoEnum(Enum):
+    _0 = 0
+    _1 = 1
+
+    @property
+    def title(self) -> str:
+        return AdRepeatVideoTitleEnum[self.name].value
+
+
+class AdLinkButtonTitleEnum(Enum):
+    _open_url = "Перейти"
+    _open = "Открыть"
+    _more = "Подробнее"
+    _call = "Позвонить"
+    _book = "Забронировать"
+    _enroll = "Записаться"
+    _register = "Зарегистрироваться"
+    _buy = "Купить"
+    _buy_ticket = "Купить билет"
+    _to_shop = "В магазин"
+    _install = "Установить"
+    _fill = "Заполнить"
+    _order = "Заказать"
+    _create = "Создать"
+    _contact = "Связаться"
+    _choose = "Выбрать"
+    _try = "Попробовать"
+    _begin = "Начать"
+    _get = "Получить"
+    _listen = "Слушать"
+    _learn = "Узнать"
+
+
+class AdLinkButtonEnum(Enum):
+    _open_url = "open_url"
+    _open = "open"
+    _more = "more"
+    _call = "call"
+    _book = "book"
+    _enroll = "enroll"
+    _register = "register"
+    _buy = "buy"
+    _buy_ticket = "buy_ticket"
+    _to_shop = "to_shop"
+    _install = "install"
+    _fill = "fill"
+    _order = "order"
+    _create = "create"
+    _contact = "contact"
+    _choose = "choose"
+    _try = "try"
+    _begin = "begin"
+    _get = "get"
+    _listen = "listen"
+    _learn = "learn"
+
+    @property
+    def title(self) -> str:
+        return AdLinkButtonTitleEnum[self.name].value
+
+
 class StatisticsIdsTypeTitleEnum(Enum):
     ad = "объявления"
     campaign = "кампании"
@@ -467,6 +539,17 @@ class AdData(BaseModel):
 
 class AdLayoutData(BaseModel):
     id: PositiveInt
+    repeat_video: AdRepeatVideoEnum
+    title: str
+    description: str
+    link_url: str
+    link_domain: str
+    link_title: str
+    link_button: AdLinkButtonTitleEnum
+    image_src: str
+    image_src_2x: str
+    icon_src: str
+    icon_src_2x: str
 
 
 class StatisticData(BaseModel):
