@@ -321,3 +321,4 @@ ads_get_accounts_operator >> ads_get_ads_layout_operator
 ads_get_clients_operator >> ads_get_ads_layout_operator
 
 ads_get_ads_operator >> ads_get_statistics_operator
+ads_get_ads_layout_operator >> ads_get_statistics_operator
