@@ -222,7 +222,9 @@ def ads_get_statistics():
                         map(
                             lambda item: int(
                                 re.sub(r"-+", "", item.get("stats")[0].get("day_from"))
-                            ),
+                            )
+                            if item.get("stats")
+                            else None,
                             daterange_match,
                         )
                     )
@@ -236,7 +238,9 @@ def ads_get_statistics():
                         map(
                             lambda item: int(
                                 re.sub(r"-+", "", item.get("stats")[0].get("day_to"))
-                            ),
+                            )
+                            if item.get("stats")
+                            else None,
                             daterange_match,
                         )
                     )
