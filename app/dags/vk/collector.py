@@ -58,7 +58,12 @@ def ads_get_campaigns():
                             "client_id": client.id,
                             **campaign,
                         },
-                        vk(method, account_id=account.account_id, client_id=client.id),
+                        vk(
+                            method,
+                            include_deleted=1,
+                            account_id=account.account_id,
+                            client_id=client.id,
+                        ),
                     )
                 )
                 time.sleep(1)
@@ -69,7 +74,11 @@ def ads_get_campaigns():
                         "account_id": account.account_id,
                         **campaign,
                     },
-                    vk(method, account_id=account.account_id),
+                    vk(
+                        method,
+                        include_deleted=1,
+                        account_id=account.account_id,
+                    ),
                 )
             )
             time.sleep(1)
