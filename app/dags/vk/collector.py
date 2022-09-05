@@ -137,7 +137,12 @@ def ads_get_ads():
                             "client_id": client.id,
                             **ad,
                         },
-                        vk(method, account_id=client.account_id, client_id=client.id),
+                        vk(
+                            method,
+                            include_deleted=1,
+                            account_id=client.account_id,
+                            client_id=client.id,
+                        ),
                     )
                 )
                 time.sleep(1)
@@ -148,8 +153,41 @@ def ads_get_ads():
                         "account_id": account.account_id,
                         **ad,
                     },
-                    vk(method, account_id=account.account_id),
+                    vk(
+                        method,
+                        include_deleted=1,
+                        account_id=account.account_id,
+                    ),
                 )
+            )
+            time.sleep(1)
+    writer(method, response)
+
+
+@log_execution_time("ads.getAdsLayout")
+def ads_get_ads_layout():
+    method = "ads.getAdsLayout"
+    accounts = reader("ads.getAccounts")
+    clients = reader("ads.getClients")
+    response = []
+    for account in accounts:
+        if account.account_type == data.AccountTypeEnum.agency:
+            account_clients = list(
+                filter(lambda client: client.account_id == account.account_id, clients)
+            )
+            for client in account_clients:
+                response += vk(
+                    method,
+                    include_deleted=1,
+                    account_id=client.account_id,
+                    client_id=client.id,
+                )
+                time.sleep(1)
+        else:
+            response += vk(
+                method,
+                include_deleted=1,
+                account_id=account.account_id,
             )
             time.sleep(1)
     writer(method, response)
@@ -257,6 +295,9 @@ ads_get_target_groups_operator = PythonOperator(
 ads_get_ads_operator = PythonOperator(
     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
 )
+ads_get_ads_layout_operator = PythonOperator(
+    task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
+)
 ads_get_statistics_operator = PythonOperator(
     task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
 )
@@ -271,5 +312,8 @@ ads_get_clients_operator >> ads_get_target_groups_operator
 
 ads_get_accounts_operator >> ads_get_ads_operator
 ads_get_clients_operator >> ads_get_ads_operator
+
+ads_get_accounts_operator >> ads_get_ads_layout_operator
+ads_get_clients_operator >> ads_get_ads_layout_operator
 
 ads_get_ads_operator >> ads_get_statistics_operator

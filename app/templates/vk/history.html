@@ -2,41 +2,9 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block js %}
-<script type="text/javascript" src="{{ url_for('static', filename='js/vk/statistics.js') }}"></script>
-{% endblock js %}
-
 {% block content %}
     <h1>{{ title }}</h1>
     {% include 'vk/menu.html' %}
-    <div class="base-filters card p-3">
-        <form action="{{ url_for('vk_statistics') }}">
-            {% if error %}
-                <div><p style="color: red">{{ error }}</p></div>
-            {% endif %}
-            <div class="filter-block">
-                <div>
-                    <label for="group_by">Группировать по</label>
-                    <select class="form-control" name="group_by" id="group_by">
-                        <option value="ad_id"{% if fields.group_by == 'ad_id' %} selected="selected"{% endif %}>Объявлениям</option>
-                        <option value="account_id"{% if fields.group_by == 'account_id' %} selected="selected"{% endif %}>Кабинетам</option>
-                        <option value="client_id"{% if fields.group_by == 'client_id' %} selected="selected"{% endif %}>Клиентам</option>
-                        <option value="campaign_id"{% if fields.group_by == 'campaign_id' %} selected="selected"{% endif %}>Кампаниям</option>
-                    </select>
-                </div>
-{#                <div>#}
-{#                    <label for="group_by">Группировка</label>#}
-{#                    <select class="form-control" data-value="{{ fields.group_by }}" name="group_by" id="group_by" disabled="disabled"></select>#}
-{#                </div>#}
-            </div>
-            <div class="filter-actions">
-                <div>
-                    <button class="btn btn-primary">Показать</button>
-                    <button class="btn btn-success btn-reset">Сбросить</button>
-                </div>
-            </div>
-        </form>
-    </div>
     <table>
         <thead>
             <tr>

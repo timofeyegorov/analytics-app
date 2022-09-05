@@ -465,6 +465,10 @@ class AdData(BaseModel):
     events_retargeting_groups: Dict[PositiveInt, List[AdEventsRetargetingGroupsEnum]]
 
 
+class AdLayoutData(BaseModel):
+    id: PositiveInt
+
+
 class StatisticData(BaseModel):
     ad_id: PositiveInt
     account_id: PositiveInt
