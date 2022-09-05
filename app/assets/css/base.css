@@ -26,11 +26,21 @@ table th.text-right {
     text-align:right;
 }
 
+label {
+    display:block;
+    line-height:1;
+    margin:0 0 5px 0;
+    font-weight:bold;
+    font-size:.875rem;
+    white-space:nowrap;
+}
+
 .base-links,
 .filter-block,
-.filter-actions {
+.base-filters {
     margin-bottom:.5rem;
 }
+
 .filter-block {
     display:-webkit-box;
     display:-moz-box;
@@ -71,4 +81,7 @@ table th.text-right {
 .filter-block > .field > select {
     min-width:150px;
     height:30px;
+}
+
+.base-filters > form {
 }

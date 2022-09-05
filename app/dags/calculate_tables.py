@@ -289,7 +289,7 @@ def leads_ta_stats():
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
-    schedule_interval="0 */4 * * *",
+    schedule_interval="0 0,4,8,12,16,20 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )

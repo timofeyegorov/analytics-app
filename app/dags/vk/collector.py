@@ -237,7 +237,7 @@ def ads_get_statistics():
 dag = DAG(
     "api_data_vk",
     description="Collect VK API data",
-    schedule_interval="30 */4 * * *",
+    schedule_interval="0 2,6,10,14,18,22 * * *",
     start_date=datetime(2017, 3, 20),
     catchup=False,
 )

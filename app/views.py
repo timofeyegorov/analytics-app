@@ -75,19 +75,8 @@ class VKStatisticsView(TemplateView):
     def ads(self) -> Dict[int, vk_data.AdData]:
         return dict(map(lambda item: (item.id, item), vk_reader("ads.getAds")))
 
-    def get_args(self) -> Dict[str, Any]:
-        return {
-            "account": request.args.get("account_id") or None,
-            "client": request.args.get("client_id") or None,
-            "campaign": request.args.get("campaign_id") or None,
-        }
-
-    def get(self):
-        args = self.get_args()
-        self.context("accounts", self.accounts)
-        self.context("clients", self.clients)
-        self.context("campaigns", self.campaigns)
-        self.context("ads", self.ads)
+    @property
+    def stats(self) -> pandas.DataFrame:
         stats = vk_reader("ads.getStatistics")
         stats["spent"] = stats["spent"].apply(lambda value: "%.2f" % value)
         stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
@@ -103,7 +92,43 @@ class VKStatisticsView(TemplateView):
         stats["effective_cost_per_message"] = stats["effective_cost_per_message"].apply(
             lambda value: "%.2f" % value
         )
+        return stats
+
+    def get_args(self) -> Dict[str, Any]:
+        return {
+            "group_by": request.args.get("group_by", "ad_id"),
+            "account": request.args.get("account_id") or None,
+            "client": request.args.get("client_id") or None,
+            "campaign": request.args.get("campaign_id") or None,
+        }
+
+    def set_context(self, data: Dict[str, Any]):
+        for name, value in data.items():
+            self.context(name, value)
+
+    def form_context_add(self, **kwargs):
+        self.set_context(
+            {
+                "fields": {
+                    "group_by": kwargs.get("group_by", ""),
+                }
+            }
+        )
+
+    def get(self):
+        args = self.get_args()
+
+        self.form_context_add(**args)
+
+        self.context("ads", self.ads)
+        self.context("accounts", self.accounts)
+        self.context("clients", self.clients)
+        self.context("campaigns", self.campaigns)
+        self.context("ads", self.ads)
+
+        stats = self.stats
         self.context("stats", stats)
+
         return super().get()
 
 
