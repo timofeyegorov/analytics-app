@@ -443,10 +443,10 @@ class AdData(BaseModel):
     goal_type: AdGoalTypeEnum
     impressions_limit: Optional[PositiveInt]
     impressions_limited: Optional[PositiveInt]
-    ad_platform: AdPlatformEnum
+    ad_platform: Optional[AdPlatformEnum]
     ad_platform_no_wall: Optional[PositiveInt]
-    ad_platform_no_ad_network: PositiveInt
-    publisher_platforms: AdPublisherPlatformsEnum
+    ad_platform_no_ad_network: Optional[PositiveInt]
+    publisher_platforms: Optional[AdPublisherPlatformsEnum]
     all_limit: NonNegativeInt
     day_limit: NonNegativeInt
     autobidding: Optional[AdAutobiddingEnum]
