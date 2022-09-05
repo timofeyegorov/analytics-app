@@ -539,17 +539,17 @@ class AdData(BaseModel):
 
 class AdLayoutData(BaseModel):
     id: PositiveInt
-    repeat_video: AdRepeatVideoEnum
+    repeat_video: Optional[AdRepeatVideoEnum]
     title: str
-    description: str
+    description: Optional[str]
     link_url: str
     link_domain: str
-    link_title: str
-    link_button: AdLinkButtonTitleEnum
+    link_title: Optional[str]
+    link_button: Optional[AdLinkButtonTitleEnum]
     image_src: str
-    image_src_2x: str
-    icon_src: str
-    icon_src_2x: str
+    image_src_2x: Optional[str]
+    icon_src: Optional[str]
+    icon_src_2x: Optional[str]
 
 
 class StatisticData(BaseModel):
