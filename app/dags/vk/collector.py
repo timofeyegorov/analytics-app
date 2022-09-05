@@ -16,6 +16,15 @@ from app.dags.decorators import log_execution_time
 from app.dags.vk import reader, writer, data
 
 
+def get_map_dates(name: str, daterange) -> map:
+    return map(
+        lambda item: int(re.sub(r"-+", "", item.get("stats")[0].get(name)))
+        if item.get("stats")
+        else None,
+        daterange,
+    )
+
+
 @log_execution_time("ads.getAccounts")
 def ads_get_accounts():
     method = "ads.getAccounts"
@@ -224,38 +233,8 @@ def ads_get_statistics():
             date_to=0,
             **request_params,
         )
-        date_from = str(
-            min(
-                list(
-                    set(
-                        map(
-                            lambda item: int(
-                                re.sub(r"-+", "", item.get("stats")[0].get("day_from"))
-                            )
-                            if item.get("stats")
-                            else None,
-                            daterange_match,
-                        )
-                    )
-                )
-            )
-        )
-        date_to = str(
-            max(
-                list(
-                    set(
-                        map(
-                            lambda item: int(
-                                re.sub(r"-+", "", item.get("stats")[0].get("day_to"))
-                            )
-                            if item.get("stats")
-                            else None,
-                            daterange_match,
-                        )
-                    )
-                )
-            )
-        )
+        date_from = str(min(list(set(get_map_dates("day_from", daterange_match)))))
+        date_to = str(max(list(set(get_map_dates("day_to", daterange_match)))))
         date_from = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
         date_to = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
         time.sleep(1)

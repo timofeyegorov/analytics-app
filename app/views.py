@@ -6,7 +6,6 @@ import tempfile
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 from urllib.parse import parse_qsl
 
 from flask import request, render_template
@@ -82,6 +81,55 @@ class StatsDataFrameMixinView(TemplateView):
         for name, value in data.items():
             self.context(name, value)
 
+    def compile_stats(self) -> pandas.DataFrame:
+        accounts = self.accounts
+        clients = self.clients
+        campaigns = self.campaigns
+        ads = self.ads
+        ads_layout = self.ads_layout
+
+        data: List[List[Any]] = []
+        stats = vk_reader("ads.getStatistics").groupby("ad_id")
+        for ad_id, stat in stats:
+            ad = ads.get(ad_id)
+            account = accounts.get(ad.account_id)
+            client = clients.get(ad.client_id)
+            campaign = campaigns.get(ad.campaign_id)
+            ad_layout = ads_layout.get(ad_id)
+            data.append(
+                [
+                    (ad_id, ad.name),
+                    (account.account_id, account.account_name),
+                    (client.id, client.name),
+                    (campaign.id, campaign.name),
+                    ad_layout.title or "",
+                    ad_layout.description or "",
+                    ad_layout.image_src or "",
+                    "%.2f" % stat.spent.sum(),
+                    stat.impressions.sum(),
+                    stat.clicks.sum(),
+                    stat.date.min().strftime("%Y-%m-%d"),
+                    stat.date.max().strftime("%Y-%m-%d"),
+                ]
+            )
+        self.stats = pandas.DataFrame(
+            data,
+            columns=[
+                "Объявление",
+                "Кабинет",
+                "Клиент",
+                "Кампания",
+                "Заголовок",
+                "Описание",
+                "Изображение",
+                "Потрачено",
+                "Просмотры",
+                "Клики",
+                "Дата запуска",
+                "Дата остановки",
+            ],
+        )
+
     def get(self):
         self.context("accounts", self.accounts)
         self.context("clients", self.clients)
@@ -89,21 +137,22 @@ class StatsDataFrameMixinView(TemplateView):
         self.context("ads", self.ads)
         self.context("ads_layout", self.ads_layout)
 
-        self.stats["spent"] = self.stats["spent"].apply(lambda value: "%.2f" % value)
-        self.stats["ctr"] = self.stats["ctr"].apply(lambda value: "%.3f" % value)
-        self.stats["effective_cost_per_click"] = self.stats[
-            "effective_cost_per_click"
-        ].apply(lambda value: "%.3f" % value)
-        self.stats["effective_cost_per_mille"] = self.stats[
-            "effective_cost_per_mille"
-        ].apply(lambda value: "%.3f" % value)
-        self.stats["effective_cpf"] = self.stats["effective_cpf"].apply(
-            lambda value: "%.3f" % value
-        )
-        self.stats["effective_cost_per_message"] = self.stats[
-            "effective_cost_per_message"
-        ].apply(lambda value: "%.2f" % value)
+        # self.stats["spent"] = self.stats["spent"].apply(lambda value: "%.2f" % value)
+        # self.stats["ctr"] = self.stats["ctr"].apply(lambda value: "%.3f" % value)
+        # self.stats["effective_cost_per_click"] = self.stats[
+        #     "effective_cost_per_click"
+        # ].apply(lambda value: "%.3f" % value)
+        # self.stats["effective_cost_per_mille"] = self.stats[
+        #     "effective_cost_per_mille"
+        # ].apply(lambda value: "%.3f" % value)
+        # self.stats["effective_cpf"] = self.stats["effective_cpf"].apply(
+        #     lambda value: "%.3f" % value
+        # )
+        # self.stats["effective_cost_per_message"] = self.stats[
+        #     "effective_cost_per_message"
+        # ].apply(lambda value: "%.2f" % value)
 
+        self.compile_stats()
         self.context("stats", self.stats)
         return super().get()
 
@@ -111,10 +160,6 @@ class StatsDataFrameMixinView(TemplateView):
 class VKHistoryView(StatsDataFrameMixinView):
     template_name = "vk/history.html"
     title = "История объявлений в ВК"
-
-    def get(self):
-        self.stats = vk_reader("ads.getStatistics")[:10]
-        return super().get()
 
 
 class VKStatisticsView(StatsDataFrameMixinView):
@@ -139,7 +184,6 @@ class VKStatisticsView(StatsDataFrameMixinView):
         )
 
     def get(self):
-        self.stats = vk_reader("ads.getStatistics")[:10]
         args = self.get_args()
         self.form_context_add(**args)
         return super().get()

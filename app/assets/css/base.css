@@ -11,8 +11,8 @@ table td.nowrap,
 table th.nowrap {
     white-space:nowrap;
 }
-table td.nowrap > span.hint,
-table th.nowrap > span.hint {
+table td > span.hint,
+table th > span.hint {
     display:block;
     color:#999;
     font-size:.75rem;
