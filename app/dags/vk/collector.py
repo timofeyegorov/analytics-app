@@ -252,10 +252,19 @@ def ads_get_ads_layout():
     writer(method, output)
 
 
-def get_demographics_execute_code(ids: List[List[str]]) -> str:
-    output = f"""
-var chunks = {json.dumps(list(map(lambda item: ",".join(item), ids)))}
-    """
+def get_demographics_execute_code(
+    ids: List[List[str]], request_params: Dict[str, Any]
+) -> str:
+    output = """var chunks = %s;
+var output = [];
+var response = API.ads.getDemographics(%s);
+while (var items in response) {
+    output += items.response;
+};
+return {"count":output.length, "response": output};""" % (
+        json.dumps(list(map(lambda item: ",".join(item), ids))),
+        json.dumps(request_params),
+    )
     print(output)
     return output
 
@@ -273,18 +282,31 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
+        request_params = {
+            "account_id": account_id,
+            "ids_type": "ad",
+            "ids": ",".join(ids),
+        }
+
+        daterange = get_full_period(method, request_params)
+        time.sleep(1)
+
         ids_chunk = chunking_ids_for_execute(ids)
         for id_chunk in ids_chunk:
-            print(get_demographics_execute_code(id_chunk))
+            print(
+                get_demographics_execute_code(
+                    id_chunk,
+                    {
+                        **request_params,
+                        "date_from": daterange[0].strftime("%Y-%m-%d"),
+                        "date_to": daterange[1].strftime("%Y-%m-%d"),
+                    },
+                )
+            )
             # response = vk("execute", code=get_demographics_execute_code(id_chunk))
             # print(response)
             time.sleep(1)
-        # request_params = {
-        #     "account_id": account_id,
-        #     "ids_type": "ad",
-        #     "ids": ",".join(ids),
-        # }
-        # daterange = get_full_period(method, request_params)
+
         # time.sleep(1)
         # statistics = vk(
         #     method,
