@@ -395,12 +395,12 @@ def collect_statistics_dataframe():
             )
 
         cities = info.pop("cities")
-        cities_dict = {}
+        cities_dict_info = {}
         for city_id, city_info in cities.items():
             city_id = int(re.sub(r"^id_", "", city_id))
             city_name = city_info.pop("name")
             cities_dict[city_id] = city_name
-            cities_dict.update(
+            cities_dict_info.update(
                 dict(
                     map(
                         lambda stat: (f"city__{city_id}__{stat[0]}", stat[1]),
@@ -413,7 +413,7 @@ def collect_statistics_dataframe():
             **info,
             **sex_dict,
             **age_dict,
-            **cities_dict,
+            **cities_dict_info,
         }
 
     writer(
