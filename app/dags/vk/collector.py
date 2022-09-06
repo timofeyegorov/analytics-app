@@ -363,10 +363,26 @@ def ads_get_statistics():
 def collect_statistics_dataframe():
     demographics = reader("ads.getDemographics")
     statistics = reader("ads.getStatistics")
-    print(demographics)
-    print(statistics)
-    print(len(demographics))
-    print(len(statistics))
+    demographics_dict = dict(
+        map(
+            lambda item: (f'{item.date.strftime("%Y%m%d")}_{item.id}', item.dict()),
+            demographics,
+        )
+    )
+    writer(
+        "collectStatisticsDataFrame",
+        list(
+            map(
+                lambda item: {
+                    **demographics_dict.get(
+                        f'{item.date.strftime("%Y%m%d")}_{item.id}', {}
+                    ),
+                    **item.dict(),
+                },
+                statistics,
+            )
+        ),
+    )
 
 
 dag = DAG(

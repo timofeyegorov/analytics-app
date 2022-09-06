@@ -63,6 +63,10 @@ class VKWriter:
         data = list(map(lambda statistic: StatisticData(**statistic), statistics))
         pickle.dump(data, file)
 
+    def collectstatisticsdataframe(self, file, statistics: List[Dict[str, Any]]):
+        data = statistics
+        pickle.dump(data, file)
+
 
 # data = pandas.DataFrame(list(map(lambda item: item.dict(), data)))
 # data["spent"] = data["spent"].fillna(0).astype(float)
