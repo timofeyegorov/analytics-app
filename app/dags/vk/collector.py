@@ -419,7 +419,7 @@ def collect_statistics_dataframe():
                     **demographics_dict.get(
                         f'{item.date.strftime("%Y%m%d")}_{item.id}', {}
                     ),
-                    **item,
+                    **item.dict(),
                 },
                 statistics,
             )
