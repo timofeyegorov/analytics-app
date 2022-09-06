@@ -65,6 +65,7 @@ class VKWriter:
         pickle.dump(data, file)
 
     def collectcities(self, file, cities: List[Dict[str, str]]):
+        print(cities)
         data = list(map(lambda city: CityData(**city), cities))
         pickle.dump(data, file)
 
