@@ -48,11 +48,30 @@ def get_full_period(
 
 def chunking_ids_for_execute(ids: List[str]) -> List[List[str]]:
     np_ids = numpy.array(ids)
-    np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 10))
+    np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 5))
     np_ids = numpy.array_split(np_ids, math.ceil(len(np_ids) / 25))
     return list(
         map(lambda item: list(map(lambda value: value.tolist(), item.tolist())), np_ids)
     )
+
+
+def get_demographics_execute_code(
+    ids: List[List[str]], request_params: Dict[str, Any]
+) -> str:
+    output = """var chunks = %s;
+var params = %s;
+var output = [];
+while (chunks) {
+    params.ids = chunks.shift();
+    var response = API.ads.getDemographics(params);
+    output = output + response.response;
+};
+return {"count":output.length, "response": output};""" % (
+        json.dumps(list(map(lambda item: ",".join(item), ids))),
+        json.dumps(request_params),
+    )
+    print(output)
+    return output
 
 
 @log_execution_time("ads.getAccounts")
@@ -250,25 +269,6 @@ def ads_get_ads_layout():
             )
             time.sleep(1)
     writer(method, output)
-
-
-def get_demographics_execute_code(
-    ids: List[List[str]], request_params: Dict[str, Any]
-) -> str:
-    output = """var chunks = %s;
-var params = %s;
-var output = [];
-while (chunks) {
-    params.ids = chunks.shift();
-    var response = API.ads.getDemographics(params);
-    output = output + response.response;
-};
-return {"count":output.length, "response": output};""" % (
-        json.dumps(list(map(lambda item: ",".join(item), ids))),
-        json.dumps(request_params),
-    )
-    print(output)
-    return output
 
 
 @log_execution_time("ads.getDemographics")
