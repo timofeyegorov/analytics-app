@@ -557,20 +557,28 @@ class DemographicBaseData(BaseModel):
     clicks_rate: NonNegativeFloat = 0
 
 
+class DemographicSexBaseData(DemographicBaseData):
+    pass
+
+
+class DemographicAgeBaseData(DemographicBaseData):
+    pass
+
+
 class DemographicSexData(BaseModel):
-    m: DemographicBaseData = DemographicBaseData()
-    f: DemographicBaseData = DemographicBaseData()
+    m: DemographicSexBaseData = DemographicSexBaseData()
+    f: DemographicSexBaseData = DemographicSexBaseData()
 
 
 class DemographicAgeData(BaseModel):
-    _12_18: DemographicBaseData = DemographicBaseData()
-    _18_21: DemographicBaseData = DemographicBaseData()
-    _21_24: DemographicBaseData = DemographicBaseData()
-    _24_27: DemographicBaseData = DemographicBaseData()
-    _27_30: DemographicBaseData = DemographicBaseData()
-    _30_35: DemographicBaseData = DemographicBaseData()
-    _35_45: DemographicBaseData = DemographicBaseData()
-    _45_100: DemographicBaseData = DemographicBaseData()
+    _12_18: DemographicAgeBaseData = DemographicAgeBaseData()
+    _18_21: DemographicAgeBaseData = DemographicAgeBaseData()
+    _21_24: DemographicAgeBaseData = DemographicAgeBaseData()
+    _24_27: DemographicAgeBaseData = DemographicAgeBaseData()
+    _27_30: DemographicAgeBaseData = DemographicAgeBaseData()
+    _30_35: DemographicAgeBaseData = DemographicAgeBaseData()
+    _35_45: DemographicAgeBaseData = DemographicAgeBaseData()
+    _45_100: DemographicAgeBaseData = DemographicAgeBaseData()
 
 
 class DemographicData(BaseModel):
