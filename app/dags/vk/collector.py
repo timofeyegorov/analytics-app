@@ -263,9 +263,7 @@ def ads_get_demographics():
         )
         time.sleep(1)
 
-        # TODO: вернуть загрузку всех данных, сейчас обрабатывается только одна запись
-        # for _id in ids:
-        for _id in ids[:1]:
+        for _id in ids:
             statistics = vk(
                 method,
                 account_id=account_id,
@@ -332,9 +330,7 @@ def ads_get_statistics():
         )
         time.sleep(1)
 
-        # TODO: вернуть загрузку всех данных, сейчас обрабатывается только одна запись
-        # for _id in ids:
-        for _id in ids[:1]:
+        for _id in ids:
             statistics = vk(
                 method,
                 account_id=account_id,
