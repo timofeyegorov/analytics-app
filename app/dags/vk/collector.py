@@ -256,10 +256,12 @@ def get_demographics_execute_code(
     ids: List[List[str]], request_params: Dict[str, Any]
 ) -> str:
     output = """var chunks = %s;
+var params = %s;
 var output = [];
-var response = API.ads.getDemographics(%s);
-while (var items in response) {
-    output += items.response;
+while (chunks) {
+    params.ids = chunks.shift();
+    var response = API.ads.getDemographics(params);
+    output = output + response.response;
 };
 return {"count":output.length, "response": output};""" % (
         json.dumps(list(map(lambda item: ",".join(item), ids))),
@@ -282,13 +284,14 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
-        request_params = {
-            "account_id": account_id,
-            "ids_type": "ad",
-            "ids": ",".join(ids),
-        }
-
-        daterange = get_full_period(method, request_params)
+        daterange = get_full_period(
+            method,
+            {
+                "account_id": account_id,
+                "ids_type": "ad",
+                "ids": ",".join(ids),
+            },
+        )
         time.sleep(1)
 
         ids_chunk = chunking_ids_for_execute(ids)
@@ -297,7 +300,9 @@ def ads_get_demographics():
                 get_demographics_execute_code(
                     id_chunk,
                     {
-                        **request_params,
+                        "account_id": account_id,
+                        "ids_type": "ad",
+                        "period": "day",
                         "date_from": daterange[0].strftime("%Y-%m-%d"),
                         "date_to": daterange[1].strftime("%Y-%m-%d"),
                     },
