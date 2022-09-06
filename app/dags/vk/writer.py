@@ -70,11 +70,10 @@ class VKWriter:
 
     def collectstatisticsdataframe(self, file, statistics: List[Dict[str, Any]]):
         data = pandas.DataFrame(statistics)
-        data = (
-            data[list(filter(lambda item: item.startswith("city__"), data.columns))]
-            .fillna(0)
-            .astype(float)
+        city_columns = list(
+            filter(lambda item: item.startswith("city__"), data.columns)
         )
+        data[city_columns] = data[city_columns].fillna(0).astype(float)
         pickle.dump(data, file)
 
 
