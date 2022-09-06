@@ -1,9 +1,7 @@
+import json
 import re
 import sys
-import json
 import time
-import math
-import numpy
 import pandas
 
 from datetime import datetime
@@ -44,34 +42,6 @@ def get_full_period(
         datetime.strptime(str(date_from), "%Y%m%d"),
         datetime.strptime(str(date_to), "%Y%m%d"),
     )
-
-
-def chunking_ids_for_execute(ids: List[str]) -> List[List[str]]:
-    np_ids = numpy.array(ids)
-    np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 2))
-    np_ids = numpy.array_split(np_ids, math.ceil(len(np_ids) / 10))
-    return list(
-        map(lambda item: list(map(lambda value: value.tolist(), item.tolist())), np_ids)
-    )
-
-
-def get_demographics_execute_code(
-    ids: List[List[str]], request_params: Dict[str, Any]
-) -> str:
-    output = """var chunks = %s;
-var params = %s;
-var output = [];
-while (chunks) {
-    params.ids = chunks.shift();
-    var response = API.ads.getDemographics(params);
-    output = output + response.response;
-};
-return {"count":output.length, "response": output};""" % (
-        json.dumps(list(map(lambda item: ",".join(item), ids))),
-        json.dumps(request_params),
-    )
-    print(output)
-    return output
 
 
 @log_execution_time("ads.getAccounts")
@@ -294,22 +264,17 @@ def ads_get_demographics():
         )
         time.sleep(1)
 
-        ids_chunk = chunking_ids_for_execute(ids)
-        for id_chunk in ids_chunk:
-            print(
-                get_demographics_execute_code(
-                    id_chunk,
-                    {
-                        "account_id": account_id,
-                        "ids_type": "ad",
-                        "period": "day",
-                        "date_from": daterange[0].strftime("%Y-%m-%d"),
-                        "date_to": daterange[1].strftime("%Y-%m-%d"),
-                    },
-                )
+        for _id in ids:
+            statistics = vk(
+                method,
+                account_id=account_id,
+                ids_type="ad",
+                ids=",".join(ids),
+                period="day",
+                date_from=daterange[0].strftime("%Y-%m-%d"),
+                date_to=daterange[1].strftime("%Y-%m-%d"),
             )
-            # response = vk("execute", code=get_demographics_execute_code(id_chunk))
-            # print(response)
+            print(json.dumps(statistics, indent=2, ensure_ascii=False))
             time.sleep(1)
 
         # time.sleep(1)
