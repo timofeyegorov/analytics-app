@@ -571,14 +571,14 @@ class DemographicSexData(BaseModel):
 
 
 class DemographicAgeData(BaseModel):
-    _12_18: DemographicAgeBaseData = DemographicAgeBaseData()
-    _18_21: DemographicAgeBaseData = DemographicAgeBaseData()
-    _21_24: DemographicAgeBaseData = DemographicAgeBaseData()
-    _24_27: DemographicAgeBaseData = DemographicAgeBaseData()
-    _27_30: DemographicAgeBaseData = DemographicAgeBaseData()
-    _30_35: DemographicAgeBaseData = DemographicAgeBaseData()
-    _35_45: DemographicAgeBaseData = DemographicAgeBaseData()
-    _45_100: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_12_18: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_18_21: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_21_24: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_24_27: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_27_30: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_30_35: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_35_45: DemographicAgeBaseData = DemographicAgeBaseData()
+    range_45_100: DemographicAgeBaseData = DemographicAgeBaseData()
 
 
 class DemographicData(BaseModel):
