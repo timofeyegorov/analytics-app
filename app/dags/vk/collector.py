@@ -46,13 +46,20 @@ def get_full_period(
     )
 
 
-def grouping_ids_for_execute(ids: List[str]) -> List[List[str]]:
+def chunking_ids_for_execute(ids: List[str]) -> List[List[str]]:
     np_ids = numpy.array(ids)
     np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 10))
     np_ids = numpy.array_split(np_ids, math.ceil(len(np_ids) / 25))
     return list(
         map(lambda item: list(map(lambda value: value.tolist(), item.tolist())), np_ids)
     )
+
+
+def get_demographics_execute_code(ids: List[List[str]]) -> str:
+    output = ""
+    print(json.dumps(ids))
+    print(output)
+    return output
 
 
 @log_execution_time("ads.getAccounts")
@@ -265,7 +272,11 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
-        print(json.dumps(grouping_ids_for_execute(ids), indent=2, ensure_ascii=False))
+        ids_chunk = chunking_ids_for_execute(ids)
+        for id_chunk in ids_chunk:
+            print(get_demographics_execute_code(id_chunk))
+            # response = vk("execute", code=get_demographics_execute_code(id_chunk))
+            # print(response)
         # request_params = {
         #     "account_id": account_id,
         #     "ids_type": "ad",
