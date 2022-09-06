@@ -68,7 +68,7 @@ class VKWriter:
         data = list(
             map(
                 lambda city: CityData(**city),
-                list(map(filter(lambda item: item.get("id") > 0, cities))),
+                list(filter(lambda item: item.get("id") > 0, cities)),
             )
         )
         pickle.dump(data, file)
