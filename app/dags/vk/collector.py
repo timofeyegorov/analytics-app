@@ -245,7 +245,6 @@ def ads_get_ads_layout():
 def ads_get_demographics():
     method = "ads.getDemographics"
     ads = reader("ads.getAds")
-    ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
     ads_accounts = list(map(lambda ad: (ad.id, ad.account_id), ads))
     groups = pandas.DataFrame(
         ads_accounts,
@@ -264,6 +263,8 @@ def ads_get_demographics():
         )
         time.sleep(1)
 
+        # TODO: вернуть загрузку всех данных, сейчас обрабатывается только одна запись
+        # for _id in ids:
         for _id in ids[:1]:
             statistics = vk(
                 method,
@@ -306,73 +307,102 @@ def ads_get_demographics():
                     )
             time.sleep(1)
 
-        # time.sleep(1)
-        # statistics = vk(
-        #     method,
-        #     period="day",
-        #     date_from=daterange[0].strftime("%Y-%m-%d"),
-        #     date_to=daterange[1].strftime("%Y-%m-%d"),
-        #     **request_params,
-        # )
-        # for statistic in statistics:
-        #     print(statistic)
-        #     ad = ads_dict.get(statistic.get("id"))
-        # time.sleep(1)
     writer(method, output)
 
 
 @log_execution_time("ads.getStatistics")
 def ads_get_statistics():
-    pass
-    # method = "ads.getStatistics"
-    # ads = reader("ads.getAds")
-    # ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
-    # response = []
-    # groups = list(map(lambda ad: (ad.id, ad.account_id), ads))
-    # data = pandas.DataFrame(groups, columns=("id", "account_id"))
-    # for account_id, group in data.groupby("account_id"):
-    #     ids = ",".join(list(group["id"].astype(str)))
-    #     request_params = {
-    #         "account_id": account_id,
-    #         "ids_type": "ad",
-    #         "ids": ids,
-    #     }
-    #     daterange_match = vk(
-    #         method,
-    #         period="overall",
-    #         date_from=0,
-    #         date_to=0,
-    #         **request_params,
-    #     )
-    #     date_from = str(min(list(set(get_map_dates("day_from", daterange_match)))))
-    #     date_to = str(max(list(set(get_map_dates("day_to", daterange_match)))))
-    #     date_from = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
-    #     date_to = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
-    #     time.sleep(1)
-    #     statistics = vk(
-    #         method,
-    #         period="day",
-    #         date_from=date_from,
-    #         date_to=date_to,
-    #         **request_params,
-    #     )
-    #     for statistic in statistics:
-    #         ad = ads_dict.get(statistic.get("id"))
-    #         response += list(
-    #             map(
-    #                 lambda stat: {
-    #                     **stat,
-    #                     "ad_id": ad.id,
-    #                     "account_id": ad.account_id,
-    #                     "client_id": ad.client_id,
-    #                     "campaign_id": ad.campaign_id,
-    #                     "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
-    #                 },
-    #                 statistic.get("stats"),
-    #             )
-    #         )
-    #     time.sleep(1)
-    # writer(method, response)
+    method = "ads.getStatistics"
+    ads = reader("ads.getAds")
+    ads_accounts = list(map(lambda ad: (ad.id, ad.account_id), ads))
+    groups = pandas.DataFrame(
+        ads_accounts,
+        columns=("id", "account_id"),
+    ).groupby("account_id")
+    output = []
+    for account_id, group in groups:
+        ids = list(group["id"].astype(str))
+        daterange = get_full_period(
+            method,
+            {
+                "account_id": account_id,
+                "ids_type": "ad",
+                "ids": ",".join(ids),
+            },
+        )
+        time.sleep(1)
+
+        # TODO: вернуть загрузку всех данных, сейчас обрабатывается только одна запись
+        # for _id in ids:
+        for _id in ids[:1]:
+            statistics = vk(
+                method,
+                account_id=account_id,
+                ids_type="ad",
+                ids=_id,
+                period="day",
+                date_from=daterange[0].strftime("%Y-%m-%d"),
+                date_to=daterange[1].strftime("%Y-%m-%d"),
+            )
+            for statistic in statistics:
+                ad_id = statistic.get("id")
+                print(statistic)
+            time.sleep(1)
+
+    writer(method, output)
+
+
+# @log_execution_time("ads.getStatistics")
+# def ads_get_statistics():
+#     method = "ads.getStatistics"
+#     ads = reader("ads.getAds")
+#     ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
+#     response = []
+#     groups = list(map(lambda ad: (ad.id, ad.account_id), ads))
+#     data = pandas.DataFrame(groups, columns=("id", "account_id"))
+#     for account_id, group in data.groupby("account_id"):
+#         ids = ",".join(list(group["id"].astype(str)))
+#         request_params = {
+#             "account_id": account_id,
+#             "ids_type": "ad",
+#             "ids": ids,
+#         }
+#         daterange_match = vk(
+#             method,
+#             period="overall",
+#             date_from=0,
+#             date_to=0,
+#             **request_params,
+#         )
+#         date_from = str(min(list(set(get_map_dates("day_from", daterange_match)))))
+#         date_to = str(max(list(set(get_map_dates("day_to", daterange_match)))))
+#         date_from = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
+#         date_to = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
+#         time.sleep(1)
+#         statistics = vk(
+#             method,
+#             period="day",
+#             date_from=date_from,
+#             date_to=date_to,
+#             **request_params,
+#         )
+#         for statistic in statistics:
+#             ad = ads_dict.get(statistic.get("id"))
+#             response += list(
+#                 map(
+#                     lambda stat: {
+#                         **stat,
+#                         "ad_id": ad.id,
+#                         "account_id": ad.account_id,
+#                         "client_id": ad.client_id,
+#                         "campaign_id": ad.campaign_id,
+#                         "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
+#                     },
+#                     statistic.get("stats"),
+#                 )
+#             )
+#         time.sleep(1)
+#     writer(method, response)
 
 
 dag = DAG(
