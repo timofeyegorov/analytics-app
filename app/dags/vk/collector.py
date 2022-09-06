@@ -397,7 +397,7 @@ def collect_statistics_dataframe():
         cities = info.pop("cities")
         cities_dict = {}
         for city_id, city_info in cities.items():
-            city_id = re.sub(r"^id_", "", city_id)
+            city_id = int(re.sub(r"^id_", "", city_id))
             city_name = city_info.pop("name")
             cities_dict[city_id] = city_name
             cities_dict.update(
