@@ -359,59 +359,6 @@ def ads_get_statistics():
     writer(method, output)
 
 
-# @log_execution_time("ads.getStatistics")
-# def ads_get_statistics():
-#     method = "ads.getStatistics"
-#     ads = reader("ads.getAds")
-#     ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
-#     response = []
-#     groups = list(map(lambda ad: (ad.id, ad.account_id), ads))
-#     data = pandas.DataFrame(groups, columns=("id", "account_id"))
-#     for account_id, group in data.groupby("account_id"):
-#         ids = ",".join(list(group["id"].astype(str)))
-#         request_params = {
-#             "account_id": account_id,
-#             "ids_type": "ad",
-#             "ids": ids,
-#         }
-#         daterange_match = vk(
-#             method,
-#             period="overall",
-#             date_from=0,
-#             date_to=0,
-#             **request_params,
-#         )
-#         date_from = str(min(list(set(get_map_dates("day_from", daterange_match)))))
-#         date_to = str(max(list(set(get_map_dates("day_to", daterange_match)))))
-#         date_from = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
-#         date_to = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
-#         time.sleep(1)
-#         statistics = vk(
-#             method,
-#             period="day",
-#             date_from=date_from,
-#             date_to=date_to,
-#             **request_params,
-#         )
-#         for statistic in statistics:
-#             ad = ads_dict.get(statistic.get("id"))
-#             response += list(
-#                 map(
-#                     lambda stat: {
-#                         **stat,
-#                         "ad_id": ad.id,
-#                         "account_id": ad.account_id,
-#                         "client_id": ad.client_id,
-#                         "campaign_id": ad.campaign_id,
-#                         "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
-#                     },
-#                     statistic.get("stats"),
-#                 )
-#             )
-#         time.sleep(1)
-#     writer(method, response)
-
-
 dag = DAG(
     "api_data_vk",
     description="Collect VK API data",
