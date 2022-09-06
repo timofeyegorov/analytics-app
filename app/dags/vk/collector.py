@@ -48,8 +48,8 @@ def get_full_period(
 
 def chunking_ids_for_execute(ids: List[str]) -> List[List[str]]:
     np_ids = numpy.array(ids)
-    np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 5))
-    np_ids = numpy.array_split(np_ids, math.ceil(len(np_ids) / 25))
+    np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 1))
+    np_ids = numpy.array_split(np_ids, math.ceil(len(np_ids) / 20))
     return list(
         map(lambda item: list(map(lambda value: value.tolist(), item.tolist())), np_ids)
     )
