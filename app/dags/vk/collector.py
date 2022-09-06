@@ -55,13 +55,6 @@ def chunking_ids_for_execute(ids: List[str]) -> List[List[str]]:
     )
 
 
-def get_demographics_execute_code(ids: List[List[str]]) -> str:
-    output = ""
-    print(json.dumps(ids))
-    print(output)
-    return output
-
-
 @log_execution_time("ads.getAccounts")
 def ads_get_accounts():
     method = "ads.getAccounts"
@@ -259,6 +252,14 @@ def ads_get_ads_layout():
     writer(method, output)
 
 
+def get_demographics_execute_code(ids: List[List[str]]) -> str:
+    output = f"""
+var chunks = {json.dumps(list(map(lambda item: ",".join(item), ids)))}
+    """
+    print(output)
+    return output
+
+
 @log_execution_time("ads.getDemographics")
 def ads_get_demographics():
     method = "ads.getDemographics"
@@ -277,6 +278,7 @@ def ads_get_demographics():
             print(get_demographics_execute_code(id_chunk))
             # response = vk("execute", code=get_demographics_execute_code(id_chunk))
             # print(response)
+            time.sleep(1)
         # request_params = {
         #     "account_id": account_id,
         #     "ids_type": "ad",
