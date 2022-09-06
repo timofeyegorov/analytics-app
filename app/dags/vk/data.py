@@ -503,9 +503,9 @@ class TargetGroupData(BaseModel):
 
 
 class AdData(BaseModel):
+    id: PositiveInt
     account_id: PositiveInt
     client_id: Optional[PositiveInt]
-    id: PositiveInt
     campaign_id: PositiveInt
     ad_format: AdFormatEnum
     cost_type: AdCostTypeEnum
@@ -590,7 +590,7 @@ class DemographicCitiesData(DemographicCitiesBaseData):
 
 
 class DemographicData(BaseModel):
-    ad_id: PositiveInt
+    id: PositiveInt
     date: datetime
     sex: DemographicSexData = DemographicSexData()
     age: DemographicAgeData = DemographicAgeData()
@@ -598,10 +598,7 @@ class DemographicData(BaseModel):
 
 
 class StatisticData(BaseModel):
-    ad_id: PositiveInt
-    account_id: PositiveInt
-    client_id: PositiveInt
-    campaign_id: PositiveInt
+    id: PositiveInt
     date: datetime
     spent: Optional[PositiveFloat]
     impressions: Optional[PositiveInt]

@@ -283,7 +283,7 @@ def ads_get_demographics():
                     cities = stat.get("cities", [])
                     output.append(
                         {
-                            "ad_id": ad_id,
+                            "id": ad_id,
                             "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
                             "sex": dict(
                                 map(lambda item: (item.get("value"), item), sex)
@@ -346,7 +346,14 @@ def ads_get_statistics():
             )
             for statistic in statistics:
                 ad_id = statistic.get("id")
-                print(statistic)
+                for stat in statistic.get("stats", []):
+                    output.append(
+                        {
+                            **stat,
+                            "id": ad_id,
+                            "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
+                        }
+                    )
             time.sleep(1)
 
     writer(method, output)
