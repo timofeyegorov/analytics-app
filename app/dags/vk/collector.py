@@ -297,6 +297,7 @@ def ads_get_demographics():
         #     print(statistic)
         #     ad = ads_dict.get(statistic.get("id"))
         # time.sleep(1)
+    print(json.dumps(output, indent=2, ensure_ascii=False))
     writer(method, output)
 
 
