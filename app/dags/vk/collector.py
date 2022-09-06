@@ -279,6 +279,17 @@ def ads_get_demographics():
                 for stat in statistic.get("stats", []):
                     sex = stat.get("sex", [])
                     age = stat.get("age", [])
+                    print(
+                        dict(
+                            map(
+                                lambda item: (
+                                    f'{re.sub(r"-+", "_", item.get("value"))}',
+                                    item,
+                                ),
+                                age,
+                            )
+                        )
+                    )
                     output.append(
                         {
                             "ad_id": ad_id,
