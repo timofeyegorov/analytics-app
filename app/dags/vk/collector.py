@@ -359,6 +359,16 @@ def ads_get_statistics():
     writer(method, output)
 
 
+@log_execution_time("collectStatisticsDataFrame")
+def collect_statistics_dataframe():
+    demographics = reader("ads.getDemographics")
+    statistics = reader("ads.getStatistics")
+    print(demographics)
+    print(statistics)
+    print(len(demographics))
+    print(len(statistics))
+
+
 dag = DAG(
     "api_data_vk",
     description="Collect VK API data",
@@ -391,6 +401,11 @@ ads_get_demographics_operator = PythonOperator(
 ads_get_statistics_operator = PythonOperator(
     task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
 )
+collect_statistics_dataframe_operator = PythonOperator(
+    task_id="collect_statistics_dataframe",
+    python_callable=collect_statistics_dataframe,
+    dag=dag,
+)
 
 ads_get_accounts_operator >> ads_get_clients_operator
 
@@ -409,3 +424,6 @@ ads_get_clients_operator >> ads_get_ads_layout_operator
 ads_get_ads_operator >> ads_get_demographics_operator
 
 ads_get_ads_operator >> ads_get_statistics_operator
+
+ads_get_demographics_operator >> collect_statistics_dataframe_operator
+ads_get_statistics_operator >> collect_statistics_dataframe_operator
