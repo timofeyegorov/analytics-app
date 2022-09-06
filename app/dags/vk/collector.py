@@ -37,7 +37,10 @@ def get_full_period(
     )
     date_from = min(list(set(filter(None, map_dates("day_from", dates)))))
     date_to = max(list(set(filter(None, map_dates("day_to", dates)))))
-    return datetime.strptime(date_from, "%Y%m%d"), datetime.strptime(date_to, "%Y%m%d")
+    return (
+        datetime.strptime(str(date_from), "%Y%m%d"),
+        datetime.strptime(str(date_to), "%Y%m%d"),
+    )
 
 
 @log_execution_time("ads.getAccounts")
