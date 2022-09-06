@@ -3,6 +3,7 @@ import pandas
 import requests
 import tempfile
 
+from PIL import Image
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta, timezone
@@ -218,6 +219,7 @@ class VKCreateAdView(TemplateView):
         target = tempfile.NamedTemporaryFile(suffix=Path(file.filename).suffix)
         target.writelines(file.stream.readlines())
         with open(target.name, "rb") as target_ref:
+            image = Image.open(target.name)
             response = requests.post(upload_url, files={"file": target_ref})
             output = response.json()
             if output.get("errcode"):
