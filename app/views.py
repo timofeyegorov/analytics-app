@@ -3,7 +3,6 @@ import pandas
 import requests
 import tempfile
 
-from PIL import Image
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta, timezone
