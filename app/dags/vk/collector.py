@@ -395,7 +395,6 @@ def collect_statistics_dataframe():
         cities_dict = {}
         for city_id, city_info in cities.items():
             city_name = city_info.pop("name")
-            city_info = city_info.items()
             cities_dict.update(
                 dict(
                     map(
