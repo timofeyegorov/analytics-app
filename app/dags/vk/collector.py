@@ -364,6 +364,8 @@ def collect_statistics_dataframe():
     demographics = reader("ads.getDemographics")
     statistics = reader("ads.getStatistics")
     demographics_dict = {}
+    cities_dict = {}
+
     for item in demographics:
         info = item.dict()
 
@@ -382,6 +384,7 @@ def collect_statistics_dataframe():
         age = info.pop("age")
         age_dict = {}
         for age_id, age_info in age.items():
+            age_id = re.sub(r"^id_", "", age_id)
             age_dict.update(
                 dict(
                     map(
@@ -394,7 +397,9 @@ def collect_statistics_dataframe():
         cities = info.pop("cities")
         cities_dict = {}
         for city_id, city_info in cities.items():
+            city_id = re.sub(r"^id_", "", city_id)
             city_name = city_info.pop("name")
+            cities_dict[city_id] = city_name
             cities_dict.update(
                 dict(
                     map(
@@ -411,6 +416,10 @@ def collect_statistics_dataframe():
             **cities_dict,
         }
 
+    writer(
+        "collectCities",
+        list(map(lambda item: {"id": item[0], "name": item[1]}, cities_dict.items())),
+    )
     writer(
         "collectStatisticsDataFrame",
         list(

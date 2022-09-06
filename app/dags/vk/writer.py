@@ -12,6 +12,7 @@ from app.dags.vk.data import (
     TargetGroupData,
     AdData,
     AdLayoutData,
+    CityData,
     DemographicData,
     StatisticData,
 )
@@ -61,6 +62,10 @@ class VKWriter:
 
     def adsgetstatistics(self, file, statistics: List[Dict[str, Any]]):
         data = list(map(lambda statistic: StatisticData(**statistic), statistics))
+        pickle.dump(data, file)
+
+    def collectcities(self, file, cities: List[Dict[str, str]]):
+        data = list(map(lambda city: CityData(**city), cities))
         pickle.dump(data, file)
 
     def collectstatisticsdataframe(self, file, statistics: List[Dict[str, Any]]):

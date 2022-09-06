@@ -552,6 +552,11 @@ class AdLayoutData(BaseModel):
     icon_src_2x: Optional[str]
 
 
+class CityData(BaseModel):
+    id: PositiveInt
+    name: str
+
+
 class DemographicBaseData(BaseModel):
     impressions_rate: NonNegativeFloat = 0
     clicks_rate: NonNegativeFloat = 0
