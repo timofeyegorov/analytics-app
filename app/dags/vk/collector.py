@@ -278,11 +278,15 @@ def ads_get_demographics():
                 ad_id = statistic.get("id")
                 for stat in statistic.get("stats", []):
                     sex = stat.get("sex", [])
-                    output += {
-                        "ad_id": ad_id,
-                        "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
-                        "sex": dict(map(lambda item: (item.get("value"), item), sex)),
-                    }
+                    output.append(
+                        {
+                            "ad_id": ad_id,
+                            "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
+                            "sex": dict(
+                                map(lambda item: (item.get("value"), item), sex)
+                            ),
+                        }
+                    )
             time.sleep(1)
 
         # time.sleep(1)
