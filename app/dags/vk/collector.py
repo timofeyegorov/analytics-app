@@ -259,6 +259,7 @@ def ads_get_demographics():
             "ids": ids,
         }
         daterange = get_full_period(method, request_params)
+        print(daterange[0].strftime("%Y-%m-%d"), daterange[1].strftime("%Y-%m-%d"))
         time.sleep(1)
         statistics = vk(
             method,
