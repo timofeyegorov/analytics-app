@@ -1,10 +1,13 @@
 import re
 import sys
+import json
 import time
+import math
+import numpy
 import pandas
 
 from datetime import datetime
-from typing import Tuple, Dict, Any
+from typing import Tuple, List, Dict, Any
 
 from airflow import DAG
 from airflow.models import Variable
@@ -40,6 +43,15 @@ def get_full_period(
     return (
         datetime.strptime(str(date_from), "%Y%m%d"),
         datetime.strptime(str(date_to), "%Y%m%d"),
+    )
+
+
+def grouping_ids_for_execute(ids: List[str]) -> List[List[str]]:
+    np_ids = numpy.array(ids)
+    np_ids = numpy.array_split(np_ids, math.ceil(len(ids) / 10))
+    np_ids = numpy.array_split(np_ids, math.ceil(len(np_ids) / 25))
+    return list(
+        map(lambda item: list(map(lambda value: value.tolist(), item.tolist())), np_ids)
     )
 
 
@@ -252,26 +264,26 @@ def ads_get_demographics():
     ).groupby("account_id")
     output = []
     for account_id, group in groups:
-        ids = ",".join(list(group["id"].astype(str)))
-        request_params = {
-            "account_id": account_id,
-            "ids_type": "ad",
-            "ids": ids,
-        }
-        daterange = get_full_period(method, request_params)
-        print(daterange[0].strftime("%Y-%m-%d"), daterange[1].strftime("%Y-%m-%d"))
-        time.sleep(1)
-        statistics = vk(
-            method,
-            period="day",
-            date_from=daterange[0].strftime("%Y-%m-%d"),
-            date_to=daterange[1].strftime("%Y-%m-%d"),
-            **request_params,
-        )
-        for statistic in statistics:
-            print(statistic)
-            ad = ads_dict.get(statistic.get("id"))
-        time.sleep(1)
+        ids = list(group["id"].astype(str))
+        print(json.dumps(grouping_ids_for_execute(ids), indent=2, ensure_ascii=False))
+        # request_params = {
+        #     "account_id": account_id,
+        #     "ids_type": "ad",
+        #     "ids": ",".join(ids),
+        # }
+        # daterange = get_full_period(method, request_params)
+        # time.sleep(1)
+        # statistics = vk(
+        #     method,
+        #     period="day",
+        #     date_from=daterange[0].strftime("%Y-%m-%d"),
+        #     date_to=daterange[1].strftime("%Y-%m-%d"),
+        #     **request_params,
+        # )
+        # for statistic in statistics:
+        #     print(statistic)
+        #     ad = ads_dict.get(statistic.get("id"))
+        # time.sleep(1)
 
 
 @log_execution_time("ads.getStatistics")
