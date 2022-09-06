@@ -264,7 +264,7 @@ def ads_get_demographics():
         )
         time.sleep(1)
 
-        for _id in ids:
+        for _id in ids[:1]:
             statistics = vk(
                 method,
                 account_id=account_id,
