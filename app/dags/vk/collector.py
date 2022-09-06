@@ -28,8 +28,6 @@ def get_full_period(
             dates,
         )
 
-    print(method)
-    print(request_params)
     dates = vk(
         method,
         period="overall",
