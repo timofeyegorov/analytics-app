@@ -274,7 +274,15 @@ def ads_get_demographics():
                 date_from=daterange[0].strftime("%Y-%m-%d"),
                 date_to=daterange[1].strftime("%Y-%m-%d"),
             )
-            print(json.dumps(statistics, indent=2, ensure_ascii=False))
+            for statistic in statistics:
+                ad_id = statistic.get("id")
+                for stat in statistic.get("stats", []):
+                    sex = stat.get("sex", [])
+                    output += {
+                        "ad_id": ad_id,
+                        "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
+                        "sex": dict(map(lambda item: (item.get("value"), item), sex)),
+                    }
             time.sleep(1)
 
         # time.sleep(1)
@@ -289,6 +297,7 @@ def ads_get_demographics():
         #     print(statistic)
         #     ad = ads_dict.get(statistic.get("id"))
         # time.sleep(1)
+    writer(method, output)
 
 
 @log_execution_time("ads.getStatistics")

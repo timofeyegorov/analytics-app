@@ -552,12 +552,27 @@ class AdLayoutData(BaseModel):
     icon_src_2x: Optional[str]
 
 
+class DemographicBaseData(BaseModel):
+    impressions_rate: NonNegativeFloat = 0
+    clicks_rate: NonNegativeFloat = 0
+
+
+class DemographicSexData(BaseModel):
+    m: DemographicBaseData = DemographicBaseData()
+    f: DemographicBaseData = DemographicBaseData()
+
+
+class DemographicData(BaseModel):
+    ad_id: PositiveInt
+    date: datetime
+    sex: DemographicSexData = DemographicSexData()
+
+
 class StatisticData(BaseModel):
     ad_id: PositiveInt
     account_id: PositiveInt
     client_id: PositiveInt
     campaign_id: PositiveInt
-    day: str
     date: datetime
     spent: Optional[PositiveFloat]
     impressions: Optional[PositiveInt]
