@@ -365,7 +365,28 @@ def collect_statistics_dataframe():
     statistics = reader("ads.getStatistics")
     demographics_dict = dict(
         map(
-            lambda item: (f'{item.date.strftime("%Y%m%d")}_{item.id}', item.dict()),
+            lambda item: (
+                f'{item.date.strftime("%Y%m%d")}_{item.id}',
+                {
+                    **item.dict(),
+                    **(
+                        dict(
+                            map(
+                                lambda sex: tuple(
+                                    map(
+                                        lambda info: (
+                                            f"sex_{sex[0]}_{info[0]}",
+                                            info[1],
+                                        ),
+                                        sex[1].items(),
+                                    )
+                                ),
+                                item.dict().get("sex", {}).items(),
+                            )
+                        )
+                    ),
+                },
+            ),
             demographics,
         )
     )
