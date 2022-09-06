@@ -363,33 +363,55 @@ def ads_get_statistics():
 def collect_statistics_dataframe():
     demographics = reader("ads.getDemographics")
     statistics = reader("ads.getStatistics")
-    demographics_dict = dict(
-        map(
-            lambda item: (
-                f'{item.date.strftime("%Y%m%d")}_{item.id}',
-                {
-                    **item.dict(),
-                    **(
-                        dict(
-                            map(
-                                lambda sex: tuple(
-                                    map(
-                                        lambda info: (
-                                            f"sex_{sex[0]}_{info[0]}",
-                                            info[1],
-                                        ),
-                                        sex[1].items(),
-                                    )
-                                ),
-                                item.dict().get("sex", {}).items(),
-                            )
-                        )
-                    ),
-                },
-            ),
-            demographics,
-        )
-    )
+    demographics_dict = {}
+    for item in demographics:
+        info = item.dict()
+
+        sex = info.pop("sex")
+        sex_dict = {}
+        for sex_id, sex_info in sex.items():
+            sex_dict.update(
+                dict(
+                    map(
+                        lambda stat: (f"sex__{sex_id}__{stat[0]}", stat[1]),
+                        sex_info.items(),
+                    )
+                )
+            )
+
+        age = info.pop("age")
+        age_dict = {}
+        for age_id, age_info in age.items():
+            age_dict.update(
+                dict(
+                    map(
+                        lambda stat: (f"age__{age_id}__{stat[0]}", stat[1]),
+                        age_info.items(),
+                    )
+                )
+            )
+
+        cities = info.pop("cities")
+        cities_dict = {}
+        for city_id, city_info in cities.items():
+            city_name = city_info.pop("name")
+            city_info = city_info.items()
+            cities_dict.update(
+                dict(
+                    map(
+                        lambda stat: (f"city__{city_id}__{stat[0]}", stat[1]),
+                        city_info.items(),
+                    )
+                )
+            )
+
+        demographics_dict[f'{item.date.strftime("%Y%m%d")}_{item.id}'] = {
+            **info,
+            **sex_dict,
+            **age_dict,
+            **cities_dict,
+        }
+
     writer(
         "collectStatisticsDataFrame",
         list(
@@ -398,7 +420,7 @@ def collect_statistics_dataframe():
                     **demographics_dict.get(
                         f'{item.date.strftime("%Y%m%d")}_{item.id}', {}
                     ),
-                    **item.dict(),
+                    **item,
                 },
                 statistics,
             )
