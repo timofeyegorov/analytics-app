@@ -269,7 +269,7 @@ def ads_get_demographics():
                 method,
                 account_id=account_id,
                 ids_type="ad",
-                ids=",".join(ids),
+                ids=_id,
                 period="day",
                 date_from=daterange[0].strftime("%Y-%m-%d"),
                 date_to=daterange[1].strftime("%Y-%m-%d"),
