@@ -244,6 +244,7 @@ def ads_get_ads_layout():
 def ads_get_demographics():
     method = "ads.getDemographics"
     ads = reader("ads.getAds")
+    ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
     ads_accounts = list(map(lambda ad: (ad.id, ad.account_id), ads))
     groups = pandas.DataFrame(
         ads_accounts,
@@ -258,7 +259,18 @@ def ads_get_demographics():
             "ids": ids,
         }
         daterange = get_full_period(method, request_params)
-        print(daterange)
+        time.sleep(1)
+        statistics = vk(
+            method,
+            period="day",
+            date_from=daterange[0].strftime("%Y-%m-%d"),
+            date_to=daterange[1].strftime("%Y-%m-%d"),
+            **request_params,
+        )
+        for statistic in statistics:
+            print(statistic)
+            ad = ads_dict.get(statistic.get("id"))
+        time.sleep(1)
 
 
 @log_execution_time("ads.getStatistics")
