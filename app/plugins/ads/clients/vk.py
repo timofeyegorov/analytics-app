@@ -24,7 +24,7 @@ class VKAPI:
             error = output.get("response")
             if isinstance(error, list) and error and error[0].get("error_code"):
                 raise Exception(
-                    f'[{error[0].get("error_code")}]: {error[0].get("error_desc")}'
+                    f'VKAPI [{error[0].get("error_code")}]: {error[0].get("error_desc")}'
                 )
             return output
         except JSONDecodeError:
