@@ -562,10 +562,22 @@ class DemographicSexData(BaseModel):
     f: DemographicBaseData = DemographicBaseData()
 
 
+class DemographicAgeData(BaseModel):
+    _12_18: DemographicBaseData = DemographicBaseData()
+    _18_21: DemographicBaseData = DemographicBaseData()
+    _21_24: DemographicBaseData = DemographicBaseData()
+    _24_27: DemographicBaseData = DemographicBaseData()
+    _27_30: DemographicBaseData = DemographicBaseData()
+    _30_35: DemographicBaseData = DemographicBaseData()
+    _35_45: DemographicBaseData = DemographicBaseData()
+    _45_100: DemographicBaseData = DemographicBaseData()
+
+
 class DemographicData(BaseModel):
     ad_id: PositiveInt
     date: datetime
     sex: DemographicSexData = DemographicSexData()
+    age: DemographicAgeData = DemographicAgeData()
 
 
 class StatisticData(BaseModel):
