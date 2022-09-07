@@ -616,3 +616,4 @@ class StatisticData(BaseModel):
     effective_cost_per_mille: Optional[PositiveFloat]
     effective_cpf: Optional[PositiveFloat]
     effective_cost_per_message: Optional[PositiveFloat]
+    message_sends: Optional[PositiveFloat]

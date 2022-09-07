@@ -40,62 +40,41 @@
     <table>
         <thead>
             <tr>
-                <th rowspan="2">#</th>
-                <th rowspan="2">Объявление</th>
-                <th rowspan="2">Кабинет</th>
-                <th rowspan="2">Клиент</th>
-                <th rowspan="2">Кампания</th>
-                <th rowspan="2">Дата</th>
-                <th rowspan="2">Потрачено (руб.)</th>
-                <th rowspan="2">Просмотры</th>
-                <th rowspan="2">Клики</th>
-                <th rowspan="2">Охват</th>
-                <th rowspan="2">Уникальные просмотры</th>
-                <th rowspan="2">Уникальные переходы</th>
-                <th rowspan="2">CTR</th>
-                <th rowspan="2">eCPC</th>
-                <th rowspan="2">eCPM</th>
-                <th rowspan="2">eCPF</th>
-                <th rowspan="2">Стоимость сообщения</th>
-                <th rowspan="2">Количество сообщений</th>
-                <th colspan="6" style="text-align:center">Количество пользователей видео</th>
-            </tr>
-            <tr>
-                <th>Включили</th>
-                <th>Посмотрели 3 секунды</th>
-                <th>Посмотрели 25%</th>
-                <th>Посмотрели 50%</th>
-                <th>Посмотрели 75%</th>
-                <th>Посмотрели 100%</th>
+                <th>#</th>
+                <th>Кабинет</th>
+                <th>Клиент</th>
+                <th>Кампания</th>
+                <th>Объявление</th>
+                <th>Дата</th>
+                <th>Потрачено</th>
+                <th>Просмотры</th>
+                <th>Клики</th>
+                <th>CTR</th>
+                <th>eCPC</th>
+                <th>eCPM</th>
+                <th>eCPF</th>
+                <th>Стоимость сообщения</th>
+                <th>Количество сообщений</th>
             </tr>
         </thead>
         <tbody>
             {% for index, stat in stats.iterrows() %}
                 <tr>
                     <td>{{ index + 1 }}</td>
-                    <td class="nowrap">{{ stat.ad_id }} <span class="hint">{{ ads[stat.ad_id].name }}</span></td>
                     <td class="nowrap">{{ stat.account_id }} <span class="hint">{{ accounts[stat.account_id].account_name }}</span></td>
                     <td class="nowrap">{{ stat.client_id }} <span class="hint">{{ clients[stat.client_id].name }}</span></td>
                     <td class="nowrap">{{ stat.campaign_id }} <span class="hint">{{ campaigns[stat.campaign_id].name }}</span></td>
+                    <td class="nowrap">{{ stat.id }} <span class="hint">{{ ads[stat.id].name }}</span></td>
                     <td class="nowrap font-monospace">{{ stat.date }}</td>
                     <td class="font-monospace text-right">{{ stat.spent }}</td>
                     <td class="font-monospace text-right">{{ stat.impressions }}</td>
                     <td class="font-monospace text-right">{{ stat.clicks }}</td>
-                    <td class="font-monospace text-right">{{ stat.reach }}</td>
-                    <td class="font-monospace text-right">{{ stat.uniq_views_count }}</td>
-                    <td class="font-monospace text-right">{{ stat.link_external_clicks }}</td>
                     <td class="font-monospace text-right">{{ stat.ctr }}</td>
                     <td class="font-monospace text-right">{{ stat.effective_cost_per_click }}</td>
                     <td class="font-monospace text-right">{{ stat.effective_cost_per_mille }}</td>
                     <td class="font-monospace text-right">{{ stat.effective_cpf }}</td>
                     <td class="font-monospace text-right">{{ stat.effective_cost_per_message }}</td>
                     <td class="font-monospace text-right">{{ stat.message_sends }}</td>
-                    <td class="font-monospace text-right">{{ stat.video_plays_unique_started }}</td>
-                    <td class="font-monospace text-right">{{ stat.video_plays_unique_3_seconds }}</td>
-                    <td class="font-monospace text-right">{{ stat.video_plays_unique_25_percents }}</td>
-                    <td class="font-monospace text-right">{{ stat.video_plays_unique_50_percents }}</td>
-                    <td class="font-monospace text-right">{{ stat.video_plays_unique_75_percents }}</td>
-                    <td class="font-monospace text-right">{{ stat.video_plays_unique_100_percents }}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -93,7 +93,20 @@ class VKStatisticsView(TemplateView):
     def get_stats(self) -> pandas.DataFrame:
         # TODO: убрать ограничение на 10 записей
         stats = vk_reader("collectStatisticsDataFrame")[:10]
-        print(stats.columns)
+        stats["spent"] = stats["spent"].apply(lambda value: "%.2f" % value)
+        stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
+        stats["effective_cost_per_click"] = stats["effective_cost_per_click"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["effective_cost_per_mille"] = stats["effective_cost_per_mille"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["effective_cpf"] = stats["effective_cpf"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["effective_cost_per_message"] = stats["effective_cost_per_message"].apply(
+            lambda value: "%.2f" % value
+        )
         return stats
 
     def get(self):
@@ -136,7 +149,6 @@ class VKCreateAdView(TemplateView):
         target = tempfile.NamedTemporaryFile(suffix=Path(file.filename).suffix)
         target.writelines(file.stream.readlines())
         with open(target.name, "rb") as target_ref:
-            image = Image.open(target.name)
             response = requests.post(upload_url, files={"file": target_ref})
             output = response.json()
             if output.get("errcode"):

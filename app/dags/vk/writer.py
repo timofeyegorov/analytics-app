@@ -93,4 +93,5 @@ class VKWriter:
         data["effective_cost_per_message"] = (
             data["effective_cost_per_message"].fillna(0).astype(float)
         )
+        data["message_sends"] = data["message_sends"].fillna(0).astype(int)
         pickle.dump(data, file)
