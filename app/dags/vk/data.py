@@ -605,26 +605,14 @@ class DemographicData(BaseModel):
 class StatisticData(BaseModel):
     id: PositiveInt
     date: datetime
+    account_id: PositiveInt
+    client_id: Optional[PositiveInt]
+    campaign_id: PositiveInt
     spent: Optional[PositiveFloat]
     impressions: Optional[PositiveInt]
     clicks: Optional[PositiveInt]
-    reach: Optional[PositiveInt]
-    join_rate: Optional[str]
-    uniq_views_count: Optional[PositiveFloat]
-    link_external_clicks: Optional[PositiveInt]
     ctr: NonNegativeFloat
     effective_cost_per_click: Optional[PositiveFloat]
     effective_cost_per_mille: Optional[PositiveFloat]
     effective_cpf: Optional[PositiveFloat]
     effective_cost_per_message: Optional[PositiveFloat]
-    message_sends: Optional[PositiveInt]
-    video_plays_unique_started: Optional[PositiveInt]
-    video_plays_unique_3_seconds: Optional[PositiveInt]
-    video_plays_unique_25_percents: Optional[PositiveInt]
-    video_plays_unique_50_percents: Optional[PositiveInt]
-    video_plays_unique_75_percents: Optional[PositiveInt]
-    video_plays_unique_100_percents: Optional[PositiveInt]
-    conversion_count: Optional[PositiveFloat]
-    conversion_sum: Optional[PositiveFloat]
-    conversion_roas: Optional[PositiveFloat]
-    conversion_cr: Optional[PositiveFloat]

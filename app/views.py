@@ -52,8 +52,9 @@ class APIView(MethodView):
         return self.render()
 
 
-class StatsDataFrameMixinView(TemplateView):
-    stats: pandas.DataFrame
+class VKStatisticsView(TemplateView):
+    template_name = "vk/statistics.html"
+    title = "Статистика объявлений в ВК"
 
     @property
     def accounts(self) -> Dict[int, vk_data.AccountData]:
@@ -81,60 +82,6 @@ class StatsDataFrameMixinView(TemplateView):
         for name, value in data.items():
             self.context(name, value)
 
-    def compile_stats(self) -> pandas.DataFrame:
-        accounts = self.accounts
-        clients = self.clients
-        campaigns = self.campaigns
-        ads = self.ads
-        ads_layout = self.ads_layout
-
-        data: List[List[Any]] = []
-        stats = vk_reader("ads.getStatistics").groupby("ad_id")
-        for ad_id, stat in stats:
-            ad = ads.get(ad_id)
-            account = accounts.get(ad.account_id)
-            client = clients.get(ad.client_id)
-            campaign = campaigns.get(ad.campaign_id)
-            ad_layout = ads_layout.get(ad_id)
-            data.append(
-                [
-                    (ad_id, ad.name),
-                    (account.account_id, account.account_name),
-                    (client.id, client.name),
-                    (campaign.id, campaign.name),
-                    ad_layout.title or "",
-                    ad_layout.description or "",
-                    ad_layout.image_src or "",
-                    "%.2f" % stat.spent.sum(),
-                    stat.impressions.sum(),
-                    stat.clicks.sum(),
-                    stat.date.min().strftime("%Y-%m-%d"),
-                    stat.date.max().strftime("%Y-%m-%d"),
-                ]
-            )
-        self.stats = pandas.DataFrame(
-            data,
-            columns=[
-                "Объявление",
-                "Кабинет",
-                "Клиент",
-                "Кампания",
-                "Заголовок",
-                "Описание",
-                "Изображение",
-                "Потрачено",
-                "Просмотры",
-                "Клики",
-                "Дата запуска",
-                "Дата остановки",
-            ],
-        )
-
-
-class VKStatisticsView(StatsDataFrameMixinView):
-    template_name = "vk/statistics.html"
-    title = "Статистика объявлений в ВК"
-
     def get_args(self) -> Dict[str, Any]:
         return {
             "group_by": request.args.get("group_by", "ad_id"),
@@ -144,8 +91,9 @@ class VKStatisticsView(StatsDataFrameMixinView):
         }
 
     def get_stats(self) -> pandas.DataFrame:
-        stats = vk_reader("collectStatisticsDataFrame")
-        print(stats)
+        # TODO: убрать ограничение на 10 записей
+        stats = vk_reader("collectStatisticsDataFrame")[:10]
+        print(stats.columns)
         return stats
 
     def get(self):

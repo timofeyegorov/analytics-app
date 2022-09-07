@@ -312,6 +312,7 @@ def ads_get_demographics():
 def ads_get_statistics():
     method = "ads.getStatistics"
     ads = reader("ads.getAds")
+    ads_dict = dict(map(lambda ad: (ad.id, ad), ads))
     ads_accounts = list(map(lambda ad: (ad.id, ad.account_id), ads))
     groups = pandas.DataFrame(
         ads_accounts,
@@ -342,11 +343,15 @@ def ads_get_statistics():
             )
             for statistic in statistics:
                 ad_id = statistic.get("id")
+                ad = ads_dict.get(ad_id)
                 for stat in statistic.get("stats", []):
                     output.append(
                         {
                             **stat,
                             "id": ad_id,
+                            "account_id": ad.account_id,
+                            "client_id": ad.client_id,
+                            "campaign_id": ad.campaign_id,
                             "date": datetime.strptime(stat.get("day"), "%Y-%m-%d"),
                         }
                     )
