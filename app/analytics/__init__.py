@@ -745,10 +745,6 @@ app.add_url_rule(
     view_func=views.VKStatisticsView.as_view("vk_statistics"),
 )
 app.add_url_rule(
-    "/vk/history",
-    view_func=views.VKHistoryView.as_view("vk_history"),
-)
-app.add_url_rule(
     "/api/vk/create-ad/dependes-fields",
     view_func=views.ApiVKCreateAdDependesFieldsView.as_view(
         "api_vk_create_ad_dependes_fields"

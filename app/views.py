@@ -130,37 +130,6 @@ class StatsDataFrameMixinView(TemplateView):
             ],
         )
 
-    def get(self):
-        self.context("accounts", self.accounts)
-        self.context("clients", self.clients)
-        self.context("campaigns", self.campaigns)
-        self.context("ads", self.ads)
-        self.context("ads_layout", self.ads_layout)
-
-        # self.stats["spent"] = self.stats["spent"].apply(lambda value: "%.2f" % value)
-        # self.stats["ctr"] = self.stats["ctr"].apply(lambda value: "%.3f" % value)
-        # self.stats["effective_cost_per_click"] = self.stats[
-        #     "effective_cost_per_click"
-        # ].apply(lambda value: "%.3f" % value)
-        # self.stats["effective_cost_per_mille"] = self.stats[
-        #     "effective_cost_per_mille"
-        # ].apply(lambda value: "%.3f" % value)
-        # self.stats["effective_cpf"] = self.stats["effective_cpf"].apply(
-        #     lambda value: "%.3f" % value
-        # )
-        # self.stats["effective_cost_per_message"] = self.stats[
-        #     "effective_cost_per_message"
-        # ].apply(lambda value: "%.2f" % value)
-
-        self.compile_stats()
-        self.context("stats", self.stats)
-        return super().get()
-
-
-class VKHistoryView(StatsDataFrameMixinView):
-    template_name = "vk/history.html"
-    title = "История объявлений в ВК"
-
 
 class VKStatisticsView(StatsDataFrameMixinView):
     template_name = "vk/statistics.html"
@@ -174,18 +143,19 @@ class VKStatisticsView(StatsDataFrameMixinView):
             "campaign": request.args.get("campaign_id") or None,
         }
 
-    def form_context_add(self, **kwargs):
-        self.set_context(
-            {
-                "fields": {
-                    "group_by": kwargs.get("group_by", ""),
-                }
-            }
-        )
+    def get_stats(self) -> pandas.DataFrame:
+        stats = vk_reader("collectStatisticsDataFrame")
+        print(stats)
+        return stats
 
     def get(self):
-        args = self.get_args()
-        self.form_context_add(**args)
+        self.context("accounts", self.accounts)
+        self.context("clients", self.clients)
+        self.context("campaigns", self.campaigns)
+        self.context("ads", self.ads)
+        self.context("ads_layout", self.ads_layout)
+        self.set_context({"fields": self.get_args()})
+        self.context("stats", self.get_stats())
         return super().get()
 
 

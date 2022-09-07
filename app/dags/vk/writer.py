@@ -64,21 +64,21 @@ class VKWriter:
         data = list(map(lambda statistic: StatisticData(**statistic), statistics))
         pickle.dump(data, file)
 
-    def collectcities(self, file, cities: List[Dict[int, str]]):
-        data = list(
-            map(
-                lambda city: CityData(**city),
-                list(filter(lambda item: item.get("id") > 0, cities)),
-            )
-        )
-        pickle.dump(data, file)
+    # def collectcities(self, file, cities: List[Dict[int, str]]):
+    #     data = list(
+    #         map(
+    #             lambda city: CityData(**city),
+    #             list(filter(lambda item: item.get("id") > 0, cities)),
+    #         )
+    #     )
+    #     pickle.dump(data, file)
 
     def collectstatisticsdataframe(self, file, statistics: List[Dict[str, Any]]):
         data = pandas.DataFrame(statistics)
-        city_columns = list(
-            filter(lambda item: item.startswith("city__"), data.columns)
-        )
-        data[city_columns] = data[city_columns].fillna(0).astype(float)
+        # city_columns = list(
+        #     filter(lambda item: item.startswith("city__"), data.columns)
+        # )
+        # data[city_columns] = data[city_columns].fillna(0).astype(float)
         pickle.dump(data, file)
 
 
