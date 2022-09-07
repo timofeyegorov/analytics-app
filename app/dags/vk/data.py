@@ -570,8 +570,8 @@ class DemographicAgeBaseData(DemographicBaseData):
     pass
 
 
-class DemographicCitiesBaseData(DemographicBaseData):
-    name: str
+# class DemographicCitiesBaseData(DemographicBaseData):
+#     name: str
 
 
 class DemographicSexData(BaseModel):
@@ -590,8 +590,8 @@ class DemographicAgeData(BaseModel):
     id_45_100: DemographicAgeBaseData = DemographicAgeBaseData()
 
 
-class DemographicCitiesData(DemographicCitiesBaseData):
-    pass
+# class DemographicCitiesData(DemographicCitiesBaseData):
+#     pass
 
 
 class DemographicData(BaseModel):
@@ -599,7 +599,7 @@ class DemographicData(BaseModel):
     date: datetime
     sex: DemographicSexData = DemographicSexData()
     age: DemographicAgeData = DemographicAgeData()
-    cities: Dict[str, DemographicCitiesData] = {}
+    # cities: Dict[str, DemographicCitiesData] = {}
 
 
 class StatisticData(BaseModel):
