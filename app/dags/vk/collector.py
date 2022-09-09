@@ -53,8 +53,10 @@ def chr_convert(text: str) -> str:
 
 
 class PreviewPageParser(HTMLParser):
+    in_title: bool = False
     in_text: bool = False
 
+    title: str = ""
     text: str = ""
 
     def has_class(self, attrs: List[Tuple[str, str]], name: str) -> bool:
@@ -66,16 +68,23 @@ class PreviewPageParser(HTMLParser):
         return len(classes) > 0
 
     def handle_starttag(self, tag, attrs):
+        if tag == "div" and self.has_class(attrs, "media_link__title"):
+            self.in_title = True
+
         if tag == "div" and self.has_class(attrs, "wall_post_text"):
             self.in_text = True
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
     def handle_endtag(self, tag):
-        if self.in_text and tag == "div":
+        if tag == "div" and self.in_title:
+            self.in_title = False
+        if tag == "div" and self.in_text:
             self.in_text = False
 
     def handle_data(self, data):
+        if self.in_title:
+            self.title += str(data)
         if self.in_text:
             self.text += str(data)
 
@@ -87,24 +96,29 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
         content = response.content.decode("cp1251")
         parser = PreviewPageParser()
         parser.feed(content)
-        print(parser.text)
-        # modifiers = (re.MULTILINE,)
-        # title_match = re.findall(
-        #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
-        # )
-        # text_match = re.findall(
-        #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
-        # )
-        # image_match = re.findall(
-        #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
-        # )
-        # if title_match:
-        #     data.update({"title": chr_convert(title_match[0])})
-        # if text_match:
-        #     data.update({"text": chr_convert(text_match[0])})
-        # if image_match:
-        #     data.update({"image": image_match[0]})
+        data.update(
+            {
+                "title": parser.title,
+                "text": parser.text,
+            }
+        )
     return data
+    # modifiers = (re.MULTILINE,)
+    # title_match = re.findall(
+    #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
+    # )
+    # text_match = re.findall(
+    #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
+    # )
+    # image_match = re.findall(
+    #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
+    # )
+    # if title_match:
+    #     data.update({"title": chr_convert(title_match[0])})
+    # if text_match:
+    #     data.update({"text": chr_convert(text_match[0])})
+    # if image_match:
+    #     data.update({"image": image_match[0]})
 
 
 @log_execution_time("ads.getAccounts")
