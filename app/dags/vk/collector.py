@@ -76,6 +76,7 @@ class PreviewPageParser(HTMLParser):
 
     def handle_data(self, data):
         if self.in_text:
+            print(data)
             self.text += str(data)
 
 
@@ -86,7 +87,6 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
         content = response.content.decode("cp1251")
         parser = PreviewPageParser()
         parser.feed(content)
-        print(parser.text)
         # modifiers = (re.MULTILINE,)
         # title_match = re.findall(
         #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
