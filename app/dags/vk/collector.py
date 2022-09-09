@@ -68,7 +68,8 @@ class PreviewPageParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == "div" and self.has_class(attrs, "wall_post_text"):
             self.in_text = True
-        print(tag, self.in_text)
+        if tag == "br" and self.in_text:
+            self.text += "<br>"
 
     def handle_endtag(self, tag):
         if self.in_text and tag == "div":
@@ -76,7 +77,6 @@ class PreviewPageParser(HTMLParser):
 
     def handle_data(self, data):
         if self.in_text:
-            print(data)
             self.text += str(data)
 
 
@@ -87,6 +87,7 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
         content = response.content.decode("cp1251")
         parser = PreviewPageParser()
         parser.feed(content)
+        print(parser.text)
         # modifiers = (re.MULTILINE,)
         # title_match = re.findall(
         #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
