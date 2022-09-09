@@ -52,8 +52,14 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     }
     if url:
         response = requests.get(url)
-        print(response.content.decode("cp1251"))
-        print(response.content.decode("ascii"))
+        print(url)
+        print(
+            re.findall(
+                r"<div\sclass=\"wall_post_text\">(.+)</div>",
+                response.content.decode("cp1251"),
+                re.MULTILINE,
+            )
+        )
     return data
 
 
