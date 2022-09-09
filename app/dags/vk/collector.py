@@ -61,6 +61,10 @@ class PreviewPageParser(HTMLParser):
     image: str = ""
 
     def has_class(self, attrs: List[Tuple[str, str]], name: str) -> bool:
+        for item in attrs:
+            if item[0] == "class":
+                print(item[1])
+                print(item[1].split(r"\s"))
         classes = list(
             filter(
                 lambda item: item[0] == "class" and name in item[1].split(r"\s"), attrs
@@ -77,8 +81,6 @@ class PreviewPageParser(HTMLParser):
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
-        if tag == "a":
-            print(attrs)
         if tag == "a" and self.has_class(attrs, "image_cover"):
             print(attrs)
 
