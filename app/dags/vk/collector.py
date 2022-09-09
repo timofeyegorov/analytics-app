@@ -73,6 +73,7 @@ class PreviewPageParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag == "div" and self.has_class(attrs, "wall_post_text"):
+            print(attrs)
             self.in_text = True
         print(tag, self.in_text)
 
