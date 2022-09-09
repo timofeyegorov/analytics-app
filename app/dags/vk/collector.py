@@ -52,16 +52,32 @@ def chr_convert(text: str) -> str:
     return text
 
 
-class MyHTMLParser(HTMLParser):
+class PreviewPageParser(HTMLParser):
+    in_text: bool = False
+
+    text: str = ""
+
     def handle_starttag(self, tag, attrs):
-        print("Encountered a start tag:", tag)
-        print("     attrs:", attrs)
+        self.in_text = (
+            len(
+                list(
+                    map(
+                        lambda item: item[0] == "class"
+                        and "wall_post_text" in item[1].split(r"\s"),
+                        attrs,
+                    )
+                )
+            )
+            > 0
+        )
 
     def handle_endtag(self, tag):
-        print("Encountered an end tag :", tag)
+        if self.in_text and tag == "div":
+            self.in_text = False
 
     def handle_data(self, data):
-        print("Encountered some data  :", data)
+        if self.in_text:
+            self.text += str(data)
 
 
 def parse_ad_preview_page(url: str) -> Dict[str, str]:
@@ -69,8 +85,9 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     if url:
         response = requests.get(url)
         content = response.content.decode("cp1251")
-        parser = MyHTMLParser()
+        parser = PreviewPageParser()
         parser.feed(content)
+        print(parser.text)
         # modifiers = (re.MULTILINE,)
         # title_match = re.findall(
         #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
