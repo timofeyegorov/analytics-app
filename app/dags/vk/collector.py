@@ -1,6 +1,7 @@
 import re
 import sys
 import time
+import html
 import pandas
 import requests
 
@@ -52,14 +53,13 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     }
     if url:
         response = requests.get(url)
-        print(url)
-        print(
-            re.findall(
-                r"<div\sclass=\"wall_post_text\">(.+)</div>",
-                response.content.decode("cp1251"),
-                re.MULTILINE,
-            )
+        content = response.content.decode("cp1251")
+        modifiers = (re.MULTILINE,)
+        description_match = re.findall(
+            r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
         )
+        if description_match:
+            data.update({"description": html.escape(description_match[0])})
     return data
 
 
