@@ -57,19 +57,22 @@ class PreviewPageParser(HTMLParser):
 
     text: str = ""
 
-    def handle_starttag(self, tag, attrs):
-        if (
+    def has_class(self, attrs: List[Tuple[str, str]], name: str) -> bool:
+        return (
             len(
                 list(
                     map(
                         lambda item: item[0] == "class"
-                        and "wall_post_text" in item[1].split(r"\s"),
+                        and name in item[1].split(r"\s"),
                         attrs,
                     )
                 )
             )
             > 0
-        ):
+        )
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "div" and self.has_class(attrs, "wall_post_text"):
             self.in_text = True
         print(tag, self.in_text)
 
@@ -87,7 +90,6 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     if url:
         response = requests.get(url)
         content = response.content.decode("cp1251")
-        print(content)
         parser = PreviewPageParser()
         parser.feed(content)
         print(parser.text)
