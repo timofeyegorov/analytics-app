@@ -1,7 +1,6 @@
 import re
 import sys
 import time
-import html
 import pandas
 import requests
 
@@ -45,6 +44,13 @@ def get_full_period(
     )
 
 
+def chr_convert(text: str) -> str:
+    match = list(set(re.findall(r"(&#\d+;)", text)))
+    for item in match:
+        text = text.replace(item, chr(int(re.findall(r"&#(\d+);", text)[0])))
+    return text
+
+
 def parse_ad_preview_page(url: str) -> Dict[str, str]:
     data = {
         "title": "",
@@ -59,7 +65,7 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
             r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
         )
         if description_match:
-            data.update({"description": html.escape(description_match[0])})
+            data.update({"description": chr_convert(description_match[0])})
     return data
 
 
