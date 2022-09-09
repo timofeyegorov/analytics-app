@@ -265,7 +265,7 @@ def ads_get_ads_layout():
                 for ad_layout in response:
                     output_wall.append(
                         {
-                            "ad_id": ad_layout.id,
+                            "ad_id": ad_layout.get("id"),
                             **parse_ad_preview_page(ad_layout.get("preview_link")),
                         }
                     )
@@ -282,7 +282,7 @@ def ads_get_ads_layout():
             for ad_layout in response:
                 output_wall.append(
                     {
-                        "ad_id": ad_layout.id,
+                        "ad_id": ad_layout.get("id"),
                         **parse_ad_preview_page(ad_layout.get("preview_link")),
                     }
                 )
