@@ -1,8 +1,8 @@
-import json
 import re
 import sys
 import time
 import pandas
+import requests
 
 from datetime import datetime
 from typing import Tuple, List, Dict, Any
@@ -42,6 +42,18 @@ def get_full_period(
         datetime.strptime(str(date_from), "%Y%m%d"),
         datetime.strptime(str(date_to), "%Y%m%d"),
     )
+
+
+def parse_ad_preview_page(url: str) -> Dict[str, str]:
+    data = {
+        "title": "",
+        "description": "",
+        "image": "",
+    }
+    if url:
+        response = requests.get(url)
+        print(response.content)
+    return data
 
 
 @log_execution_time("ads.getAccounts")
@@ -230,9 +242,9 @@ def ads_get_ads_layout():
                     account_id=client.account_id,
                     client_id=client.id,
                 )
-                print(response)
                 for ad_layout in response:
-                    print(ad_layout)
+                    ad_page_data = parse_ad_preview_page(ad_layout.get("preview_link"))
+                    print(ad_page_data)
                     output.append(ad_layout)
                 time.sleep(1)
         else:
