@@ -52,7 +52,7 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     }
     if url:
         response = requests.get(url)
-        print(response.content)
+        print(response.content.decode("utf-8"))
     return data
 
 
@@ -246,6 +246,7 @@ def ads_get_ads_layout():
                     ad_page_data = parse_ad_preview_page(ad_layout.get("preview_link"))
                     print(ad_page_data)
                     output.append(ad_layout)
+                    break
                 time.sleep(1)
         else:
             output += vk(
