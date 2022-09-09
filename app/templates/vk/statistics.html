@@ -45,9 +45,7 @@
                 <th rowspan="3">Клиент</th>
                 <th rowspan="3">Кампания</th>
                 <th rowspan="3">Объявление</th>
-                <th rowspan="3">Заголовок</th>
-                <th rowspan="3">Описание</th>
-                <th rowspan="3">Изображение</th>
+                <th rowspan="3">Заголовок / Описание / Изображение</th>
                 <th rowspan="3">Дата</th>
                 <th rowspan="3">Потрачено</th>
                 <th rowspan="3">Просмотры</th>
@@ -98,9 +96,17 @@
                     <td class="nowrap">{{ stat.client_id }} <span class="hint">{{ clients[stat.client_id].name }}</span></td>
                     <td class="nowrap">{{ stat.campaign_id }} <span class="hint">{{ campaigns[stat.campaign_id].name }}</span></td>
                     <td class="nowrap">{{ stat.id }} <span class="hint">{{ ads[stat.id].name }}</span></td>
-                    <td class="nowrap">{{ posts[stat.id].title or "" }}</td>
-                    <td class="nowrap">{{ posts[stat.id].text or "" }}</td>
-                    <td class="nowrap">{{ posts[stat.id].image or "" }}</td>
+                    <td class="nowrap">
+                        <div class="ad-detail">
+                            {% if posts[stat.id].image %}
+                                <div class="image"><img src="{{ posts[stat.id].image or "" }}" alt=""></div>
+                            {% endif %}
+                            <div class="text">
+                                {{ posts[stat.id].title or "" }}
+                                <span class="hint">{{ posts[stat.id].text or "" }}</span>
+                            </div>
+                        </div>
+                    </td>
                     <td class="nowrap font-monospace">{{ stat.date }}</td>
                     <td class="font-monospace text-right">{{ stat.spent }}</td>
                     <td class="font-monospace text-right">{{ stat.impressions }}</td>

@@ -3,11 +3,15 @@ import pandas
 import requests
 import tempfile
 
+from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl
 
+from xlsxwriter import Workbook
+
+from flask import send_file
 from flask import request, render_template
 from flask.views import MethodView
 
@@ -278,6 +282,154 @@ class VKCreateAdView(TemplateView):
         except Exception as error:
             self.context("error", error)
         return self.render()
+
+
+class VKDownloadView(MethodView):
+    def create_ads_worksheet(self, workbook: Workbook):
+        worksheet = workbook.add_worksheet("Объявления")
+        columns = [
+            "id",
+            "account_id",
+            "client_id",
+            "campaign_id",
+            "title",
+            "text",
+            "image",
+            "ad_format",
+            "cost_type",
+            "cpc",
+            "cpm",
+            "ocpm",
+            "goal_type",
+            "impressions_limit",
+            "impressions_limited",
+            "ad_platform",
+            "ad_platform_no_wall",
+            "ad_platform_no_ad_network",
+            "publisher_platforms",
+            "all_limit",
+            "day_limit",
+            "autobidding",
+            "autobidding_max_cost",
+            "category1_id",
+            "category2_id",
+            "status",
+            "name",
+            "approved",
+        ]
+        worksheet.write_row(0, 0, columns)
+        posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
+        for row, ad in enumerate(vk_reader("ads.getAds")):
+            worksheet.write_row(
+                row + 1,
+                0,
+                [
+                    ad.id,
+                    ad.account_id,
+                    ad.client_id,
+                    ad.campaign_id,
+                    posts.get(ad.id).get("title", ""),
+                    posts.get(ad.id).get("text", ""),
+                    posts.get(ad.id).get("image", ""),
+                    ad.ad_format.value if ad.ad_format else "",
+                    ad.cost_type.value if ad.cost_type else "",
+                    ad.cpc,
+                    ad.cpm,
+                    ad.ocpm,
+                    ad.goal_type.value if ad.goal_type else "",
+                    ad.impressions_limit,
+                    ad.impressions_limited,
+                    ad.ad_platform.value if ad.ad_platform else "",
+                    ad.ad_platform_no_wall,
+                    ad.ad_platform_no_ad_network,
+                    ad.publisher_platforms.value if ad.publisher_platforms else "",
+                    ad.all_limit,
+                    ad.day_limit,
+                    ad.autobidding.value if ad.autobidding else "",
+                    ad.autobidding_max_cost,
+                    ad.category1_id,
+                    ad.category2_id,
+                    ad.status.value if ad.status else "",
+                    ad.name,
+                    ad.approved.value if ad.approved else "",
+                ],
+            )
+
+    def create_statistics_worksheet(self, workbook: Workbook):
+        worksheet = workbook.add_worksheet("Статистика")
+        data = vk_reader("collectStatisticsDataFrame")
+        data["date"] = data["date"].astype(str)
+        worksheet.write_row(0, 0, data.columns)
+        for row, stat in enumerate(data.iterrows()):
+            worksheet.write_row(row + 1, 0, stat[1].values)
+
+    def create_enum(
+        self, workbook: Workbook, enum_data: Enum, title: str, description: str
+    ):
+        worksheet = workbook.add_worksheet(title)
+        worksheet.write_row(0, 0, [description])
+        worksheet.write_row(1, 0, ["id", "name"])
+        for row, data in enumerate(enum_data):
+            worksheet.write_row(row + 2, 0, [data.value, data.title])
+
+    def create_enums(self, workbook: Workbook):
+        items = [
+            (
+                vk_data.AdFormatEnum,
+                "ad_format",
+                "Форматы объявлений",
+            ),
+            (
+                vk_data.AdCostTypeEnum,
+                "cost_type",
+                "Типы оплат",
+            ),
+            (
+                vk_data.AdGoalTypeEnum,
+                "goal_type",
+                "Типы целей",
+            ),
+            (
+                vk_data.AdPlatformEnum,
+                "ad_platform",
+                "Рекламные площадки",
+            ),
+            (
+                vk_data.AdPublisherPlatformsEnum,
+                "publisher_platforms",
+                "Площадки показа",
+            ),
+            (
+                vk_data.AdAutobiddingEnum,
+                "autobidding",
+                "Автоматическое управление ценой",
+            ),
+            (
+                vk_data.AdStatusEnum,
+                "status",
+                "Статусы объявлений",
+            ),
+            (
+                vk_data.AdApprovedEnum,
+                "approved",
+                "Статусы модерации объявлений",
+            ),
+        ]
+        for item in items:
+            self.create_enum(workbook, *item)
+
+    def get(self):
+        target = tempfile.NamedTemporaryFile(suffix=".xlsx")
+        workbook = Workbook(target.name)
+        self.create_ads_worksheet(workbook)
+        self.create_statistics_worksheet(workbook)
+        self.create_enums(workbook)
+        workbook.close()
+        return send_file(
+            workbook.filename,
+            download_name=f'vk-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            as_attachment=True,
+        )
 
 
 class ApiVKCreateAdDependesFieldsView(APIView):

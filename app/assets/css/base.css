@@ -1,8 +1,8 @@
-table  { border-collapse: collapse; width: 100%; overflow-x: auto;}
-th, td { padding: 8px 16px; }
+table  { border-collapse:collapse; width:100%; overflow-x:auto;}
+th, td { padding:8px 16px; }
 th     { background:#eee; }
 td, th {
-    border: 1px solid;
+    border:1px solid;
 }
 table tr:hover {
     background:#eee;
@@ -11,8 +11,8 @@ table td.nowrap,
 table th.nowrap {
     white-space:nowrap;
 }
-table td > span.hint,
-table th > span.hint {
+table td span.hint,
+table th span.hint {
     display:block;
     color:#999;
     font-size:.75rem;
@@ -47,6 +47,42 @@ table.statistics > thead > tr:nth-child(2) > th {
 }
 table.statistics > thead > tr:nth-child(3) > th {
     top:64px;
+}
+table.statistics .ad-detail {
+    display:-webkit-box;
+    display:-moz-box;
+    display:-ms-flexbox;
+    display:-webkit-flex;
+    display:flex;
+    -webkit-box-direction:normal;
+    -moz-box-direction:normal;
+    -webkit-box-orient:horizontal;
+    -moz-box-orient:horizontal;
+    -webkit-flex-direction:row;
+    -ms-flex-direction:row;
+    flex-direction:row;
+    -webkit-flex-wrap:nowrap;
+    -ms-flex-wrap:nowrap;
+    flex-wrap:nowrap;
+    -webkit-box-pack:start;
+    -moz-box-pack:start;
+    -webkit-justify-content:flex-start;
+    -ms-flex-pack:start;
+    justify-content:flex-start;
+    -webkit-align-content:flex-start;
+    -ms-flex-line-pack:start;
+    align-content:flex-start;
+    -webkit-box-align:start;
+    -moz-box-align:start;
+    -webkit-align-items:flex-start;
+    -ms-flex-align:start;
+    align-items:flex-start;
+}
+table.statistics .ad-detail > .image {
+    padding:0 5px 0 0;
+}
+table.statistics .ad-detail > .image > img {
+    width:70px;
 }
 
 label {
