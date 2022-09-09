@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Any, Optional
 from pydantic import (
     BaseModel,
     PositiveInt,
@@ -617,3 +617,15 @@ class StatisticData(BaseModel):
     effective_cpf: Optional[PositiveFloat]
     effective_cost_per_message: Optional[PositiveFloat]
     message_sends: Optional[PositiveFloat]
+
+
+class WallPostData(BaseModel):
+    ad_id: PositiveInt
+    id: PositiveInt = 1
+    owner_id: int = 1
+    from_id: int = 1
+    date: PositiveInt = 1
+    title: str = ""
+    text: str = ""
+    image: str = ""
+    attachments: List[Dict[str, Any]] = []

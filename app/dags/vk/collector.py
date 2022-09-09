@@ -52,26 +52,26 @@ def chr_convert(text: str) -> str:
 
 
 def parse_ad_preview_page(url: str) -> Dict[str, str]:
-    data = {
-        "title": "",
-        "description": "",
-        "image": "",
-    }
+    data = {"title": "", "text": "", "image": ""}
     if url:
         response = requests.get(url)
         content = response.content.decode("cp1251")
         modifiers = (re.MULTILINE,)
         title_match = re.findall(
-            r"<a\sclass=\"media_link__title\"\shref=\"([^\"]+)\"[^>]+>(.+)</a>",
-            content,
-            *modifiers,
+            r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
         )
-        description_match = re.findall(
+        text_match = re.findall(
             r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
         )
-        print(title_match)
-        if description_match:
-            data.update({"description": chr_convert(description_match[0])})
+        image_match = re.findall(
+            r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
+        )
+        if title_match:
+            data.update({"title": chr_convert(title_match[0])})
+        if text_match:
+            data.update({"text": chr_convert(text_match[0])})
+        if image_match:
+            data.update({"image": image_match[0]})
     return data
 
 
@@ -249,6 +249,7 @@ def ads_get_ads_layout():
     accounts = reader("ads.getAccounts")
     clients = reader("ads.getClients")
     output = []
+    output_wall = []
     for account in accounts:
         if account.account_type == data.AccountTypeEnum.agency:
             account_clients = list(
@@ -262,20 +263,35 @@ def ads_get_ads_layout():
                     client_id=client.id,
                 )
                 for ad_layout in response:
-                    ad_page_data = parse_ad_preview_page(ad_layout.get("preview_link"))
-                    print(ad_page_data)
-                    output.append(ad_layout)
+                    output_wall.append(
+                        {
+                            "ad_id": ad_layout.id,
+                            **parse_ad_preview_page(ad_layout.get("preview_link")),
+                        }
+                    )
                     time.sleep(1)
                     break
+                output += response
                 time.sleep(1)
         else:
-            output += vk(
+            response = vk(
                 method,
                 include_deleted=1,
                 account_id=account.account_id,
             )
+            for ad_layout in response:
+                output_wall.append(
+                    {
+                        "ad_id": ad_layout.id,
+                        **parse_ad_preview_page(ad_layout.get("preview_link")),
+                    }
+                )
+                time.sleep(1)
+                break
+            output += response
             time.sleep(1)
     writer(method, output)
+    writer("wall.get", output_wall)
 
 
 @log_execution_time("ads.getDemographics")

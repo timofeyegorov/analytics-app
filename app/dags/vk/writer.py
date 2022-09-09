@@ -15,6 +15,7 @@ from app.dags.vk.data import (
     CityData,
     DemographicData,
     StatisticData,
+    WallPostData,
 )
 
 
@@ -154,4 +155,8 @@ class VKWriter:
         data["age__45_100__clicks_rate"] = (
             data["age__45_100__clicks_rate"].fillna(0).astype(float)
         )
+        pickle.dump(data, file)
+
+    def wallget(self, file, posts: List[Dict[str, Any]]):
+        data = list(map(lambda post: WallPostData(**post), posts))
         pickle.dump(data, file)
