@@ -58,7 +58,7 @@ class PreviewPageParser(HTMLParser):
     text: str = ""
 
     def handle_starttag(self, tag, attrs):
-        self.in_text = (
+        if (
             len(
                 list(
                     map(
@@ -69,7 +69,8 @@ class PreviewPageParser(HTMLParser):
                 )
             )
             > 0
-        )
+        ):
+            self.in_text = True
         print(tag, self.in_text)
 
     def handle_endtag(self, tag):
