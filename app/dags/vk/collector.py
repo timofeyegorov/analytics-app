@@ -52,7 +52,8 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     }
     if url:
         response = requests.get(url)
-        print(response.content)
+        print(response.content.decode("cp1251"))
+        print(response.content.decode("ascii"))
     return data
 
 
