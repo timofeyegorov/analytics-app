@@ -70,6 +70,7 @@ class PreviewPageParser(HTMLParser):
             )
             > 0
         )
+        print(tag, self.in_text)
 
     def handle_endtag(self, tag):
         if self.in_text and tag == "div":
