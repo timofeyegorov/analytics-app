@@ -78,6 +78,7 @@ class PreviewPageParser(HTMLParser):
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
+        print(tag)
         if tag == "a" and self.has_class(attrs, "image_cover"):
             print(attrs)
 
