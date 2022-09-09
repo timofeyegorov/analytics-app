@@ -61,9 +61,15 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
         response = requests.get(url)
         content = response.content.decode("cp1251")
         modifiers = (re.MULTILINE,)
+        title_match = re.findall(
+            r"<a\sclass=\"media_link__title\"\shref=\"([^\"]+)\"[^>]+>(.+)</a>",
+            content,
+            *modifiers,
+        )
         description_match = re.findall(
             r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
         )
+        print(title_match)
         if description_match:
             data.update({"description": chr_convert(description_match[0])})
     return data
@@ -259,6 +265,7 @@ def ads_get_ads_layout():
                     ad_page_data = parse_ad_preview_page(ad_layout.get("preview_link"))
                     print(ad_page_data)
                     output.append(ad_layout)
+                    time.sleep(1)
                     break
                 time.sleep(1)
         else:
