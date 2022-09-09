@@ -96,6 +96,7 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
         content = response.content.decode("cp1251")
         parser = PreviewPageParser()
         parser.feed(content)
+        print(content)
         data.update(
             {
                 "title": parser.title,
