@@ -52,7 +52,7 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
     }
     if url:
         response = requests.get(url)
-        print(response.content.decode("utf-8"))
+        print(response.content)
     return data
 
 
