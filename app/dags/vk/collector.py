@@ -64,10 +64,11 @@ class PreviewPageParser(HTMLParser):
         for item in attrs:
             if item[0] == "class":
                 print(item[1])
-                print(item[1].split(r"\s"))
+                print(re.split(r"\s+", item[1]))
         classes = list(
             filter(
-                lambda item: item[0] == "class" and name in item[1].split(r"\s"), attrs
+                lambda item: item[0] == "class" and name in re.split(r"\s+", item[1]),
+                attrs,
             )
         )
         return len(classes) > 0
