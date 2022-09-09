@@ -77,7 +77,7 @@ class PreviewPageParser(HTMLParser):
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
-        if tag == "a" and self.has_class(attrs, "page_post_thumb_video"):
+        if tag == "a" and self.has_class(attrs, "image_cover"):
             print(attrs)
 
     def handle_endtag(self, tag):
@@ -100,7 +100,6 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
         content = response.content.decode("cp1251")
         parser = PreviewPageParser()
         parser.feed(content)
-        print(content)
         data.update(
             {
                 "title": parser.title,
