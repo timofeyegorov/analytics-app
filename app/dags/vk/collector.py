@@ -58,18 +58,11 @@ class PreviewPageParser(HTMLParser):
     text: str = ""
 
     def has_class(self, attrs: List[Tuple[str, str]], name: str) -> bool:
-        return (
-            len(
-                list(
-                    map(
-                        lambda item: item[0] == "class"
-                        and name in item[1].split(r"\s"),
-                        attrs,
-                    )
-                )
-            )
-            > 0
+        classes = list(
+            map(lambda item: item[0] == "class" and name in item[1].split(r"\s"), attrs)
         )
+        print(classes)
+        return len(classes) > 0
 
     def handle_starttag(self, tag, attrs):
         if tag == "div" and self.has_class(attrs, "wall_post_text"):
