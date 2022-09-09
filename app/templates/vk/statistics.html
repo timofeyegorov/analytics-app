@@ -98,9 +98,9 @@
                     <td class="nowrap">{{ stat.client_id }} <span class="hint">{{ clients[stat.client_id].name }}</span></td>
                     <td class="nowrap">{{ stat.campaign_id }} <span class="hint">{{ campaigns[stat.campaign_id].name }}</span></td>
                     <td class="nowrap">{{ stat.id }} <span class="hint">{{ ads[stat.id].name }}</span></td>
-                    <td class="nowrap">{{ ads_layout[stat.id].title or "" }}</td>
-                    <td class="nowrap">{{ ads_layout[stat.id].description or "" }}</td>
-                    <td class="nowrap">{{ ads_layout[stat.id].image_src or "" }}</td>
+                    <td class="nowrap">{{ posts[stat.id].title or "" }}</td>
+                    <td class="nowrap">{{ posts[stat.id].text or "" }}</td>
+                    <td class="nowrap">{{ posts[stat.id].image or "" }}</td>
                     <td class="nowrap font-monospace">{{ stat.date }}</td>
                     <td class="font-monospace text-right">{{ stat.spent }}</td>
                     <td class="font-monospace text-right">{{ stat.impressions }}</td>

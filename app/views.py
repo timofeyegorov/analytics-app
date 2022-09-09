@@ -57,6 +57,10 @@ class VKStatisticsView(TemplateView):
     title = "Статистика объявлений в ВК"
 
     @property
+    def posts(self) -> Dict[int, vk_data.WallPostData]:
+        return dict(map(lambda item: (item.ad_id, item), vk_reader("wall.get")))
+
+    @property
     def accounts(self) -> Dict[int, vk_data.AccountData]:
         return dict(
             map(lambda item: (item.account_id, item), vk_reader("ads.getAccounts"))
@@ -170,6 +174,7 @@ class VKStatisticsView(TemplateView):
         return stats
 
     def get(self):
+        self.context("posts", self.posts)
         self.context("accounts", self.accounts)
         self.context("clients", self.clients)
         self.context("campaigns", self.campaigns)
