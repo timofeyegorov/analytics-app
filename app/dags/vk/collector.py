@@ -58,6 +58,7 @@ class PreviewPageParser(HTMLParser):
 
     title: str = ""
     text: str = ""
+    image: str = ""
 
     def has_class(self, attrs: List[Tuple[str, str]], name: str) -> bool:
         classes = list(
@@ -75,6 +76,9 @@ class PreviewPageParser(HTMLParser):
             self.in_text = True
         if tag == "br" and self.in_text:
             self.text += "<br>"
+
+        if tag == "a" and self.has_class(attrs, "page_post_thumb_video"):
+            print(attrs)
 
     def handle_endtag(self, tag):
         if tag == "a" and self.in_title:
