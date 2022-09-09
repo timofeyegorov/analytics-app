@@ -79,10 +79,9 @@ class PreviewPageParser(HTMLParser):
             self.text += "<br>"
 
         if tag == "a" and self.has_class(attrs, "page_post_thumb_video"):
-            print(list(filter(lambda item: item[0] == "style", attrs)))
             self.image = re.findall(
                 r"url\([^)]+\)",
-                list(filter(lambda item: item[0] == "style", attrs))[0],
+                list(filter(lambda item: item[0] == "style", attrs))[0][1],
             )[0]
 
     def handle_endtag(self, tag):
