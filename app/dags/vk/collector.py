@@ -79,12 +79,10 @@ class PreviewPageParser(HTMLParser):
             self.text += "<br>"
 
         if tag == "a" and self.has_class(attrs, "page_post_thumb_video"):
-            print(
-                re.findall(
-                    r"url\([^)]+\)",
-                    list(filter(lambda item: item[0] == "style", attrs)),
-                )
-            )
+            self.image = re.findall(
+                r"url\([^)]+\)",
+                list(filter(lambda item: item[0] == "style", attrs))[0],
+            )[0]
 
     def handle_endtag(self, tag):
         if tag == "a" and self.in_title:
@@ -110,8 +108,10 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
             {
                 "title": parser.title,
                 "text": parser.text,
+                "image": parser.image,
             }
         )
+        print(data)
     return data
 
 
