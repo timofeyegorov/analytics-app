@@ -43,6 +43,10 @@
                 <input class="form-control" data-value="{{ fields.description }}" name="description" id="description" value="" type="text" />
             </div>
             <div class="m-2">
+                <label for="goal_type">Рекламная цель</label>
+                <select class="form-control" data-value="{{ fields.goal_type }}" name="goal_type" id="goal_type" disabled="disabled"></select>
+            </div>
+            <div class="m-2">
                 <label for="photo">Основное изображение</label>
                 <input class="form-control" name="photo_file" id="photo_file" value="" type="file" />
                 <input class="form-control" data-value="{{ fields.photo }}" name="photo" id="photo" value="" type="text" readonly="readonly" />

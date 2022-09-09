@@ -15,7 +15,7 @@ class VKAPI:
         return cfg.get("url", "")
 
     def get_url(self, path: str) -> str:
-        return f'{self.host}{path}?access_token={cfg.get("token", "")}&v={cfg.get("version", "")}'
+        return f'{self.host}{path}?access_token={cfg.get("token", "")}&v={cfg.get("version", "")}&lang=ru'
 
     def request(self, method: str, **kwargs) -> Union[dict, str]:
         response = requests.post(self.get_url(method), data=kwargs)

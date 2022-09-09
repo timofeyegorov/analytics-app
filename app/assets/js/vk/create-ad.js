@@ -14,7 +14,8 @@
             title_field = $("#title")[0],
             description_field = $("#description")[0],
             photo_file_field = $("#photo_file")[0],
-            photo_field = $("#photo")[0];
+            photo_field = $("#photo")[0],
+            goal_type_field = $("#goal_type")[0];
 
         let prepare_fields = (is_init) => {
             let account_field_value = account_field.value,
@@ -24,7 +25,8 @@
                 link_url_field_value = link_url_field.value,
                 title_field_value = title_field.value,
                 description_field_value = description_field.value,
-                photo_field_value = photo_field.value;
+                photo_field_value = photo_field.value,
+                goal_type_field_value = goal_type.value;
             if (is_init) {
                 account_field_value = account_field.dataset.value;
                 campaign_field_value = campaign_field.dataset.value;
@@ -34,6 +36,7 @@
                 title_field_value = title_field.dataset.value;
                 description_field_value = description_field.dataset.value;
                 photo_field_value = photo_field.dataset.value;
+                goal_type_field_value = goal_type.dataset.value;
             }
             $(cost_type_field).val(cost_type_field_value);
             $(ad_format_field).val(ad_format_field_value);
@@ -41,6 +44,7 @@
             $(title_field).val(title_field_value);
             $(description_field).val(description_field_value);
             $(photo_field).val(photo_field_value);
+            $(goal_type).val(goal_type_field_value);
             if (!this.locked) {
                 this.locked = true;
                 $.ajax({
@@ -50,18 +54,21 @@
                         campaign_id: campaign_field_value,
                         cost_type: cost_type_field_value,
                         ad_format: ad_format_field_value,
+                        goal_type: goal_type_field_value,
                     },
                     success: (data) => {
                         account_field.available_options = data.accounts || [];
                         campaign_field.available_options = data.campaigns || [];
                         cost_type_field.available_options = data.cost_type || [];
                         ad_format_field.available_options = data.ad_format || [];
+                        goal_type_field.available_options = data.goal_type || [];
                     },
                     error: () => {
                         account_field.available_options = [];
                         campaign_field.available_options = [];
                         cost_type_field.available_options = [];
                         ad_format_field.available_options = [];
+                        goal_type_field.available_options = [];
                     },
                     complete: () => {
                         this.locked = false;
@@ -191,6 +198,34 @@
                         options.push($(`<option value="${item[0]}"${item[2] ? ' selected="selected"' : ''}>${item[1]}</option>`));
                     });
                     $(ad_format_field).html(options);
+                }
+            }
+        });
+
+        Object.defineProperties(goal_type_field, {
+            locked: {
+                get: () => {
+                    return this._locked || false;
+                },
+                set: (value) => {
+                    if (typeof value === "boolean") {
+                        goal_type_field._locked = value;
+                        if (value) {
+                            goal_type_field.setAttribute("disabled", "disabled");
+                        } else {
+                            goal_type_field.removeAttribute("disabled");
+                        }
+                    }
+                }
+            },
+            available_options: {
+                set: (value) => {
+                    let options = [];
+                    goal_type_field.locked = !value.length;
+                    value.forEach((item) => {
+                        options.push($(`<option value="${item[0]}"${item[2] ? ' selected="selected"' : ''}>${item[1]}</option>`));
+                    });
+                    $(goal_type_field).html(options);
                 }
             }
         });

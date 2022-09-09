@@ -91,8 +91,8 @@ class VKStatisticsView(TemplateView):
         }
 
     def get_stats(self) -> pandas.DataFrame:
-        # TODO: убрать ограничение на 10 записей
-        stats = vk_reader("collectStatisticsDataFrame")[:10]
+        # TODO: убрать ограничение на 100 записей
+        stats = vk_reader("collectStatisticsDataFrame")[:100]
         stats["spent"] = stats["spent"].apply(lambda value: "%.2f" % value)
         stats["ctr"] = stats["ctr"].apply(lambda value: "%.3f" % value)
         stats["effective_cost_per_click"] = stats["effective_cost_per_click"].apply(
@@ -106,6 +106,66 @@ class VKStatisticsView(TemplateView):
         )
         stats["effective_cost_per_message"] = stats["effective_cost_per_message"].apply(
             lambda value: "%.2f" % value
+        )
+        stats["sex__m__impressions_rate"] = stats["sex__m__impressions_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["sex__f__impressions_rate"] = stats["sex__f__impressions_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["sex__m__clicks_rate"] = stats["sex__m__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["sex__f__clicks_rate"] = stats["sex__f__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__12_18__impressions_rate"] = stats[
+            "age__12_18__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__18_21__impressions_rate"] = stats[
+            "age__18_21__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__21_24__impressions_rate"] = stats[
+            "age__21_24__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__24_27__impressions_rate"] = stats[
+            "age__24_27__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__27_30__impressions_rate"] = stats[
+            "age__27_30__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__30_35__impressions_rate"] = stats[
+            "age__30_35__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__35_45__impressions_rate"] = stats[
+            "age__35_45__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__45_100__impressions_rate"] = stats[
+            "age__45_100__impressions_rate"
+        ].apply(lambda value: "%.3f" % value)
+        stats["age__12_18__clicks_rate"] = stats["age__12_18__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__18_21__clicks_rate"] = stats["age__18_21__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__21_24__clicks_rate"] = stats["age__21_24__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__24_27__clicks_rate"] = stats["age__24_27__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__27_30__clicks_rate"] = stats["age__27_30__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__30_35__clicks_rate"] = stats["age__30_35__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__35_45__clicks_rate"] = stats["age__35_45__clicks_rate"].apply(
+            lambda value: "%.3f" % value
+        )
+        stats["age__45_100__clicks_rate"] = stats["age__45_100__clicks_rate"].apply(
+            lambda value: "%.3f" % value
         )
         return stats
 
@@ -140,6 +200,7 @@ class VKCreateAdView(TemplateView):
                     "title": kwargs.get("title", ""),
                     "description": kwargs.get("description", ""),
                     "photo": kwargs.get("photo", ""),
+                    "goal_type": kwargs.get("goal_type", ""),
                 }
             }
         )
@@ -167,6 +228,7 @@ class VKCreateAdView(TemplateView):
         link_url = request.form.get("link_url", "")
         title = request.form.get("title", "")
         description = request.form.get("description", "")
+        goal_type = request.form.get("goal_type", "")
         form_context = {
             "account_id": account_id,
             "campaign_id": campaign_id,
@@ -175,10 +237,11 @@ class VKCreateAdView(TemplateView):
             "link_url": link_url,
             "title": title,
             "description": description,
+            "goal_type": goal_type,
         }
         try:
-            photo = request.form.get(
-                "photo", self.get_photo_url(request.files.get("photo_file"), ad_format)
+            photo = request.form.get("photo") or self.get_photo_url(
+                request.files.get("photo_file"), ad_format
             )
             form_context.update({"photo": photo})
         except Exception as error:
@@ -198,10 +261,12 @@ class VKCreateAdView(TemplateView):
                         "title": title,
                         "description": description,
                         "photo": photo,
+                        "goal_type": int(goal_type) if goal_type else "",
                     }
                 ]
             ),
         }
+        print(params)
         try:
             response = vk("ads.createAds", **params)
             print(response)
@@ -256,11 +321,19 @@ class ApiVKCreateAdDependesFieldsView(APIView):
                 vk_data.CampaignAdFormatEnum,
             )
         )
+        goal_type = int(data.get("goal_type", -1))
+        goal_types = [("", "", False)] + list(
+            map(
+                lambda item: (item.value, item.title, item.value == goal_type),
+                vk_data.AdGoalTypeEnum,
+            )
+        )
         self.data = {
             "accounts": accounts,
             "campaigns": campaigns,
             "cost_type": cost_types,
             "ad_format": ad_formats,
+            "goal_type": goal_types,
         }
         return super().get()
 

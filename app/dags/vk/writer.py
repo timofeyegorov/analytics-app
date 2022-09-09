@@ -94,4 +94,64 @@ class VKWriter:
             data["effective_cost_per_message"].fillna(0).astype(float)
         )
         data["message_sends"] = data["message_sends"].fillna(0).astype(int)
+        data["sex__m__impressions_rate"] = (
+            data["sex__m__impressions_rate"].fillna(0).astype(float)
+        )
+        data["sex__f__impressions_rate"] = (
+            data["sex__f__impressions_rate"].fillna(0).astype(float)
+        )
+        data["sex__m__clicks_rate"] = (
+            data["sex__m__clicks_rate"].fillna(0).astype(float)
+        )
+        data["sex__f__clicks_rate"] = (
+            data["sex__f__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__12_18__impressions_rate"] = (
+            data["age__12_18__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__18_21__impressions_rate"] = (
+            data["age__18_21__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__21_24__impressions_rate"] = (
+            data["age__21_24__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__24_27__impressions_rate"] = (
+            data["age__24_27__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__27_30__impressions_rate"] = (
+            data["age__27_30__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__30_35__impressions_rate"] = (
+            data["age__30_35__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__35_45__impressions_rate"] = (
+            data["age__35_45__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__45_100__impressions_rate"] = (
+            data["age__45_100__impressions_rate"].fillna(0).astype(float)
+        )
+        data["age__12_18__clicks_rate"] = (
+            data["age__12_18__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__18_21__clicks_rate"] = (
+            data["age__18_21__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__21_24__clicks_rate"] = (
+            data["age__21_24__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__24_27__clicks_rate"] = (
+            data["age__24_27__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__27_30__clicks_rate"] = (
+            data["age__27_30__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__30_35__clicks_rate"] = (
+            data["age__30_35__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__35_45__clicks_rate"] = (
+            data["age__35_45__clicks_rate"].fillna(0).astype(float)
+        )
+        data["age__45_100__clicks_rate"] = (
+            data["age__45_100__clicks_rate"].fillna(0).astype(float)
+        )
         pickle.dump(data, file)

@@ -25,6 +25,29 @@ table td.text-right,
 table th.text-right {
     text-align:right;
 }
+table td.text-center,
+table th.text-center {
+    text-align:center;
+}
+table.statistics th,
+table.statistics td {
+    padding:5px 10px;
+    font-size:.875rem;
+}
+table.statistics th {
+    position:sticky;
+    top:0;
+    z-index:2;
+}
+table.statistics > thead > tr:nth-child(1) > th {
+    top:0;
+}
+table.statistics > thead > tr:nth-child(2) > th {
+    top:32px;
+}
+table.statistics > thead > tr:nth-child(3) > th {
+    top:64px;
+}
 
 label {
     display:block;
