@@ -66,7 +66,6 @@ class PreviewPageParser(HTMLParser):
                 lambda item: item[0] == "class" and name in item[1].split(r"\s"), attrs
             )
         )
-        print(classes)
         return len(classes) > 0
 
     def handle_starttag(self, tag, attrs):
@@ -78,7 +77,8 @@ class PreviewPageParser(HTMLParser):
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
-        print(tag)
+        if tag == "a":
+            print(attrs)
         if tag == "a" and self.has_class(attrs, "image_cover"):
             print(attrs)
 
