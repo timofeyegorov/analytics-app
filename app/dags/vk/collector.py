@@ -310,7 +310,6 @@ def ads_get_ads_layout():
                         }
                     )
                     time.sleep(1)
-                    break
                 output += response
                 time.sleep(1)
         else:
@@ -327,7 +326,6 @@ def ads_get_ads_layout():
                     }
                 )
                 time.sleep(1)
-                break
             output += response
             time.sleep(1)
     writer(method, output)
