@@ -68,7 +68,7 @@ class PreviewPageParser(HTMLParser):
         return len(classes) > 0
 
     def handle_starttag(self, tag, attrs):
-        if tag == "div" and self.has_class(attrs, "media_link__title"):
+        if tag == "a" and self.has_class(attrs, "media_link__title"):
             self.in_title = True
 
         if tag == "div" and self.has_class(attrs, "wall_post_text"):
@@ -77,7 +77,7 @@ class PreviewPageParser(HTMLParser):
             self.text += "<br>"
 
     def handle_endtag(self, tag):
-        if tag == "div" and self.in_title:
+        if tag == "a" and self.in_title:
             self.in_title = False
         if tag == "div" and self.in_text:
             self.in_text = False
@@ -103,22 +103,6 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
             }
         )
     return data
-    # modifiers = (re.MULTILINE,)
-    # title_match = re.findall(
-    #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
-    # )
-    # text_match = re.findall(
-    #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
-    # )
-    # image_match = re.findall(
-    #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
-    # )
-    # if title_match:
-    #     data.update({"title": chr_convert(title_match[0])})
-    # if text_match:
-    #     data.update({"text": chr_convert(text_match[0])})
-    # if image_match:
-    #     data.update({"image": image_match[0]})
 
 
 @log_execution_time("ads.getAccounts")
