@@ -5,6 +5,7 @@ import pandas
 import requests
 
 from datetime import datetime
+from html.parser import HTMLParser
 from typing import Tuple, List, Dict, Any
 
 from airflow import DAG
@@ -51,27 +52,40 @@ def chr_convert(text: str) -> str:
     return text
 
 
+class MyHTMLParser(HTMLParser):
+    def handle_starttag(self, tag, attrs):
+        print("Encountered a start tag:", tag)
+
+    def handle_endtag(self, tag):
+        print("Encountered an end tag :", tag)
+
+    def handle_data(self, data):
+        print("Encountered some data  :", data)
+
+
 def parse_ad_preview_page(url: str) -> Dict[str, str]:
     data = {"title": "", "text": "", "image": ""}
     if url:
         response = requests.get(url)
         content = response.content.decode("cp1251")
-        modifiers = (re.MULTILINE,)
-        title_match = re.findall(
-            r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
-        )
-        text_match = re.findall(
-            r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
-        )
-        image_match = re.findall(
-            r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
-        )
-        if title_match:
-            data.update({"title": chr_convert(title_match[0])})
-        if text_match:
-            data.update({"text": chr_convert(text_match[0])})
-        if image_match:
-            data.update({"image": image_match[0]})
+        parser = MyHTMLParser()
+        parser.feed(content)
+        # modifiers = (re.MULTILINE,)
+        # title_match = re.findall(
+        #     r"<a\sclass=\"media_link__title\"\s[^>]+>(.+)</a>", content, *modifiers
+        # )
+        # text_match = re.findall(
+        #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
+        # )
+        # image_match = re.findall(
+        #     r"<div\sclass=\"wall_post_text\">(.+)</div>", content, *modifiers
+        # )
+        # if title_match:
+        #     data.update({"title": chr_convert(title_match[0])})
+        # if text_match:
+        #     data.update({"text": chr_convert(text_match[0])})
+        # if image_match:
+        #     data.update({"image": image_match[0]})
     return data
 
 
