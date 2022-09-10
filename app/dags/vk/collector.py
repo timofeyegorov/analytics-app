@@ -97,6 +97,7 @@ class PreviewPageParser(HTMLParser):
             self.image = list(filter(lambda item: item[0] == "src", attrs))[0][1]
 
         if tag == "a" and self.has_class(attrs, "media_link__button"):
+            print(attrs)
             self.target_url = list(filter(lambda item: item[0] == "src", attrs))[0][1]
 
     def handle_endtag(self, tag):
