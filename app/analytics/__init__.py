@@ -749,6 +749,10 @@ app.add_url_rule(
     view_func=views.VKDownloadView.as_view("vk_download"),
 )
 app.add_url_rule(
+    "/vk/leads",
+    view_func=views.VKLeadsView.as_view("vk_leads"),
+)
+app.add_url_rule(
     "/api/vk/create-ad/dependes-fields",
     view_func=views.ApiVKCreateAdDependesFieldsView.as_view(
         "api_vk_create_ad_dependes_fields"

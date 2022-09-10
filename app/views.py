@@ -1,4 +1,5 @@
 import json
+import numpy
 import pandas
 import requests
 import tempfile
@@ -468,6 +469,31 @@ class VKDownloadView(MethodView):
         return send_file(
             workbook.filename,
             download_name=f'vk-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            as_attachment=True,
+        )
+
+
+class VKLeadsView(MethodView):
+    def get(self):
+        target = tempfile.NamedTemporaryFile(suffix=".xlsx")
+        leads = pickle_loader.leads
+        leads = leads.drop(["id", "email", "phone"], axis=1)
+        leads = leads[leads.utm_source.str.contains("vk")]
+        leads["date_request"] = leads["date_request"].astype(str)
+        leads["date_payment"] = leads["date_payment"].astype(str)
+        leads["date_status_change"] = leads["date_status_change"].astype(str)
+        leads["created_at"] = leads["created_at"].astype(str)
+        leads["updated_at"] = leads["updated_at"].astype(str)
+        leads = leads.reset_index(drop=True)
+        workbook = Workbook(target.name, {"strings_to_urls": False})
+        worksheet = workbook.add_worksheet("Лиды")
+        worksheet.write_row(0, 0, leads.columns)
+        for row, lead in leads.iterrows():
+            worksheet.write_row(row + 1, 0, lead.values)
+        workbook.close()
+        return send_file(
+            workbook.filename,
+            download_name=f'leads-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
             as_attachment=True,
         )
 
