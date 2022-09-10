@@ -598,26 +598,26 @@ collect_statistics_dataframe_operator = PythonOperator(
     dag=dag,
 )
 
-ads_get_accounts_operator >> ads_get_clients_operator
-
-ads_get_accounts_operator >> ads_get_campaigns_operator
-ads_get_clients_operator >> ads_get_campaigns_operator
-
-ads_get_accounts_operator >> ads_get_target_groups_operator
-ads_get_clients_operator >> ads_get_target_groups_operator
-
-ads_get_accounts_operator >> ads_get_ads_operator
-ads_get_clients_operator >> ads_get_ads_operator
-
-ads_get_accounts_operator >> ads_get_ads_layout_operator
-ads_get_clients_operator >> ads_get_ads_layout_operator
+# ads_get_accounts_operator >> ads_get_clients_operator
+#
+# ads_get_accounts_operator >> ads_get_campaigns_operator
+# ads_get_clients_operator >> ads_get_campaigns_operator
+#
+# ads_get_accounts_operator >> ads_get_target_groups_operator
+# ads_get_clients_operator >> ads_get_target_groups_operator
+#
+# ads_get_accounts_operator >> ads_get_ads_operator
+# ads_get_clients_operator >> ads_get_ads_operator
+#
+# ads_get_accounts_operator >> ads_get_ads_layout_operator
+# ads_get_clients_operator >> ads_get_ads_layout_operator
 
 ads_get_accounts_operator >> ads_get_ads_targeting_operator
 ads_get_clients_operator >> ads_get_ads_targeting_operator
 
-ads_get_ads_operator >> ads_get_demographics_operator
-
-ads_get_ads_operator >> ads_get_statistics_operator
-
-ads_get_demographics_operator >> collect_statistics_dataframe_operator
-ads_get_statistics_operator >> collect_statistics_dataframe_operator
+# ads_get_ads_operator >> ads_get_demographics_operator
+#
+# ads_get_ads_operator >> ads_get_statistics_operator
+#
+# ads_get_demographics_operator >> collect_statistics_dataframe_operator
+# ads_get_statistics_operator >> collect_statistics_dataframe_operator
