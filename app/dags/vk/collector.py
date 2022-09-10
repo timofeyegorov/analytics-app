@@ -357,13 +357,13 @@ def ads_get_ads_targeting():
                             "retargeting_groups": list(
                                 map(
                                     lambda value: int(value),
-                                    item.get("retargeting_groups", []),
+                                    item.get("retargeting_groups", "").split(","),
                                 )
                             ),
                             "retargeting_groups_not": list(
                                 map(
                                     lambda value: int(value),
-                                    item.get("retargeting_groups_not", []),
+                                    item.get("retargeting_groups_not", "").split(","),
                                 )
                             ),
                         }
