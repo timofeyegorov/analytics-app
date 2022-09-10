@@ -52,6 +52,15 @@ def chr_convert(text: str) -> str:
     return text
 
 
+def string_to_list_int(text: str, delimiter: str = ",") -> List[int]:
+    return list(
+        map(
+            lambda value: int(value),
+            list(filter(None, text.strip("()").split(delimiter))),
+        )
+    )
+
+
 class PreviewPageParser(HTMLParser):
     in_title: bool = False
     in_text: bool = False
@@ -330,12 +339,6 @@ def ads_get_ads_layout():
             time.sleep(1)
     writer(method, output)
     writer("wall.get", output_wall)
-
-
-def string_to_list_int(text: str, delimiter: str = ",") -> List[int]:
-    return list(
-        map(lambda value: int(value), list(filter(None, text.split(delimiter))))
-    )
 
 
 @log_execution_time("ads.getAdsTargeting")
