@@ -163,9 +163,9 @@ class VKWriter:
         )
         pickle.dump(data, file)
 
-    def adsgetsuggestions(self, file, positions: List[Dict[str, Any]]):
-        positions = list(map(lambda position: PositionsData(**position), positions))
-        pickle.dump(positions, file)
+    def adsgetsuggestionspositions(self, file, positions: List[Dict[str, Any]]):
+        data = list(map(lambda position: PositionsData(**position), positions))
+        pickle.dump(data, file)
 
     def wallget(self, file, posts: List[Dict[str, Any]]):
         data = list(map(lambda post: WallPostData(**post), posts))

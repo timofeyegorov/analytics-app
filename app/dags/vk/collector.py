@@ -501,11 +501,11 @@ def ads_get_statistics():
     writer(method, output)
 
 
-@log_execution_time("ads.getSuggestions")
-def ads_get_suggestions():
-    method = "ads.getSuggestions"
-    positions = vk(method, section="positions")
-    writer("ads.getSuggestions", positions)
+@log_execution_time("ads.getSuggestions.positions")
+def ads_get_suggestions_positions():
+    writer(
+        "ads.getSuggestions.positions", vk("ads.getSuggestions", section="positions")
+    )
 
 
 @log_execution_time("collectStatisticsDataFrame")
@@ -625,8 +625,10 @@ ads_get_ads_targeting_operator = PythonOperator(
 #     python_callable=collect_statistics_dataframe,
 #     dag=dag,
 # )
-ads_get_suggestions_operator = PythonOperator(
-    task_id="ads_get_suggestions", python_callable=ads_get_suggestions, dag=dag
+ads_get_suggestions_positions_operator = PythonOperator(
+    task_id="ads_get_suggestions_positions",
+    python_callable=ads_get_suggestions_positions,
+    dag=dag,
 )
 
 # ads_get_accounts_operator >> ads_get_clients_operator
