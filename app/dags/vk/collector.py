@@ -4,6 +4,7 @@ import time
 import pandas
 import requests
 
+from urllib.parse import urlparse
 from datetime import datetime
 from html.parser import HTMLParser
 from typing import Tuple, List, Dict, Any
@@ -97,8 +98,8 @@ class PreviewPageParser(HTMLParser):
             self.image = list(filter(lambda item: item[0] == "src", attrs))[0][1]
 
         if tag == "a" and self.has_class(attrs, "media_link__button"):
-            print(attrs)
-            self.target_url = list(filter(lambda item: item[0] == "src", attrs))[0][1]
+            print(urlparse(list(filter(lambda item: item[0] == "href", attrs))[0][1]))
+            self.target_url = ""
 
     def handle_endtag(self, tag):
         if tag == "a" and self.in_title:
