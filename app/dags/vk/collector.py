@@ -357,6 +357,7 @@ def ads_get_ads_targeting():
                     client_id=client.id,
                 )
                 for index, item in enumerate(response):
+                    print(item.get("groups_active_formula", ""))
                     item.update(
                         {
                             "sex": int(item.get("sex")) if item.get("sex") else None,
@@ -639,16 +640,16 @@ ads_get_ads_targeting_operator = PythonOperator(
 #     python_callable=collect_statistics_dataframe,
 #     dag=dag,
 # )
-ads_get_suggestions_positions_operator = PythonOperator(
-    task_id="ads_get_suggestions_positions",
-    python_callable=ads_get_suggestions_positions,
-    dag=dag,
-)
-ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
-    task_id="ads_get_suggestions_interest_categories_v2",
-    python_callable=ads_get_suggestions_interest_categories_v2,
-    dag=dag,
-)
+# ads_get_suggestions_positions_operator = PythonOperator(
+#     task_id="ads_get_suggestions_positions",
+#     python_callable=ads_get_suggestions_positions,
+#     dag=dag,
+# )
+# ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
+#     task_id="ads_get_suggestions_interest_categories_v2",
+#     python_callable=ads_get_suggestions_interest_categories_v2,
+#     dag=dag,
+# )
 
 # ads_get_accounts_operator >> ads_get_clients_operator
 #
