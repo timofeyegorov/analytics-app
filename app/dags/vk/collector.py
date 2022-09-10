@@ -366,6 +366,9 @@ def ads_get_ads_targeting():
                             "retargeting_groups_not": string_to_list_int(
                                 item.get("retargeting_groups_not", "")
                             ),
+                            "groups": string_to_list_int(
+                                item.get("groups_active_formula", ""), "|"
+                            ),
                             "positions": string_to_list_int(item.get("positions", "")),
                             "interest_categories": string_to_list_int(
                                 item.get("interest_categories_formula", "")
