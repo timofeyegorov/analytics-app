@@ -97,25 +97,13 @@ class PreviewPageParser(HTMLParser):
         if tag == "img" and self.has_class(attrs, "media_link__photo"):
             self.image = list(filter(lambda item: item[0] == "src", attrs))[0][1]
 
-        if tag == "a" and (
-            self.has_class(attrs, "media_link__button")
-            or list(
-                filter(
-                    lambda item: item[0] == "href" and item[1].startswith("/away.php?"),
-                    attrs,
-                )
-            )
-        ):
-            print(attrs)
-            qs = dict(
-                parse_qsl(
-                    urlparse(
-                        list(filter(lambda item: item[0] == "href", attrs))[0][1]
-                    ).query
-                )
-            )
-            print(qs)
-            target_url = qs.get("to", "")
+        if tag == "a" and self.has_class(attrs, "media_link__button"):
+            url = list(filter(lambda item: item[0] == "href", attrs))[0][1]
+            if url.startswith("/away.php?"):
+                qs = dict(parse_qsl(urlparse(url).query))
+                target_url = qs.get("to", "")
+            else:
+                target_url = url
             if target_url:
                 self.target_url = target_url
 
