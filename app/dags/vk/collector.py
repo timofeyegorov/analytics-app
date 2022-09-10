@@ -366,6 +366,13 @@ def ads_get_ads_targeting():
         )
         return item
 
+    def write_countries(data: List[Dict[str, Any]]):
+        ids = list(map(lambda item: str(item.get("country", "")), data))
+        writer(
+            "ads.getSuggestions.countries",
+            vk("ads.getSuggestions", section="countries", ids=",".join(ids)),
+        )
+
     method = "ads.getAdsTargeting"
     accounts = reader("ads.getAccounts")
     clients = reader("ads.getClients")
@@ -396,7 +403,7 @@ def ads_get_ads_targeting():
                 response[index] = update_data(item)
             output += response
             time.sleep(1)
-    print(output)
+    write_countries(output)
     writer(method, output)
 
 
@@ -534,13 +541,6 @@ def ads_get_suggestions_interest_categories_v2():
     )
 
 
-@log_execution_time("ads.getSuggestions.countries")
-def ads_get_suggestions_countries():
-    writer(
-        "ads.getSuggestions.countries", vk("ads.getSuggestions", section="countries")
-    )
-
-
 @log_execution_time("collectStatisticsDataFrame")
 def collect_statistics_dataframe():
     demographics = reader("ads.getDemographics")
@@ -667,11 +667,6 @@ ads_get_ads_targeting_operator = PythonOperator(
 # ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
 #     task_id="ads_get_suggestions_interest_categories_v2",
 #     python_callable=ads_get_suggestions_interest_categories_v2,
-#     dag=dag,
-# )
-# ads_get_suggestions_countries_operator = PythonOperator(
-#     task_id="ads_get_suggestions_countries",
-#     python_callable=ads_get_suggestions_countries,
 #     dag=dag,
 # )
 

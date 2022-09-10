@@ -444,10 +444,16 @@ class VKDownloadView(MethodView):
             (vk_data.SexEnum, "targeting__sex"),
             (vk_data.BirthdayEnum, "targeting__birthday"),
             (vk_data.FamilyStatusEnum, "targeting__statuses"),
-            (vk_data.CountryData, "targeting__countries"),
         ]
         for item in items:
             self.create_enum(workbook, *item)
+
+    def create_countries(self, workbook: Workbook):
+        worksheet = workbook.add_worksheet("targeting__countries")
+        countries = vk_reader("ads.getSuggestions.countries")
+        worksheet.write_row(0, 0, ["id", "name"])
+        for row, country in enumerate(countries):
+            worksheet.write_row(row + 1, 0, country.values())
 
     def get(self):
         target = tempfile.NamedTemporaryFile(suffix=".xlsx")
@@ -455,6 +461,7 @@ class VKDownloadView(MethodView):
         self.create_ads_worksheet(workbook)
         self.create_statistics_worksheet(workbook)
         self.create_enums(workbook)
+        self.create_countries(workbook)
         workbook.close()
         return send_file(
             workbook.filename,
