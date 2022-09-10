@@ -78,7 +78,7 @@ class PreviewPageParser(HTMLParser):
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
-        if tag == "a" and self.has_class(attrs, "page_post_thumb_video"):
+        if tag in ["a", "span"] and self.has_class(attrs, "image_cover"):
             self.image = re.findall(
                 r"url\(([^)]+)\)",
                 list(filter(lambda item: item[0] == "style", attrs))[0][1],
