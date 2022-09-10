@@ -17,6 +17,7 @@ from app.dags.vk.data import (
     StatisticData,
     WallPostData,
     AdTargetingData,
+    PositionsData,
 )
 
 
@@ -161,6 +162,10 @@ class VKWriter:
             data["age__45_100__clicks_rate"].fillna(0).astype(float)
         )
         pickle.dump(data, file)
+
+    def adsgetsuggestions(self, file, positions: List[Dict[str, Any]]):
+        positions = list(map(lambda position: PositionsData(**position), positions))
+        pickle.dump(positions, file)
 
     def wallget(self, file, posts: List[Dict[str, Any]]):
         data = list(map(lambda post: WallPostData(**post), posts))

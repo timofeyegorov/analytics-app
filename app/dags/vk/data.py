@@ -701,3 +701,8 @@ class WallPostData(BaseModel):
     text: str = ""
     image: str = ""
     attachments: List[Dict[str, Any]] = []
+
+
+class PositionsData(BaseModel):
+    id: PositiveInt
+    name: str
