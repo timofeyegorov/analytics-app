@@ -711,6 +711,7 @@ class WallPostData(BaseModel):
     title: str = ""
     text: str = ""
     image: str = ""
+    target_url: str = ""
     attachments: List[Dict[str, Any]] = []
 
 
