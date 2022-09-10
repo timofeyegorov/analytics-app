@@ -326,7 +326,6 @@ def ads_get_ads_layout():
                     client_id=client.id,
                 )
                 for ad_layout in response:
-                    print(ad_layout.get("preview_link"))
                     output_wall.append(
                         {
                             "ad_id": ad_layout.get("id"),
