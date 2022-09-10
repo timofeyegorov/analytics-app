@@ -316,10 +316,40 @@ class VKDownloadView(MethodView):
             "status",
             "name",
             "approved",
+            "targeting__sex",
+            "targeting__age_from",
+            "targeting__age_to",
+            "targeting__birthday",
+            "targeting__country",
+            "targeting__cities",
+            "targeting__cities_not",
+            "targeting__statuses",
+            "targeting__groups",
+            "targeting__groups_not",
+            "targeting__apps",
+            "targeting__apps_not",
+            "targeting__districts",
+            "targeting__stations",
+            "targeting__streets",
+            "targeting__schools",
+            "targeting__positions",
+            "targeting__religions",
+            "targeting__interest_categories",
+            "targeting__interests",
+            "targeting__user_devices",
+            "targeting__user_os",
+            "targeting__user_browsers",
+            "targeting__retargeting_groups",
+            "targeting__retargeting_groups_not",
+            "targeting__count",
         ]
         worksheet.write_row(0, 0, columns)
         posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
+        targeting = dict(
+            map(lambda item: (item.id, item), vk_reader("ads.getAdsTargeting"))
+        )
         for row, ad in enumerate(vk_reader("ads.getAds")):
+            target = targeting.get(ad.id)
             worksheet.write_row(
                 row + 1,
                 0,
@@ -352,6 +382,38 @@ class VKDownloadView(MethodView):
                     ad.status.value if ad.status else "",
                     ad.name,
                     ad.approved.value if ad.approved else "",
+                    target.sex.value if target.sex else "",
+                    target.age_from,
+                    target.age_to,
+                    target.birthday,
+                    target.country,
+                    ",".join(list(map(lambda item: str(item), target.cities))),
+                    ",".join(list(map(lambda item: str(item), target.cities_not))),
+                    ",".join(list(map(lambda item: str(item.value), target.statuses))),
+                    ",".join(list(map(lambda item: str(item), target.groups))),
+                    ",".join(list(map(lambda item: str(item), target.groups_not))),
+                    ",".join(list(map(lambda item: str(item), target.apps))),
+                    ",".join(list(map(lambda item: str(item), target.apps_not))),
+                    ",".join(list(map(lambda item: str(item), target.districts))),
+                    ",".join(list(map(lambda item: str(item), target.stations))),
+                    ",".join(list(map(lambda item: str(item), target.streets))),
+                    ",".join(list(map(lambda item: str(item), target.schools))),
+                    ",".join(list(map(lambda item: str(item), target.positions))),
+                    ",".join(list(map(lambda item: str(item), target.religions))),
+                    ",".join(
+                        list(map(lambda item: str(item), target.interest_categories))
+                    ),
+                    ",".join(list(map(lambda item: str(item), target.interests))),
+                    ",".join(list(map(lambda item: str(item), target.user_devices))),
+                    ",".join(list(map(lambda item: str(item), target.user_os))),
+                    ",".join(list(map(lambda item: str(item), target.user_browsers))),
+                    ",".join(
+                        list(map(lambda item: str(item), target.retargeting_groups))
+                    ),
+                    ",".join(
+                        list(map(lambda item: str(item), target.retargeting_groups_not))
+                    ),
+                    target.count,
                 ],
             )
 
@@ -363,57 +425,26 @@ class VKDownloadView(MethodView):
         for row, stat in enumerate(data.iterrows()):
             worksheet.write_row(row + 1, 0, stat[1].values)
 
-    def create_enum(
-        self, workbook: Workbook, enum_data: Enum, title: str, description: str
-    ):
+    def create_enum(self, workbook: Workbook, enum_data: Enum, title: str):
         worksheet = workbook.add_worksheet(title)
-        worksheet.write_row(0, 0, [description])
-        worksheet.write_row(1, 0, ["id", "name"])
+        worksheet.write_row(0, 0, ["id", "name"])
         for row, data in enumerate(enum_data):
-            worksheet.write_row(row + 2, 0, [data.value, data.title])
+            worksheet.write_row(row + 1, 0, [data.value, data.title])
 
     def create_enums(self, workbook: Workbook):
         items = [
-            (
-                vk_data.AdFormatEnum,
-                "ad_format",
-                "Форматы объявлений",
-            ),
-            (
-                vk_data.AdCostTypeEnum,
-                "cost_type",
-                "Типы оплат",
-            ),
-            (
-                vk_data.AdGoalTypeEnum,
-                "goal_type",
-                "Типы целей",
-            ),
-            (
-                vk_data.AdPlatformEnum,
-                "ad_platform",
-                "Рекламные площадки",
-            ),
-            (
-                vk_data.AdPublisherPlatformsEnum,
-                "publisher_platforms",
-                "Площадки показа",
-            ),
-            (
-                vk_data.AdAutobiddingEnum,
-                "autobidding",
-                "Автоматическое управление ценой",
-            ),
-            (
-                vk_data.AdStatusEnum,
-                "status",
-                "Статусы объявлений",
-            ),
-            (
-                vk_data.AdApprovedEnum,
-                "approved",
-                "Статусы модерации объявлений",
-            ),
+            (vk_data.AdFormatEnum, "ad_format"),
+            (vk_data.AdCostTypeEnum, "cost_type"),
+            (vk_data.AdGoalTypeEnum, "goal_type"),
+            (vk_data.AdPlatformEnum, "ad_platform"),
+            (vk_data.AdPublisherPlatformsEnum, "publisher_platforms"),
+            (vk_data.AdAutobiddingEnum, "autobidding"),
+            (vk_data.AdStatusEnum, "status"),
+            (vk_data.AdApprovedEnum, "approved"),
+            (vk_data.SexEnum, "targeting__sex"),
+            (vk_data.BirthdayEnum, "targeting__birthday"),
+            (vk_data.FamilyStatusEnum, "targeting__statuses"),
+            (vk_data.CountryData, "targeting__countries"),
         ]
         for item in items:
             self.create_enum(workbook, *item)

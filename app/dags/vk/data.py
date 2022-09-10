@@ -470,6 +470,22 @@ class SexEnum(Enum):
         return SexTitleEnum[self.name].value
 
 
+class BirthdayTitleEnum(Enum):
+    _1 = "Сегодня"
+    _2 = "Завтра"
+    _4 = "В течение недели"
+
+
+class BirthdayEnum(Enum):
+    _1 = 1
+    _2 = 2
+    _4 = 4
+
+    @property
+    def title(self) -> str:
+        return BirthdayTitleEnum[self.name].value
+
+
 class FamilyStatusTitleEnum(Enum):
     _1 = "Не женат или не замужем"
     _2 = "Есть подруга или есть друг"
@@ -709,5 +725,10 @@ class PositionsData(BaseModel):
 
 
 class InterestCategoriesV2Data(BaseModel):
+    id: PositiveInt
+    name: str
+
+
+class CountryData(BaseModel):
     id: PositiveInt
     name: str

@@ -345,6 +345,27 @@ def ads_get_ads_layout():
 
 @log_execution_time("ads.getAdsTargeting")
 def ads_get_ads_targeting():
+    def update_data(item: dict) -> dict:
+        item.update(
+            {
+                "sex": int(item.get("sex")) if item.get("sex") else None,
+                "retargeting_groups": string_to_list_int(
+                    item.get("retargeting_groups", "")
+                ),
+                "retargeting_groups_not": string_to_list_int(
+                    item.get("retargeting_groups_not", "")
+                ),
+                "groups": string_to_list_int(
+                    item.get("groups_active_formula", ""), "|"
+                ),
+                "positions": string_to_list_int(item.get("positions", "")),
+                "interest_categories": string_to_list_int(
+                    item.get("interest_categories_formula", "")
+                ),
+            }
+        )
+        return item
+
     method = "ads.getAdsTargeting"
     accounts = reader("ads.getAccounts")
     clients = reader("ads.getClients")
@@ -362,34 +383,20 @@ def ads_get_ads_targeting():
                     client_id=client.id,
                 )
                 for index, item in enumerate(response):
-                    item.update(
-                        {
-                            "sex": int(item.get("sex")) if item.get("sex") else None,
-                            "retargeting_groups": string_to_list_int(
-                                item.get("retargeting_groups", "")
-                            ),
-                            "retargeting_groups_not": string_to_list_int(
-                                item.get("retargeting_groups_not", "")
-                            ),
-                            "groups": string_to_list_int(
-                                item.get("groups_active_formula", ""), "|"
-                            ),
-                            "positions": string_to_list_int(item.get("positions", "")),
-                            "interest_categories": string_to_list_int(
-                                item.get("interest_categories_formula", "")
-                            ),
-                        }
-                    )
-                    response[index] = item
+                    response[index] = update_data(item)
                 output += response
                 time.sleep(1)
         else:
-            output += vk(
+            response = vk(
                 method,
                 include_deleted=1,
                 account_id=account.account_id,
             )
+            for index, item in enumerate(response):
+                response[index] = update_data(item)
+            output += response
             time.sleep(1)
+    print(output)
     writer(method, output)
 
 
@@ -527,6 +534,13 @@ def ads_get_suggestions_interest_categories_v2():
     )
 
 
+@log_execution_time("ads.getSuggestions.countries")
+def ads_get_suggestions_countries():
+    writer(
+        "ads.getSuggestions.countries", vk("ads.getSuggestions", section="countries")
+    )
+
+
 @log_execution_time("collectStatisticsDataFrame")
 def collect_statistics_dataframe():
     demographics = reader("ads.getDemographics")
@@ -628,12 +642,12 @@ dag = DAG(
 # ads_get_ads_operator = PythonOperator(
 #     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
 # )
-ads_get_ads_layout_operator = PythonOperator(
-    task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
-)
-# ads_get_ads_targeting_operator = PythonOperator(
-#     task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
+# ads_get_ads_layout_operator = PythonOperator(
+#     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
 # )
+ads_get_ads_targeting_operator = PythonOperator(
+    task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
+)
 # ads_get_demographics_operator = PythonOperator(
 #     task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
 # )
@@ -653,6 +667,11 @@ ads_get_ads_layout_operator = PythonOperator(
 # ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
 #     task_id="ads_get_suggestions_interest_categories_v2",
 #     python_callable=ads_get_suggestions_interest_categories_v2,
+#     dag=dag,
+# )
+# ads_get_suggestions_countries_operator = PythonOperator(
+#     task_id="ads_get_suggestions_countries",
+#     python_callable=ads_get_suggestions_countries,
 #     dag=dag,
 # )
 

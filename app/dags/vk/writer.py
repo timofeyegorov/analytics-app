@@ -19,6 +19,7 @@ from app.dags.vk.data import (
     AdTargetingData,
     PositionsData,
     InterestCategoriesV2Data,
+    CountryData,
 )
 
 
@@ -174,6 +175,10 @@ class VKWriter:
         data = list(
             map(lambda category: InterestCategoriesV2Data(**category), categories)
         )
+        pickle.dump(data, file)
+
+    def adsgetsuggestionscountries(self, file, countries: List[Dict[str, Any]]):
+        data = list(map(lambda country: CountryData(**country), countries))
         pickle.dump(data, file)
 
     def wallget(self, file, posts: List[Dict[str, Any]]):
