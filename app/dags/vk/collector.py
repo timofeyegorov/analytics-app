@@ -344,12 +344,15 @@ def ads_get_ads_targeting():
                 filter(lambda client: client.account_id == account.account_id, clients)
             )
             for client in account_clients:
-                output += vk(
+                response = vk(
                     method,
                     include_deleted=1,
                     account_id=client.account_id,
                     client_id=client.id,
                 )
+                for index, item in enumerate(response):
+                    print(index, item)
+                output += response
                 time.sleep(1)
         else:
             output += vk(
