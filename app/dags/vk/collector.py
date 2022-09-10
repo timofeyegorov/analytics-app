@@ -511,10 +511,10 @@ def ads_get_suggestions_positions():
     )
 
 
-@log_execution_time("ads.getSuggestions.interest_categories_v2")
+@log_execution_time("ads.getSuggestions.interestCategoriesV2")
 def ads_get_suggestions_interest_categories_v2():
     writer(
-        "ads.getSuggestions.interest_categories_v2",
+        "ads.getSuggestions.interestCategoriesV2",
         vk("ads.getSuggestions", section="interest_categories_v2"),
     )
 
