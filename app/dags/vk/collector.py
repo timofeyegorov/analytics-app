@@ -98,14 +98,17 @@ class PreviewPageParser(HTMLParser):
             self.image = list(filter(lambda item: item[0] == "src", attrs))[0][1]
 
         if tag == "a" and self.has_class(attrs, "media_link__button"):
-            print(
+            print(attrs)
+            qs = dict(
                 parse_qsl(
                     urlparse(
                         list(filter(lambda item: item[0] == "href", attrs))[0][1]
                     ).query
                 )
             )
-            self.target_url = ""
+            target_url = qs.get("to", "")
+            if target_url:
+                self.target_url = target_url
 
     def handle_endtag(self, tag):
         if tag == "a" and self.in_title:
@@ -325,6 +328,7 @@ def ads_get_ads_layout():
                     client_id=client.id,
                 )
                 for ad_layout in response:
+                    print(ad_layout.get("preview_link"))
                     output_wall.append(
                         {
                             "ad_id": ad_layout.get("id"),
