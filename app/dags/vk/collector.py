@@ -367,6 +367,9 @@ def ads_get_ads_targeting():
                                 item.get("retargeting_groups_not", "")
                             ),
                             "positions": string_to_list_int(item.get("positions", "")),
+                            "interest_categories": string_to_list_int(
+                                item.get("interest_categories_formula", "")
+                            ),
                         }
                     )
                     response[index] = item
@@ -508,6 +511,14 @@ def ads_get_suggestions_positions():
     )
 
 
+@log_execution_time("ads.getSuggestions.interest_categories_v2")
+def ads_get_suggestions_interest_categories_v2():
+    writer(
+        "ads.getSuggestions.interest_categories_v2",
+        vk("ads.getSuggestions", section="interest_categories_v2"),
+    )
+
+
 @log_execution_time("collectStatisticsDataFrame")
 def collect_statistics_dataframe():
     demographics = reader("ads.getDemographics")
@@ -628,6 +639,11 @@ ads_get_ads_targeting_operator = PythonOperator(
 ads_get_suggestions_positions_operator = PythonOperator(
     task_id="ads_get_suggestions_positions",
     python_callable=ads_get_suggestions_positions,
+    dag=dag,
+)
+ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
+    task_id="ads_get_suggestions_interest_categories_v2",
+    python_callable=ads_get_suggestions_interest_categories_v2,
     dag=dag,
 )
 

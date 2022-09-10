@@ -706,3 +706,8 @@ class WallPostData(BaseModel):
 class PositionsData(BaseModel):
     id: PositiveInt
     name: str
+
+
+class InterestCategoriesV2Data(BaseModel):
+    id: PositiveInt
+    name: str
