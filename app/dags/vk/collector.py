@@ -332,6 +332,12 @@ def ads_get_ads_layout():
     writer("wall.get", output_wall)
 
 
+def string_to_list_int(text: str, delimiter: str = ",") -> List[int]:
+    return list(
+        map(lambda value: int(value), list(filter(None, text.split(delimiter))))
+    )
+
+
 @log_execution_time("ads.getAdsTargeting")
 def ads_get_ads_targeting():
     method = "ads.getAdsTargeting"
@@ -351,24 +357,17 @@ def ads_get_ads_targeting():
                     client_id=client.id,
                 )
                 for index, item in enumerate(response):
-                    print(item.get("retargeting_groups", "").split(","))
-                    # item.update(
-                    #     {
-                    #         "sex": int(item.get("sex")) if item.get("sex") else None,
-                    #         "retargeting_groups": list(
-                    #             map(
-                    #                 lambda value: int(value),
-                    #                 item.get("retargeting_groups", "").split(","),
-                    #             )
-                    #         ),
-                    #         "retargeting_groups_not": list(
-                    #             map(
-                    #                 lambda value: int(value),
-                    #                 item.get("retargeting_groups_not", "").split(","),
-                    #             )
-                    #         ),
-                    #     }
-                    # )
+                    item.update(
+                        {
+                            "sex": int(item.get("sex")) if item.get("sex") else None,
+                            "retargeting_groups": string_to_list_int(
+                                item.get("retargeting_groups", "")
+                            ),
+                            "retargeting_groups_not": string_to_list_int(
+                                item.get("retargeting_groups_not", "")
+                            ),
+                        }
+                    )
                     response[index] = item
                 output += response
                 time.sleep(1)
