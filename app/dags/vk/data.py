@@ -437,10 +437,10 @@ class AdLinkButtonEnum(Enum):
 
 
 class StatisticsIdsTypeTitleEnum(Enum):
-    ad = "объявления"
-    campaign = "кампании"
-    client = "клиенты"
-    office = "кабинет"
+    ad = "Объявления"
+    campaign = "Кампании"
+    client = "Клиенты"
+    office = "Кабинет"
 
 
 class StatisticsIdsTypeEnum(Enum):
@@ -452,6 +452,48 @@ class StatisticsIdsTypeEnum(Enum):
     @property
     def title(self) -> str:
         return StatisticsIdsTypeTitleEnum[self.name].value
+
+
+class SexTitleEnum(Enum):
+    _0 = "Любой"
+    _1 = "Женский"
+    _2 = "Мужской"
+
+
+class SexEnum(Enum):
+    _0 = 0
+    _1 = 1
+    _2 = 2
+
+    @property
+    def title(self) -> str:
+        return SexTitleEnum[self.name].value
+
+
+class FamilyStatusTitleEnum(Enum):
+    _1 = "Не женат или не замужем"
+    _2 = "Есть подруга или есть друг"
+    _3 = "Помолвлен(а)"
+    _4 = "Женат или замужем"
+    _5 = "Все сложно"
+    _6 = "В активном поиске"
+    _7 = "Влюблен(а)"
+    _8 = "В гражданском браке"
+
+
+class FamilyStatusEnum(Enum):
+    _1 = 1
+    _2 = 2
+    _3 = 3
+    _4 = 4
+    _5 = 5
+    _6 = 6
+    _7 = 7
+    _8 = 8
+
+    @property
+    def title(self) -> str:
+        return FamilyStatusTitleEnum[self.name].value
 
 
 class AccountData(BaseModel):
@@ -550,6 +592,36 @@ class AdLayoutData(BaseModel):
     image_src_2x: Optional[str]
     icon_src: Optional[str]
     icon_src_2x: Optional[str]
+
+
+class AdTargetingData(BaseModel):
+    id: PositiveInt
+    sex: Optional[SexEnum]
+    age_from: NonNegativeInt = 0
+    age_to: NonNegativeInt = 0
+    birthday: NonNegativeInt = 0
+    country: NonNegativeInt = 0
+    cities: List[int] = []
+    cities_not: List[int] = []
+    statuses: List[FamilyStatusEnum] = []
+    groups: List[int] = []
+    groups_not: List[int] = []
+    apps: List[int] = []
+    apps_not: List[int] = []
+    districts: List[int] = []
+    stations: List[int] = []
+    streets: List[int] = []
+    schools: List[int] = []
+    positions: List[int] = []
+    religions: List[int] = []
+    interest_categories: List[int] = []
+    interests: List[int] = []
+    user_devices: List[int] = []
+    user_os: List[int] = []
+    user_browsers: List[int] = []
+    retargeting_groups: List[int] = []
+    retargeting_groups_not: List[int] = []
+    count: NonNegativeInt = 0
 
 
 class CityData(BaseModel):

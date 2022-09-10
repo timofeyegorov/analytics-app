@@ -332,6 +332,35 @@ def ads_get_ads_layout():
     writer("wall.get", output_wall)
 
 
+@log_execution_time("ads.getAdsTargeting")
+def ads_get_ads_targeting():
+    method = "ads.getAdsTargeting"
+    accounts = reader("ads.getAccounts")
+    clients = reader("ads.getClients")
+    output = []
+    for account in accounts:
+        if account.account_type == data.AccountTypeEnum.agency:
+            account_clients = list(
+                filter(lambda client: client.account_id == account.account_id, clients)
+            )
+            for client in account_clients:
+                output += vk(
+                    method,
+                    include_deleted=1,
+                    account_id=client.account_id,
+                    client_id=client.id,
+                )
+                time.sleep(1)
+        else:
+            output += vk(
+                method,
+                include_deleted=1,
+                account_id=account.account_id,
+            )
+            time.sleep(1)
+    writer(method, output)
+
+
 @log_execution_time("ads.getDemographics")
 def ads_get_demographics():
     method = "ads.getDemographics"
@@ -554,6 +583,9 @@ ads_get_ads_operator = PythonOperator(
 ads_get_ads_layout_operator = PythonOperator(
     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
 )
+ads_get_ads_targeting_operator = PythonOperator(
+    task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
+)
 ads_get_demographics_operator = PythonOperator(
     task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
 )
@@ -579,6 +611,9 @@ ads_get_clients_operator >> ads_get_ads_operator
 
 ads_get_accounts_operator >> ads_get_ads_layout_operator
 ads_get_clients_operator >> ads_get_ads_layout_operator
+
+ads_get_accounts_operator >> ads_get_ads_targeting_operator
+ads_get_clients_operator >> ads_get_ads_targeting_operator
 
 ads_get_ads_operator >> ads_get_demographics_operator
 

@@ -16,6 +16,7 @@ from app.dags.vk.data import (
     DemographicData,
     StatisticData,
     WallPostData,
+    AdTargetingData,
 )
 
 
@@ -53,6 +54,10 @@ class VKWriter:
 
     def adsgetadslayout(self, file, ads_layout: List[Dict[str, Any]]):
         data = list(map(lambda ad_layout: AdLayoutData(**ad_layout), ads_layout))
+        pickle.dump(data, file)
+
+    def adsgetadstargeting(self, file, targeting: List[Dict[str, Any]]):
+        data = list(map(lambda target: AdTargetingData(**target), targeting))
         pickle.dump(data, file)
 
     def adsgetdemographics(self, file, demographics: List[Dict[str, Any]]):
