@@ -168,7 +168,7 @@ class VKWriter:
         data = list(map(lambda position: PositionsData(**position), positions))
         pickle.dump(data, file)
 
-    def adsgetsuggestioninterestcategoriesv2(
+    def adsgetsuggestioninterest_categories_v2(
         self, file, categories: List[Dict[str, Any]]
     ):
         data = list(
