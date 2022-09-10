@@ -640,11 +640,6 @@ class AdTargetingData(BaseModel):
     count: NonNegativeInt = 0
 
 
-class CityData(BaseModel):
-    id: PositiveInt
-    name: str
-
-
 class DemographicBaseData(BaseModel):
     impressions_rate: NonNegativeFloat = 0
     clicks_rate: NonNegativeFloat = 0
@@ -730,5 +725,10 @@ class InterestCategoriesV2Data(BaseModel):
 
 
 class CountryData(BaseModel):
+    id: PositiveInt
+    name: str
+
+
+class CityData(BaseModel):
     id: PositiveInt
     name: str

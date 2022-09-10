@@ -453,7 +453,7 @@ class VKDownloadView(MethodView):
         countries = vk_reader("ads.getSuggestions.countries")
         worksheet.write_row(0, 0, ["id", "name"])
         for row, country in enumerate(countries):
-            worksheet.write_row(row + 1, 0, country.values())
+            worksheet.write_row(row + 1, 0, country.dict().values())
 
     def get(self):
         target = tempfile.NamedTemporaryFile(suffix=".xlsx")

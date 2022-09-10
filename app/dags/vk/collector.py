@@ -122,7 +122,6 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
                 "image": parser.image,
             }
         )
-        print(data)
     return data
 
 
@@ -374,13 +373,11 @@ def ads_get_ads_targeting():
                 )
             )
         )
-        print("--------------------------")
-        print(ids)
-        print(",".join(ids))
-        print("--------------------------")
         writer(
             "ads.getSuggestions.countries",
-            vk("ads.getSuggestions", section="countries", ids=",".join(ids)),
+            vk("ads.getSuggestions", section="countries", ids=",".join(ids))
+            if ids
+            else [],
         )
 
     method = "ads.getAdsTargeting"
