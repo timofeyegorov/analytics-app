@@ -114,6 +114,7 @@ class PreviewPageParser(HTMLParser):
                     ).query
                 )
             )
+            print(qs)
             target_url = qs.get("to", "")
             if target_url:
                 self.target_url = target_url
