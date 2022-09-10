@@ -124,7 +124,7 @@ class PreviewPageParser(HTMLParser):
 
 
 def parse_ad_preview_page(url: str) -> Dict[str, str]:
-    data = {"title": "", "text": "", "image": ""}
+    data = {"title": "", "text": "", "image": "", "target_url": ""}
     if url:
         response = requests.get(url)
         content = response.content.decode("cp1251")
@@ -135,6 +135,7 @@ def parse_ad_preview_page(url: str) -> Dict[str, str]:
                 "title": parser.title,
                 "text": parser.text,
                 "image": parser.image,
+                "target_url": parser.target_url,
             }
         )
     return data
