@@ -351,23 +351,25 @@ def ads_get_ads_targeting():
                     client_id=client.id,
                 )
                 for index, item in enumerate(response):
-                    item.update(
-                        {
-                            "sex": int(item.get("sex")) if item.get("sex") else None,
-                            "retargeting_groups": list(
-                                map(
-                                    lambda value: int(value),
-                                    item.get("retargeting_groups", "").split(","),
-                                )
-                            ),
-                            "retargeting_groups_not": list(
-                                map(
-                                    lambda value: int(value),
-                                    item.get("retargeting_groups_not", "").split(","),
-                                )
-                            ),
-                        }
-                    )
+                    print(item.get("retargeting_groups", "").split(","))
+                    # item.update(
+                    #     {
+                    #         "sex": int(item.get("sex")) if item.get("sex") else None,
+                    #         "retargeting_groups": list(
+                    #             map(
+                    #                 lambda value: int(value),
+                    #                 item.get("retargeting_groups", "").split(","),
+                    #             )
+                    #         ),
+                    #         "retargeting_groups_not": list(
+                    #             map(
+                    #                 lambda value: int(value),
+                    #                 item.get("retargeting_groups_not", "").split(","),
+                    #             )
+                    #         ),
+                    #     }
+                    # )
+                    response[index] = item
                 output += response
                 time.sleep(1)
         else:
