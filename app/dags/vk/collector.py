@@ -1,9 +1,11 @@
 import re
 import sys
 import time
+import numpy
 import pandas
 import requests
 
+from math import ceil
 from urllib.parse import urlparse, parse_qsl
 from datetime import datetime
 from html.parser import HTMLParser
@@ -21,7 +23,7 @@ from app.dags.vk import reader, writer, data
 
 
 def get_full_period(
-    method: str, request_params: Dict[str, Any]
+    method: str, ids: List[str], request_params: Dict[str, Any]
 ) -> Tuple[datetime, datetime]:
     def map_dates(name: str, dates) -> map:
         return map(
@@ -31,18 +33,23 @@ def get_full_period(
             dates,
         )
 
-    dates = vk(
-        method,
-        period="overall",
-        date_from=0,
-        date_to=0,
-        **request_params,
-    )
-    date_from = min(list(set(filter(None, map_dates("day_from", dates)))))
-    date_to = max(list(set(filter(None, map_dates("day_to", dates)))))
+    dates_from = []
+    dates_to = []
+    ids_list = numpy.array_split(ids, ceil(len(ids) / +300))
+    for item in ids_list:
+        dates = vk(
+            method,
+            period="overall",
+            date_from=0,
+            date_to=0,
+            ids=",".join(list(item)),
+            **request_params,
+        )
+        dates_from += list(set(filter(None, map_dates("day_from", dates))))
+        dates_to += list(set(filter(None, map_dates("day_to", dates))))
     return (
-        datetime.strptime(str(date_from), "%Y%m%d"),
-        datetime.strptime(str(date_to), "%Y%m%d"),
+        datetime.strptime(str(min(dates_from)), "%Y%m%d"),
+        datetime.strptime(str(max(dates_to)), "%Y%m%d"),
     )
 
 
@@ -441,20 +448,12 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
-        print(len(ids))
-        print(
-            {
-                "account_id": account_id,
-                "ids_type": "ad",
-                "ids": ",".join(ids),
-            }
-        )
         daterange = get_full_period(
             method,
+            ids,
             {
                 "account_id": account_id,
                 "ids_type": "ad",
-                "ids": ",".join(ids),
             },
         )
         time.sleep(1)
@@ -529,10 +528,10 @@ def ads_get_statistics():
         ids = list(group["id"].astype(str))
         daterange = get_full_period(
             method,
+            ids,
             {
                 "account_id": account_id,
                 "ids_type": "ad",
-                "ids": ",".join(ids),
             },
         )
         time.sleep(1)
