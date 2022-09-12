@@ -35,7 +35,7 @@ def get_full_period(
 
     dates_from = []
     dates_to = []
-    ids_list = numpy.array_split(ids, ceil(len(ids) / +100))
+    ids_list = numpy.array_split(ids, ceil(len(ids) / +50))
     for item in ids_list:
         print("dates", list(item))
         dates = vk(
