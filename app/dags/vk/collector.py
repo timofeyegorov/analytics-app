@@ -452,6 +452,16 @@ def ads_get_demographics():
         time.sleep(1)
 
         for _id in ids:
+            print(
+                {
+                    "account_id": account_id,
+                    "ids_type": "ad",
+                    "ids": _id,
+                    "period": "day",
+                    "date_from": daterange[0].strftime("%Y-%m-%d"),
+                    "date_to": daterange[1].strftime("%Y-%m-%d"),
+                }
+            )
             statistics = vk(
                 method,
                 account_id=account_id,
