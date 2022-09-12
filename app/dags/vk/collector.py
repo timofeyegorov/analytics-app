@@ -652,12 +652,12 @@ dag = DAG(
 # ads_get_accounts_operator = PythonOperator(
 #     task_id="ads_get_accounts", python_callable=ads_get_accounts, dag=dag
 # )
-ads_get_clients_operator = PythonOperator(
-    task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
-)
-# ads_get_campaigns_operator = PythonOperator(
-#     task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
+# ads_get_clients_operator = PythonOperator(
+#     task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
 # )
+ads_get_campaigns_operator = PythonOperator(
+    task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
+)
 # ads_get_target_groups_operator = PythonOperator(
 #     task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
 # )
