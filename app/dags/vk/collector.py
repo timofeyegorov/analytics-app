@@ -441,6 +441,7 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
+        print(len(ids))
         print(
             {
                 "account_id": account_id,
