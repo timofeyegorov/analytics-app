@@ -365,9 +365,7 @@ def ads_get_ads_targeting():
                 "retargeting_groups_not": string_to_list_int(
                     item.get("retargeting_groups_not", "")
                 ),
-                "groups": string_to_list_int(
-                    item.get("groups_active_formula", ""), "|"
-                ),
+                "groups": string_to_list_int(item.get("groups_active_formula", "")),
                 "positions": string_to_list_int(item.get("positions", "")),
                 "interest_categories": string_to_list_int(
                     item.get("interest_categories_formula", "")
@@ -660,9 +658,9 @@ dag = DAG(
 # ads_get_ads_operator = PythonOperator(
 #     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
 # )
-ads_get_ads_layout_operator = PythonOperator(
-    task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
-)
+# ads_get_ads_layout_operator = PythonOperator(
+#     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
+# )
 ads_get_ads_targeting_operator = PythonOperator(
     task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
 )
