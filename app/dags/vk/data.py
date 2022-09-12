@@ -525,7 +525,7 @@ class AccountData(BaseModel):
 class ClientData(BaseModel):
     account_id: PositiveInt
     id: PositiveInt
-    name: EmailStr
+    name: str
     day_limit: NonNegativeInt
     all_limit: NonNegativeInt
 
