@@ -35,9 +35,9 @@ def get_full_period(
 
     dates_from = []
     dates_to = []
-    ids_list = numpy.array_split(ids, ceil(len(ids) / +200))
+    ids_list = numpy.array_split(ids, ceil(len(ids) / +300))
     for item in ids_list:
-        print("dates", item)
+        print("dates", list(item))
         dates = vk(
             method,
             period="overall",
@@ -48,6 +48,7 @@ def get_full_period(
         )
         dates_from += list(set(filter(None, map_dates("day_from", dates))))
         dates_to += list(set(filter(None, map_dates("day_to", dates))))
+        time.sleep(1)
     return (
         datetime.strptime(str(min(dates_from)), "%Y%m%d"),
         datetime.strptime(str(max(dates_to)), "%Y%m%d"),
