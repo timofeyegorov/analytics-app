@@ -376,6 +376,9 @@ def ads_get_ads_targeting():
 
     def write_countries(data: List[Dict[str, Any]]):
         print(data)
+        print(
+            list(filter(None, list(map(lambda item: str(item.get("country")), data))))
+        )
         ids = list(
             set(
                 list(
@@ -665,9 +668,9 @@ dag = DAG(
 ads_get_ads_targeting_operator = PythonOperator(
     task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
 )
-ads_get_demographics_operator = PythonOperator(
-    task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
-)
+# ads_get_demographics_operator = PythonOperator(
+#     task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
+# )
 # ads_get_statistics_operator = PythonOperator(
 #     task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
 # )
