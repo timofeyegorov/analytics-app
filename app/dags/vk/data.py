@@ -609,7 +609,7 @@ class AdLayoutData(BaseModel):
     link_url: str
     link_domain: str
     link_title: Optional[str]
-    link_button: Optional[AdLinkButtonTitleEnum]
+    link_button: Optional[AdLinkButtonEnum]
     image_src: str
     image_src_2x: Optional[str]
     icon_src: Optional[str]
