@@ -304,6 +304,9 @@ def ads_get_ads():
                 )
             )
             time.sleep(1)
+    ddd = list(map(lambda item: item.get("ad_platform", ""), output))
+    print(ddd)
+    print(list(set(ddd)))
     writer(method, output)
 
 
