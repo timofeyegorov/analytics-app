@@ -55,7 +55,7 @@ def chr_convert(text: str) -> str:
 
 def string_to_list_int(text: str) -> List[int]:
     return list(
-        map(lambda value: int(value), list(filter(None, re.split(r"\D+", text))))
+        map(lambda value: int(value), list(filter(None, re.split(r"[\D^-]+", text))))
     )
 
 
@@ -359,6 +359,7 @@ def ads_get_ads_targeting():
         item.update(
             {
                 "sex": int(item.get("sex")) if item.get("sex") else None,
+                "cities_not": string_to_list_int(item.get("cities_not", "")),
                 "retargeting_groups": string_to_list_int(
                     item.get("retargeting_groups", "")
                 ),
