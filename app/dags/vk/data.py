@@ -247,6 +247,7 @@ class AdPlatformTitleEnum(Enum):
     all = "Все площадки"
     desktop = "Полная версия сайта"
     mobile = "Мобильный сайт и приложения"
+    stories = "Stories"
 
 
 class AdPlatformEnum(Enum):
@@ -255,6 +256,7 @@ class AdPlatformEnum(Enum):
     all = "all"
     desktop = "desktop"
     mobile = "mobile"
+    stories = "stories"
 
     @property
     def title(self) -> str:
