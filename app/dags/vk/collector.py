@@ -193,13 +193,11 @@ def ads_get_campaigns():
                 )
                 time.sleep(1)
         else:
-            print(account.account_id, account.account_name)
             response = vk(
                 method,
                 include_deleted=1,
                 account_id=account.account_id,
             )
-            print(response)
             output += list(
                 map(
                     lambda campaign: {
@@ -656,15 +654,15 @@ dag = DAG(
 # ads_get_clients_operator = PythonOperator(
 #     task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
 # )
-ads_get_campaigns_operator = PythonOperator(
-    task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
-)
+# ads_get_campaigns_operator = PythonOperator(
+#     task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
+# )
 # ads_get_target_groups_operator = PythonOperator(
 #     task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
 # )
-# ads_get_ads_operator = PythonOperator(
-#     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
-# )
+ads_get_ads_operator = PythonOperator(
+    task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
+)
 # ads_get_ads_layout_operator = PythonOperator(
 #     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
 # )
