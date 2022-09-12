@@ -160,6 +160,7 @@ def ads_get_clients():
             map(lambda client: {"account_id": account.account_id, **client}, response)
         )
         time.sleep(1)
+        print(output)
     writer(method, output)
 
 

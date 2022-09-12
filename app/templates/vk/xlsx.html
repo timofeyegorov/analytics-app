@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    {% include 'vk/menu.html' %}
+{#    <div class="base-filters card p-3">#}
+{#        <form action="{{ url_for('vk_statistics') }}">#}
+{#            {% if error %}#}
+{#                <div><p style="color: red">{{ error }}</p></div>#}
+{#            {% endif %}#}
+{#            <div class="filter-block">#}
+{#                <div>#}
+{#                    <label for="group_by">Группировать по</label>#}
+{#                    <input type="checkbox" name="group_by" id="group_by_account_id"><label for="group_by_account_id">Кабинетам</label>#}
+{#                    <input type="checkbox" name="group_by" id="group_by_account_id"><label for="group_by_account_id">Клиентам</label>#}
+{#                    <input type="checkbox" name="group_by" id="group_by_account_id"><label for="group_by_account_id">Кампаниям</label>#}
+{#                    <input type="checkbox" name="group_by" id="group_by_account_id"><label for="group_by_account_id">Объявлениям</label>#}
+{#                    <select class="form-control" name="group_by" id="group_by">#}
+{#                        <option value="ad_id"{% if fields.group_by == 'ad_id' %} selected="selected"{% endif %}>Объявлениям</option>#}
+{#                        <option value="account_id"{% if fields.group_by == 'account_id' %} selected="selected"{% endif %}>Кабинетам</option>#}
+{#                        <option value="client_id"{% if fields.group_by == 'client_id' %} selected="selected"{% endif %}>Клиентам</option>#}
+{#                        <option value="campaign_id"{% if fields.group_by == 'campaign_id' %} selected="selected"{% endif %}>Кампаниям</option>#}
+{#                    </select>#}
+{#                </div>#}
+{#            </div>#}
+{#            <div class="filter-actions">#}
+{#                <div>#}
+{#                    <button class="btn btn-primary">Показать</button>#}
+{#                    <button class="btn btn-success btn-reset">Сбросить</button>#}
+{#                </div>#}
+{#            </div>#}
+{#        </form>#}
+{#    </div>#}
+
+    <table class="statistics">
+        <thead>
+            <tr>
+                <th>ads_urls ({{ ads_urls_len }})</th>
+                <th>leads_urls ({{ leads_urls_len }})</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="vertical-align:top;">
+                    <table class="statistics">
+                        <tbody>
+                            {% for item in ads_urls %}
+                                <tr>
+                                    <td>{{ item }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+                <td style="vertical-align:top;">
+                    <table class="statistics">
+                        <tbody>
+                            {% for item in leads_urls %}
+                                <tr>
+                                    <td>{{ item }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="statistics">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>utm_source</th>
+                <th>utm_medium</th>
+                <th>utm_campaign</th>
+                <th>utm_content</th>
+                <th>utm_term</th>
+            </tr>
+        </thead>
+{#        <tbody>#}
+{#            {% for index, lead in leads.iterrows() %}#}
+{#                <tr>#}
+{#                    <td rowspan="2">{{ index + 1 }}</td>#}
+{#                    <td colspan="5" style="font-size:.6875rem;font-weight:bold;">{{ lead.traffic_channel }}</td>#}
+{#                </tr>#}
+{#                <tr>#}
+{#                    <td>{{ lead.utm_source }}</td>#}
+{#                    <td>{{ lead.utm_medium }}</td>#}
+{#                    <td>{{ lead.utm_campaign }}</td>#}
+{#                    <td>{{ lead.utm_content }}</td>#}
+{#                    <td>{{ lead.utm_term }}</td>#}
+{#                </tr>#}
+{#            {% endfor %}#}
+{#        </tbody>#}
+    </table>
+{% endblock %}

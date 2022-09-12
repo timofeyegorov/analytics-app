@@ -498,6 +498,86 @@ class VKLeadsView(MethodView):
         )
 
 
+class VKXlsxView(TemplateView):
+    template_name = "vk/xlsx.html"
+    title = "Скачать таблицу XLSX"
+
+    @property
+    def ads(self) -> pandas.DataFrame:
+        posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
+        columns = ["id", "target_url"]
+        rows = []
+        for item in vk_reader("ads.getAds"):
+            rows.append([item.id, posts.get(item.id).get("target_url")])
+        return pandas.DataFrame(rows, columns=columns)
+
+    @property
+    def leads(self) -> pandas.DataFrame:
+        leads = pickle_loader.leads
+        leads = leads.drop(
+            [
+                "id",
+                "email",
+                "phone",
+                "quiz_answers1",
+                "quiz_answers2",
+                "quiz_answers3",
+                "quiz_answers4",
+                "quiz_answers5",
+                "quiz_answers6",
+                "status_amo",
+                "payment_amount",
+                "turnover_on_lead",
+                "date_request",
+                "date_payment",
+                "date_status_change",
+                "opener",
+                "closer",
+                "current_lead_amo",
+                "main_lead_amo",
+                "is_double",
+                "is_processed",
+                "trafficologist",
+                "account",
+                "target_class",
+                "channel_expense",
+                "amo_marker",
+                "created_at",
+                "updated_at",
+                "channel_expense2",
+            ],
+            axis=1,
+        )
+        leads = leads[
+            leads.utm_source.str.contains("vk") | leads.utm_source.str.contains("VK")
+        ]
+        # leads["date_request"] = leads["date_request"].astype(str)
+        # leads["date_payment"] = leads["date_payment"].astype(str)
+        # leads["date_status_change"] = leads["date_status_change"].astype(str)
+        # leads["created_at"] = leads["created_at"].astype(str)
+        # leads["updated_at"] = leads["updated_at"].astype(str)
+        leads = leads.reset_index(drop=True)
+        return leads
+
+    def get(self):
+        leads = self.leads
+        ads = self.ads
+        # print(leads.traffic_channel.values)
+        # print("-----------------------------------------")
+        # print(ads.target_url.values)
+        leads_urls = list(leads["traffic_channel"].unique())
+        ads_urls = list(ads["target_url"].unique())
+        self.context("leads_urls", leads_urls)
+        self.context("ads_urls", ads_urls)
+        self.context("leads_urls_len", len(leads_urls))
+        self.context("ads_urls_len", len(ads_urls))
+        # print(ads_urls)
+        # print(ads[ads["target_url"] in list(leads["traffic_channel"].unique())])
+        # print(list(leads["traffic_channel"].values))
+        self.context("leads", leads)
+        return super().get()
+
+
 class ApiVKCreateAdDependesFieldsView(APIView):
     def get(self):
         data = dict(parse_qsl(request.query_string.decode("utf-8")))
