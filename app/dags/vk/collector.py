@@ -37,6 +37,7 @@ def get_full_period(
     dates_to = []
     ids_list = numpy.array_split(ids, ceil(len(ids) / +300))
     for item in ids_list:
+        print("dates", item)
         dates = vk(
             method,
             period="overall",
@@ -448,6 +449,7 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
+        print(ids)
         daterange = get_full_period(
             method,
             ids,
@@ -459,16 +461,16 @@ def ads_get_demographics():
         time.sleep(1)
 
         for _id in ids:
-            # print(
-            #     {
-            #         "account_id": account_id,
-            #         "ids_type": "ad",
-            #         "ids": _id,
-            #         "period": "day",
-            #         "date_from": daterange[0].strftime("%Y-%m-%d"),
-            #         "date_to": daterange[1].strftime("%Y-%m-%d"),
-            #     }
-            # )
+            print(
+                {
+                    "account_id": account_id,
+                    "ids_type": "ad",
+                    "ids": _id,
+                    "period": "day",
+                    "date_from": daterange[0].strftime("%Y-%m-%d"),
+                    "date_to": daterange[1].strftime("%Y-%m-%d"),
+                }
+            )
             statistics = vk(
                 method,
                 account_id=account_id,
