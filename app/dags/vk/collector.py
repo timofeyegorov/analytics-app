@@ -48,7 +48,7 @@ def get_full_period(
         )
         dates_from += list(set(filter(None, map_dates("day_from", dates))))
         dates_to += list(set(filter(None, map_dates("day_to", dates))))
-        time.sleep(1)
+        time.sleep(2)
     return (
         datetime.strptime(str(min(dates_from)), "%Y%m%d"),
         datetime.strptime(str(max(dates_to)), "%Y%m%d"),
