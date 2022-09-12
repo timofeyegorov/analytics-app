@@ -386,6 +386,7 @@ def ads_get_ads_targeting():
                 )
             )
         )
+        print(ids)
         writer(
             "ads.getSuggestions.countries",
             vk("ads.getSuggestions", section="countries", ids=",".join(ids))
