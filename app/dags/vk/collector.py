@@ -175,24 +175,16 @@ def ads_get_campaigns():
                 filter(lambda client: client.account_id == account.account_id, clients)
             )
             for client in account_clients:
-                print(
-                    client.account_id,
-                    account.account_id,
-                    account.account_name,
-                    client.id,
-                    client.name,
-                )
                 response = vk(
                     method,
                     include_deleted=1,
-                    account_id=client.account_id,
+                    account_id=account.account_id,
                     client_id=client.id,
                 )
-                print(len(response))
                 output += list(
                     map(
                         lambda campaign: {
-                            "account_id": client.account_id,
+                            "account_id": account.account_id,
                             "client_id": client.id,
                             **campaign,
                         },
@@ -201,11 +193,13 @@ def ads_get_campaigns():
                 )
                 time.sleep(1)
         else:
+            print(account.account_id, account.account_name)
             response = vk(
                 method,
                 include_deleted=1,
                 account_id=account.account_id,
             )
+            print(response)
             output += list(
                 map(
                     lambda campaign: {
