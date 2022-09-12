@@ -452,6 +452,9 @@ def ads_get_demographics():
         time.sleep(1)
 
         for _id in ids:
+            if str(_id) == "120528209":
+                print(f"Ignore 120528209")
+                continue
             print(
                 {
                     "account_id": account_id,
@@ -501,7 +504,7 @@ def ads_get_demographics():
                             # ),
                         }
                     )
-            time.sleep(2)
+            time.sleep(1)
 
     writer(method, output)
 
