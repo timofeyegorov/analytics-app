@@ -65,6 +65,7 @@ class CampaignTypeTitleEnum(Enum):
     adaptive_ads = (
         "Кампания, в которой можно рекламировать только объявления адаптивного формата"
     )
+    stories = "Stories"
 
 
 class CampaignTypeEnum(Enum):
@@ -73,6 +74,7 @@ class CampaignTypeEnum(Enum):
     mobile_apps = "mobile_apps"
     promoted_posts = "promoted_posts"
     adaptive_ads = "adaptive_ads"
+    stories = "stories"
 
     @property
     def title(self) -> str:
@@ -590,7 +592,7 @@ class AdData(BaseModel):
     disclaimer_medical: Optional[PositiveInt]
     disclaimer_specialist: Optional[PositiveInt]
     disclaimer_supplements: Optional[PositiveInt]
-    weekly_schedule_hours: Optional[str]
+    weekly_schedule_hours: List[str] = []
     weekly_schedule_use_holidays: Optional[bool]
     events_retargeting_groups: Dict[PositiveInt, List[AdEventsRetargetingGroupsEnum]]
 
