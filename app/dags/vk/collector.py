@@ -208,6 +208,7 @@ def ads_get_campaigns():
                 )
             )
             time.sleep(1)
+    print(output)
     writer(method, output)
 
 
