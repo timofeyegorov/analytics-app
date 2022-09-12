@@ -375,12 +375,6 @@ def ads_get_ads_targeting():
         return item
 
     def write_countries(data: List[Dict[str, Any]]):
-        print(data)
-        print(
-            list(
-                filter(None, list(map(lambda item: str(item.get("country", "")), data)))
-            )
-        )
         ids = list(
             set(
                 list(
@@ -390,8 +384,6 @@ def ads_get_ads_targeting():
                 )
             )
         )
-        print(ids)
-        print(",".join(ids))
         writer(
             "ads.getSuggestions.countries",
             vk("ads.getSuggestions", section="countries", ids=",".join(ids))
@@ -429,6 +421,7 @@ def ads_get_ads_targeting():
                 response[index] = update_data(item)
             output += response
             time.sleep(1)
+    print(list(map(lambda item: item.get("cities_not"), output)))
     write_countries(output)
     writer(method, output)
 
