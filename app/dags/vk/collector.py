@@ -375,6 +375,7 @@ def ads_get_ads_targeting():
         return item
 
     def write_countries(data: List[Dict[str, Any]]):
+        print(data)
         ids = list(
             set(
                 list(
