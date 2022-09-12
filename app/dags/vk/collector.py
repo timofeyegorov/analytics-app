@@ -175,7 +175,13 @@ def ads_get_campaigns():
                 filter(lambda client: client.account_id == account.account_id, clients)
             )
             for client in account_clients:
-                print(client.account_id, client.account_name, client.id, client.name)
+                print(
+                    client.account_id,
+                    account.account_id,
+                    account.account_name,
+                    client.id,
+                    client.name,
+                )
                 response = vk(
                     method,
                     include_deleted=1,
