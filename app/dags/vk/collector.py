@@ -25,34 +25,35 @@ from app.dags.vk import reader, writer, data
 def get_full_period(
     method: str, ids: List[str], request_params: Dict[str, Any]
 ) -> Tuple[datetime, datetime]:
-    def map_dates(name: str, dates) -> map:
-        return map(
-            lambda item: int(re.sub(r"-+", "", item.get("stats")[0].get(name)))
-            if item.get("stats")
-            else None,
-            dates,
-        )
-
-    dates_from = []
-    dates_to = []
-    ids_list = numpy.array_split(ids, ceil(len(ids) / +50))
-    for item in ids_list:
-        print("dates", list(item))
-        dates = vk(
-            method,
-            period="overall",
-            date_from=0,
-            date_to=0,
-            ids=",".join(list(item)),
-            **request_params,
-        )
-        dates_from += list(set(filter(None, map_dates("day_from", dates))))
-        dates_to += list(set(filter(None, map_dates("day_to", dates))))
-        time.sleep(2)
-    return (
-        datetime.strptime(str(min(dates_from)), "%Y%m%d"),
-        datetime.strptime(str(max(dates_to)), "%Y%m%d"),
-    )
+    # def map_dates(name: str, dates) -> map:
+    #     return map(
+    #         lambda item: int(re.sub(r"-+", "", item.get("stats")[0].get(name)))
+    #         if item.get("stats")
+    #         else None,
+    #         dates,
+    #     )
+    #
+    # dates_from = []
+    # dates_to = []
+    # ids_list = numpy.array_split(ids, ceil(len(ids) / +50))
+    # for item in ids_list:
+    #     print("dates", list(item))
+    #     dates = vk(
+    #         method,
+    #         period="overall",
+    #         date_from=0,
+    #         date_to=0,
+    #         ids=",".join(list(item)),
+    #         **request_params,
+    #     )
+    #     dates_from += list(set(filter(None, map_dates("day_from", dates))))
+    #     dates_to += list(set(filter(None, map_dates("day_to", dates))))
+    #     time.sleep(2)
+    # return (
+    #     datetime.strptime(str(min(dates_from)), "%Y%m%d"),
+    #     datetime.strptime(str(max(dates_to)), "%Y%m%d"),
+    # )
+    return datetime.strptime("2010-01-01", "%Y-%m-%d"), datetime.now()
 
 
 def chr_convert(text: str) -> str:
