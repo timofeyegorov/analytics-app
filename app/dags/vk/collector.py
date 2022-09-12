@@ -175,10 +175,11 @@ def ads_get_campaigns():
                 filter(lambda client: client.account_id == account.account_id, clients)
             )
             for client in account_clients:
+                print(client.account_id, client.id)
                 response = vk(
                     method,
                     include_deleted=1,
-                    account_id=account.account_id,
+                    account_id=client.account_id,
                     client_id=client.id,
                 )
                 output += list(
@@ -208,7 +209,6 @@ def ads_get_campaigns():
                 )
             )
             time.sleep(1)
-    print(output)
     writer(method, output)
 
 
@@ -305,7 +305,6 @@ def ads_get_ads():
                 )
             )
             time.sleep(1)
-    print(output)
     writer(method, output)
 
 
@@ -662,9 +661,9 @@ ads_get_campaigns_operator = PythonOperator(
 # ads_get_target_groups_operator = PythonOperator(
 #     task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
 # )
-ads_get_ads_operator = PythonOperator(
-    task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
-)
+# ads_get_ads_operator = PythonOperator(
+#     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
+# )
 # ads_get_ads_layout_operator = PythonOperator(
 #     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
 # )
