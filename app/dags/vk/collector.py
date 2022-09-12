@@ -377,12 +377,16 @@ def ads_get_ads_targeting():
     def write_countries(data: List[Dict[str, Any]]):
         print(data)
         print(
-            list(filter(None, list(map(lambda item: str(item.get("country")), data))))
+            list(
+                filter(None, list(map(lambda item: str(item.get("country", "")), data)))
+            )
         )
         ids = list(
             set(
                 list(
-                    filter(None, list(map(lambda item: str(item.get("country")), data)))
+                    filter(
+                        None, list(map(lambda item: str(item.get("country", "")), data))
+                    )
                 )
             )
         )
