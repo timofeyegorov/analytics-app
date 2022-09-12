@@ -346,6 +346,7 @@ class AdEventsRetargetingGroupsTitleEnum(Enum):
     _23 = "Неизвестно"
     _24 = "Неизвестно"
     _25 = "Неизвестно"
+    _26 = "Неизвестно"
 
 
 class AdEventsRetargetingGroupsEnum(Enum):
@@ -368,6 +369,7 @@ class AdEventsRetargetingGroupsEnum(Enum):
     _23 = 23
     _24 = 24
     _25 = 25
+    _26 = 26
 
     @property
     def title(self) -> str:
