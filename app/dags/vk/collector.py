@@ -362,6 +362,7 @@ def ads_get_ads_targeting():
                 "cities": string_to_list_int(item.get("cities", "")),
                 "cities_not": string_to_list_int(item.get("cities_not", "")),
                 "user_os": string_to_list_int(item.get("user_os", "")),
+                "apps": string_to_list_int(item.get("apps", "")),
                 "retargeting_groups": string_to_list_int(
                     item.get("retargeting_groups", "")
                 ),
