@@ -37,7 +37,6 @@ def get_full_period(
     # dates_to = []
     # ids_list = numpy.array_split(ids, ceil(len(ids) / +50))
     # for item in ids_list:
-    #     print("dates", list(item))
     #     dates = vk(
     #         method,
     #         period="overall",
@@ -451,7 +450,6 @@ def ads_get_demographics():
     output = []
     for account_id, group in groups:
         ids = list(group["id"].astype(str))
-        print(ids)
         daterange = get_full_period(
             method,
             ids,
@@ -463,16 +461,6 @@ def ads_get_demographics():
         time.sleep(1)
 
         for _id in ids:
-            print(
-                {
-                    "account_id": account_id,
-                    "ids_type": "ad",
-                    "ids": _id,
-                    "period": "day",
-                    "date_from": daterange[0].strftime("%Y-%m-%d"),
-                    "date_to": daterange[1].strftime("%Y-%m-%d"),
-                }
-            )
             statistics = vk(
                 method,
                 account_id=account_id,
@@ -670,70 +658,70 @@ dag = DAG(
 )
 
 
-# ads_get_accounts_operator = PythonOperator(
-#     task_id="ads_get_accounts", python_callable=ads_get_accounts, dag=dag
-# )
-# ads_get_clients_operator = PythonOperator(
-#     task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
-# )
-# ads_get_campaigns_operator = PythonOperator(
-#     task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
-# )
-# ads_get_target_groups_operator = PythonOperator(
-#     task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
-# )
-# ads_get_ads_operator = PythonOperator(
-#     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
-# )
-# ads_get_ads_layout_operator = PythonOperator(
-#     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
-# )
-# ads_get_ads_targeting_operator = PythonOperator(
-#     task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
-# )
+ads_get_accounts_operator = PythonOperator(
+    task_id="ads_get_accounts", python_callable=ads_get_accounts, dag=dag
+)
+ads_get_clients_operator = PythonOperator(
+    task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
+)
+ads_get_campaigns_operator = PythonOperator(
+    task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
+)
+ads_get_target_groups_operator = PythonOperator(
+    task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
+)
+ads_get_ads_operator = PythonOperator(
+    task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
+)
+ads_get_ads_layout_operator = PythonOperator(
+    task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
+)
+ads_get_ads_targeting_operator = PythonOperator(
+    task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
+)
 ads_get_demographics_operator = PythonOperator(
     task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
 )
-# ads_get_statistics_operator = PythonOperator(
-#     task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
-# )
-# collect_statistics_dataframe_operator = PythonOperator(
-#     task_id="collect_statistics_dataframe",
-#     python_callable=collect_statistics_dataframe,
-#     dag=dag,
-# )
-# ads_get_suggestions_positions_operator = PythonOperator(
-#     task_id="ads_get_suggestions_positions",
-#     python_callable=ads_get_suggestions_positions,
-#     dag=dag,
-# )
-# ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
-#     task_id="ads_get_suggestions_interest_categories_v2",
-#     python_callable=ads_get_suggestions_interest_categories_v2,
-#     dag=dag,
-# )
+ads_get_statistics_operator = PythonOperator(
+    task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
+)
+collect_statistics_dataframe_operator = PythonOperator(
+    task_id="collect_statistics_dataframe",
+    python_callable=collect_statistics_dataframe,
+    dag=dag,
+)
+ads_get_suggestions_positions_operator = PythonOperator(
+    task_id="ads_get_suggestions_positions",
+    python_callable=ads_get_suggestions_positions,
+    dag=dag,
+)
+ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
+    task_id="ads_get_suggestions_interest_categories_v2",
+    python_callable=ads_get_suggestions_interest_categories_v2,
+    dag=dag,
+)
 
 
-# ads_get_accounts_operator >> ads_get_clients_operator
-#
-# ads_get_accounts_operator >> ads_get_campaigns_operator
-# ads_get_clients_operator >> ads_get_campaigns_operator
-#
-# ads_get_accounts_operator >> ads_get_target_groups_operator
-# ads_get_clients_operator >> ads_get_target_groups_operator
-#
-# ads_get_accounts_operator >> ads_get_ads_operator
-# ads_get_clients_operator >> ads_get_ads_operator
-#
-# ads_get_accounts_operator >> ads_get_ads_layout_operator
-# ads_get_clients_operator >> ads_get_ads_layout_operator
-#
-# ads_get_accounts_operator >> ads_get_ads_targeting_operator
-# ads_get_clients_operator >> ads_get_ads_targeting_operator
-#
-# ads_get_ads_operator >> ads_get_demographics_operator
-#
-# ads_get_ads_operator >> ads_get_statistics_operator
-#
-# ads_get_demographics_operator >> collect_statistics_dataframe_operator
-# ads_get_statistics_operator >> collect_statistics_dataframe_operator
+ads_get_accounts_operator >> ads_get_clients_operator
+
+ads_get_accounts_operator >> ads_get_campaigns_operator
+ads_get_clients_operator >> ads_get_campaigns_operator
+
+ads_get_accounts_operator >> ads_get_target_groups_operator
+ads_get_clients_operator >> ads_get_target_groups_operator
+
+ads_get_accounts_operator >> ads_get_ads_operator
+ads_get_clients_operator >> ads_get_ads_operator
+
+ads_get_accounts_operator >> ads_get_ads_layout_operator
+ads_get_clients_operator >> ads_get_ads_layout_operator
+
+ads_get_accounts_operator >> ads_get_ads_targeting_operator
+ads_get_clients_operator >> ads_get_ads_targeting_operator
+
+ads_get_ads_operator >> ads_get_demographics_operator
+
+ads_get_ads_operator >> ads_get_statistics_operator
+
+ads_get_demographics_operator >> collect_statistics_dataframe_operator
+ads_get_statistics_operator >> collect_statistics_dataframe_operator
