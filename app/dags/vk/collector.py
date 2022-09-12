@@ -304,6 +304,8 @@ def ads_get_ads():
                 )
             )
             time.sleep(1)
+    ddd = list(map(lambda item: item.get("events_retargeting_groups", {}), output))
+    print(ddd)
     writer(method, output)
 
 
