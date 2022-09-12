@@ -188,6 +188,7 @@ def ads_get_campaigns():
                     account_id=client.account_id,
                     client_id=client.id,
                 )
+                print(len(response))
                 output += list(
                     map(
                         lambda campaign: {
