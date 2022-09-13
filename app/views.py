@@ -788,7 +788,6 @@ class ApiVKAdsView(APIView):
         for item in vk_reader("ads.getAds"):
             post = posts.get(item.id, {})
             item = item.dict()
-            print(item.get("events_retargeting_groups"))
             item.update(
                 {
                     "ad_format": item.get("ad_format").value
