@@ -38,7 +38,7 @@
         <thead>
             <tr>
                 <th>ads_urls ({{ ads_urls_len }})</th>
-                <th>leads_urls ({{ leads_urls_len }})</th>
+{#                <th>leads_urls ({{ leads_urls_len }})</th>#}
             </tr>
         </thead>
         <tbody>
@@ -48,23 +48,25 @@
                         <tbody>
                             {% for item in ads_urls %}
                                 <tr>
+                                    <td>{{ loop.index }}</td>
                                     <td>{{ item }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </td>
-                <td style="vertical-align:top;">
-                    <table class="statistics">
-                        <tbody>
-                            {% for item in leads_urls %}
-                                <tr>
-                                    <td>{{ item }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </td>
+{#                <td style="vertical-align:top;">#}
+{#                    <table class="statistics">#}
+{#                        <tbody>#}
+{#                            {% for item in leads_urls %}#}
+{#                                <tr>#}
+{#                                    <td>{{ loop.index }}</td>#}
+{#                                    <td>{{ item }}</td>#}
+{#                                </tr>#}
+{#                            {% endfor %}#}
+{#                        </tbody>#}
+{#                    </table>#}
+{#                </td>#}
             </tr>
         </tbody>
     </table>

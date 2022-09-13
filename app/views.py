@@ -504,7 +504,11 @@ class VKXlsxView(TemplateView):
 
     @property
     def ads(self) -> pandas.DataFrame:
-        posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
+        wall = vk_reader("wall.get")
+        for item in wall:
+            print(item.id, item.target_url)
+
+        posts = dict(map(lambda post: (post.ad_id, post.dict()), wall))
         columns = ["id", "target_url"]
         rows = []
         for item in vk_reader("ads.getAds"):
