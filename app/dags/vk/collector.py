@@ -105,6 +105,8 @@ class PreviewPageParser(HTMLParser):
 
         if tag == "a":
             target_url = ""
+            print(attrs)
+            print(dict(attrs))
             url = list(filter(lambda item: item[0] == "href", attrs))[0][1]
             if url.startswith("/away.php?"):
                 qs = dict(parse_qsl(urlparse(url).query))
