@@ -92,12 +92,9 @@ class PreviewPageParser(HTMLParser):
             self.text += "<br>"
 
         if tag in ["a", "span"] and self.has_class(class_attr, "image_cover"):
-            self.image = re.findall(
-                r"url\(([^)]+)\)",
-                list(filter(lambda item: item[0] == "style", attrs))[0][1],
-            )[0]
+            self.image = re.findall(r"url\(([^)]+)\)", attrs.get("style", ""))[0]
         if tag == "img" and self.has_class(class_attr, "media_link__photo"):
-            self.image = list(filter(lambda item: item[0] == "src", attrs))[0][1]
+            self.image = attrs.get("src", "")
 
         if tag == "a":
             target_url = ""
