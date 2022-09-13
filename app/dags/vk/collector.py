@@ -77,41 +77,35 @@ class PreviewPageParser(HTMLParser):
     image: str = ""
     target_url: str = ""
 
-    def has_class(self, attrs: List[Tuple[str, str]], name: str) -> bool:
-        classes = list(
-            filter(
-                lambda item: item[0] == "class" and name in re.split(r"\s+", item[1]),
-                attrs,
-            )
-        )
-        return len(classes) > 0
+    def has_class(self, class_attr: str, name: str) -> bool:
+        return name in re.split(r"\s+", class_attr)
 
     def handle_starttag(self, tag, attrs):
-        if tag == "a" and self.has_class(attrs, "media_link__title"):
+        attrs = dict(attrs)
+        class_attr = attrs.get("class", "")
+        if tag == "a" and self.has_class(class_attr, "media_link__title"):
             self.in_title = True
 
-        if tag == "div" and self.has_class(attrs, "wall_post_text"):
+        if tag == "div" and self.has_class(class_attr, "wall_post_text"):
             self.in_text = True
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
-        if tag in ["a", "span"] and self.has_class(attrs, "image_cover"):
+        if tag in ["a", "span"] and self.has_class(class_attr, "image_cover"):
             self.image = re.findall(
                 r"url\(([^)]+)\)",
                 list(filter(lambda item: item[0] == "style", attrs))[0][1],
             )[0]
-        if tag == "img" and self.has_class(attrs, "media_link__photo"):
+        if tag == "img" and self.has_class(class_attr, "media_link__photo"):
             self.image = list(filter(lambda item: item[0] == "src", attrs))[0][1]
 
         if tag == "a":
             target_url = ""
-            print(attrs)
-            print(dict(attrs))
-            url = list(filter(lambda item: item[0] == "href", attrs))[0][1]
+            url = attrs.get("href", "")
             if url.startswith("/away.php?"):
                 qs = dict(parse_qsl(urlparse(url).query))
                 target_url = qs.get("to", "")
-            elif self.has_class(attrs, "media_link__button"):
+            elif self.has_class(class_attr, "media_link__button"):
                 target_url = url
             if target_url:
                 self.target_url = target_url
@@ -335,12 +329,12 @@ def ads_get_ads_layout():
                     client_id=client.id,
                 )
                 for ad_layout in response:
-                    output_wall.append(
-                        {
-                            "ad_id": ad_layout.get("id"),
-                            **parse_ad_preview_page(ad_layout.get("preview_link")),
-                        }
-                    )
+                    output_wall_data = {
+                        "ad_id": ad_layout.get("id"),
+                        **parse_ad_preview_page(ad_layout.get("preview_link")),
+                    }
+                    print(output_wall_data)
+                    output_wall.append(output_wall_data)
                     time.sleep(1)
                 output += response
                 time.sleep(1)
@@ -351,12 +345,12 @@ def ads_get_ads_layout():
                 account_id=account.account_id,
             )
             for ad_layout in response:
-                output_wall.append(
-                    {
-                        "ad_id": ad_layout.get("id"),
-                        **parse_ad_preview_page(ad_layout.get("preview_link")),
-                    }
-                )
+                output_wall_data = {
+                    "ad_id": ad_layout.get("id"),
+                    **parse_ad_preview_page(ad_layout.get("preview_link")),
+                }
+                print(output_wall_data)
+                output_wall.append(output_wall_data)
                 time.sleep(1)
             output += response
             time.sleep(1)
