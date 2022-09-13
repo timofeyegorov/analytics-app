@@ -37,25 +37,25 @@
     <table class="statistics">
         <thead>
             <tr>
-                <th>ads_urls ({{ ads_urls_len }})</th>
+{#                <th>ads_urls ({{ ads_urls_len }})</th>#}
 {#                <th>leads_urls ({{ leads_urls_len }})</th>#}
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td style="vertical-align:top;">
-                    <table class="statistics">
-                        <tbody>
-                            {% for item in ads_urls %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td>{{ item }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+{#                    <table class="statistics">#}
+{#                        <tbody>#}
+{#                            {% for item in ads_urls %}#}
+{#                                <tr>#}
+{#                                    <td>{{ loop.index }}</td>#}
+{#                                    <td>{{ item }}</td>#}
+{#                                </tr>#}
+{#                            {% endfor %}#}
+{#                        </tbody>#}
+{#                    </table>#}
                 </td>
-{#                <td style="vertical-align:top;">#}
+                <td style="vertical-align:top;">
 {#                    <table class="statistics">#}
 {#                        <tbody>#}
 {#                            {% for item in leads_urls %}#}
@@ -66,7 +66,7 @@
 {#                            {% endfor %}#}
 {#                        </tbody>#}
 {#                    </table>#}
-{#                </td>#}
+                </td>
             </tr>
         </tbody>
     </table>

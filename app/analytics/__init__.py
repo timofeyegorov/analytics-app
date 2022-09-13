@@ -762,6 +762,14 @@ app.add_url_rule(
         "api_vk_create_ad_dependes_fields"
     ),
 )
+app.add_url_rule(
+    "/api/vk/leads",
+    view_func=views.ApiVKLeadsView.as_view("api_vk_leads"),
+)
+app.add_url_rule(
+    "/api/vk/ads",
+    view_func=views.ApiVKAdsView.as_view("api_vk_ads"),
+)
 
 
 @app.route("/login/hh")

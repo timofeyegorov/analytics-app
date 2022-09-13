@@ -504,16 +504,16 @@ class VKXlsxView(TemplateView):
 
     @property
     def ads(self) -> pandas.DataFrame:
-        wall = vk_reader("wall.get")
-        for item in wall:
-            print(item.id, item.target_url)
-
-        posts = dict(map(lambda post: (post.ad_id, post.dict()), wall))
-        columns = ["id", "target_url"]
+        posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
         rows = []
+        ads_columns = []
+        posts_columns = []
         for item in vk_reader("ads.getAds"):
-            rows.append([item.id, posts.get(item.id).get("target_url")])
-        return pandas.DataFrame(rows, columns=columns)
+            post = posts.get(item.id, {})
+            ads_columns = item.dict().keys()
+            posts_columns = post.keys()
+            rows.append(list(item.dict().values()) + list(post.values()))
+        return pandas.DataFrame(rows, columns=(list(ads_columns) + list(posts_columns)))
 
     @property
     def leads(self) -> pandas.DataFrame:
@@ -566,18 +566,9 @@ class VKXlsxView(TemplateView):
     def get(self):
         leads = self.leads
         ads = self.ads
-        # print(leads.traffic_channel.values)
-        # print("-----------------------------------------")
-        # print(ads.target_url.values)
-        leads_urls = list(leads["traffic_channel"].unique())
-        ads_urls = list(ads["target_url"].unique())
-        self.context("leads_urls", leads_urls)
-        self.context("ads_urls", ads_urls)
-        self.context("leads_urls_len", len(leads_urls))
-        self.context("ads_urls_len", len(ads_urls))
-        # print(ads_urls)
-        # print(ads[ads["target_url"] in list(leads["traffic_channel"].unique())])
-        # print(list(leads["traffic_channel"].values))
+        # print(len(list(leads["traffic_channel"].unique())))
+        # print(len(list(ads["target_url"].unique())))
+        print(ads[ads.target_url.isin(leads.traffic_channel.unique())])
         self.context("leads", leads)
         return super().get()
 
@@ -753,4 +744,98 @@ class ChannelsView(TemplateView):
         self.context("date_range", [date_from, date_to])
         self.context("data", output)
 
+        return super().get()
+
+
+class ApiVKLeadsView(APIView):
+    @property
+    def leads(self) -> pandas.DataFrame:
+        leads = pickle_loader.leads
+        leads = leads.drop(
+            ["id", "email", "phone"],
+            axis=1,
+        )
+        leads = leads[
+            leads.utm_source.str.contains("vk")
+            | leads.utm_source.str.contains("VK")
+            | leads.utm_source.str.contains("Vk")
+        ]
+        leads["date_request"] = leads["date_request"].astype(str)
+        leads["date_payment"] = leads["date_payment"].astype(str)
+        leads["date_status_change"] = leads["date_status_change"].astype(str)
+        leads["created_at"] = leads["created_at"].astype(str)
+        leads["updated_at"] = leads["updated_at"].astype(str)
+        leads = leads.reset_index(drop=True)
+        return leads
+
+    def get(self):
+        leads = self.leads
+        columns = list(leads.columns)
+        leads_output = []
+        for index, item in leads.iterrows():
+            leads_output.append(dict(zip(columns, list(item.values))))
+        self.data.update({"leads": leads_output})
+        return super().get()
+
+
+class ApiVKAdsView(APIView):
+    @property
+    def ads(self) -> pandas.DataFrame:
+        posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
+        rows = []
+        ads_columns = []
+        posts_columns = []
+        for item in vk_reader("ads.getAds"):
+            post = posts.get(item.id, {})
+            item = item.dict()
+            print(item.get("events_retargeting_groups"))
+            item.update(
+                {
+                    "ad_format": item.get("ad_format").value
+                    if item.get("ad_format")
+                    else None,
+                    "ad_platform": item.get("ad_platform").value
+                    if item.get("ad_platform")
+                    else None,
+                    "approved": item.get("approved").value
+                    if item.get("approved")
+                    else None,
+                    "autobidding": item.get("autobidding").value
+                    if item.get("autobidding")
+                    else None,
+                    "cost_type": item.get("cost_type").value
+                    if item.get("cost_type")
+                    else None,
+                    "events_retargeting_groups": dict(
+                        map(
+                            lambda events: (
+                                events[0],
+                                list(map(lambda event: event.value, events[1])),
+                            ),
+                            item.get("events_retargeting_groups").items(),
+                        )
+                    )
+                    if item.get("events_retargeting_groups")
+                    else None,
+                    "goal_type": item.get("goal_type").value
+                    if item.get("goal_type")
+                    else None,
+                    "publisher_platforms": item.get("publisher_platforms").value
+                    if item.get("publisher_platforms")
+                    else None,
+                    "status": item.get("status").value if item.get("status") else None,
+                }
+            )
+            ads_columns = item.keys()
+            posts_columns = post.keys()
+            rows.append(list(item.values()) + list(post.values()))
+        return pandas.DataFrame(rows, columns=(list(ads_columns) + list(posts_columns)))
+
+    def get(self):
+        ads = self.ads
+        columns = list(ads.columns)
+        leads_output = []
+        for index, item in ads.iterrows():
+            leads_output.append(dict(zip(columns, list(item.values))))
+        self.data.update({"ads": leads_output})
         return super().get()
