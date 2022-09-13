@@ -86,14 +86,20 @@ class PreviewPageParser(HTMLParser):
         if tag == "a" and self.has_class(class_attr, "media_link__title"):
             self.in_title = True
 
-        if tag == "div" and self.has_class(class_attr, "wall_post_text"):
+        if tag == "div" and (
+            self.has_class(class_attr, "wall_post_text")
+            or self.has_class(class_attr, "ads_ad_title")
+        ):
             self.in_text = True
         if tag == "br" and self.in_text:
             self.text += "<br>"
 
         if tag in ["a", "span"] and self.has_class(class_attr, "image_cover"):
             self.image = re.findall(r"url\(([^)]+)\)", attrs.get("style", ""))[0]
-        if tag == "img" and self.has_class(class_attr, "media_link__photo"):
+        if tag == "img" and (
+            self.has_class(class_attr, "media_link__photo")
+            or self.has_class(class_attr, "ads_ad_photo")
+        ):
             self.image = attrs.get("src", "")
 
         if tag == "a":
