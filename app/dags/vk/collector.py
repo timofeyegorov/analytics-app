@@ -668,70 +668,70 @@ dag = DAG(
 )
 
 
-ads_get_accounts_operator = PythonOperator(
-    task_id="ads_get_accounts", python_callable=ads_get_accounts, dag=dag
-)
-ads_get_clients_operator = PythonOperator(
-    task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
-)
-ads_get_campaigns_operator = PythonOperator(
-    task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
-)
-ads_get_target_groups_operator = PythonOperator(
-    task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
-)
-ads_get_ads_operator = PythonOperator(
-    task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
-)
-ads_get_ads_layout_operator = PythonOperator(
-    task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
-)
-ads_get_ads_targeting_operator = PythonOperator(
-    task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
-)
-ads_get_demographics_operator = PythonOperator(
-    task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
-)
+# ads_get_accounts_operator = PythonOperator(
+#     task_id="ads_get_accounts", python_callable=ads_get_accounts, dag=dag
+# )
+# ads_get_clients_operator = PythonOperator(
+#     task_id="ads_get_clients", python_callable=ads_get_clients, dag=dag
+# )
+# ads_get_campaigns_operator = PythonOperator(
+#     task_id="ads_get_campaigns", python_callable=ads_get_campaigns, dag=dag
+# )
+# ads_get_target_groups_operator = PythonOperator(
+#     task_id="ads_get_target_groups", python_callable=ads_get_target_groups, dag=dag
+# )
+# ads_get_ads_operator = PythonOperator(
+#     task_id="ads_get_ads", python_callable=ads_get_ads, dag=dag
+# )
+# ads_get_ads_layout_operator = PythonOperator(
+#     task_id="ads_get_ads_layout", python_callable=ads_get_ads_layout, dag=dag
+# )
+# ads_get_ads_targeting_operator = PythonOperator(
+#     task_id="ads_get_ads_targeting", python_callable=ads_get_ads_targeting, dag=dag
+# )
+# ads_get_demographics_operator = PythonOperator(
+#     task_id="ads_get_demographics", python_callable=ads_get_demographics, dag=dag
+# )
 ads_get_statistics_operator = PythonOperator(
     task_id="ads_get_statistics", python_callable=ads_get_statistics, dag=dag
 )
-collect_statistics_dataframe_operator = PythonOperator(
-    task_id="collect_statistics_dataframe",
-    python_callable=collect_statistics_dataframe,
-    dag=dag,
-)
-ads_get_suggestions_positions_operator = PythonOperator(
-    task_id="ads_get_suggestions_positions",
-    python_callable=ads_get_suggestions_positions,
-    dag=dag,
-)
-ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
-    task_id="ads_get_suggestions_interest_categories_v2",
-    python_callable=ads_get_suggestions_interest_categories_v2,
-    dag=dag,
-)
+# collect_statistics_dataframe_operator = PythonOperator(
+#     task_id="collect_statistics_dataframe",
+#     python_callable=collect_statistics_dataframe,
+#     dag=dag,
+# )
+# ads_get_suggestions_positions_operator = PythonOperator(
+#     task_id="ads_get_suggestions_positions",
+#     python_callable=ads_get_suggestions_positions,
+#     dag=dag,
+# )
+# ads_get_suggestions_interest_categories_v2_operator = PythonOperator(
+#     task_id="ads_get_suggestions_interest_categories_v2",
+#     python_callable=ads_get_suggestions_interest_categories_v2,
+#     dag=dag,
+# )
 
 
-ads_get_accounts_operator >> ads_get_clients_operator
-
-ads_get_accounts_operator >> ads_get_campaigns_operator
-ads_get_clients_operator >> ads_get_campaigns_operator
-
-ads_get_accounts_operator >> ads_get_target_groups_operator
-ads_get_clients_operator >> ads_get_target_groups_operator
-
-ads_get_accounts_operator >> ads_get_ads_operator
-ads_get_clients_operator >> ads_get_ads_operator
-
-ads_get_accounts_operator >> ads_get_ads_layout_operator
-ads_get_clients_operator >> ads_get_ads_layout_operator
-
-ads_get_accounts_operator >> ads_get_ads_targeting_operator
-ads_get_clients_operator >> ads_get_ads_targeting_operator
-
-ads_get_ads_operator >> ads_get_demographics_operator
-
-ads_get_ads_operator >> ads_get_statistics_operator
-
-ads_get_demographics_operator >> collect_statistics_dataframe_operator
-ads_get_statistics_operator >> collect_statistics_dataframe_operator
+# ads_get_accounts_operator >> ads_get_clients_operator
+#
+# ads_get_accounts_operator >> ads_get_campaigns_operator
+# ads_get_clients_operator >> ads_get_campaigns_operator
+#
+# ads_get_accounts_operator >> ads_get_target_groups_operator
+# ads_get_clients_operator >> ads_get_target_groups_operator
+#
+# ads_get_accounts_operator >> ads_get_ads_operator
+# ads_get_clients_operator >> ads_get_ads_operator
+#
+# ads_get_accounts_operator >> ads_get_ads_layout_operator
+# ads_get_clients_operator >> ads_get_ads_layout_operator
+#
+# ads_get_accounts_operator >> ads_get_ads_targeting_operator
+# ads_get_clients_operator >> ads_get_ads_targeting_operator
+#
+# ads_get_ads_operator >> ads_get_demographics_operator
+#
+# ads_get_ads_operator >> ads_get_statistics_operator
+#
+# ads_get_demographics_operator >> collect_statistics_dataframe_operator
+# ads_get_statistics_operator >> collect_statistics_dataframe_operator
