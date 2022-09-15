@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Tuple, List, Dict, Any
 from datetime import datetime, timedelta, timezone
+from collections import OrderedDict
 from urllib.parse import parse_qsl
 
 from xlsxwriter import Workbook
@@ -285,13 +286,12 @@ class VKCreateAdView(TemplateView):
 
 
 class VKXlsxAdsView(MethodView):
-    def create_ads_worksheet(self, workbook: Workbook):
-        worksheet = workbook.add_worksheet("Объявления")
+    def create_ads(
+        self, workbook: Workbook, categories: Dict[int, str], countries: Dict[int, str]
+    ):
+        worksheet = workbook.add_worksheet("Ads")
         columns = [
             "id",
-            "account_id",
-            "client_id",
-            "campaign_id",
             "title",
             "text",
             "image",
@@ -302,11 +302,7 @@ class VKXlsxAdsView(MethodView):
             "cpm",
             "ocpm",
             "goal_type",
-            "impressions_limit",
-            "impressions_limited",
             "ad_platform",
-            "ad_platform_no_wall",
-            "ad_platform_no_ad_network",
             "publisher_platforms",
             "all_limit",
             "day_limit",
@@ -315,7 +311,6 @@ class VKXlsxAdsView(MethodView):
             "category1_id",
             "category2_id",
             "status",
-            "name",
             "approved",
             "targeting__sex",
             "targeting__age_from",
@@ -344,51 +339,60 @@ class VKXlsxAdsView(MethodView):
             "targeting__retargeting_groups_not",
             "targeting__count",
         ]
-        worksheet.write_row(0, 0, columns)
+        ads = vk_reader("ads.getAds")
+
+        def link_column(index: int) -> str:
+            return f"internal:'Description \"Ads\"'!A{index + 1}"
+
+        def link_enum(name: str, enum_data: Enum) -> str:
+            return f"internal:'{name}'!A{list(type(enum_data)).index(enum_data) + 2}"
+
+        def link_category(index: int) -> str:
+            return f"internal:'categories'!A{index}"
+
+        def link_country(index: int) -> str:
+            return f"internal:'targeting__country'!A{index}"
+
+        for index, column in enumerate(columns):
+            worksheet.write_url(0, index, link_column(index + 1), string=column)
+
         posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
         targeting = dict(
             map(lambda item: (item.id, item), vk_reader("ads.getAdsTargeting"))
         )
-        for row, ad in enumerate(vk_reader("ads.getAds")):
-            target = targeting.get(ad.id)
+        for row, ad in enumerate(ads):
+            target = targeting.get(ad.id, vk_data.AdTargetingData())
+            post = posts.get(ad.id, {})
             worksheet.write_row(
                 row + 1,
                 0,
                 [
                     ad.id,
-                    ad.account_id,
-                    ad.client_id,
-                    ad.campaign_id,
-                    posts.get(ad.id).get("title", ""),
-                    posts.get(ad.id).get("text", ""),
-                    posts.get(ad.id).get("image", ""),
-                    posts.get(ad.id).get("target_url", ""),
-                    ad.ad_format.value if ad.ad_format else "",
-                    ad.cost_type.value if ad.cost_type else "",
-                    ad.cpc,
-                    ad.cpm,
-                    ad.ocpm,
-                    ad.goal_type.value if ad.goal_type else "",
-                    ad.impressions_limit,
-                    ad.impressions_limited,
-                    ad.ad_platform.value if ad.ad_platform else "",
-                    ad.ad_platform_no_wall,
-                    ad.ad_platform_no_ad_network,
-                    ad.publisher_platforms.value if ad.publisher_platforms else "",
+                    post.get("title", ""),
+                    post.get("text", ""),
+                    post.get("image", ""),
+                    post.get("target_url", ""),
+                    str(ad.ad_format or ""),
+                    str(ad.cost_type or ""),
+                    ad.cpc / 100 if ad.cpc else None,
+                    ad.cpm / 100 if ad.cpm else None,
+                    ad.ocpm / 100 if ad.ocpm else None,
+                    str(ad.goal_type or ""),
+                    str(ad.ad_platform or ""),
+                    str(ad.publisher_platforms or ""),
                     ad.all_limit,
                     ad.day_limit,
-                    ad.autobidding.value if ad.autobidding else "",
-                    ad.autobidding_max_cost,
-                    ad.category1_id,
-                    ad.category2_id,
-                    ad.status.value if ad.status else "",
-                    ad.name,
-                    ad.approved.value if ad.approved else "",
-                    target.sex.value if target.sex else "",
+                    str(ad.autobidding or ""),
+                    ad.autobidding_max_cost / 100 if ad.autobidding_max_cost else None,
+                    str(ad.category1_id or ""),
+                    str(ad.category2_id or ""),
+                    str(ad.status or ""),
+                    str(ad.approved or ""),
+                    str(target.sex or ""),
                     target.age_from,
                     target.age_to,
                     target.birthday,
-                    target.country,
+                    str(target.country or ""),
                     ",".join(list(map(lambda item: str(item), target.cities))),
                     ",".join(list(map(lambda item: str(item), target.cities_not))),
                     ",".join(list(map(lambda item: str(item.value), target.statuses))),
@@ -418,20 +422,164 @@ class VKXlsxAdsView(MethodView):
                     target.count,
                 ],
             )
+            if ad.ad_format:
+                worksheet.write_url(
+                    row + 1,
+                    5,
+                    link_enum("ad_format", ad.ad_format),
+                    string=str(ad.ad_format.value),
+                )
+            if ad.cost_type:
+                worksheet.write_url(
+                    row + 1,
+                    6,
+                    link_enum("cost_type", ad.cost_type),
+                    string=str(ad.cost_type.value),
+                )
+            if ad.goal_type:
+                worksheet.write_url(
+                    row + 1,
+                    10,
+                    link_enum("goal_type", ad.goal_type),
+                    string=str(ad.goal_type.value),
+                )
+            if ad.ad_platform:
+                worksheet.write_url(
+                    row + 1,
+                    11,
+                    link_enum("ad_platform", ad.ad_platform),
+                    string=str(ad.ad_platform.value),
+                )
+            if ad.publisher_platforms:
+                worksheet.write_url(
+                    row + 1,
+                    12,
+                    link_enum("publisher_platforms", ad.publisher_platforms),
+                    string=str(ad.publisher_platforms.value),
+                )
+            if ad.autobidding:
+                worksheet.write_url(
+                    row + 1,
+                    15,
+                    link_enum("autobidding", ad.autobidding),
+                    string=str(ad.autobidding.value),
+                )
+            categories_list = list(OrderedDict(categories).keys())
+            category1_id = int(ad.category1_id or 0)
+            if ad.category1_id and category1_id in categories_list:
+                worksheet.write_url(
+                    row + 1,
+                    17,
+                    link_category(categories_list.index(category1_id) + 2),
+                    string=str(ad.category1_id),
+                )
+            category2_id = int(ad.category2_id or 0)
+            if ad.category2_id and category2_id in categories_list:
+                worksheet.write_url(
+                    row + 1,
+                    18,
+                    link_category(categories_list.index(category2_id) + 2),
+                    string=str(ad.category2_id),
+                )
+            if ad.status:
+                worksheet.write_url(
+                    row + 1,
+                    19,
+                    link_enum("status", ad.status),
+                    string=str(ad.status.value),
+                )
+            if ad.approved:
+                worksheet.write_url(
+                    row + 1,
+                    20,
+                    link_enum("approved", ad.approved),
+                    string=str(ad.approved.value),
+                )
+            if target.sex:
+                worksheet.write_url(
+                    row + 1,
+                    21,
+                    link_enum("targeting__sex", target.sex),
+                    string=str(target.sex.value),
+                )
+            countries_list = list(OrderedDict(countries).keys())
+            country = int(target.country or 0)
+            if target.country and country in countries_list:
+                worksheet.write_url(
+                    row + 1,
+                    25,
+                    link_country(countries_list.index(country) + 2),
+                    string=str(target.country),
+                )
+        worksheet.autofilter("A1:AU1")
 
-    def create_statistics_worksheet(self, workbook: Workbook):
-        worksheet = workbook.add_worksheet("Статистика")
+    def create_statistics(self, workbook: Workbook):
+        worksheet = workbook.add_worksheet("Statistics")
         data = vk_reader("collectStatisticsDataFrame")
+        data = data.drop(
+            [
+                "account_id",
+                "client_id",
+                "campaign_id",
+                "message_sends",
+            ],
+            axis=1,
+        )
+
+        def link_column(index: int) -> str:
+            return f"internal:'Description \"Statistics\"'!A{index + 1}"
+
+        for index, column in enumerate(data.columns):
+            worksheet.write_url(0, index, link_column(index + 1), string=column)
+
         data["date"] = data["date"].astype(str)
+        data["sex__m__impressions_rate"] = data["sex__m__impressions_rate"] * 100
+        data["sex__m__clicks_rate"] = data["sex__m__clicks_rate"] * 100
+        data["sex__f__impressions_rate"] = data["sex__f__impressions_rate"] * 100
+        data["sex__f__clicks_rate"] = data["sex__f__clicks_rate"] * 100
+        data["age__12_18__impressions_rate"] = (
+            data["age__12_18__impressions_rate"] * 100
+        )
+        data["age__12_18__clicks_rate"] = data["age__12_18__clicks_rate"] * 100
+        data["age__18_21__impressions_rate"] = (
+            data["age__18_21__impressions_rate"] * 100
+        )
+        data["age__18_21__clicks_rate"] = data["age__18_21__clicks_rate"] * 100
+        data["age__21_24__impressions_rate"] = (
+            data["age__21_24__impressions_rate"] * 100
+        )
+        data["age__21_24__clicks_rate"] = data["age__21_24__clicks_rate"] * 100
+        data["age__24_27__impressions_rate"] = (
+            data["age__24_27__impressions_rate"] * 100
+        )
+        data["age__24_27__clicks_rate"] = data["age__24_27__clicks_rate"] * 100
+        data["age__27_30__impressions_rate"] = (
+            data["age__27_30__impressions_rate"] * 100
+        )
+        data["age__27_30__clicks_rate"] = data["age__27_30__clicks_rate"] * 100
+        data["age__30_35__impressions_rate"] = (
+            data["age__30_35__impressions_rate"] * 100
+        )
+        data["age__30_35__clicks_rate"] = data["age__30_35__clicks_rate"] * 100
+        data["age__35_45__impressions_rate"] = (
+            data["age__35_45__impressions_rate"] * 100
+        )
+        data["age__35_45__clicks_rate"] = data["age__35_45__clicks_rate"] * 100
+        data["age__45_100__impressions_rate"] = (
+            data["age__45_100__impressions_rate"] * 100
+        )
+        data["age__45_100__clicks_rate"] = data["age__45_100__clicks_rate"] * 100
         worksheet.write_row(0, 0, data.columns)
         for row, stat in enumerate(data.iterrows()):
             worksheet.write_row(row + 1, 0, stat[1].values)
+        worksheet.autofilter("A1:AD1")
 
     def create_enum(self, workbook: Workbook, enum_data: Enum, title: str):
         worksheet = workbook.add_worksheet(title)
-        worksheet.write_row(0, 0, ["id", "name"])
+        worksheet.write_row(0, 0, ["Идентификатор", "Описание"])
         for row, data in enumerate(enum_data):
             worksheet.write_row(row + 1, 0, [data.value, data.title])
+        worksheet.autofilter("A1:B1")
 
     def create_enums(self, workbook: Workbook):
         items = [
@@ -450,20 +598,502 @@ class VKXlsxAdsView(MethodView):
         for item in items:
             self.create_enum(workbook, *item)
 
-    def create_countries(self, workbook: Workbook):
-        worksheet = workbook.add_worksheet("targeting__countries")
-        countries = vk_reader("ads.getSuggestions.countries")
-        worksheet.write_row(0, 0, ["id", "name"])
-        for row, country in enumerate(countries):
-            worksheet.write_row(row + 1, 0, country.dict().values())
+    def create_categories(self, workbook: Workbook, categories: Dict[int, str]):
+        worksheet = workbook.add_worksheet("categories")
+        worksheet.write_row(0, 0, ["Идентификатор", "Описание"])
+        for index, category in enumerate(categories.items()):
+            worksheet.write_row(index + 1, 0, category)
+        worksheet.autofilter("A1:B1")
+
+    def create_countries(self, workbook: Workbook, countries: Dict[int, str]):
+        worksheet = workbook.add_worksheet("targeting__country")
+        worksheet.write_row(0, 0, ["Идентификатор", "Описание"])
+        for row, country in enumerate(countries.items()):
+            worksheet.write_row(row + 1, 0, country)
+        worksheet.autofilter("A1:B1")
+
+    def create_datatype(self, workbook: Workbook):
+        worksheet = workbook.add_worksheet("Datatype")
+        for row, item in enumerate(vk_data.DatatypeEnum.table_data()):
+            worksheet.write_row(row, 0, item)
+        worksheet.autofilter("A1:B1")
+
+    def create_description_ads(self, workbook: Workbook):
+        datatype_indexes = vk_data.DatatypeEnum.table_indexes()
+
+        def link_datatype(value: vk_data.DatatypeEnum) -> Tuple[str, str]:
+            return (
+                f"internal:'Datatype'!A{datatype_indexes.get(value.name)}",
+                value.value,
+            )
+
+        columns = [
+            [
+                "id",
+                link_datatype(vk_data.DatatypeEnum.PositiveInteger),
+                "Идентификатор объявления",
+            ],
+            [
+                "title",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Заголовок объявления",
+            ],
+            [
+                "text",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Текст объявления",
+            ],
+            [
+                "image",
+                link_datatype(vk_data.DatatypeEnum.URL),
+                "Изображение объявления",
+            ],
+            [
+                "target_url",
+                link_datatype(vk_data.DatatypeEnum.URL),
+                "Целевая ссылка",
+            ],
+            [
+                "ad_format",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Формат объявления",
+            ],
+            [
+                "cost_type",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Тип оплаты",
+            ],
+            [
+                "cpc",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Цена за переход (в рублях)",
+            ],
+            [
+                "cpm",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Цена за 1000 показов (в рублях)",
+            ],
+            [
+                "ocpm",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Цена за действие для oCPM (в рублях)",
+            ],
+            [
+                "goal_type",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Тип цели",
+            ],
+            [
+                "ad_platform",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Рекламные площадки, на которых будет показываться объявление",
+            ],
+            [
+                "publisher_platforms",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "На каких площадках показывается объявление",
+            ],
+            [
+                "all_limit",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Общий лимит объявления (в рублях)",
+            ],
+            [
+                "day_limit",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Дневной лимит объявления (в рублях)",
+            ],
+            [
+                "autobidding",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Автоматическое управление ценой",
+            ],
+            [
+                "autobidding_max_cost",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Максимальное ограничение автоматической ставки (в рублях)",
+            ],
+            [
+                "category1_id",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Тематика или подраздел тематики объявления",
+            ],
+            [
+                "category2_id",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Тематика или подраздел тематики объявления. Дополнительная тематика",
+            ],
+            [
+                "status",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Статус объявления",
+            ],
+            [
+                "approved",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Статус модерации объявления",
+            ],
+            [
+                "targeting__sex",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Пол",
+            ],
+            [
+                "targeting__age_from",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Нижняя граница возраста (0 — не задано)",
+            ],
+            [
+                "targeting__age_to",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Верхняя граница возраста (0 — не задано)",
+            ],
+            [
+                "targeting__birthday",
+                link_datatype(vk_data.DatatypeEnum.PositiveInteger),
+                "День рождения. Задаётся в виде суммы флагов",
+            ],
+            [
+                "targeting__country",
+                link_datatype(vk_data.DatatypeEnum.Anchor),
+                "Страна (0 — не задано)",
+            ],
+            [
+                "targeting__cities",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список городов и регионов",
+            ],
+            [
+                "targeting__cities_not",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список городов и регионов, которые следует исключить из таргетинга",
+            ],
+            [
+                "targeting__statuses",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список семейных положений",
+            ],
+            [
+                "targeting__groups",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список сообществ",
+            ],
+            [
+                "targeting__groups_not",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список сообществ, которые следует исключить из таргетинга",
+            ],
+            [
+                "targeting__apps",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список приложений",
+            ],
+            [
+                "targeting__apps_not",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список приложений, которые следует исключить из таргетинга",
+            ],
+            [
+                "targeting__districts",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список районов",
+            ],
+            [
+                "targeting__stations",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список станций метро",
+            ],
+            [
+                "targeting__streets",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список улиц",
+            ],
+            [
+                "targeting__schools",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список учебных заведений",
+            ],
+            [
+                "targeting__positions",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список должностей",
+            ],
+            [
+                "targeting__religions",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список религиозных взглядов",
+            ],
+            [
+                "targeting__interest_categories",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список категорий интересов",
+            ],
+            [
+                "targeting__interests",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список интересов",
+            ],
+            [
+                "targeting__user_devices",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список устройств",
+            ],
+            [
+                "targeting__user_os",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список операционных систем",
+            ],
+            [
+                "targeting__user_browsers",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список интернет-браузеров",
+            ],
+            [
+                "targeting__retargeting_groups",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список групп ретаргетинга",
+            ],
+            [
+                "targeting__retargeting_groups_not",
+                link_datatype(vk_data.DatatypeEnum.AnchorList),
+                "Список групп ретаргетинга, которые следует исключить из таргетинга",
+            ],
+            [
+                "targeting__count",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Размер целевой аудитории на момент сохранения объявления",
+            ],
+        ]
+
+        worksheet = workbook.add_worksheet('Description "Ads"')
+        worksheet.write_row(0, 0, ["Название колонки", "Тип данных", "Описание"])
+        for row, item in enumerate(columns):
+            worksheet.write_row(
+                row + 1,
+                0,
+                list(
+                    map(
+                        lambda cell: str(cell) if isinstance(cell, tuple) else cell,
+                        item,
+                    )
+                ),
+            )
+            worksheet.write_url(row + 1, 1, item[1][0], string=item[1][1])
+        worksheet.autofilter("A1:C1")
+
+    def create_description_statistics(self, workbook: Workbook):
+        datatype_indexes = vk_data.DatatypeEnum.table_indexes()
+
+        def link_datatype(value: vk_data.DatatypeEnum) -> Tuple[str, str]:
+            return (
+                f"internal:'Datatype'!A{datatype_indexes.get(value.name)}",
+                value.value,
+            )
+
+        columns = [
+            [
+                "id",
+                link_datatype(vk_data.DatatypeEnum.PositiveInteger),
+                "Идентификатор объявления",
+            ],
+            [
+                "date",
+                link_datatype(vk_data.DatatypeEnum.Date),
+                "Дата",
+            ],
+            [
+                "sex__m__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля мужчин, просмотревших объявление",
+            ],
+            [
+                "sex__m__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля мужчин, кликнувших по объявлению",
+            ],
+            [
+                "sex__f__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля женщин, просмотревших объявление",
+            ],
+            [
+                "sex__f__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля женщин, кликнувших по объявлению",
+            ],
+            [
+                "age__12_18__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 12 до 18 лет, просмотревших объявление",
+            ],
+            [
+                "age__12_18__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 12 до 18 лет, кликнувших по объявлению",
+            ],
+            [
+                "age__18_21__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 18 до 21 года, просмотревших объявление",
+            ],
+            [
+                "age__18_21__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 18 до 21 года, кликнувших по объявлению",
+            ],
+            [
+                "age__21_24__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 21 до 24 лет, просмотревших объявление",
+            ],
+            [
+                "age__21_24__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 21 до 24 лет, кликнувших по объявлению",
+            ],
+            [
+                "age__24_27__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 24 до 27 лет, просмотревших объявление",
+            ],
+            [
+                "age__24_27__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 24 до 27 лет, кликнувших по объявлению",
+            ],
+            [
+                "age__27_30__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 27 до 30 лет, просмотревших объявление",
+            ],
+            [
+                "age__27_30__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 27 до 30 лет, кликнувших по объявлению",
+            ],
+            [
+                "age__30_35__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 30 до 35 лет, просмотревших объявление",
+            ],
+            [
+                "age__30_35__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 30 до 35 лет, кликнувших по объявлению",
+            ],
+            [
+                "age__35_45__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 35 до 45 лет, просмотревших объявление",
+            ],
+            [
+                "age__35_45__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 35 до 45 лет, кликнувших по объявлению",
+            ],
+            [
+                "age__45_100__impressions_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 45 до 100 лет, просмотревших объявление",
+            ],
+            [
+                "age__45_100__clicks_rate",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "Доля возрастной группы от 45 до 100 лет, кликнувших по объявлению",
+            ],
+            [
+                "spent",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Потраченные средства",
+            ],
+            [
+                "impressions",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Просмотры",
+            ],
+            [
+                "clicks",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeInteger),
+                "Клики",
+            ],
+            [
+                "ctr",
+                link_datatype(vk_data.DatatypeEnum.Rate),
+                "CTR",
+            ],
+            [
+                "effective_cost_per_click",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "eCPC",
+            ],
+            [
+                "effective_cost_per_mille",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "eCPM",
+            ],
+            [
+                "effective_cpf",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "eCPF",
+            ],
+            [
+                "effective_cost_per_message",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Стоимость сообщения",
+            ],
+        ]
+
+        worksheet = workbook.add_worksheet('Description "Statistics"')
+        worksheet.write_row(0, 0, ["Название колонки", "Тип данных", "Описание"])
+        for row, item in enumerate(columns):
+            worksheet.write_row(
+                row + 1,
+                0,
+                list(
+                    map(
+                        lambda cell: str(cell) if isinstance(cell, tuple) else cell,
+                        item,
+                    )
+                ),
+            )
+            worksheet.write_url(row + 1, 1, item[1][0], string=item[1][1])
+        worksheet.autofilter("A1:C1")
 
     def get(self):
         target = tempfile.NamedTemporaryFile(suffix=".xlsx")
         workbook = Workbook(target.name)
-        self.create_ads_worksheet(workbook)
-        self.create_statistics_worksheet(workbook)
+        categories = dict(
+            OrderedDict(
+                sorted(
+                    dict(
+                        map(
+                            lambda item: (item.id, item.name),
+                            vk_reader("ads.getSuggestions.interest_categories_v2"),
+                        )
+                    ).items()
+                )
+            )
+        )
+        countries = dict(
+            OrderedDict(
+                sorted(
+                    dict(
+                        map(
+                            lambda item: (item.id, item.name),
+                            vk_reader("ads.getSuggestions.countries"),
+                        )
+                    ).items()
+                )
+            )
+        )
+        self.create_ads(workbook, categories, countries)
+        self.create_statistics(workbook)
+        self.create_description_ads(workbook)
+        self.create_description_statistics(workbook)
+        self.create_datatype(workbook)
         self.create_enums(workbook)
-        self.create_countries(workbook)
+        self.create_categories(workbook, categories)
+        self.create_countries(workbook, countries)
         workbook.close()
         return send_file(
             workbook.filename,
@@ -508,13 +1138,13 @@ class VKXlsxLeadsView(MethodView):
         leads["created_at"] = leads["created_at"].astype(str)
         leads["turnover_on_lead"] = leads["turnover_on_lead"].astype(float)
         leads = leads.reset_index(drop=True)
-        worksheet = workbook.add_worksheet("Лиды")
+        worksheet = workbook.add_worksheet("Leads")
 
         def link_column(index: int) -> str:
-            return f"internal:'Описание'!A{index + 1}"
+            return f"internal:'Description \"Leads\"'!A{index + 1}"
 
         for index, column in enumerate(leads.columns):
-            worksheet.write_url(0, index, link_column(index), string=column)
+            worksheet.write_url(0, index, link_column(index + 1), string=column)
 
         for row, lead in leads.iterrows():
             worksheet.write_row(row + 1, 0, lead.values)
@@ -525,7 +1155,7 @@ class VKXlsxLeadsView(MethodView):
 
         def link_datatype(value: vk_data.DatatypeEnum) -> Tuple[str, str]:
             return (
-                f"internal:'Типы данных'!A{datatype_indexes.get(value.name)}",
+                f"internal:'Datatype'!A{datatype_indexes.get(value.name)}",
                 value.value,
             )
 
@@ -621,7 +1251,7 @@ class VKXlsxLeadsView(MethodView):
                 "UTM term",
             ],
         ]
-        worksheet = workbook.add_worksheet("Описание")
+        worksheet = workbook.add_worksheet('Description "Leads"')
         worksheet.write_row(0, 0, ["Название колонки", "Тип данных", "Описание"])
         for row, item in enumerate(columns):
             worksheet.write_row(
@@ -638,7 +1268,7 @@ class VKXlsxLeadsView(MethodView):
         worksheet.autofilter("A1:C1")
 
     def create_datatype(self, workbook: Workbook):
-        worksheet = workbook.add_worksheet("Типы данных")
+        worksheet = workbook.add_worksheet("Datatype")
         for row, item in enumerate(vk_data.DatatypeEnum.table_data()):
             worksheet.write_row(row, 0, item)
         worksheet.autofilter("A1:B1")

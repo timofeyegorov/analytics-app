@@ -13,7 +13,12 @@ from pydantic import (
 class DatatypeTitleEnum(Enum):
     URL = "Ссылка"
     String = "Строковое значение"
+    Date = "Дата в формате %Y-%m-%d"
+    Time = "Время в формате %H:%M:%S"
     Datetime = "Дата и время в формате %Y-%m-%d %H:%M:%S"
+    Rate = "Доля в процентах"
+    Anchor = "Ссылка на ячейку"
+    AnchorList = "Список ссылок на ячейки"
     Integer = "Целое число"
     PositiveInteger = "Натуральное число"
     NonNegativeInteger = "Неотрицательное целое число"
@@ -25,7 +30,12 @@ class DatatypeTitleEnum(Enum):
 class DatatypeEnum(Enum):
     URL = "URL"
     String = "String"
+    Date = "Date"
+    Time = "Time"
     Datetime = "Datetime"
+    Rate = "Rate"
+    Anchor = "Anchor"
+    AnchorList = "AnchorList"
     Integer = "Integer"
     PositiveInteger = "PositiveInteger"
     NonNegativeInteger = "NonNegativeInteger"
@@ -301,8 +311,8 @@ class AdPlatformEnum(Enum):
 
 
 class AdPublisherPlatformsTitleEnum(Enum):
-    all = "Все площадки(по умолчанию)"
-    social = "Все соцсети(ВКонтакте и Одноклассники)"
+    all = "Все площадки (по умолчанию)"
+    social = "Все соцсети (ВКонтакте и Одноклассники)"
     vk = "Только ВКонтакте"
 
 
@@ -654,7 +664,7 @@ class AdLayoutData(BaseModel):
 
 
 class AdTargetingData(BaseModel):
-    id: PositiveInt
+    id: Optional[PositiveInt]
     sex: Optional[SexEnum]
     age_from: NonNegativeInt = 0
     age_to: NonNegativeInt = 0
