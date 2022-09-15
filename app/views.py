@@ -467,7 +467,7 @@ class VKXlsxAdsView(MethodView):
         workbook.close()
         return send_file(
             workbook.filename,
-            download_name=f'vk-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            download_name=f'analytic-nu-vk-ads-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
             as_attachment=True,
         )
 
@@ -652,7 +652,7 @@ class VKXlsxLeadsView(MethodView):
         workbook.close()
         return send_file(
             workbook.filename,
-            download_name=f'vk-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            download_name=f'analytic-nu-leads-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
             as_attachment=True,
         )
 
