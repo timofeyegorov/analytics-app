@@ -18,7 +18,6 @@ class PickleLoader:
     @property
     def leads(self) -> pandas.DataFrame:
         data = self._load(self.pickle_files_path / "leads.pkl")
-        data.created_at = pandas.to_datetime(data.created_at).dt.normalize()
         return data
 
     @property

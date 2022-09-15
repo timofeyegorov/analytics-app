@@ -745,12 +745,12 @@ app.add_url_rule(
     view_func=views.VKCreateAdView.as_view("vk_create_ad"),
 )
 app.add_url_rule(
-    "/vk/download",
-    view_func=views.VKDownloadView.as_view("vk_download"),
+    "/vk/xlsx/ads",
+    view_func=views.VKXlsxAdsView.as_view("vk_xlsx_ads"),
 )
 app.add_url_rule(
-    "/vk/leads",
-    view_func=views.VKLeadsView.as_view("vk_leads"),
+    "/vk/xlsx/leads",
+    view_func=views.VKXlsxLeadsView.as_view("vk_xlsx_leads"),
 )
 app.add_url_rule(
     "/vk/xlsx",

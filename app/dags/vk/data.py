@@ -1,14 +1,51 @@
 from enum import Enum
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Tuple, List, Dict, Any, Optional
 from pydantic import (
     BaseModel,
     PositiveInt,
     PositiveFloat,
-    EmailStr,
     NonNegativeInt,
     NonNegativeFloat,
 )
+
+
+class DatatypeTitleEnum(Enum):
+    URL = "Ссылка"
+    String = "Строковое значение"
+    Datetime = "Дата и время в формате %Y-%m-%d %H:%M:%S"
+    Integer = "Целое число"
+    PositiveInteger = "Натуральное число"
+    NonNegativeInteger = "Неотрицательное целое число"
+    Float = "Float"
+    PositiveFloat = "PositiveFloat"
+    NonNegativeFloat = "NonNegativeFloat"
+
+
+class DatatypeEnum(Enum):
+    URL = "URL"
+    String = "String"
+    Datetime = "Datetime"
+    Integer = "Integer"
+    PositiveInteger = "PositiveInteger"
+    NonNegativeInteger = "NonNegativeInteger"
+    Float = "Float"
+    PositiveFloat = "PositiveFloat"
+    NonNegativeFloat = "NonNegativeFloat"
+
+    @property
+    def title(self) -> str:
+        return DatatypeTitleEnum[self.name].value
+
+    @classmethod
+    def table_data(cls) -> List[Tuple[str, str]]:
+        return [("Название", "Описание")] + list(
+            map(lambda item: (item.name, item.title), cls)
+        )
+
+    @classmethod
+    def table_indexes(cls) -> Dict[str, int]:
+        return dict((item.name, index + 2) for index, item in enumerate(cls))
 
 
 class AccountAccessRoleTitleEnum(Enum):

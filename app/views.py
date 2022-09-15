@@ -1,12 +1,11 @@
 import json
-import numpy
 import pandas
 import requests
 import tempfile
 
 from enum import Enum
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Tuple, List, Dict, Any
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl
 
@@ -285,7 +284,7 @@ class VKCreateAdView(TemplateView):
         return self.render()
 
 
-class VKDownloadView(MethodView):
+class VKXlsxAdsView(MethodView):
     def create_ads_worksheet(self, workbook: Workbook):
         worksheet = workbook.add_worksheet("Объявления")
         columns = [
@@ -473,27 +472,187 @@ class VKDownloadView(MethodView):
         )
 
 
-class VKLeadsView(MethodView):
-    def get(self):
-        target = tempfile.NamedTemporaryFile(suffix=".xlsx")
+class VKXlsxLeadsView(MethodView):
+    def create_leads(self, workbook: Workbook):
         leads = pickle_loader.leads
-        leads = leads.drop(["id", "email", "phone"], axis=1)
-        leads = leads[leads.utm_source.str.contains("vk")]
-        leads["date_request"] = leads["date_request"].astype(str)
-        leads["date_payment"] = leads["date_payment"].astype(str)
-        leads["date_status_change"] = leads["date_status_change"].astype(str)
+        leads = leads.drop(
+            [
+                "status_amo",
+                "payment_amount",
+                "date_request",
+                "date_payment",
+                "date_status_change",
+                "opener",
+                "closer",
+                "current_lead_amo",
+                "main_lead_amo",
+                "is_double",
+                "is_processed",
+                "amo_marker",
+                "updated_at",
+                "channel_expense2",
+                "id",
+                "email",
+                "phone",
+            ],
+            axis=1,
+        )
+        leads = leads[
+            (
+                leads.utm_source.str.contains("vk")
+                | leads.utm_source.str.contains("VK")
+                | leads.utm_source.str.contains("Vk")
+            )
+            & ~leads.utm_source.str.contains("kladovka")
+        ]
         leads["created_at"] = leads["created_at"].astype(str)
-        leads["updated_at"] = leads["updated_at"].astype(str)
+        leads["turnover_on_lead"] = leads["turnover_on_lead"].astype(float)
         leads = leads.reset_index(drop=True)
-        workbook = Workbook(target.name, {"strings_to_urls": False})
         worksheet = workbook.add_worksheet("Лиды")
-        worksheet.write_row(0, 0, leads.columns)
+
+        def link_column(index: int) -> str:
+            return f"internal:'Описание'!A{index + 1}"
+
+        for index, column in enumerate(leads.columns):
+            worksheet.write_url(0, index, link_column(index), string=column)
+
         for row, lead in leads.iterrows():
             worksheet.write_row(row + 1, 0, lead.values)
+        worksheet.autofilter("A1:R1")
+
+    def create_description(self, workbook: Workbook):
+        datatype_indexes = vk_data.DatatypeEnum.table_indexes()
+
+        def link_datatype(value: vk_data.DatatypeEnum) -> Tuple[str, str]:
+            return (
+                f"internal:'Типы данных'!A{datatype_indexes.get(value.name)}",
+                value.value,
+            )
+
+        columns = [
+            [
+                "traffic_channel",
+                link_datatype(vk_data.DatatypeEnum.URL),
+                "Целевая ссылка",
+            ],
+            [
+                "quiz_answers1",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Ответ на вопрос 1 квиза",
+            ],
+            [
+                "quiz_answers2",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Ответ на вопрос 2 квиза",
+            ],
+            [
+                "quiz_answers3",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Ответ на вопрос 3 квиза",
+            ],
+            [
+                "quiz_answers4",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Ответ на вопрос 4 квиза",
+            ],
+            [
+                "quiz_answers5",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Ответ на вопрос 5 квиза",
+            ],
+            [
+                "quiz_answers6",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Ответ на вопрос 6 квиза",
+            ],
+            [
+                "turnover_on_lead",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Оборот за лид (в рублях)",
+            ],
+            [
+                "trafficologist",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Название трафиколога",
+            ],
+            [
+                "account",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "Название аккаунта",
+            ],
+            [
+                "target_class",
+                link_datatype(vk_data.DatatypeEnum.PositiveInteger),
+                f'Количество попаданий лидов по вопросам квиза в целевую аудиторию [{", ".join(pickle_loader.target_audience)}]',
+            ],
+            [
+                "channel_expense",
+                link_datatype(vk_data.DatatypeEnum.NonNegativeFloat),
+                "Расход (в рублях)",
+            ],
+            [
+                "created_at",
+                link_datatype(vk_data.DatatypeEnum.Datetime),
+                "Дата создания",
+            ],
+            [
+                "utm_source",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "UTM source",
+            ],
+            [
+                "utm_medium",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "UTM medium",
+            ],
+            [
+                "utm_campaign",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "UTM campaign",
+            ],
+            [
+                "utm_content",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "UTM content",
+            ],
+            [
+                "utm_term",
+                link_datatype(vk_data.DatatypeEnum.String),
+                "UTM term",
+            ],
+        ]
+        worksheet = workbook.add_worksheet("Описание")
+        worksheet.write_row(0, 0, ["Название колонки", "Тип данных", "Описание"])
+        for row, item in enumerate(columns):
+            worksheet.write_row(
+                row + 1,
+                0,
+                list(
+                    map(
+                        lambda cell: str(cell) if isinstance(cell, tuple) else cell,
+                        item,
+                    )
+                ),
+            )
+            worksheet.write_url(row + 1, 1, item[1][0], string=item[1][1])
+        worksheet.autofilter("A1:C1")
+
+    def create_datatype(self, workbook: Workbook):
+        worksheet = workbook.add_worksheet("Типы данных")
+        for row, item in enumerate(vk_data.DatatypeEnum.table_data()):
+            worksheet.write_row(row, 0, item)
+        worksheet.autofilter("A1:B1")
+
+    def get(self):
+        target = tempfile.NamedTemporaryFile(suffix=".xlsx")
+        workbook = Workbook(target.name)
+        self.create_leads(workbook)
+        self.create_description(workbook)
+        self.create_datatype(workbook)
         workbook.close()
         return send_file(
             workbook.filename,
-            download_name=f'leads-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            download_name=f'vk-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
             as_attachment=True,
         )
 
@@ -748,11 +907,31 @@ class ChannelsView(TemplateView):
 
 
 class ApiVKLeadsView(APIView):
+    data: Dict[str, Any] = {}
+
     @property
     def leads(self) -> pandas.DataFrame:
         leads = pickle_loader.leads
         leads = leads.drop(
-            ["id", "email", "phone"],
+            [
+                "amo_marker",
+                "channel_expense2",
+                "closer",
+                "current_lead_amo",
+                "date_payment",
+                "date_request",
+                "date_status_change",
+                "email",
+                "id",
+                "is_double",
+                "is_processed",
+                "main_lead_amo",
+                "opener",
+                "payment_amount",
+                "phone",
+                "status_amo",
+                "updated_at",
+            ],
             axis=1,
         )
         leads = leads[
@@ -760,11 +939,7 @@ class ApiVKLeadsView(APIView):
             | leads.utm_source.str.contains("VK")
             | leads.utm_source.str.contains("Vk")
         ]
-        leads["date_request"] = leads["date_request"].astype(str)
-        leads["date_payment"] = leads["date_payment"].astype(str)
-        leads["date_status_change"] = leads["date_status_change"].astype(str)
         leads["created_at"] = leads["created_at"].astype(str)
-        leads["updated_at"] = leads["updated_at"].astype(str)
         leads = leads.reset_index(drop=True)
         return leads
 
@@ -779,56 +954,150 @@ class ApiVKLeadsView(APIView):
 
 
 class ApiVKAdsView(APIView):
+    data: Dict[str, Any]
+
+    def __init__(self):
+        self.data = {}
+        super().__init__()
+
+    @property
+    def add_format(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdFormatEnum)
+        )
+
+    @property
+    def ad_platform(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdPlatformEnum)
+        )
+
+    @property
+    def approved(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdApprovedEnum)
+        )
+
+    @property
+    def autobidding(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdAutobiddingEnum)
+        )
+
+    @property
+    def categories(self) -> Dict[str, str]:
+        return dict(
+            map(
+                lambda item: (str(item.id), item.name),
+                vk_reader("ads.getSuggestions.interest_categories_v2"),
+            )
+        )
+
+    @property
+    def cost_type(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdCostTypeEnum)
+        )
+
+    @property
+    def goal_type(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdGoalTypeEnum)
+        )
+
+    @property
+    def publisher_platforms(self) -> Dict[str, str]:
+        return dict(
+            map(
+                lambda item: (str(item.value), item.title),
+                vk_data.AdPublisherPlatformsEnum,
+            )
+        )
+
+    @property
+    def status(self) -> Dict[str, str]:
+        return dict(
+            map(lambda item: (str(item.value), item.title), vk_data.AdStatusEnum)
+        )
+
     @property
     def ads(self) -> pandas.DataFrame:
         posts = dict(map(lambda post: (post.ad_id, post.dict()), vk_reader("wall.get")))
         rows = []
-        ads_columns = []
-        posts_columns = []
+        columns = []
         for item in vk_reader("ads.getAds"):
             post = posts.get(item.id, {})
+            post.pop("ad_id", None)
+            post.pop("attachments", None)
+            post.pop("date", None)
+            post.pop("from_id", None)
+            post.pop("id", None)
+            post.pop("owner_id", None)
+
             item = item.dict()
+            item.pop("account_id", None)
+            item.pop("ad_platform_no_ad_network", None)
+            item.pop("ad_platform_no_wall", None)
+            item.pop("campaign_id", None)
+            item.pop("name", None)
+            item.pop("client_id", None)
+            item.pop("disclaimer_medical", None)
+            item.pop("disclaimer_specialist", None)
+            item.pop("disclaimer_supplements", None)
+            item.pop("impressions_limit", None)
+            item.pop("impressions_limited", None)
+            item.pop("events_retargeting_groups", None)
+            item.pop("video", None)
+            item.pop("weekly_schedule_hours", None)
+            item.pop("weekly_schedule_use_holidays", None)
+
             item.update(
                 {
-                    "ad_format": item.get("ad_format").value
+                    "ad_format": str(item.get("ad_format").value)
                     if item.get("ad_format")
                     else None,
-                    "ad_platform": item.get("ad_platform").value
+                    "ad_platform": str(item.get("ad_platform").value)
                     if item.get("ad_platform")
                     else None,
-                    "approved": item.get("approved").value
+                    "all_limit": int(item.get("all_limit", 0)),
+                    "approved": str(item.get("approved").value)
                     if item.get("approved")
                     else None,
-                    "autobidding": item.get("autobidding").value
-                    if item.get("autobidding")
+                    "autobidding": str(
+                        (item.get("autobidding") or vk_data.AdAutobiddingEnum(0)).value
+                    ),
+                    "autobidding_max_cost": int(item.get("autobidding_max_cost") / 100)
+                    if item.get("autobidding_max_cost")
+                    else 0,
+                    "category1_id": str(item.get("category1_id"))
+                    if item.get("category1_id")
                     else None,
-                    "cost_type": item.get("cost_type").value
+                    "category2_id": str(item.get("category2_id"))
+                    if item.get("category2_id")
+                    else None,
+                    "cost_type": str(item.get("cost_type").value)
                     if item.get("cost_type")
                     else None,
-                    "events_retargeting_groups": dict(
-                        map(
-                            lambda events: (
-                                events[0],
-                                list(map(lambda event: event.value, events[1])),
-                            ),
-                            item.get("events_retargeting_groups").items(),
-                        )
-                    )
-                    if item.get("events_retargeting_groups")
-                    else None,
-                    "goal_type": item.get("goal_type").value
+                    "cpc": float(item.get("cpc") / 100) if item.get("cpc") else None,
+                    "cpm": float(item.get("cpm") / 100) if item.get("cpm") else None,
+                    "ocpm": float(item.get("ocpm") / 100) if item.get("ocpm") else None,
+                    "day_limit": int(item.get("day_limit", 0)),
+                    "goal_type": str(item.get("goal_type").value)
                     if item.get("goal_type")
                     else None,
-                    "publisher_platforms": item.get("publisher_platforms").value
+                    "id": int(item.get("id")),
+                    "publisher_platforms": str(item.get("publisher_platforms").value)
                     if item.get("publisher_platforms")
                     else None,
-                    "status": item.get("status").value if item.get("status") else None,
+                    "status": str(item.get("status").value)
+                    if item.get("status")
+                    else None,
+                    **post,
                 }
             )
-            ads_columns = item.keys()
-            posts_columns = post.keys()
-            rows.append(list(item.values()) + list(post.values()))
-        return pandas.DataFrame(rows, columns=(list(ads_columns) + list(posts_columns)))
+            columns = item.keys()
+            rows.append(list(item.values()))
+        return pandas.DataFrame(rows, columns=(list(columns)))
 
     def get(self):
         ads = self.ads
@@ -836,5 +1105,41 @@ class ApiVKAdsView(APIView):
         leads_output = []
         for index, item in ads.iterrows():
             leads_output.append(dict(zip(columns, list(item.values))))
-        self.data.update({"ads": leads_output})
+        self.data.update(
+            {
+                "ads": leads_output,
+                "ad_format": self.add_format,
+                "ad_platform": self.ad_platform,
+                "approved": self.approved,
+                "autobidding": self.autobidding,
+                "categories": self.categories,
+                "cost_type": self.cost_type,
+                "goal_type": self.goal_type,
+                "publisher_platforms": self.publisher_platforms,
+                "status": self.status,
+                "titles": {
+                    "ad_format": "Формат объявления",
+                    "ad_platform": "Рекламные площадки, на которых будет показываться объявление",
+                    "all_limit": "Общий лимит объявления (в рублях, 0 — лимит не задан)",
+                    "approved": "Статус модерации объявления",
+                    "autobidding": "Автоматическое управление ценой",
+                    "autobidding_max_cost": "Максимальное ограничение автоматической ставки (в рублях)",
+                    "category1_id": "ID тематики или подраздела тематики объявления",
+                    "category2_id": "ID тематики или подраздела тематики объявления (дополнительная тематика)",
+                    "cost_type": "Тип оплаты",
+                    "cpc": "Цена за переход (в рублях)",
+                    "cpm": "Цена за 1000 показов (в рублях)",
+                    "day_limit": "Дневной лимит объявления (в рублях, 0 — лимит не задан)",
+                    "goal_type": "Тип цели",
+                    "id": "Идентификатор объявления",
+                    "ocpm": "Цена за действие для oCPM (в рублях)",
+                    "publisher_platforms": "На каких площадках показывается объявление",
+                    "status": "Статус объявления",
+                    "image": "Изображение объявления",
+                    "target_url": "Целевая ссылка",
+                    "text": "Описание объявления",
+                    "title": "Заголовок объявления",
+                },
+            }
+        )
         return super().get()
