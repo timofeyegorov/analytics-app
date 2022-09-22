@@ -4,8 +4,13 @@ from airflow.operators.python_operator import PythonOperator
 import pickle as pkl
 import json
 import os
+import re
 import sys
 import datetime
+
+from typing import List, Dict
+from pandas import DataFrame
+from urllib.parse import urlparse, parse_qsl
 
 sys.path.append(Variable.get("APP_FOLDER"))
 
@@ -48,6 +53,91 @@ from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
 from app.dags.decorators import log_execution_time
+
+
+class MatchIDs:
+    _campaign_ids: List[str]
+    _ad_ids: List[str]
+
+    def __init__(self, leads: DataFrame):
+        self._campaign_ids = []
+        self._ad_ids = []
+
+        for index, lead in leads.iterrows():
+            qs = dict(
+                parse_qsl(
+                    urlparse(lead.traffic_channel).query.replace(r"&amp;amp;", "&")
+                )
+            )
+            campaign_id = self.match_campaign_id(qs)
+            ad_id = self.match_ad_id(qs)
+
+            self._campaign_ids.append(
+                str(campaign_id) if campaign_id is not None else None
+            )
+            self._ad_ids.append(str(ad_id) if ad_id is not None else None)
+
+    @property
+    def dict(self) -> Dict[str, List[str]]:
+        return {
+            "campaign_id": self._campaign_ids,
+            "ad_id": self._ad_ids,
+        }
+
+    def match_campaign_id(self, qs: Dict[str, str]) -> str:
+        rs = qs.get("rs", "")
+        rs_split = list(filter(None, rs.split("_")))
+        if len(rs_split):
+            if re.findall(r"^vk.*", rs_split[0]):
+                try:
+                    return int(rs_split[1])
+                except Exception:
+                    utm_campaign_findall = re.findall(
+                        r"^(\d+).*", qs.get("utm_campaign", "")
+                    )
+                    if len(utm_campaign_findall) == 1:
+                        return int(utm_campaign_findall[0])
+                    else:
+                        if len(rs_split) == 1:
+                            return
+                        elif len(rs_split) == 5:
+                            try:
+                                return int(rs_split[3])
+                            except Exception:
+                                return
+                        else:
+                            return
+
+    def match_ad_id(self, qs: Dict[str, str]) -> str:
+        rs = qs.get("rs", "")
+        rs_split = list(filter(None, rs.split("_")))
+        if len(rs_split):
+            if re.findall(r"^vk.*", rs_split[0]):
+                if len(rs_split) == 3:
+                    match_id = re.findall(r"^{*(\d{2,})[\s}]*$", rs_split[2])
+                    if len(match_id) == 1:
+                        return int(match_id[0])
+                    else:
+                        try:
+                            return int(qs.get("utm_content"))
+                        except Exception:
+                            return
+                else:
+                    utm_content_findall = re.findall(
+                        r"^(\d+).*", qs.get("utm_content", "")
+                    )
+                    if len(utm_content_findall) == 1:
+                        return int(utm_content_findall[0])
+                    else:
+                        if rs_split == 1:
+                            return
+                        else:
+                            try:
+                                match_id = re.findall(r"^{*(\d{3,})}*$", rs_split[4])
+                                if len(match_id) == 1:
+                                    return int(match_id[0])
+                            except Exception:
+                                return
 
 
 @log_execution_time("load_crops")
@@ -122,6 +212,7 @@ def load_data():
     leads = get_marginality(leads)
     leads = calculate_crops_expenses(leads, crops)
     leads = calculate_trafficologists_expenses(leads, trafficologists)
+    leads = leads.assign(**MatchIDs(leads).dict)
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
 
