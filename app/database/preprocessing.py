@@ -7,6 +7,7 @@ import json
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 from dateutil import parser
+from app.dags.vk import reader as vk_reader
 
 
 def preprocess_dataframe(df):
@@ -397,3 +398,29 @@ if __name__ == "__main__":
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
     print(leads)
+
+
+def recalc_expenses(leads):
+    stats = vk_reader("collectStatisticsDataFrame")
+    stats.campaign_id = stats.campaign_id.astype(str)
+    stats.id = stats.id.astype(str)
+    stats.date = stats.date.astype(str)
+
+    leads_ids = leads.copy()
+    leads_ids = leads_ids[~leads_ids.campaign_id.isna() & ~leads_ids.ad_id.isna()]
+    leads_ids.campaign_id = leads_ids.campaign_id.astype(str)
+    leads_ids.ad_id = leads_ids.ad_id.astype(str)
+    leads_ids.created_at = (
+        pd.to_datetime(leads_ids.created_at).dt.normalize().astype(str)
+    )
+
+    for index, item in leads_ids.iterrows():
+        stat = stats[
+            (stats.campaign_id == item.campaign_id)
+            & (stats.id == item.ad_id)
+            & (stats.date == item.created_at)
+        ]
+        if len(stat):
+            leads.loc[index, "channel_expense"] = stat.iloc[0].spent
+
+    return leads

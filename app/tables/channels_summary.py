@@ -269,7 +269,6 @@ class CalculateTarget(Calculate):
     @property
     def traffic(self) -> int:
         if self._traffic is None:
-            print(self.name, len(self._data.created_at.unique()))
             self._traffic = (
                 round(
                     self._data[self._data[self._column] == self.name][

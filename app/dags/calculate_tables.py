@@ -28,6 +28,7 @@ from app.database.get_payments_table import get_payments_table
 from app.database.preprocessing import (
     calculate_trafficologists_expenses,
     calculate_crops_expenses,
+    recalc_expenses,
 )
 from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.tables import (
@@ -213,6 +214,7 @@ def load_data():
     leads = calculate_crops_expenses(leads, crops)
     leads = calculate_trafficologists_expenses(leads, trafficologists)
     leads = leads.assign(**MatchIDs(leads).dict)
+    leads = recalc_expenses(leads)
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
 
