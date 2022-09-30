@@ -424,3 +424,33 @@ def recalc_expenses(leads):
             leads.loc[index, "channel_expense"] = stat.iloc[0].spent
 
     return leads
+
+
+def telegram_restructure(leads):
+    def restructure(leads, name):
+        leads_new = leads[leads.utm_source == name]
+        leads_new.utm_campaign = leads_new.utm_source
+        leads_new.utm_source = "tg"
+        leads[leads.utm_source == name] = leads_new
+        return leads
+
+    items = [
+        "bookpython",
+        "books_java",
+        "clear_python",
+        "coding_on_java",
+        "frontend_tasks",
+        "frontend_trends",
+        "fullstacker",
+        "github_community",
+        "habr",
+        "java_job",
+        "java_learning",
+        "java_news",
+        "javascript_job",
+    ]
+
+    for name in items:
+        leads = restructure(leads, name)
+
+    return leads

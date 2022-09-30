@@ -29,6 +29,7 @@ from app.database.preprocessing import (
     calculate_trafficologists_expenses,
     calculate_crops_expenses,
     recalc_expenses,
+    telegram_restructure,
 )
 from app.database.preprocessing import get_turnover_on_lead, get_marginality
 from app.tables import (
@@ -215,6 +216,7 @@ def load_data():
     leads = calculate_trafficologists_expenses(leads, trafficologists)
     leads = leads.assign(**MatchIDs(leads).dict)
     leads = recalc_expenses(leads)
+    leads = telegram_restructure(leads)
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
 
