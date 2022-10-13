@@ -93,6 +93,7 @@ def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     date_end = kwargs.get("date_end")
     utm_source = kwargs.get("utm_source")
     source = kwargs.get("source")
+    only_ru = kwargs.get("only_ru")
 
     date_end_filter = (
         datetime.strptime(date_end, "%Y-%m-%d") if date_end else datetime.now()
@@ -104,6 +105,10 @@ def get_table_one_campaign(campaign, column_unique, table, **kwargs):
         table = table[table["utm_source"] == utm_source]
     elif source:
         table = table[table["account"] == source]
+
+    if only_ru:
+        table = table[table["quiz_answers1"] == "Россия"]
+
     return table
 
 
@@ -127,6 +132,7 @@ def channels_summary():
     utm_source = request.args.get("utm_source", default="")  # Значение utm_source
     source = request.args.get("source", default="")  # Имя канала
     utm_2 = request.args.get("utm_2")  # Значение utm для разбивки
+    only_ru = bool(request.args.get("only_ru"))
     column = request.args.get("sort")
 
     try:
@@ -171,10 +177,11 @@ def channels_summary():
             "unique_sources": [""] + unique_sources,
             "column": column,
             "columns_dict": columns_dict,
+            "only_ru": only_ru,
         }
 
         channels_summary_detailed = calculate_channels_summary_detailed(
-            table, utm_source, source, utm_2, utm_2_value
+            table, utm_source, source, utm_2, utm_2_value, only_ru
         )
         channels_summary_detailed_df = channels_summary_detailed["1"]
         additional_df = channels_summary_detailed["2"]
@@ -189,6 +196,7 @@ def channels_summary():
             enumerate=enumerate,
             utm_2_value=utm_2_value,
             utms2=utms2,
+            only_ru=only_ru,
             filter_data=filter_data,
         )
     # Если жмем на общую фильтрацию
@@ -215,6 +223,7 @@ def channels_summary():
             "unique_sources": unique_sources,
             "column": column,
             "columns_dict": columns_dict,
+            "only_ru": only_ru,
         }
 
         # if date_start or date_end or utm_source or source or utm_2:
@@ -233,11 +242,15 @@ def channels_summary():
         elif source:
             table = table[table["trafficologist"] == source]
 
+        if only_ru:
+            table = table[table["quiz_answers1"] == "Россия"]
+
         if len(table) == 0:
             return render_template(
                 "channels_summary.html",
                 filter_data=filter_data,
                 utms2=utms2,
+                only_ru=only_ru,
                 additional_df="",
                 error="Нет данных для заданного периода",
                 channels_summary_detailed_df="",
@@ -256,6 +269,7 @@ def channels_summary():
                 date_end=date_end,
                 utm_source=utm_source,
                 source=source,
+                only_ru=only_ru,
             )
 
         tables = calculate_channels_summary(
@@ -274,6 +288,7 @@ def channels_summary():
             "unique_sources": [""] + unique_sources.tolist(),
             "column": column,
             "columns_dict": columns_dict,
+            "only_ru": only_ru,
         }
         with open(os.path.join(RESULTS_FOLDER, "filter_data.txt"), "w") as f:
             json.dump(filter_data, f)
@@ -290,6 +305,7 @@ def channels_summary():
             date_start=date_start,
             date_end=date_end,
             utms2=utms2,
+            only_ru=only_ru,
             enumerate=enumerate,
             additional_df="",
             channels_summary_detailed_df="",
@@ -737,6 +753,10 @@ def vacancies():
 
 
 app.add_url_rule(
+    "/statistics",
+    view_func=views.StatisticsView.as_view("statistics"),
+)
+app.add_url_rule(
     "/vk/statistics",
     view_func=views.VKStatisticsView.as_view("vk_statistics"),
 )
@@ -769,6 +789,24 @@ app.add_url_rule(
 app.add_url_rule(
     "/api/vk/ads",
     view_func=views.ApiVKAdsView.as_view("api_vk_ads"),
+)
+app.add_url_rule(
+    "/api/statistics/accounts/<provider>",
+    view_func=views.StatisticsAccountsByProviderView.as_view(
+        "statistics_accounts_by_provider"
+    ),
+)
+app.add_url_rule(
+    "/api/statistics/campaigns/<provider>/<account>",
+    view_func=views.StatisticsCampaignsByAccountView.as_view(
+        "statistics_campaigns_by_account"
+    ),
+)
+app.add_url_rule(
+    "/api/statistics/groups/<provider>/<campaign>",
+    view_func=views.StatisticsGroupsByCampaignView.as_view(
+        "statistics_groups_by_campaign"
+    ),
 )
 
 

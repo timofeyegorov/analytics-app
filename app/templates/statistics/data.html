@@ -1,0 +1,22 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                {% for column in statistics.columns %}
+                    <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, statistic in statistics.iterrows() %}
+                <tr>
+                    <td>{{ index + 1 }}</td>
+                    {% for column in statistics.columns %}
+                        <td>{{ statistic[column] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

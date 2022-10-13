@@ -113,7 +113,9 @@ def additional_table(df):
     return res
 
 
-def calculate_channels_summary_detailed(df, utm_source, source, utm_2, utm_2_value):
+def calculate_channels_summary_detailed(
+    df, utm_source, source, utm_2, utm_2_value, only_ru: bool = False
+):
     if (utm_source == "") & (source == "") & (utm_2 == ""):
         if utm_2_value != "все лиды":
             signature = "Канал=" + utm_2_value
@@ -155,6 +157,8 @@ def calculate_channels_summary_detailed(df, utm_source, source, utm_2, utm_2_val
     else:
         signature = "Неизвестная фильтрация"
         output_df = df
+    if only_ru:
+        output_df = output_df[output_df["quiz_answers1"] == "Россия"]
     additional_df = additional_table(output_df)
     output_df = output_df[
         [

@@ -7,3 +7,4 @@ webserver_config.py
 celerybeat-schedule
 /app/dags/results/
 /app/dags/data/
+/service-*.py

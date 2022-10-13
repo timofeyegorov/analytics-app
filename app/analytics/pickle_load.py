@@ -50,3 +50,8 @@ class PickleLoader:
     def target_audience(self) -> pandas.DataFrame:
         data = self._load(self.pickle_files_path / "target_audience.pkl")
         return data
+
+    @property
+    def statistics(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "statistics.pkl")
+        return data

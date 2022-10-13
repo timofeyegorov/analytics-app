@@ -4,24 +4,29 @@ import requests
 import tempfile
 
 from enum import Enum
+from math import ceil
 from pathlib import Path
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from urllib.parse import parse_qsl
+from pydantic import BaseModel, ConstrainedDate
+from werkzeug.datastructures import ImmutableMultiDict
 
 from xlsxwriter import Workbook
 
-from flask import send_file
-from flask import request, render_template
+from flask import request, render_template, send_file, abort
 from flask.views import MethodView
 
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
+from app.data import StatisticsProviderEnum, StatisticsGroupByEnum
 
 
 pickle_loader = PickleLoader()
+
+UNDEFINED = "Undefined"
 
 
 class ContextTemplate:
@@ -53,8 +58,159 @@ class APIView(MethodView):
     def render(self):
         return self.data
 
-    def get(self):
+    def get(self, *args, **kwargs):
         return self.render()
+
+
+class StatisticsFiltersData(BaseModel):
+    date: Tuple[Optional[ConstrainedDate], Optional[ConstrainedDate]]
+    provider: Optional[str]
+    account: Optional[int]
+    campaign: Optional[int]
+    group: Optional[int]
+    groupby: str
+
+
+class StatisticsView(TemplateView):
+    template_name = "statistics/index.html"
+    title = "Статистика"
+    statistics = None
+    extras = None
+    filters = None
+
+    def get_extras(self) -> Dict[str, Any]:
+        providers = StatisticsProviderEnum.dict()
+        groupby = StatisticsGroupByEnum.dict()
+        data = {
+            "providers": list(map(lambda item: (item[0], item[1]), providers.items())),
+            "groupby": list(map(lambda item: (item[0], item[1]), groupby.items())),
+        }
+        return data
+
+    def get_filters(self, source: ImmutableMultiDict) -> StatisticsFiltersData:
+        date = [source.get("date_from") or None, source.get("date_to") or None]
+        provider = source.get("provider")
+        account = source.get("account")
+        campaign = source.get("campaign")
+        group = source.get("group")
+        groupby = source.get("groupby")
+
+        # provider
+        providers = list(map(lambda item: item[0], self.extras.get("providers")))
+        if provider not in providers:
+            provider = None
+
+        if provider:
+            available_accounts = list(
+                map(
+                    lambda item: str(item.get("value")),
+                    requests.get(
+                        f"{request.host_url}api/statistics/accounts/{provider}"
+                    )
+                    .json()
+                    .get("accounts"),
+                )
+            )
+            if account not in available_accounts:
+                account = None
+            if account:
+                available_campaigns = list(
+                    map(
+                        lambda item: str(item.get("value")),
+                        requests.get(
+                            f"{request.host_url}api/statistics/campaigns/{provider}/{account}"
+                        )
+                        .json()
+                        .get("campaigns"),
+                    )
+                )
+                if campaign not in available_campaigns:
+                    campaign = None
+                if campaign:
+                    available_groups = list(
+                        map(
+                            lambda item: str(item.get("value")),
+                            requests.get(
+                                f"{request.host_url}api/statistics/groups/{provider}/{campaign}"
+                            )
+                            .json()
+                            .get("groups"),
+                        )
+                    )
+                    if group not in available_groups:
+                        group = None
+
+        # groupby
+        try:
+            StatisticsGroupByEnum[groupby]
+        except KeyError:
+            groupby = StatisticsGroupByEnum.provider.name
+
+        return StatisticsFiltersData(
+            date=date,
+            provider=provider,
+            account=account,
+            campaign=campaign,
+            group=group,
+            groupby=groupby,
+        )
+
+    def get_statistics(self) -> pandas.DataFrame:
+        statistics = pickle_loader.statistics
+
+        data = statistics.data
+        data.date = pandas.to_datetime(data.date).dt.date
+
+        if self.filters.date[0]:
+            data = data[data.date >= self.filters.date[0]]
+        if self.filters.date[1]:
+            data = data[data.date <= self.filters.date[1]]
+        if self.filters.provider:
+            data = data[data.provider == self.filters.provider]
+        if self.filters.account:
+            data = data[data.account == self.filters.account]
+        if self.filters.campaign:
+            data = data[data.campaign == self.filters.campaign]
+        if self.filters.group:
+            data = data[data.group == self.filters.group]
+
+        data = data.groupby(self.filters.groupby)
+
+        output = pandas.DataFrame()
+
+        for _id, item in data:
+            if self.filters.groupby == StatisticsGroupByEnum.provider.name:
+                name = StatisticsProviderEnum[_id].value
+            else:
+                info = {}
+                if self.filters.groupby == StatisticsGroupByEnum.account.name:
+                    info = statistics.accounts
+                elif self.filters.groupby == StatisticsGroupByEnum.campaign.name:
+                    info = statistics.campaigns
+                elif self.filters.groupby == StatisticsGroupByEnum.group.name:
+                    info = statistics.groups
+                elif self.filters.groupby == StatisticsGroupByEnum.ad.name:
+                    info = statistics.ads
+                info_item = info.get(item.iloc[0].provider, {}).get(_id)
+                name = info_item.get("name") if info_item else UNDEFINED
+
+            output = output.append(
+                {"Название": name, "Потрачено": ceil(item.spent.sum() * 100) / 100},
+                ignore_index=True,
+            )
+
+        return output
+
+    def get(self):
+        self.extras = self.get_extras()
+        self.filters = self.get_filters(request.args)
+        self.statistics = self.get_statistics()
+
+        self.context("extras", self.extras)
+        self.context("filters", self.filters)
+        self.context("statistics", self.statistics)
+
+        return super().get()
 
 
 class VKStatisticsView(TemplateView):
@@ -1772,4 +1928,94 @@ class ApiVKAdsView(APIView):
                 },
             }
         )
+        return super().get()
+
+
+class StatisticsAccountsByProviderView(APIView):
+    def get(self, provider: str):
+        if provider not in StatisticsProviderEnum.dict().keys():
+            abort(404)
+
+        accounts = []
+
+        if provider == StatisticsProviderEnum.vk.name:
+            accounts = sorted(
+                list(
+                    map(
+                        lambda account: {
+                            "value": account.account_id,
+                            "name": account.account_name,
+                        },
+                        vk_reader("ads.getAccounts"),
+                    )
+                ),
+                key=lambda account: account.get("name"),
+            )
+
+        elif provider == StatisticsProviderEnum.yandex.name:
+            accounts = []
+
+        elif provider == StatisticsProviderEnum.tg.name:
+            accounts = []
+
+        self.data = {"accounts": accounts}
+
+        return super().get()
+
+
+class StatisticsCampaignsByAccountView(APIView):
+    def get(self, provider: str, account: int):
+        if provider not in StatisticsProviderEnum.dict().keys():
+            abort(404)
+
+        campaigns = []
+
+        if provider == StatisticsProviderEnum.vk.name:
+            campaigns = sorted(
+                list(
+                    map(
+                        lambda campaign: {
+                            "value": campaign.id,
+                            "name": campaign.name,
+                        },
+                        list(
+                            filter(
+                                lambda item: item.account_id == int(account),
+                                vk_reader("ads.getCampaigns"),
+                            )
+                        ),
+                    )
+                ),
+                key=lambda campaign: campaign.get("name"),
+            )
+
+        elif provider == StatisticsProviderEnum.yandex.name:
+            campaigns = []
+
+        elif provider == StatisticsProviderEnum.tg.name:
+            campaigns = []
+
+        self.data = {"campaigns": campaigns}
+
+        return super().get()
+
+
+class StatisticsGroupsByCampaignView(APIView):
+    def get(self, provider: str, campaign: int):
+        if provider not in StatisticsProviderEnum.dict().keys():
+            abort(404)
+
+        groups = []
+
+        if provider == StatisticsProviderEnum.vk.name:
+            groups = []
+
+        elif provider == StatisticsProviderEnum.yandex.name:
+            groups = []
+
+        elif provider == StatisticsProviderEnum.tg.name:
+            groups = []
+
+        self.data = {"groups": groups}
+
         return super().get()

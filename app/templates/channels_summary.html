@@ -14,56 +14,29 @@
 <div class='d-flex flex-column'>
     {% if error %}
         <h1 style="color: red">{{ error }}</h1>
-        <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' action='/channels_summary'>
-            <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
-            <input type='date' name='date_end' value="{{ date_end }}" placeholder="date end">
-                        <br>
-
-            <div class="filter-some" id="some-0">
-                <div><b>Utm_source</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;<b>Кабинет (label)</b></div>
-<!--                <div><b>Канал</b></div>-->
-                <input name='utm_source' value="{{ filter_data['utms']['utm_source'] }}" class="utm-values">
-                <select name='source' class="utms">
-                    {% for el in filter_data['unique_sources'] %}
-                    {% if el==filter_data['utms']['source'] %}
-                        <option value="{{ el }}" selected="selected">{{ el }}</option>
-                    {% else %}
-                        <option value="{{ el }}">{{ el }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-
-                <select name='utm_2' class="utms">
-                    {% for el in utms2 %}
-                    {% if el==filter_data['utms']['utm_2'] %}
-                        <option value="{{ el }}" selected="selected">{{ el }}</option>
-                    {% else %}
-                        <option value="{{ el }}">{{ el }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <button class="btn btn-primary">Обновить</button>
-            {{ reset_button() }}
-        </form>
     {% else %}
         <h1>Источники - сводная таблица</h1>
-        <div><a href="/" class="btn btn-success">В меню</a></div>
-        <form method='get' id='filters' action='/channels_summary'>
-            <input type='date' name='date_start' value="{{ date_start }}" placeholder="date start">
-            <input type='date' name='date_end' value="{{ date_end}}" placeholder="date end">
-            <br>
+    {% endif %}
 
-            <div class="filter-some" id="some-0">
-                <div><b>Utm_source</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;<b>Кабинет (label)</b></div>
-<!--                <div><b>Канал</b></div>-->
-                <input name='utm_source' value="{{ filter_data['utms']['utm_source'] }}" class="utm-values">
-                <select name='source' class="utms">
+    {% include 'base_links.html' %}
+
+    <form method='get' id='filters' action='/channels_summary'>
+        <div class="filter-block">
+            <div class="field">
+                <label for="date_start">С даты</label>
+                <input type='date' name='date_start' id='date_start' value="{{ date_start }}" placeholder="date start">
+            </div>
+            <div class="field">
+                <label for="date_end">По дату</label>
+                <input type='date' name='date_end' id='date_end' value="{{ date_end }}" placeholder="date end">
+            </div>
+            <div class="field">
+                <label for="utm_source">UTM source</label>
+                <input name='utm_source' id='utm_source' value="{{ filter_data['utms']['utm_source'] }}" class="utm-values">
+            </div>
+            <div class="field">
+                <label for="source">Кабинет (label)</label>
+                <select name='source' id='source' class="utms">
                     {% for el in filter_data['unique_sources'] %}
                     {% if el==filter_data['utms']['source'] %}
                         <option value="{{ el }}" selected="selected">{{ el }}</option>
@@ -72,8 +45,10 @@
                     {% endif %}
                     {% endfor %}
                 </select>
-
-                <select name='utm_2' class="utms">
+            </div>
+            <div class="field">
+                <label for="utm_2">Группировать по</label>
+                <select name='utm_2' id='utm_2' class="utms">
                     {% for el in utms2 %}
                     {% if el==filter_data['utms']['utm_2'] %}
                         <option value="{{ el }}" selected="selected">{{ el }}</option>
@@ -83,11 +58,18 @@
                     {% endfor %}
                 </select>
             </div>
-
+            <div class="field field-checkbox">
+                <input type='checkbox' name='only_ru' id='only_ru'{% if only_ru %} checked="checked"{% endif %}>
+                <label for="only_ru">Только Россия</label>
+            </div>
+        </div>
+        <div class="filter-actions">
             <button class="btn btn-primary" id="btn-update">Обновить</button>
             {{ reset_button() }}
+        </div>
 
-            <table>
+        {% if not error %}
+            <br><table>
                 <tr>
                     <td style="background-color:#eeeeee"></td>
                     {% for col in tables['Источники - сводная таблица'].columns %}
@@ -144,13 +126,13 @@
                 {% endif %}
                 {% endfor %}
             </table>
-        </form>
-    {% endif %}
-</div>
-<div class="m-2 w-100 justify-content-center">
-    <form method='get' action='/getPlotCSV'>
-        <input type="hidden" name="value" value="channels_summary, Источники - сводная таблица"/>
-        <button class="btn btn-primary">Скачать отчет в csv</button>
+            <div class="m-2 w-100 justify-content-center">
+                <form method='get' action='/getPlotCSV'>
+                    <input type="hidden" name="value" value="channels_summary, Источники - сводная таблица"/>
+                    <button class="btn btn-primary">Скачать отчет в csv</button>
+                </form>
+            </div>
+        {% endif %}
     </form>
 </div>
 
