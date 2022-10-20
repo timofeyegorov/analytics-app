@@ -294,7 +294,7 @@ class StatisticsRoistatView(TemplateView):
                 )
             ]
 
-        stats = stats[stats.rs_expenses > 0]
+        stats = stats[stats.expenses > 0]
 
         return stats
 
@@ -369,8 +369,7 @@ class StatisticsRoistatView(TemplateView):
         columns = [
             "Сеть",
             StatisticsRoistatGroupByEnum[self.filters.groupby].value,
-            "Расход [RS]",
-            "Лиды [RS]",
+            "Расход",
         ]
         data = pandas.DataFrame(columns=columns)
         for name, group in self.statistics.groupby(
@@ -385,16 +384,15 @@ class StatisticsRoistatView(TemplateView):
                                 group.package.unique()[0]
                             ].value,
                             group[f"{self.filters.groupby}_title"].unique()[0],
-                            round(group.rs_expenses.sum()),
-                            round(group.rs_leads.sum()),
+                            round(group.expenses.sum()),
                         ],
                     )
                 ),
                 ignore_index=True,
             )
         data = (
-            data[data["Расход [RS]"] > 0]
-            .sort_values(["Расход [RS]"], ascending=False)
+            data[data["Расход"] > 0]
+            .sort_values(["Расход"], ascending=False)
             .reset_index(drop=True)
         )
 
