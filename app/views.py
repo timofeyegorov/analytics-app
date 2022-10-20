@@ -1,4 +1,5 @@
 import json
+import pytz
 import pandas
 import requests
 import tempfile
@@ -21,7 +22,13 @@ from flask.views import MethodView
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
-from app.data import StatisticsProviderEnum, StatisticsGroupByEnum
+from app.dags.roistat import reader as roistat_reader
+from app.data import (
+    StatisticsProviderEnum,
+    StatisticsGroupByEnum,
+    StatisticsRoistatPackageEnum,
+    StatisticsRoistatGroupByEnum,
+)
 
 
 pickle_loader = PickleLoader()
@@ -69,6 +76,15 @@ class StatisticsFiltersData(BaseModel):
     campaign: Optional[int]
     group: Optional[int]
     groupby: str
+
+
+class StatisticsRoistatFiltersData(BaseModel):
+    date: Tuple[Optional[ConstrainedDate], Optional[ConstrainedDate]]
+    account: Optional[str]
+    campaign: Optional[str]
+    group: Optional[str]
+    groupby: str
+    only_ru: bool
 
 
 class StatisticsView(TemplateView):
@@ -209,6 +225,183 @@ class StatisticsView(TemplateView):
         self.context("extras", self.extras)
         self.context("filters", self.filters)
         self.context("statistics", self.statistics)
+
+        return super().get()
+
+
+class StatisticsRoistatView(TemplateView):
+    template_name = "statistics/roistat/index.html"
+    title = "Статистика Roistat"
+    filters = None
+    statistics = None
+    extras = None
+
+    def get_filters(self, source: ImmutableMultiDict) -> StatisticsFiltersData:
+        date = [source.get("date_from") or None, source.get("date_to") or None]
+        account = source.get("account", "__all__")
+        campaign = source.get("campaign", "__all__")
+        group = source.get("group", "__all__")
+        groupby = source.get("groupby")
+        only_ru = bool(source.get("only_ru"))
+
+        if account == "__all__":
+            account = None
+        if campaign == "__all__":
+            campaign = None
+        if group == "__all__":
+            group = None
+
+        try:
+            StatisticsRoistatGroupByEnum[groupby]
+        except KeyError:
+            groupby = StatisticsRoistatGroupByEnum.account.name
+
+        return StatisticsRoistatFiltersData(
+            date=date,
+            account=account,
+            campaign=campaign,
+            group=group,
+            groupby=groupby,
+            only_ru=only_ru,
+        )
+
+    def get_statistics(self) -> pandas.DataFrame:
+        stats = roistat_reader("statistics")
+        tz = pytz.timezone("Europe/Moscow")
+        filter_date = self.filters.date
+
+        if filter_date[0]:
+            stats = stats[
+                stats.date
+                >= tz.localize(
+                    datetime(
+                        year=filter_date[0].year,
+                        month=filter_date[0].month,
+                        day=filter_date[0].day,
+                    )
+                )
+            ]
+
+        if filter_date[1]:
+            stats = stats[
+                stats.date
+                <= tz.localize(
+                    datetime(
+                        year=filter_date[1].year,
+                        month=filter_date[1].month,
+                        day=filter_date[1].day,
+                    )
+                )
+            ]
+
+        stats = stats[stats.rs_expenses > 0]
+
+        return stats
+
+    def get_extras(self) -> Dict[str, Any]:
+        accounts = self.statistics[["account", "account_title"]].drop_duplicates(
+            subset=["account"]
+        )
+        accounts = list(
+            map(
+                lambda item: (item[0], item[1]),
+                accounts[~accounts.account.isna()].values,
+            )
+        )
+        if self.filters.account not in list(map(lambda item: item[0], accounts)):
+            self.filters.account = None
+        if self.filters.account is not None:
+            self.statistics = self.statistics[
+                self.statistics.account == self.filters.account
+            ]
+
+        campaigns = self.statistics[["campaign", "campaign_title"]].drop_duplicates(
+            subset=["campaign"]
+        )
+        campaigns = list(
+            map(
+                lambda item: (item[0], item[1]),
+                campaigns[~campaigns.campaign.isna()].values,
+            )
+        )
+        if self.filters.campaign not in list(map(lambda item: item[0], campaigns)):
+            self.filters.campaign = None
+        if self.filters.campaign is not None:
+            self.statistics = self.statistics[
+                self.statistics.campaign == self.filters.campaign
+            ]
+
+        groups = self.statistics[["group", "group_title"]].drop_duplicates(
+            subset=["group"]
+        )
+        groups = list(
+            map(
+                lambda item: (item[0], item[1]),
+                groups[~groups.group.isna()].values,
+            )
+        )
+        if self.filters.group not in list(map(lambda item: item[0], groups)):
+            self.filters.group = None
+        if self.filters.group is not None:
+            self.statistics = self.statistics[
+                self.statistics.group == self.filters.group
+            ]
+
+        data = {
+            "groupby": list(
+                map(
+                    lambda item: (item[0], item[1]),
+                    StatisticsRoistatGroupByEnum.dict().items(),
+                )
+            ),
+            "accounts": sorted(accounts, key=lambda item: item[1]),
+            "campaigns": sorted(campaigns, key=lambda item: item[1]),
+            "groups": sorted(groups, key=lambda item: item[1]),
+        }
+
+        return data
+
+    def get(self):
+        self.filters = self.get_filters(request.args)
+        self.statistics = self.get_statistics()
+        self.extras = self.get_extras()
+
+        columns = [
+            "Сеть",
+            StatisticsRoistatGroupByEnum[self.filters.groupby].value,
+            "Расход [RS]",
+            "Лиды [RS]",
+        ]
+        data = pandas.DataFrame(columns=columns)
+        for name, group in self.statistics.groupby(
+            by=self.filters.groupby, dropna=False
+        ):
+            data = data.append(
+                dict(
+                    zip(
+                        columns,
+                        [
+                            StatisticsRoistatPackageEnum[
+                                group.package.unique()[0]
+                            ].value,
+                            group[f"{self.filters.groupby}_title"].unique()[0],
+                            round(group.rs_expenses.sum()),
+                            round(group.rs_leads.sum()),
+                        ],
+                    )
+                ),
+                ignore_index=True,
+            )
+        data = (
+            data[data["Расход [RS]"] > 0]
+            .sort_values(["Расход [RS]"], ascending=False)
+            .reset_index(drop=True)
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+        self.context("empty", len(data) == 0)
 
         return super().get()
 

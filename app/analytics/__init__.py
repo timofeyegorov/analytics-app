@@ -757,6 +757,10 @@ app.add_url_rule(
     view_func=views.StatisticsView.as_view("statistics"),
 )
 app.add_url_rule(
+    "/statistics/roistat",
+    view_func=views.StatisticsRoistatView.as_view("statistics_roistat"),
+)
+app.add_url_rule(
     "/vk/statistics",
     view_func=views.VKStatisticsView.as_view("vk_statistics"),
 )

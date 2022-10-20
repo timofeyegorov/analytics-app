@@ -11,6 +11,12 @@ table td.nowrap,
 table th.nowrap {
     white-space:nowrap;
 }
+table td.sticky,
+table th.sticky {
+    position:sticky;
+    top:-1px;
+    z-index:1;
+}
 table td span.hint,
 table th span.hint {
     display:block;
@@ -96,8 +102,9 @@ label {
 
 .base-links,
 .filter-block,
+.filter-actions,
 .base-filters {
-    margin-bottom:.5rem;
+    margin-bottom:1rem;
 }
 
 .filter-block {
@@ -138,11 +145,8 @@ label {
 .filter-block > .field > input[type=date],
 .filter-block > .field > input[type=text],
 .filter-block > .field > select {
-    min-width:150px;
+    width:200px;
     height:30px;
-}
-.filter-block > .field > select {
-    max-width:200px;
 }
 .filter-block > .field.field-checkbox {
     margin-top:19px;

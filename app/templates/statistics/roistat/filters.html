@@ -1,0 +1,65 @@
+<form action="{{ url_for('statistics_roistat') }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-date_from">С даты</label>
+            <input type="date" name="date_from" id="field-date_from" value="{% if filters.date.0 %}{{ filters.date.0 }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-date_to">По дату</label>
+            <input type="date" name="date_to" id="field-date_to" value="{% if filters.date.1 %}{{ filters.date.1 }}{% endif %}">
+        </div>
+    </div>
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-account">Кабинет</label>
+            <select name="account" id="field-account"{% if not extras.accounts %} disabled="disabled"{% endif %}>
+                {% if extras.accounts %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.accounts %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.account %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="field-campaign">Кампания</label>
+            <select name="campaign" id="field-campaign"{% if not extras.campaigns %} disabled="disabled"{% endif %}>
+                {% if extras.campaigns %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.campaigns %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.campaign %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="field-group">Группа объявлений</label>
+            <select name="group" id="field-group"{% if not extras.groups %} disabled="disabled"{% endif %}>
+                {% if extras.groups %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.groups %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.group %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+    </div>
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-groupby">Группировать по</label>
+            <select name="groupby" id="field-groupby">
+                {% for option in extras.groupby %}
+                    <option value="{{ option.0 }}"{% if option.0 == filters.groupby %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field field-checkbox">
+            <input type="checkbox" name="only_ru" id="only_ru"{% if filters.only_ru %} checked="checked"{% endif %}>
+            <label for="only_ru">Только Россия</label>
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Обновить</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
+    </div>
+</form>

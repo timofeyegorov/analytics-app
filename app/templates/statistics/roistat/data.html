@@ -1,0 +1,28 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in data.columns %}
+                    <th class="sticky nowrap{% if column in ["Расход [RS]", "Лиды [RS]"] %} text-right{% endif %}">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if not empty %}
+                {% for index, statistic in data.iterrows() %}
+                    <tr>
+                        <td class="nowrap">{{ index + 1 }}</td>
+                        {% for column in data.columns %}
+                            <td class="nowrap{% if column in ["Расход [RS]", "Лиды [RS]"] %} font-monospace text-right{% endif %}">{% if statistic[column] %}{{ statistic[column] }}{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5">Не найдено</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
