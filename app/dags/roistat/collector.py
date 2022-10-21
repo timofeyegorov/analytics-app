@@ -26,36 +26,37 @@ def validate_response(response: Dict[str, Any], name: str):
         raise Exception(f"Error while getting response `{name}`: {response}")
 
 
+def detect_package(value) -> Optional[str]:
+    if re.match(r"^vk.+$", value):
+        return StatisticsRoistatPackageEnum.vk.name
+    if (
+        re.match(r"^direct\d+.*$", value)
+        or re.match(r"^:openstat:direct\.yandex\.ru$", value)
+        or re.match(r"^direct$", value)
+    ):
+        return StatisticsRoistatPackageEnum.yandex_direct.name
+    if re.match(r"^ya\.master$", value) or re.match(r"^yulyayamaster$", value):
+        return StatisticsRoistatPackageEnum.yandex_master.name
+    if re.match(r"^facebook\d+.*$", value):
+        return StatisticsRoistatPackageEnum.facebook.name
+    if re.match(r"^mytarget\d+$", value):
+        return StatisticsRoistatPackageEnum.mytarget.name
+    if re.match(r"^google\d+$", value) or re.match(r"^g-adwords\d+$", value):
+        return StatisticsRoistatPackageEnum.google.name
+    if re.match(r"^site$", value):
+        return StatisticsRoistatPackageEnum.site.name
+    if re.match(r"^seo$", value):
+        return StatisticsRoistatPackageEnum.seo.name
+    if re.match(r"^:utm:.+$", value):
+        return StatisticsRoistatPackageEnum.utm.name
+    if value:
+        print("Undefined package:", value)
+    return StatisticsRoistatPackageEnum.undefined.name
+
+
 def get_levels(
     dimensions: Dict[str, Dict[str, str]],
 ) -> Dict[str, Optional[str]]:
-    def get_package(value) -> Optional[str]:
-        if re.match(r"^vk.+$", value):
-            return StatisticsRoistatPackageEnum.vk.name
-        if (
-            re.match(r"^direct\d+.*$", value)
-            or re.match(r"^:openstat:direct\.yandex\.ru$", value)
-            or re.match(r"^direct$", value)
-        ):
-            return StatisticsRoistatPackageEnum.yandex_direct.name
-        if re.match(r"^ya\.master$", value) or re.match(r"^yulyayamaster$", value):
-            return StatisticsRoistatPackageEnum.yandex_master.name
-        if re.match(r"^facebook\d+.*$", value):
-            return StatisticsRoistatPackageEnum.facebook.name
-        if re.match(r"^mytarget\d+$", value):
-            return StatisticsRoistatPackageEnum.mytarget.name
-        if re.match(r"^google\d+$", value) or re.match(r"^g-adwords\d+$", value):
-            return StatisticsRoistatPackageEnum.google.name
-        if re.match(r"^site$", value):
-            return StatisticsRoistatPackageEnum.site.name
-        if re.match(r"^seo$", value):
-            return StatisticsRoistatPackageEnum.seo.name
-        if re.match(r"^:utm:.+$", value):
-            return StatisticsRoistatPackageEnum.utm.name
-        if value:
-            print("Undefined package:", value)
-        return StatisticsRoistatPackageEnum.undefined.name
-
     output = {
         "package": None,
         "marker_level_1": None,
@@ -81,7 +82,7 @@ def get_levels(
             output.update({name: level_value, f"{name}_title": level_title})
         else:
             output.update({name: None})
-    output.update({"package": get_package(output.get("marker_level_1"))})
+    output.update({"package": detect_package(output.get("marker_level_1"))})
     return output
 
 
@@ -95,7 +96,7 @@ def analytics():
     analytics = reader("analytics")
     from_date = max(
         list(analytics.date.unique())
-        or [tz.localize(datetime.strptime("2020-02-01", "%Y-%m-%d"))]
+        or [tz.localize(datetime.strptime("2021-04-14", "%Y-%m-%d"))]
     ) - timedelta(days=1)
     to_date = from_date + timedelta(days=30)
     datetime_now = datetime.now(tz=pytz.timezone("Europe/Moscow")).replace(
