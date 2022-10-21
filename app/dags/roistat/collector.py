@@ -86,8 +86,19 @@ def get_levels(
     return output
 
 
-def get_metrics(metrics: List[Dict[str, Any]]) -> Dict[str, str]:
-    return dict(map(lambda item: (item.get("metric_name"), item.get("value")), metrics))
+def get_metrics(
+    metrics: List[Dict[str, Any]], available_metrics: List[str]
+) -> Dict[str, str]:
+    return dict(
+        map(
+            lambda item: (item.get("metric_name"), item.get("value")),
+            list(
+                filter(
+                    lambda value: value.get("metric_name") in available_metrics, metrics
+                )
+            ),
+        )
+    )
 
 
 @log_execution_time("analytics")
@@ -123,7 +134,7 @@ def analytics():
                 "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
                 "to": current_date.strftime("%Y-%m-%dT23:59:59+0300"),
             },
-            metrics=["visitsCost"],
+            metrics=["visitsCost", "leadCount", "visitCount"],
             interval="1d",
         )
         for item_data in response.get("data"):
@@ -136,7 +147,7 @@ def analytics():
             )
             for item in item_data.get("items"):
                 levels = get_levels(item.get("dimensions"))
-                metrics = get_metrics(item.get("metrics"))
+                metrics = get_metrics(item.get("metrics"), ["visitsCost"])
                 analytics = analytics.append(
                     {**levels, **metrics, "date": date}, ignore_index=True
                 )

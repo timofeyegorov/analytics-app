@@ -59,7 +59,6 @@ class RoistatReader:
                     "campaign",
                     "group",
                     "ad",
-                    "package_title",
                     "account_title",
                     "campaign_title",
                     "group_title",
