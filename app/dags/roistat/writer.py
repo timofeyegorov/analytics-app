@@ -51,3 +51,9 @@ class RoistatWriter:
     def statistics(self, file, statistics: pandas.DataFrame):
         data = statistics.reset_index(drop=True)
         pickle.dump(data, file)
+
+    def leads(self, file, leads: pandas.DataFrame):
+        data = leads.drop_duplicates(keep="last", ignore_index=True).reset_index(
+            drop=True
+        )
+        pickle.dump(data, file)

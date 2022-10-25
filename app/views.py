@@ -294,7 +294,7 @@ class StatisticsRoistatView(TemplateView):
                 )
             ]
 
-        stats = stats[stats.expenses > 0]
+        # stats = stats[stats.expenses > 0]
 
         return stats
 
@@ -354,9 +354,12 @@ class StatisticsRoistatView(TemplateView):
                     StatisticsRoistatGroupByEnum.dict().items(),
                 )
             ),
-            "accounts": sorted(accounts, key=lambda item: item[1]),
-            "campaigns": sorted(campaigns, key=lambda item: item[1]),
-            "groups": sorted(groups, key=lambda item: item[1]),
+            # "accounts": sorted(accounts, key=lambda item: item[1]),
+            # "campaigns": sorted(campaigns, key=lambda item: item[1]),
+            # "groups": sorted(groups, key=lambda item: item[1]),
+            "accounts": sorted(accounts, key=lambda item: item[1] or ""),
+            "campaigns": sorted(campaigns, key=lambda item: item[1] or ""),
+            "groups": sorted(groups, key=lambda item: item[1] or ""),
         }
 
         return data
@@ -391,9 +394,8 @@ class StatisticsRoistatView(TemplateView):
                 ignore_index=True,
             )
         data = (
-            data[data["Расход"] > 0]
-            .sort_values(["Расход"], ascending=False)
-            .reset_index(drop=True)
+            # data[data["Расход"] > 0]
+            data.sort_values(["Расход"], ascending=False).reset_index(drop=True)
         )
 
         self.context("filters", self.filters)

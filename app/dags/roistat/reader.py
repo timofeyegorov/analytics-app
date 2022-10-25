@@ -67,3 +67,32 @@ class RoistatReader:
                 ]
             )
         return statistics
+
+    def leads(self, leads: pandas.DataFrame = None):
+        if leads is None:
+            leads = pandas.DataFrame(
+                columns=[
+                    "url",
+                    "qa1",
+                    "qa2",
+                    "qa3",
+                    "qa4",
+                    "qa5",
+                    "qa6",
+                    "ipl",
+                    "target_class",
+                    "email",
+                    "phone",
+                    "date",
+                    "utm_source",
+                    "utm_medium",
+                    "utm_campaign",
+                    "utm_content",
+                    "utm_term",
+                    "account",
+                    "campaign",
+                    "group",
+                    "ad",
+                ]
+            )
+        return leads

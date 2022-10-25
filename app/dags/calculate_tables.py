@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import pytz
 import datetime
 
 from typing import List, Dict
@@ -217,6 +218,12 @@ def load_data():
     leads = leads.assign(**MatchIDs(leads).dict)
     leads = recalc_expenses(leads)
     leads = telegram_restructure(leads)
+    tz = pytz.timezone("Europe/Moscow")
+    leads["date"] = leads.created_at.apply(
+        lambda value: tz.localize(value).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+    )
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
 

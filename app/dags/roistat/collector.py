@@ -108,7 +108,8 @@ def analytics():
     from_date = max(
         list(analytics.date.unique())
         or [tz.localize(datetime.strptime("2021-04-14", "%Y-%m-%d"))]
-    ) - timedelta(days=1)
+    ) - timedelta(seconds=3600 * 2)
+    from_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
     to_date = from_date + timedelta(days=30)
     datetime_now = datetime.now(tz=pytz.timezone("Europe/Moscow")).replace(
         hour=0, minute=0, second=0, microsecond=0
