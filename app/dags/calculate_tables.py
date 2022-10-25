@@ -1,3 +1,5 @@
+import shutil
+
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python_operator import PythonOperator
@@ -7,6 +9,7 @@ import os
 import re
 import sys
 import pytz
+import shutil
 import datetime
 
 from typing import List, Dict
@@ -203,6 +206,10 @@ def load_payments_table():
 
 @log_execution_time("load_data")
 def load_data():
+    shutil.copy(
+        os.path.join(RESULTS_FOLDER, "leads.pkl"),
+        os.path.join(RESULTS_FOLDER, "leads_old.pkl"),
+    )
     data = get_leads_data()
     with open(os.path.join(RESULTS_FOLDER, "ca_payment_analytic.pkl"), "rb") as f:
         ca_payment_analytic = pkl.load(f)
