@@ -21,8 +21,8 @@ class PickleLoader:
         return data
 
     @property
-    def leads_old(self) -> pandas.DataFrame:
-        data = self._load(self.pickle_files_path / "leads_old.pkl")
+    def leads_np(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "leads_np.pkl")
         return data
 
     @property

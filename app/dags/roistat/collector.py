@@ -323,7 +323,7 @@ def analytics():
     from_date = max(
         list(analytics.date.unique())
         or [tz.localize(datetime.strptime("2021-04-14", "%Y-%m-%d"))]
-    ) - timedelta(seconds=3600 * 2)
+    ) - timedelta(days=1)
     from_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
     to_date = from_date + timedelta(days=30)
     datetime_now = datetime.now(tz=pytz.timezone("Europe/Moscow")).replace(
@@ -419,13 +419,11 @@ def statistics():
 def leads():
     columns = ["account", "campaign", "group", "ad"]
     statistics = reader("statistics")
-    leads = pickle_loader.leads
     try:
-        leads_old = pickle_loader.leads_old
-        os.remove(f"{RESULTS_FOLDER}/leads_old.pkl")
+        leads = pickle_loader.leads_np
+        os.remove(f"{RESULTS_FOLDER}/leads_np.pkl")
     except FileNotFoundError:
-        leads_old = pandas.DataFrame(columns=list(leads.columns))
-    leads = leads.drop(leads_old.index)
+        return
     for column in columns:
         leads[column] = None
     for index, lead in leads.iterrows():

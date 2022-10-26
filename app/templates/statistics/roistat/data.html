@@ -9,20 +9,26 @@
             </tr>
         </thead>
         <tbody>
-            {% if not empty %}
-                {% for index, statistic in data.iterrows() %}
-                    <tr>
-                        <td class="nowrap">{{ index + 1 }}</td>
-                        {% for column in data.columns %}
-                            <td class="nowrap{% if column == "Расход" %} font-monospace text-right{% endif %}">{% if statistic[column] %}{{ statistic[column] }}{% endif %}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            {% else %}
+            <tr>
+                <td class="nowrap" colspan="3">Итого</td>
+                <td class="nowrap font-monospace text-right">{{ format_int(total["Расход"]) }}</td>
+            </tr>
+            {% for index, statistic in data.iterrows() %}
                 <tr>
-                    <td colspan="5">Не найдено</td>
+                    <th class="nowrap">{{ index + 1 }}</th>
+                    {% for column in data.columns %}
+                        {% if column == "Расход" %}
+                            <td class="nowrap font-monospace text-right">
+                                {% if column == "Расход" %}
+                                    {{ format_int(statistic[column]) }}
+                                {% endif %}
+                            </td>
+                        {% else %}
+                            <td class="nowrap">{{ statistic[column] }}</td>
+                        {% endif %}
+                    {% endfor %}
                 </tr>
-            {% endif %}
+            {% endfor %}
         </tbody>
     </table>
 </div>

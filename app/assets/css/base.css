@@ -1,11 +1,20 @@
-table  { border-collapse:collapse; width:100%; overflow-x:auto;}
+table  { border-collapse:collapse; overflow-x:auto; }
+tr {
+    border-color:#d8e2e9;
+}
 th, td { padding:8px 16px; }
 th     { background:#eee; }
 td, th {
-    border:1px solid;
+    border:1px solid #d8e2e9;
+    font-size:.875rem;
 }
 table tr:hover {
-    background:#eee;
+    background: #ecf3f8;
+}
+table th {
+    color:#fff;
+    background:#6c757d;
+    user-select:none;
 }
 table td.nowrap,
 table th.nowrap {

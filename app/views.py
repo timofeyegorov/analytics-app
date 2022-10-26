@@ -398,10 +398,12 @@ class StatisticsRoistatView(TemplateView):
             data.sort_values(["Расход"], ascending=False).reset_index(drop=True)
         )
 
+        total = pandas.Series({"Расход": data["Расход"].sum()})
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("data", data)
-        self.context("empty", len(data) == 0)
+        self.context("total", total)
 
         return super().get()
 

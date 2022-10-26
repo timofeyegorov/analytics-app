@@ -1,5 +1,3 @@
-import shutil
-
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python_operator import PythonOperator
@@ -9,7 +7,7 @@ import os
 import re
 import sys
 import pytz
-import shutil
+import pandas
 import datetime
 
 from typing import List, Dict
@@ -59,6 +57,7 @@ from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
 from app.dags.decorators import log_execution_time
+from app.analytics import pickle_loader
 
 
 class MatchIDs:
@@ -206,10 +205,7 @@ def load_payments_table():
 
 @log_execution_time("load_data")
 def load_data():
-    shutil.copy(
-        os.path.join(RESULTS_FOLDER, "leads.pkl"),
-        os.path.join(RESULTS_FOLDER, "leads_old.pkl"),
-    )
+    leads_old = pickle_loader.leads
     data = get_leads_data()
     with open(os.path.join(RESULTS_FOLDER, "ca_payment_analytic.pkl"), "rb") as f:
         ca_payment_analytic = pkl.load(f)
@@ -233,6 +229,15 @@ def load_data():
     )
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
+
+    try:
+        with open(os.path.join(RESULTS_FOLDER, "leads_np.pkl"), "rb") as f:
+            leads_np = pkl.load(f)
+    except FileNotFoundError:
+        leads_np = pandas.DataFrame()
+    leads_np = pandas.concat([leads_np, leads.drop(leads_old.index)])
+    with open(os.path.join(RESULTS_FOLDER, "leads_np.pkl"), "wb") as f:
+        pkl.dump(leads_np, f)
 
 
 # @log_execution_time('calculate_channel_expense')

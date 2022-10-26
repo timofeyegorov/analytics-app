@@ -59,7 +59,10 @@ def utility_processor():
     def is_tuple(value) -> bool:
         return isinstance(value, tuple)
 
-    return dict(is_tuple=is_tuple)
+    def format_int(value: int) -> str:
+        return f"{value:,}".replace(",", " ")
+
+    return dict(is_tuple=is_tuple, format_int=format_int)
 
 
 @app.route("/getPlotCSV")
