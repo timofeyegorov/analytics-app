@@ -598,6 +598,37 @@ class StatisticsRoistatView(TemplateView):
             }
         )
 
+        if "download" in request.args.keys():
+            target = tempfile.NamedTemporaryFile(suffix=".xlsx")
+            workbook = Workbook(target.name)
+            worksheet = workbook.add_worksheet("Статистика")
+            worksheet.write_row(0, 0, self.extras.get("columns").values())
+            index = -1
+            for index, row in calc.data.iterrows():
+                item = list(row.values)
+                item[0] = item[0][0]
+                item[8] = item[8][1]
+                item[9] = item[9][1]
+                item[10] = item[10][1]
+                item[11] = item[11][1]
+                item[12] = item[12][1]
+                worksheet.write_row(index + 1, 0, item)
+            total_values = list(total_data.values())
+            total_values[0] = total_values[0][0]
+            total_values[8] = total_values[8][1]
+            total_values[9] = total_values[9][1]
+            total_values[10] = total_values[10][1]
+            total_values[11] = total_values[11][1]
+            total_values[12] = total_values[12][1]
+            worksheet.write_row(index + 2, 0, total_values)
+            worksheet.autofilter("A1:M1")
+            workbook.close()
+            return send_file(
+                workbook.filename,
+                download_name=f"statistics.xlsx",
+                as_attachment=True,
+            )
+
         url = urlparse(request.url)
         qs = dict(parse_qsl(url.query))
         link = f"{url.scheme}://{url.netloc}{url.path}"
