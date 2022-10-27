@@ -245,6 +245,66 @@ class StatisticsView(TemplateView):
         return super().get()
 
 
+class StatusColor(str, Enum):
+    high = "high"
+    middle = "middle"
+    low = "low"
+
+
+class Action(str, Enum):
+    suppose = "Оставить"
+    disable = "Выключить"
+    pending = "Ждем"
+
+
+class DetectPositive:
+    def __call__(self, value) -> StatusColor:
+        if value >= 0:
+            return StatusColor.high
+        elif -50 <= value < 0:
+            return StatusColor.middle
+        else:
+            return StatusColor.low
+
+
+class DetectActivity:
+    def __call__(self, value) -> StatusColor:
+        if value >= 30:
+            return StatusColor.high
+        elif 10 <= value < 29:
+            return StatusColor.middle
+        else:
+            return StatusColor.low
+
+
+class DetectAction:
+    def __call__(
+        self,
+        positive_period: StatusColor,
+        positive_month: StatusColor,
+        activity_period: StatusColor,
+        activity_month: StatusColor,
+    ) -> Action:
+        if activity_period == StatusColor.high:
+            if positive_period in (StatusColor.high, StatusColor.middle):
+                return Action.suppose
+            elif positive_period == StatusColor.low:
+                return Action.disable
+        elif activity_period in (StatusColor.middle, StatusColor.low):
+            if activity_month == StatusColor.high:
+                if positive_month in (StatusColor.high, StatusColor.middle):
+                    return Action.suppose
+                elif positive_month == StatusColor.low:
+                    return Action.disable
+            elif activity_month in (StatusColor.middle, StatusColor.low):
+                return Action.pending
+
+
+detect_positive = DetectPositive()
+detect_activity = DetectActivity()
+detect_action = DetectAction()
+
+
 class Calculate:
     _leads: pandas.DataFrame
     _statistics: pandas.DataFrame
@@ -271,8 +331,8 @@ class Calculate:
 
         self._data = pandas.DataFrame(columns=self.columns.keys())
         for name, group in self._leads.groupby(by=self._filters.groupby, dropna=False):
-            leads_count = len(group)
-            if not leads_count:
+            leads = len(group)
+            if not leads:
                 continue
 
             stats_group = stats.get(str(name))
@@ -284,12 +344,34 @@ class Calculate:
                 continue
 
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
+            income = int(group.ipl.sum())
+            ipl = int(round(income / leads))
+            profit = int(round(income - expenses))
+            ppl = int(round(profit / leads))
+            cpl = int(round(expenses / leads))
+            ppl_range = detect_positive(ppl)
+            ppl_30d = detect_positive(0)
+            leads_range = detect_activity(leads)
+            leads_30d = detect_activity(0)
+            action = detect_action(ppl_range, ppl_30d, leads_range, leads_30d)
             self._data = self._data.append(
                 {
-                    CalculateColumnEnum.name.name: "" if title is None else title,
-                    CalculateColumnEnum.leads.name: leads_count,
-                    CalculateColumnEnum.ipl.name: round(group.ipl.sum() / leads_count),
+                    CalculateColumnEnum.name.name: (
+                        "" if title is None else title,
+                        action.name,
+                    ),
+                    CalculateColumnEnum.leads.name: leads,
+                    CalculateColumnEnum.income.name: income,
+                    CalculateColumnEnum.ipl.name: ipl,
                     CalculateColumnEnum.expenses.name: expenses,
+                    CalculateColumnEnum.profit.name: profit,
+                    CalculateColumnEnum.ppl.name: ppl,
+                    CalculateColumnEnum.cpl.name: cpl,
+                    CalculateColumnEnum.ppl_range.name: (ppl, ppl_range.value),
+                    CalculateColumnEnum.ppl_30d.name: (0, ppl_30d.value),
+                    CalculateColumnEnum.leads_range.name: (leads, leads_range.value),
+                    CalculateColumnEnum.leads_30d.name: (0, leads_30d.value),
+                    CalculateColumnEnum.action.name: (action.value, action.name),
                 },
                 ignore_index=True,
             )
@@ -466,18 +548,44 @@ class StatisticsRoistatView(TemplateView):
         calc = Calculate(self.leads, self.statistics, self.filters)
 
         total_data = dict(zip(calc.columns.keys(), [None] * len(calc.columns.keys())))
+
+        total_title = "Итого"
+        total_leads = calc.data.leads.sum()
+        total_income = calc.data.income.sum()
+        total_ipl = int(round(total_income / total_leads))
+        total_expenses = calc.data.expenses.sum()
+        total_profit = int(round(total_income - total_expenses))
+        total_ppl = int(round(total_profit / total_leads))
+        total_cpl = int(round(total_expenses / total_leads))
+        total_ppl_range = detect_positive(total_ppl)
+        total_ppl_30d = detect_positive(0)
+        total_leads_range = detect_activity(total_leads)
+        total_leads_30d = detect_activity(0)
+        total_action = detect_action(
+            total_ppl_range, total_ppl_30d, total_leads_range, total_leads_30d
+        )
+
         total_data.update(
             {
-                CalculateColumnEnum.name.name: "Итого",
-                CalculateColumnEnum.leads.name: calc.data[
-                    CalculateColumnEnum.leads.name
-                ].sum(),
-                CalculateColumnEnum.ipl.name: round(
-                    calc.data[CalculateColumnEnum.ipl.name].sum() / len(calc.data)
+                CalculateColumnEnum.name.name: (total_title, total_action.name),
+                CalculateColumnEnum.leads.name: total_leads,
+                CalculateColumnEnum.income.name: total_income,
+                CalculateColumnEnum.ipl.name: total_ipl,
+                CalculateColumnEnum.expenses.name: total_expenses,
+                CalculateColumnEnum.profit.name: total_profit,
+                CalculateColumnEnum.ppl.name: total_ppl,
+                CalculateColumnEnum.cpl.name: total_cpl,
+                CalculateColumnEnum.ppl_range.name: (total_ppl, total_ppl_range.value),
+                CalculateColumnEnum.ppl_30d.name: (0, total_ppl_30d.value),
+                CalculateColumnEnum.leads_range.name: (
+                    total_leads,
+                    total_leads_range.value,
                 ),
-                CalculateColumnEnum.expenses.name: calc.data[
-                    CalculateColumnEnum.expenses.name
-                ].sum(),
+                CalculateColumnEnum.leads_30d.name: (0, total_leads_30d.value),
+                CalculateColumnEnum.action.name: (
+                    total_action.value,
+                    total_action.name,
+                ),
             }
         )
 

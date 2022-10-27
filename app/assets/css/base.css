@@ -44,6 +44,31 @@ table td.text-center,
 table th.text-center {
     text-align:center;
 }
+table td.colored {
+    font-weight:bold !important;
+    border-color:inherit !important;
+}
+table td.high {
+    color:#4caf50 !important;
+    background:rgba(76,175,80,.1) !important;
+}
+table td.middle {
+    color:#ff9800 !important;
+    background:rgba(255,152,0,.1) !important;
+}
+table td.low {
+    color:#f44336 !important;
+    background:rgba(244,67,54,.1) !important;
+}
+table td.suppose {
+    color:#4caf50 !important;
+}
+table td.pending {
+    color:#ff9800 !important;
+}
+table td.disable {
+    color:#f44336 !important;
+}
 table.statistics th,
 table.statistics td {
     padding:5px 10px;

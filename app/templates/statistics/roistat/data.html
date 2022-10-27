@@ -13,18 +13,20 @@
         <tbody>
             <tr>
                 {% for column in data.columns %}
-                    {% if column in ["leads", "ipl", "expenses"] %}
-                        <td class="nowrap font-monospace text-right">
-                            {% if column in ["leads", "ipl", "expenses"] %}
+                    {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}
+                        <td class="nowrap font-monospace text-right{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}">
+                            {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl"] %}
                                 {{ format_int(total[column]) }}
+                            {% elif is_tuple(total[column]) %}
+                                {{ format_int(total[column].0) }}
                             {% else %}
                                 {{ total[column] }}
                             {% endif %}
                         </td>
                     {% elif column == "name" %}
-                        <td class="nowrap" colspan="2">{{ total[column] }}</td>
+                        <td class="nowrap{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}" colspan="2">{% if is_tuple(total[column]) %}{{ total[column].0 }}{% else %}{{ total[column] }}{% endif %}</td>
                     {% else %}
-                        <td class="nowrap">{{ total[column] }}</td>
+                        <td class="nowrap{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}">{% if is_tuple(total[column]) %}{{ total[column].0 }}{% else %}{{ total[column] }}{% endif %}</td>
                     {% endif %}
                 {% endfor %}
             </tr>
@@ -32,16 +34,18 @@
                 <tr>
                     <th class="nowrap">{{ index + 1 }}</th>
                     {% for column in data.columns %}
-                        {% if column in ["leads", "ipl", "expenses"] %}
-                            <td class="nowrap font-monospace text-right">
-                                {% if column in ["leads", "ipl", "expenses"] %}
+                        {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}
+                            <td class="nowrap font-monospace text-right{% if is_tuple(statistic[column]) %} colored {{ statistic[column].1 }}{% endif %}">
+                                {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl"] %}
                                     {{ format_int(statistic[column]) }}
+                                {% elif is_tuple(statistic[column]) %}
+                                    {{ format_int(statistic[column].0) }}
                                 {% else %}
                                     {{ statistic[column] }}
                                 {% endif %}
                             </td>
                         {% else %}
-                            <td class="nowrap">{{ statistic[column] }}</td>
+                            <td class="nowrap{% if is_tuple(statistic[column]) %} colored {{ statistic[column].1 }}{% endif %}">{% if is_tuple(statistic[column]) %}{{ statistic[column].0 }}{% else %}{{ statistic[column] }}{% endif %}</td>
                         {% endif %}
                     {% endfor %}
                 </tr>
