@@ -62,7 +62,18 @@ def utility_processor():
     def format_int(value: int) -> str:
         return f"{value:,}".replace(",", " ")
 
-    return dict(is_tuple=is_tuple, format_int=format_int)
+    def format_float2(value: float) -> str:
+        return f"{value:,.2f}".replace(",", " ")
+
+    def format_date(value: datetime) -> str:
+        return value.strftime("%Y-%m-%d")
+
+    return dict(
+        is_tuple=is_tuple,
+        format_int=format_int,
+        format_float2=format_float2,
+        format_date=format_date,
+    )
 
 
 @app.route("/getPlotCSV")

@@ -44,29 +44,36 @@ table td.text-center,
 table th.text-center {
     text-align:center;
 }
-table td.colored {
+table td.colored,
+table td.colored > a {
     font-weight:bold !important;
     border-color:inherit !important;
 }
-table td.high {
+table td.high,
+table td.high > a {
     color:#4caf50 !important;
     background:rgba(76,175,80,.1) !important;
 }
-table td.middle {
+table td.middle,
+table td.middle > a {
     color:#ff9800 !important;
     background:rgba(255,152,0,.1) !important;
 }
-table td.low {
+table td.low,
+table td.low > a {
     color:#f44336 !important;
     background:rgba(244,67,54,.1) !important;
 }
-table td.suppose {
+table td.suppose,
+table td.suppose > a {
     color:#4caf50 !important;
 }
-table td.pending {
+table td.pending,
+table td.pending > a {
     color:#ff9800 !important;
 }
-table td.disable {
+table td.disable,
+table td.disable > a {
     color:#f44336 !important;
 }
 table.statistics th,
@@ -204,5 +211,7 @@ label {
     clear:both;
 }
 
-.base-filters > form {
+#statistics-extra,
+#statistics-leads {
+    margin-top:1rem;
 }

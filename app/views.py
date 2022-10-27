@@ -1,4 +1,6 @@
 import json
+import urllib.parse
+
 import pytz
 import pandas
 import requests
@@ -10,7 +12,7 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
-from urllib.parse import parse_qsl
+from urllib.parse import urlparse, parse_qsl, urlencode
 from pydantic import BaseModel, ConstrainedDate
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -343,6 +345,7 @@ class Calculate:
             if not expenses:
                 continue
 
+            name = stats_group[self._filters.groupby].unique()[0]
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
             income = int(group.ipl.sum())
             ipl = int(round(income / leads))
@@ -359,6 +362,7 @@ class Calculate:
                     CalculateColumnEnum.name.name: (
                         "" if title is None else title,
                         action.name,
+                        name,
                     ),
                     CalculateColumnEnum.leads.name: leads,
                     CalculateColumnEnum.income.name: income,
@@ -493,6 +497,55 @@ class StatisticsRoistatView(TemplateView):
             "columns": CalculateColumnEnum.dict(),
         }
 
+    def get_details(
+        self, name: str = None
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+        if name is None:
+            return None, None
+
+        leads = self.leads[self.leads[self.filters.groupby] == name]
+        statistics = self.statistics[self.statistics[self.filters.groupby] == name]
+
+        leads = (
+            leads[
+                [
+                    "date",
+                    "ipl",
+                    "qa1",
+                    "qa2",
+                    "qa3",
+                    "qa4",
+                    "qa5",
+                    "qa6",
+                ]
+            ]
+            .rename(
+                columns={
+                    "date": "Дата",
+                    "ipl": "IPL",
+                    "qa1": "Ответ 1",
+                    "qa2": "Ответ 2",
+                    "qa3": "Ответ 3",
+                    "qa4": "Ответ 4",
+                    "qa5": "Ответ 5",
+                    "qa6": "Ответ 6",
+                }
+            )
+            .sort_values(by=["Дата"])
+            .reset_index(drop=True)
+        )
+
+        return (
+            {
+                "title": "Дополнительная таблица",
+                "data": pandas.DataFrame(),
+            },
+            {
+                "title": f"Лиды в разбивке по {StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {statistics[f'{self.filters.groupby}_title'].unique()[0]}",
+                "data": leads,
+            },
+        )
+
     def get(self):
         self.filters = self.get_filters(request.args)
         self.leads, self.statistics = self.get_statistics()
@@ -500,50 +553,6 @@ class StatisticsRoistatView(TemplateView):
         self.extras["columns"]["name"] = StatisticsRoistatGroupByEnum[
             self.filters.groupby
         ].value
-
-        # columns = [
-        #     StatisticsRoistatGroupByEnum[self.filters.groupby].value,
-        #     "Лиды",
-        #     "IPL",
-        #     "Расход",
-        # ]
-        #
-        # stats = {}
-        # for name, group in self.statistics.groupby(
-        #     by=self.filters.groupby, dropna=False
-        # ):
-        #     stats.update({str(name): group})
-        #
-        # data = pandas.DataFrame(columns=columns)
-        # for name, group in self.leads.groupby(by=self.filters.groupby, dropna=False):
-        #     leads_count = len(group)
-        #     if not leads_count:
-        #         continue
-        #
-        #     stats_group = stats.get(str(name))
-        #     if stats_group is None:
-        #         continue
-        #
-        #     expenses = round(stats_group.expenses.sum())
-        #     if not expenses:
-        #         continue
-        #
-        #     title = stats_group[f"{self.filters.groupby}_title"].unique()[0]
-        #     data = data.append(
-        #         dict(
-        #             zip(
-        #                 columns,
-        #                 [
-        #                     "" if title is None else title,
-        #                     leads_count,
-        #                     round(group.ipl.sum() / leads_count),
-        #                     expenses,
-        #                 ],
-        #             )
-        #         ),
-        #         ignore_index=True,
-        #     )
-        # data = data.reset_index(drop=True)
 
         calc = Calculate(self.leads, self.statistics, self.filters)
 
@@ -589,10 +598,24 @@ class StatisticsRoistatView(TemplateView):
             }
         )
 
+        url = urlparse(request.url)
+        qs = dict(parse_qsl(url.query))
+        link = f"{url.scheme}://{url.netloc}{url.path}"
+        details = qs.pop("details", None)
+        if details not in dict(self.extras.get(f"{self.filters.groupby}s")).keys():
+            details = None
+        details_extra, details_leads = self.get_details(details)
+        if qs:
+            link = f"{link}?{urlencode(qs)}"
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("data", calc.data)
         self.context("total", pandas.Series(total_data))
+        self.context("url", link)
+        self.context("qs_tail", "&" if qs else "?")
+        self.context("details_extra", details_extra)
+        self.context("details_leads", details_leads)
 
         return super().get()
 
