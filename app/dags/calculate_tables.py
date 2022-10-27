@@ -231,8 +231,7 @@ def load_data():
         pkl.dump(leads, f)
 
     try:
-        with open(os.path.join(RESULTS_FOLDER, "leads_np.pkl"), "rb") as f:
-            leads_np = pkl.load(f)
+        leads_np = pickle_loader.leads_np
     except FileNotFoundError:
         leads_np = pandas.DataFrame()
     leads_np = pandas.concat([leads_np, leads.drop(leads_old.index)])

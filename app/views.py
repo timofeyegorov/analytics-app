@@ -1,4 +1,6 @@
 import json
+
+import numpy
 import pytz
 import pandas
 import requests
@@ -230,9 +232,10 @@ class StatisticsView(TemplateView):
 
 
 class StatisticsRoistatView(TemplateView):
-    template_name = "statistics/roistat/index.html"
-    title = "Статистика Roistat"
-    filters = None
+    template_name: str = "statistics/roistat/index.html"
+    title: str = "Статистика Roistat"
+    filters: StatisticsRoistatFiltersData = None
+    leads = None
     statistics = None
     extras = None
 
@@ -265,38 +268,38 @@ class StatisticsRoistatView(TemplateView):
             only_ru=only_ru,
         )
 
-    def get_statistics(self) -> pandas.DataFrame:
-        stats = roistat_reader("statistics")
+    def get_statistics(self) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
+        leads = roistat_reader("leads")
+        statistics = roistat_reader("statistics")
+
         tz = pytz.timezone("Europe/Moscow")
-        filter_date = self.filters.date
 
-        if filter_date[0]:
-            stats = stats[
-                stats.date
-                >= tz.localize(
-                    datetime(
-                        year=filter_date[0].year,
-                        month=filter_date[0].month,
-                        day=filter_date[0].day,
-                    )
+        if self.filters.date[0]:
+            date_from = tz.localize(
+                datetime(
+                    year=self.filters.date[0].year,
+                    month=self.filters.date[0].month,
+                    day=self.filters.date[0].day,
                 )
-            ]
+            )
+            leads = leads[leads.date >= date_from]
+            statistics = statistics[statistics.date >= date_from]
 
-        if filter_date[1]:
-            stats = stats[
-                stats.date
-                <= tz.localize(
-                    datetime(
-                        year=filter_date[1].year,
-                        month=filter_date[1].month,
-                        day=filter_date[1].day,
-                    )
+        if self.filters.date[1]:
+            date_to = tz.localize(
+                datetime(
+                    year=self.filters.date[1].year,
+                    month=self.filters.date[1].month,
+                    day=self.filters.date[1].day,
                 )
-            ]
+            )
+            leads = leads[leads.date <= date_to]
+            statistics = statistics[statistics.date <= date_to]
 
-        # stats = stats[stats.expenses > 0]
+        if self.filters.only_ru:
+            leads = leads[leads.qa1 == "Россия"]
 
-        return stats
+        return leads, statistics
 
     def get_extras(self) -> Dict[str, Any]:
         accounts = self.statistics[["account", "account_title"]].drop_duplicates(
@@ -311,6 +314,7 @@ class StatisticsRoistatView(TemplateView):
         if self.filters.account not in list(map(lambda item: item[0], accounts)):
             self.filters.account = None
         if self.filters.account is not None:
+            self.leads = self.leads[self.leads.account == self.filters.account]
             self.statistics = self.statistics[
                 self.statistics.account == self.filters.account
             ]
@@ -327,6 +331,7 @@ class StatisticsRoistatView(TemplateView):
         if self.filters.campaign not in list(map(lambda item: item[0], campaigns)):
             self.filters.campaign = None
         if self.filters.campaign is not None:
+            self.leads = self.leads[self.leads.campaign == self.filters.campaign]
             self.statistics = self.statistics[
                 self.statistics.campaign == self.filters.campaign
             ]
@@ -343,6 +348,7 @@ class StatisticsRoistatView(TemplateView):
         if self.filters.group not in list(map(lambda item: item[0], groups)):
             self.filters.group = None
         if self.filters.group is not None:
+            self.leads = self.leads[self.leads.group == self.filters.group]
             self.statistics = self.statistics[
                 self.statistics.group == self.filters.group
             ]
@@ -354,9 +360,6 @@ class StatisticsRoistatView(TemplateView):
                     StatisticsRoistatGroupByEnum.dict().items(),
                 )
             ),
-            # "accounts": sorted(accounts, key=lambda item: item[1]),
-            # "campaigns": sorted(campaigns, key=lambda item: item[1]),
-            # "groups": sorted(groups, key=lambda item: item[1]),
             "accounts": sorted(accounts, key=lambda item: item[1] or ""),
             "campaigns": sorted(campaigns, key=lambda item: item[1] or ""),
             "groups": sorted(groups, key=lambda item: item[1] or ""),
@@ -366,39 +369,57 @@ class StatisticsRoistatView(TemplateView):
 
     def get(self):
         self.filters = self.get_filters(request.args)
-        self.statistics = self.get_statistics()
+        self.leads, self.statistics = self.get_statistics()
         self.extras = self.get_extras()
 
         columns = [
-            "Сеть",
             StatisticsRoistatGroupByEnum[self.filters.groupby].value,
+            "Лиды",
+            "IPL",
             "Расход",
         ]
         data = pandas.DataFrame(columns=columns)
+        stats = {}
         for name, group in self.statistics.groupby(
             by=self.filters.groupby, dropna=False
         ):
+            stats.update(
+                {
+                    name: {
+                        "expenses": group.expenses.sum(),
+                        "title": group[f"{self.filters.groupby}_title"].unique()[0],
+                    }
+                }
+            )
+        for name, group in self.leads.groupby(by=self.filters.groupby, dropna=False):
+            stats_group = stats.get(name, {}) or {}
             data = data.append(
                 dict(
                     zip(
                         columns,
                         [
-                            StatisticsRoistatPackageEnum[
-                                group.package.unique()[0]
-                            ].value,
-                            group[f"{self.filters.groupby}_title"].unique()[0],
-                            round(group.expenses.sum()),
+                            stats_group.get("title", "Undefined"),
+                            len(group),
+                            round(group.ipl.sum() / len(group)),
+                            round(stats_group.get("expenses", 0)),
                         ],
                     )
                 ),
                 ignore_index=True,
             )
         data = (
-            # data[data["Расход"] > 0]
-            data.sort_values(["Расход"], ascending=False).reset_index(drop=True)
+            data[(data["Лиды"] > 0) & (data["Расход"] > 0)]
+            .sort_values(["Расход"], ascending=False)
+            .reset_index(drop=True)
         )
 
-        total = pandas.Series({"Расход": data["Расход"].sum()})
+        total = pandas.Series(
+            {
+                "Лиды": data["Лиды"].sum(),
+                "IPL": round(data["IPL"].sum() / len(data)),
+                "Расход": data["Расход"].sum(),
+            }
+        )
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
