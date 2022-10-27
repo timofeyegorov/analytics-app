@@ -602,7 +602,7 @@ class StatisticsRoistatView(TemplateView):
         qs = dict(parse_qsl(url.query))
         link = f"{url.scheme}://{url.netloc}{url.path}"
         details = qs.pop("details", None)
-        if details not in dict(self.extras.get(f"{self.filters.groupby}s")).keys():
+        if details not in list(map(lambda item: item[2], calc.data.name.unique())):
             details = None
         details_extra, details_leads = self.get_details(details)
         if qs:
