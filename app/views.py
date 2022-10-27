@@ -614,6 +614,7 @@ class StatisticsRoistatView(TemplateView):
         self.context("total", pandas.Series(total_data))
         self.context("url", link)
         self.context("qs_tail", "&" if qs else "?")
+        self.context("details", details)
         self.context("details_extra", details_extra)
         self.context("details_leads", details_leads)
 

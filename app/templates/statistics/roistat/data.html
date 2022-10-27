@@ -29,7 +29,7 @@
                 {% endfor %}
             </tr>
             {% for index, statistic in data.iterrows() %}
-                <tr>
+                <tr{% if statistic.get("name").2 == details %} class="details"{% endif %}>
                     <th class="nowrap">{{ index + 1 }}</th>
                     {% for column in data.columns %}
                         {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}

@@ -8,6 +8,9 @@ td, th {
     border:1px solid #d8e2e9;
     font-size:.875rem;
 }
+table tr.details {
+    background:#d4edff !important;
+}
 table tr:hover {
     background: #ecf3f8;
 }
@@ -210,7 +213,6 @@ label {
     content:'';
     clear:both;
 }
-
 #statistics-extra,
 #statistics-leads {
     margin-top:1rem;
