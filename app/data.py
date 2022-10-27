@@ -54,6 +54,26 @@ class StatisticsRoistatPackageEnum(Enum):
         return dict(map(lambda item: (item.name, item.value), cls))
 
 
+class CalculateColumnEnum(Enum):
+    name = "Название"
+    leads = "Лиды"
+    income = "Оборот"
+    ipl = "IPL"
+    expenses = "Расход"
+    profit = "Прибыль"
+    ppl = "PPL"
+    cpl = "CPL"
+    ppl_range = "PPL range"
+    ppl_30d = "PPL 30d"
+    leads_range = "Лиды range"
+    leads_30d = "Лиды 30d"
+    action = "Действие"
+
+    @classmethod
+    def dict(cls) -> Dict[str, str]:
+        return dict(map(lambda item: (item.name, item.value), cls))
+
+
 PACKAGES_COMPARE = {
     StatisticsRoistatPackageEnum.vk: (
         [

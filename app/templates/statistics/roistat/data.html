@@ -1,27 +1,40 @@
+
+                {{ total.columns }}
 <div id="statistics">
     <table>
         <thead>
             <tr>
                 <th class="sticky nowrap">&nbsp;</th>
                 {% for column in data.columns %}
-                    <th class="sticky nowrap{% if column =="Расход" %} text-right{% endif %}">{{ column }}</th>
+                    <th class="sticky nowrap">{{ extras.columns[column] }}</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td class="nowrap" colspan="2">Итого</td>
-                <td class="nowrap font-monospace text-right">{{ format_int(total["Лиды"]) }}</td>
-                <td class="nowrap font-monospace text-right">{{ format_int(total["IPL"]) }}</td>
-                <td class="nowrap font-monospace text-right">{{ format_int(total["Расход"]) }}</td>
+                {% for column in data.columns %}
+                    {% if column in ["leads", "ipl", "expenses"] %}
+                        <td class="nowrap font-monospace text-right">
+                            {% if column in ["leads", "ipl", "expenses"] %}
+                                {{ format_int(total[column]) }}
+                            {% else %}
+                                {{ total[column] }}
+                            {% endif %}
+                        </td>
+                    {% elif column == "name" %}
+                        <td class="nowrap" colspan="2">{{ total[column] }}</td>
+                    {% else %}
+                        <td class="nowrap">{{ total[column] }}</td>
+                    {% endif %}
+                {% endfor %}
             </tr>
             {% for index, statistic in data.iterrows() %}
                 <tr>
                     <th class="nowrap">{{ index + 1 }}</th>
                     {% for column in data.columns %}
-                        {% if column in ["Лиды", "IPL", "Расход"] %}
+                        {% if column in ["leads", "ipl", "expenses"] %}
                             <td class="nowrap font-monospace text-right">
-                                {% if column in ["Лиды", "IPL", "Расход"] %}
+                                {% if column in ["leads", "ipl", "expenses"] %}
                                     {{ format_int(statistic[column]) }}
                                 {% else %}
                                     {{ statistic[column] }}

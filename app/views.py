@@ -1,6 +1,4 @@
 import json
-
-import numpy
 import pytz
 import pandas
 import requests
@@ -28,8 +26,8 @@ from app.dags.roistat import reader as roistat_reader
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
-    StatisticsRoistatPackageEnum,
     StatisticsRoistatGroupByEnum,
+    CalculateColumnEnum,
 )
 
 
@@ -87,6 +85,22 @@ class StatisticsRoistatFiltersData(BaseModel):
     group: Optional[str]
     groupby: str
     only_ru: bool
+
+    def __getitem__(self, item):
+        if item == "account":
+            return self.account
+        elif item == "campaign":
+            return self.campaign
+        elif item == "group":
+            return self.group
+
+    def __setitem__(self, key, value):
+        if key == "account":
+            self.account = value
+        elif key == "campaign":
+            self.campaign = value
+        elif key == "group":
+            self.group = value
 
 
 class StatisticsView(TemplateView):
@@ -231,6 +245,66 @@ class StatisticsView(TemplateView):
         return super().get()
 
 
+class Calculate:
+    _leads: pandas.DataFrame
+    _statistics: pandas.DataFrame
+    _filters: StatisticsRoistatFiltersData
+
+    _data: pandas.DataFrame
+
+    def __init__(
+        self,
+        leads: pandas.DataFrame,
+        statistics: pandas.DataFrame,
+        filters: StatisticsRoistatFiltersData,
+    ):
+        self._leads = leads
+        self._statistics = statistics
+        self._filters = filters
+
+        stats = dict(
+            map(
+                lambda item: (item[0], item[1]),
+                self._statistics.groupby(by=self._filters.groupby, dropna=False),
+            )
+        )
+
+        self._data = pandas.DataFrame(columns=self.columns.keys())
+        for name, group in self._leads.groupby(by=self._filters.groupby, dropna=False):
+            leads_count = len(group)
+            if not leads_count:
+                continue
+
+            stats_group = stats.get(str(name))
+            if stats_group is None:
+                continue
+
+            expenses = round(stats_group.expenses.sum())
+            if not expenses:
+                continue
+
+            title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
+            self._data = self._data.append(
+                {
+                    CalculateColumnEnum.name.name: "" if title is None else title,
+                    CalculateColumnEnum.leads.name: leads_count,
+                    CalculateColumnEnum.ipl.name: round(group.ipl.sum() / leads_count),
+                    CalculateColumnEnum.expenses.name: expenses,
+                },
+                ignore_index=True,
+            )
+
+        self._data = self._data.reset_index(drop=True)
+
+    @property
+    def columns(self) -> Dict[str, str]:
+        return CalculateColumnEnum.dict()
+
+    @property
+    def data(self) -> pandas.DataFrame:
+        return self._data
+
+
 class StatisticsRoistatView(TemplateView):
     template_name: str = "statistics/roistat/index.html"
     title: str = "Статистика Roistat"
@@ -301,130 +375,116 @@ class StatisticsRoistatView(TemplateView):
 
         return leads, statistics
 
+    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
+        stats_groups = []
+        for name, item in self.statistics.groupby(group):
+            if not item.expenses.sum():
+                continue
+            stats_groups.append((name, item[f"{group}_title"].unique()[0]))
+        leads_groups = []
+        for name, item in self.leads.groupby(group):
+            leads_groups.append(name)
+        output = list(filter(lambda item: item[0] in leads_groups, stats_groups))
+        if self.filters[group] not in list(map(lambda item: item[0], output)):
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            self.leads = self.leads[self.leads[group] == self.filters[group]]
+            self.statistics = self.statistics[
+                self.statistics[group] == self.filters[group]
+            ]
+        return output
+
     def get_extras(self) -> Dict[str, Any]:
-        accounts = self.statistics[["account", "account_title"]].drop_duplicates(
-            subset=["account"]
-        )
-        accounts = list(
-            map(
-                lambda item: (item[0], item[1]),
-                accounts[~accounts.account.isna()].values,
-            )
-        )
-        if self.filters.account not in list(map(lambda item: item[0], accounts)):
-            self.filters.account = None
-        if self.filters.account is not None:
-            self.leads = self.leads[self.leads.account == self.filters.account]
-            self.statistics = self.statistics[
-                self.statistics.account == self.filters.account
-            ]
-
-        campaigns = self.statistics[["campaign", "campaign_title"]].drop_duplicates(
-            subset=["campaign"]
-        )
-        campaigns = list(
-            map(
-                lambda item: (item[0], item[1]),
-                campaigns[~campaigns.campaign.isna()].values,
-            )
-        )
-        if self.filters.campaign not in list(map(lambda item: item[0], campaigns)):
-            self.filters.campaign = None
-        if self.filters.campaign is not None:
-            self.leads = self.leads[self.leads.campaign == self.filters.campaign]
-            self.statistics = self.statistics[
-                self.statistics.campaign == self.filters.campaign
-            ]
-
-        groups = self.statistics[["group", "group_title"]].drop_duplicates(
-            subset=["group"]
-        )
-        groups = list(
-            map(
-                lambda item: (item[0], item[1]),
-                groups[~groups.group.isna()].values,
-            )
-        )
-        if self.filters.group not in list(map(lambda item: item[0], groups)):
-            self.filters.group = None
-        if self.filters.group is not None:
-            self.leads = self.leads[self.leads.group == self.filters.group]
-            self.statistics = self.statistics[
-                self.statistics.group == self.filters.group
-            ]
-
-        data = {
+        accounts = self.get_extras_group("account")
+        campaigns = self.get_extras_group("campaign")
+        groups = self.get_extras_group("group")
+        return {
             "groupby": list(
                 map(
                     lambda item: (item[0], item[1]),
                     StatisticsRoistatGroupByEnum.dict().items(),
                 )
             ),
-            "accounts": sorted(accounts, key=lambda item: item[1] or ""),
-            "campaigns": sorted(campaigns, key=lambda item: item[1] or ""),
-            "groups": sorted(groups, key=lambda item: item[1] or ""),
+            "accounts": sorted(accounts, key=lambda item: item[1]),
+            "campaigns": sorted(campaigns, key=lambda item: item[1]),
+            "groups": sorted(groups, key=lambda item: item[1]),
+            "columns": CalculateColumnEnum.dict(),
         }
-
-        return data
 
     def get(self):
         self.filters = self.get_filters(request.args)
         self.leads, self.statistics = self.get_statistics()
         self.extras = self.get_extras()
+        self.extras["columns"]["name"] = StatisticsRoistatGroupByEnum[
+            self.filters.groupby
+        ].value
 
-        columns = [
-            StatisticsRoistatGroupByEnum[self.filters.groupby].value,
-            "Лиды",
-            "IPL",
-            "Расход",
-        ]
-        data = pandas.DataFrame(columns=columns)
-        stats = {}
-        for name, group in self.statistics.groupby(
-            by=self.filters.groupby, dropna=False
-        ):
-            stats.update(
-                {
-                    name: {
-                        "expenses": group.expenses.sum(),
-                        "title": group[f"{self.filters.groupby}_title"].unique()[0],
-                    }
-                }
-            )
-        for name, group in self.leads.groupby(by=self.filters.groupby, dropna=False):
-            stats_group = stats.get(name, {}) or {}
-            data = data.append(
-                dict(
-                    zip(
-                        columns,
-                        [
-                            stats_group.get("title", "Undefined"),
-                            len(group),
-                            round(group.ipl.sum() / len(group)),
-                            round(stats_group.get("expenses", 0)),
-                        ],
-                    )
-                ),
-                ignore_index=True,
-            )
-        data = (
-            data[(data["Лиды"] > 0) & (data["Расход"] > 0)]
-            .sort_values(["Расход"], ascending=False)
-            .reset_index(drop=True)
-        )
+        # columns = [
+        #     StatisticsRoistatGroupByEnum[self.filters.groupby].value,
+        #     "Лиды",
+        #     "IPL",
+        #     "Расход",
+        # ]
+        #
+        # stats = {}
+        # for name, group in self.statistics.groupby(
+        #     by=self.filters.groupby, dropna=False
+        # ):
+        #     stats.update({str(name): group})
+        #
+        # data = pandas.DataFrame(columns=columns)
+        # for name, group in self.leads.groupby(by=self.filters.groupby, dropna=False):
+        #     leads_count = len(group)
+        #     if not leads_count:
+        #         continue
+        #
+        #     stats_group = stats.get(str(name))
+        #     if stats_group is None:
+        #         continue
+        #
+        #     expenses = round(stats_group.expenses.sum())
+        #     if not expenses:
+        #         continue
+        #
+        #     title = stats_group[f"{self.filters.groupby}_title"].unique()[0]
+        #     data = data.append(
+        #         dict(
+        #             zip(
+        #                 columns,
+        #                 [
+        #                     "" if title is None else title,
+        #                     leads_count,
+        #                     round(group.ipl.sum() / leads_count),
+        #                     expenses,
+        #                 ],
+        #             )
+        #         ),
+        #         ignore_index=True,
+        #     )
+        # data = data.reset_index(drop=True)
 
-        total = pandas.Series(
+        calc = Calculate(self.leads, self.statistics, self.filters)
+
+        total_data = dict(zip(calc.columns.keys(), [None] * len(calc.columns.keys())))
+        total_data.update(
             {
-                "Лиды": data["Лиды"].sum(),
-                "IPL": round(data["IPL"].sum() / len(data)),
-                "Расход": data["Расход"].sum(),
+                CalculateColumnEnum.name.name: "Итого",
+                CalculateColumnEnum.leads.name: calc.data[
+                    CalculateColumnEnum.leads.name
+                ].sum(),
+                CalculateColumnEnum.ipl.name: round(
+                    calc.data[CalculateColumnEnum.ipl.name].sum() / len(calc.data)
+                ),
+                CalculateColumnEnum.expenses.name: calc.data[
+                    CalculateColumnEnum.expenses.name
+                ].sum(),
             }
         )
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
-        self.context("data", data)
-        self.context("total", total)
+        self.context("data", calc.data)
+        self.context("total", pandas.Series(total_data))
 
         return super().get()
 
