@@ -552,11 +552,11 @@ class StatisticsRoistatView(TemplateView):
         total_title = "Итого"
         total_leads = calc.data.leads.sum()
         total_income = calc.data.income.sum()
-        total_ipl = int(round(total_income / total_leads))
+        total_ipl = int(round(total_income / total_leads)) if total_leads else 0
         total_expenses = calc.data.expenses.sum()
         total_profit = int(round(total_income - total_expenses))
-        total_ppl = int(round(total_profit / total_leads))
-        total_cpl = int(round(total_expenses / total_leads))
+        total_ppl = int(round(total_profit / total_leads)) if total_leads else 0
+        total_cpl = int(round(total_expenses / total_leads)) if total_leads else 0
         total_ppl_range = detect_positive(total_ppl)
         total_ppl_30d = detect_positive(0)
         total_leads_range = detect_activity(total_leads)
