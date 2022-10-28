@@ -43,22 +43,22 @@ def run(date: List[Optional[datetime]], name: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("python service-xlsx-trafficologist.py")
+    parser = argparse.ArgumentParser("python xlsx-trafficologist.py")
     parser.add_argument(
         "-df",
         "--date_from",
         type=str,
-        help="С даты (формат %%Y-%%m-%%d)",
+        help="From date (format %%Y-%%m-%%d)",
         required=False,
     )
     parser.add_argument(
         "-dt",
         "--date_to",
         type=str,
-        help="По дату (формат %%Y-%%m-%%d)",
+        help="To date (format %%Y-%%m-%%d)",
         required=False,
     )
-    parser.add_argument("-n", "--name", type=str, help="Трафиколог", required=True)
+    parser.add_argument("-n", "--name", type=str, help="Trafficologist", required=True)
     args = parser.parse_args()
     run(
         date=[
