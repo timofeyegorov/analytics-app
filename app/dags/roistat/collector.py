@@ -65,30 +65,29 @@ def get_levels(
     dimensions: Dict[str, Dict[str, str]],
 ) -> Dict[str, Optional[str]]:
     output = {
-        "package": None,
-        "marker_level_1": None,
-        "marker_level_2": None,
-        "marker_level_3": None,
-        "marker_level_4": None,
-        "marker_level_5": None,
-        "marker_level_6": None,
-        "marker_level_7": None,
-        "marker_level_1_title": None,
-        "marker_level_2_title": None,
-        "marker_level_3_title": None,
-        "marker_level_4_title": None,
-        "marker_level_5_title": None,
-        "marker_level_6_title": None,
-        "marker_level_7_title": None,
+        "package": StatisticsRoistatPackageEnum.undefined.name,
+        "marker_level_1": "",
+        "marker_level_2": "",
+        "marker_level_3": "",
+        "marker_level_4": "",
+        "marker_level_5": "",
+        "marker_level_6": "",
+        "marker_level_7": "",
+        "marker_level_1_title": StatisticsRoistatPackageEnum.undefined.value,
+        "marker_level_2_title": StatisticsRoistatPackageEnum.undefined.value,
+        "marker_level_3_title": StatisticsRoistatPackageEnum.undefined.value,
+        "marker_level_4_title": StatisticsRoistatPackageEnum.undefined.value,
+        "marker_level_5_title": StatisticsRoistatPackageEnum.undefined.value,
+        "marker_level_6_title": StatisticsRoistatPackageEnum.undefined.value,
+        "marker_level_7_title": StatisticsRoistatPackageEnum.undefined.value,
     }
     levels = dict(sorted(dimensions.items()))
     for name, level in levels.items():
         level_value = level.get("value", "")
         level_title = level.get("title", "")
-        if level_value or level_title:
-            output.update({name: level_value, f"{name}_title": level_title})
-        else:
-            output.update({name: None})
+        if not level_value:
+            level_title = StatisticsRoistatPackageEnum.undefined.value
+        output.update({name: level_value, f"{name}_title": level_title})
     output.update({"package": detect_package(output.get("marker_level_1"))})
     return output
 
