@@ -4,7 +4,7 @@ import pytz
 import argparse
 
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from xlsxwriter import Workbook
 
 from app.analytics import pickle_loader
