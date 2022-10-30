@@ -481,7 +481,7 @@ def leads():
 dag = DAG(
     "api_data_roistat",
     description="Collect Roistat API data",
-    schedule_interval="0 * * * *",
+    schedule_interval="0 */2 * * *",
     start_date=datetime(2017, 3, 20),
     catchup=False,
 )
