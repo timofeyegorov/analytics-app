@@ -424,7 +424,7 @@ def leads():
     except FileNotFoundError:
         return
     for column in columns:
-        leads[column] = None
+        leads[column] = ""
     for index, lead in leads.iterrows():
         stats = statistics[statistics.date == lead.date]
         levels = DetectLevels(lead, stats)
@@ -468,14 +468,8 @@ def leads():
             "turnover_on_lead": "ipl",
         }
     )
-    leads = leads.replace({numpy.nan: None})
-    leads[leads.account == ""] = None
-    leads[leads.campaign == ""] = None
-    leads[leads.group == ""] = None
-    leads[leads.ad == ""] = None
 
-    data = reader("leads")
-    writer("leads", data=pandas.concat([data, leads]))
+    writer("leads", data=pandas.concat([reader("leads"), leads]))
 
 
 dag = DAG(
