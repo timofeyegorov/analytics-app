@@ -1,5 +1,4 @@
 import json
-import urllib.parse
 
 import pytz
 import pandas
@@ -24,10 +23,10 @@ from flask.views import MethodView
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
-from app.dags.roistat import reader as roistat_reader
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
+    StatisticsRoistatPackageEnum,
     StatisticsRoistatGroupByEnum,
     CalculateColumnEnum,
 )
@@ -326,12 +325,13 @@ class Calculate:
 
         stats = dict(
             map(
-                lambda item: (item[0], item[1]),
+                lambda item: (str(item[0]), item[1]),
                 self._statistics.groupby(by=self._filters.groupby, dropna=False),
             )
         )
 
         self._data = pandas.DataFrame(columns=self.columns.keys())
+        count = 0
         for name, group in self._leads.groupby(by=self._filters.groupby, dropna=False):
             leads = len(group)
             if not leads:
@@ -339,7 +339,19 @@ class Calculate:
 
             stats_group = stats.get(str(name))
             if stats_group is None:
-                continue
+                print("------------------------")
+                print(name)
+                print(stats.keys())
+                stats.update(
+                    {
+                        StatisticsRoistatPackageEnum.undefined.name: pandas.DataFrame(
+                            columns=list(self._statistics.columns)
+                        )
+                    }
+                )
+                print(stats.keys())
+                print("------------------------")
+            count += leads
 
             expenses = round(stats_group.expenses.sum())
             if not expenses:
@@ -380,6 +392,7 @@ class Calculate:
                 ignore_index=True,
             )
 
+        print(count)
         self._data = self._data.reset_index(drop=True)
 
     @property
@@ -429,8 +442,8 @@ class StatisticsRoistatView(TemplateView):
         )
 
     def get_statistics(self) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
-        leads = roistat_reader("leads")
-        statistics = roistat_reader("statistics")
+        leads = pickle_loader.roistat_leads
+        statistics = pickle_loader.roistat_statistics
 
         tz = pytz.timezone("Europe/Moscow")
 
