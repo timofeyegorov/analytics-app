@@ -548,7 +548,10 @@ def load_payments_table():
 
 @log_execution_time("load_data")
 def load_data():
-    leads_old = pickle_loader.leads
+    try:
+        leads_old = pickle_loader.leads
+    except FileNotFoundError:
+        leads_old = pandas.DataFrame()
     print(leads_old)
     data = get_leads_data()
     with open(os.path.join(RESULTS_FOLDER, "ca_payment_analytic.pkl"), "rb") as f:
