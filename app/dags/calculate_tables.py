@@ -549,6 +549,7 @@ def load_payments_table():
 @log_execution_time("load_data")
 def load_data():
     leads_old = pickle_loader.leads
+    print(leads_old)
     data = get_leads_data()
     with open(os.path.join(RESULTS_FOLDER, "ca_payment_analytic.pkl"), "rb") as f:
         ca_payment_analytic = pkl.load(f)
@@ -570,14 +571,18 @@ def load_data():
             hour=0, minute=0, second=0, microsecond=0
         )
     )
+    leads.drop_duplicates(ignore_index=True, inplace=True)
+    print(leads)
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
 
     try:
         leads_np = pickle_loader.leads_np
     except FileNotFoundError:
-        leads_np = pandas.DataFrame()
+        leads_np = pandas.DataFrame(columns=list(leads.columns))
+    print(leads_np)
     leads_np = pandas.concat([leads_np, leads.drop(leads_old.index)])
+    print(leads_np)
     with open(os.path.join(RESULTS_FOLDER, "leads_np.pkl"), "wb") as f:
         pkl.dump(leads_np, f)
 
