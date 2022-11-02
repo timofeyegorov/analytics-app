@@ -221,10 +221,10 @@ class RoistatDetectLevels:
     _content: Dict[str, str] = None
     _content_available: List[str] = None
 
-    _account: str = None
-    _campaign: str = None
-    _group: str = None
-    _ad: str = None
+    _account: str = ""
+    _campaign: str = ""
+    _group: str = ""
+    _ad: str = ""
 
     def __init__(self, lead: pandas.Series, stats: pandas.DataFrame):
         self._lead = lead
@@ -281,22 +281,22 @@ class RoistatDetectLevels:
 
     def _correct_account(self):
         accounts = self._stats.account.unique()
-        if self._account is None and len(accounts) == 1:
+        if self._account == "" and len(accounts) == 1:
             self._account = accounts[0]
 
     def _correct_campaign(self):
         campaigns = self._stats.campaign.unique()
-        if self._campaign is None and len(campaigns) == 1:
+        if self._campaign == "" and len(campaigns) == 1:
             self._campaign = campaigns[0]
 
     def _correct_group(self):
         groups = self._stats.group.unique()
-        if self._group is None and len(groups) == 1:
+        if self._group == "" and len(groups) == 1:
             self._group = groups[0]
 
     def _correct_ad(self):
         ads = self._stats.ad.unique()
-        if self._ad is None and len(ads) == 1:
+        if self._ad == "" and len(ads) == 1:
             self._ad = ads[0]
 
     def _parse_utm_content(self, value: str) -> Dict[str, str]:
@@ -330,27 +330,27 @@ class RoistatDetectLevels:
         raise Exception(message)
 
     def _detect_account(self):
-        account = None
+        account = ""
         accounts = list(set(filter(None, self._stats.account.unique())))
 
         if len(self._rs) > 0:
             account = self._rs[0].lower().strip()
             if account not in accounts:
-                account = None
+                account = ""
 
-        if account is None:
+        if not account:
             utm_source = self._qs.get("utm_source")
             if utm_source:
                 account = f":utm:{utm_source}".lower().strip()
                 if account not in accounts:
-                    account = None
+                    account = ""
 
         self._account = account
         if self._account:
             self._stats = self._stats[self._stats.account == self._account]
 
     def _detect_campaign(self):
-        campaign = None
+        campaign = ""
         campaigns = list(set(filter(None, self._stats.campaign.unique())))
 
         if len(self._rs) > 1:
@@ -358,14 +358,14 @@ class RoistatDetectLevels:
             if campaigns_detect:
                 campaign = campaigns_detect[0]
 
-        if campaign is None:
-            utm_campaign = self._qs.get("utm_campaign")
+        if not campaign:
+            utm_campaign = self._qs.get("utm_campaign", "")
             if utm_campaign:
                 campaign = utm_campaign.strip()
                 if campaign not in campaigns:
-                    campaign = None
+                    campaign = ""
 
-        if campaign is None:
+        if not campaign:
             if self._content_available:
                 campaigns_detect = list(set(self._content_available) & set(campaigns))
                 if campaigns_detect:
@@ -376,7 +376,7 @@ class RoistatDetectLevels:
             self._stats = self._stats[self._stats.campaign == self._campaign]
 
     def _detect_group(self):
-        group = None
+        group = ""
         groups = list(set(filter(None, self._stats.group.unique())))
 
         if len(self._rs) > 1:
@@ -384,7 +384,7 @@ class RoistatDetectLevels:
             if groups_detect:
                 group = groups_detect[0]
 
-        if group is None:
+        if not group:
             if self._content_available:
                 groups_detect = list(set(self._content_available) & set(groups))
                 if groups_detect:
@@ -395,7 +395,7 @@ class RoistatDetectLevels:
             self._stats = self._stats[self._stats.group == self._group]
 
     def _detect_ad(self):
-        ad = None
+        ad = ""
         ads = list(set(filter(None, self._stats.ad.unique())))
 
         if len(self._rs) > 1:
@@ -403,7 +403,7 @@ class RoistatDetectLevels:
             if ads_detect:
                 ad = ads_detect[0]
 
-        if ad is None:
+        if not ad:
             if self._content_available:
                 ads_detect = list(set(self._content_available) & set(ads))
                 if ads_detect:
@@ -552,7 +552,6 @@ def load_data():
         leads_old = pickle_loader.leads
     except FileNotFoundError:
         leads_old = pandas.DataFrame()
-    print(leads_old)
     data = get_leads_data()
     with open(os.path.join(RESULTS_FOLDER, "ca_payment_analytic.pkl"), "rb") as f:
         ca_payment_analytic = pkl.load(f)
@@ -575,7 +574,6 @@ def load_data():
         )
     )
     leads.drop_duplicates(ignore_index=True, inplace=True)
-    print(leads)
     with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "wb") as f:
         pkl.dump(leads, f)
 
@@ -583,9 +581,7 @@ def load_data():
         leads_np = pickle_loader.leads_np
     except FileNotFoundError:
         leads_np = pandas.DataFrame(columns=list(leads.columns))
-    print(leads_np)
     leads_np = pandas.concat([leads_np, leads.drop(leads_old.index)])
-    print(leads_np)
     with open(os.path.join(RESULTS_FOLDER, "leads_np.pkl"), "wb") as f:
         pkl.dump(leads_np, f)
 
@@ -875,11 +871,11 @@ def roistat_statistics():
             StatisticsRoistatPackageEnum.utm,
             StatisticsRoistatPackageEnum.mytarget,
         ):
-            data_package["group"] = None
-            data_package["group_title"] = None
+            data_package["group"] = ""
+            data_package["group_title"] = ""
         if package in (StatisticsRoistatPackageEnum.seo,):
-            data_package["campaign"] = None
-            data_package["campaign_title"] = None
+            data_package["campaign"] = ""
+            data_package["campaign_title"] = ""
         groups.append(data_package)
     data = pandas.concat(groups).reset_index(drop=True)
     with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as f:
