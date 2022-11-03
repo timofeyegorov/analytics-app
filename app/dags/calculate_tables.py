@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import pytz
+import numpy
 import pandas
 import datetime
 
@@ -866,10 +867,9 @@ def roistat_statistics():
         data_package = data_package[rel[0]].rename(columns=rel[1])
         if package in (
             StatisticsRoistatPackageEnum.vk,
+            StatisticsRoistatPackageEnum.mytarget,
             StatisticsRoistatPackageEnum.site,
             StatisticsRoistatPackageEnum.seo,
-            StatisticsRoistatPackageEnum.utm,
-            StatisticsRoistatPackageEnum.mytarget,
         ):
             data_package["group"] = ""
             data_package["group_title"] = ""
@@ -878,6 +878,12 @@ def roistat_statistics():
             data_package["campaign_title"] = ""
         groups.append(data_package)
     data = pandas.concat(groups).reset_index(drop=True)
+    data[["account", "campaign", "group", "ad"]] = data[
+        ["account", "campaign", "group", "ad"]
+    ].replace({numpy.nan: ""})
+    data[["account_title", "campaign_title", "group_title", "ad_title"]] = data[
+        ["account_title", "campaign_title", "group_title", "ad_title"]
+    ].replace({numpy.nan: StatisticsRoistatPackageEnum.undefined.value})
     with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as f:
         pkl.dump(data, f)
 
