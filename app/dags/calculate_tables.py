@@ -842,40 +842,13 @@ def roistat_statistics():
         analytics = pickle_loader.roistat_analytics
     except Exception:
         analytics = pandas.DataFrame(columns=roistat_analytics_columns)
-    groups = [
-        pandas.DataFrame(
-            columns=[
-                "date",
-                "package",
-                "account",
-                "campaign",
-                "group",
-                "ad",
-                "account_title",
-                "campaign_title",
-                "group_title",
-                "ad_title",
-                "expenses",
-            ]
-        )
-    ]
+    groups = [pandas.DataFrame(columns=roistat_statistics_columns)]
     for package in StatisticsRoistatPackageEnum:
         data_package = analytics[analytics.package == package.name]
         rel = PACKAGES_COMPARE.get(package)
         if not rel:
             continue
         data_package = data_package[rel[0]].rename(columns=rel[1])
-        if package in (
-            StatisticsRoistatPackageEnum.vk,
-            StatisticsRoistatPackageEnum.mytarget,
-            StatisticsRoistatPackageEnum.site,
-            StatisticsRoistatPackageEnum.seo,
-        ):
-            data_package["group"] = ""
-            data_package["group_title"] = ""
-        if package in (StatisticsRoistatPackageEnum.seo,):
-            data_package["campaign"] = ""
-            data_package["campaign_title"] = ""
         groups.append(data_package)
     data = pandas.concat(groups).reset_index(drop=True)
     data[["account", "campaign", "group", "ad"]] = data[
