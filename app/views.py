@@ -331,31 +331,44 @@ class Calculate:
         )
 
         self._data = pandas.DataFrame(columns=self.columns.keys())
-        count = 0
         for name, group in self._leads.groupby(by=self._filters.groupby, dropna=False):
             leads = len(group)
             if not leads:
                 continue
 
+            if str(name) == "nan":
+                name = ""
             stats_group = stats.get(str(name))
-            if stats_group is None:
-                print("------------------------")
-                print(name)
-                print(stats.keys())
-                stats.update(
-                    {
-                        StatisticsRoistatPackageEnum.undefined.name: pandas.DataFrame(
-                            columns=list(self._statistics.columns)
-                        )
-                    }
-                )
-                print(stats.keys())
-                print("------------------------")
-            count += leads
+            # if stats_group is None:
+            #     print("------------------------")
+            #     print(name)
+            #     print(stats.keys())
+            #     # stats.update(
+            #     #     {
+            #     #         StatisticsRoistatPackageEnum.undefined.name: pandas.DataFrame(
+            #     #             columns=list(self._statistics.columns)
+            #     #         )
+            #     #     }
+            #     # )
+            #     # print(stats.keys())
+            #     # print("------------------------")
 
             expenses = round(stats_group.expenses.sum())
             if not expenses:
-                continue
+                print(name)
+                tz = pytz.timezone("Europe/Moscow")
+                date_from = tz.localize(datetime.strptime("2022-10-20", "%Y-%m-%d"))
+                date_to = tz.localize(datetime.strptime("2022-10-26", "%Y-%m-%d"))
+                l = pickle_loader.leads
+                print(l.columns)
+                print(
+                    l[
+                        (l.date >= date_from)
+                        & (l.date <= date_to)
+                        & (l.quiz_answers1.str.lower() == "россия")
+                    ].channel_expense
+                )
+                print("-------------------------------")
 
             name = stats_group[self._filters.groupby].unique()[0]
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
@@ -392,7 +405,6 @@ class Calculate:
                 ignore_index=True,
             )
 
-        print(count)
         self._data = self._data.reset_index(drop=True)
 
     @property
@@ -530,6 +542,7 @@ class StatisticsRoistatView(TemplateView):
                     "qa4",
                     "qa5",
                     "qa6",
+                    "url",
                 ]
             ]
             .rename(
@@ -542,6 +555,7 @@ class StatisticsRoistatView(TemplateView):
                     "qa4": "Ответ 4",
                     "qa5": "Ответ 5",
                     "qa6": "Ответ 6",
+                    "url": "Ссылка",
                 }
             )
             .sort_values(by=["Дата"])
@@ -644,8 +658,9 @@ class StatisticsRoistatView(TemplateView):
 
         url = urlparse(request.url)
         qs = dict(parse_qsl(url.query))
+        qs.pop("details", None)
         link = f"{url.scheme}://{url.netloc}{url.path}"
-        details = qs.pop("details", None)
+        details = request.args.get("details")
         if details not in list(map(lambda item: item[2], calc.data.name.unique())):
             details = None
         details_extra, details_leads = self.get_details(details)

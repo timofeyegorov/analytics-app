@@ -899,6 +899,7 @@ def roistat_leads():
             "email",
             "phone",
             "date",
+            "channel_expense",
             "utm_source",
             "utm_medium",
             "utm_campaign",
@@ -916,6 +917,7 @@ def roistat_leads():
             "quiz_answers5": "qa5",
             "quiz_answers6": "qa6",
             "turnover_on_lead": "ipl",
+            "channel_expense": "expenses",
         }
     )
     try:

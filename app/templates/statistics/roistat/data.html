@@ -22,7 +22,8 @@
                             {% endif %}
                         </td>
                     {% elif column == "name" %}
-                        <td class="nowrap{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}" colspan="2">{% if is_tuple(total[column]) %}{{ total[column].0 }}{% else %}{{ total[column] }}{% endif %}</td>
+                        <th>&nbsp;</th>
+                        <td class="nowrap{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}">{% if is_tuple(total[column]) %}{{ total[column].0 }}{% else %}{{ total[column] }}{% endif %}</td>
                     {% else %}
                         <td class="nowrap{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}">{% if is_tuple(total[column]) %}{{ total[column].0 }}{% else %}{{ total[column] }}{% endif %}</td>
                     {% endif %}
