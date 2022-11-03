@@ -110,6 +110,7 @@ roistat_leads_columns = [
     "email",
     "phone",
     "date",
+    "expense",
     "utm_source",
     "utm_medium",
     "utm_campaign",
