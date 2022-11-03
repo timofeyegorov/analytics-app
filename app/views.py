@@ -355,20 +355,22 @@ class Calculate:
 
             expenses = round(stats_group.expenses.sum())
             if not expenses:
-                print(name)
-                tz = pytz.timezone("Europe/Moscow")
-                date_from = tz.localize(datetime.strptime("2022-10-20", "%Y-%m-%d"))
-                date_to = tz.localize(datetime.strptime("2022-10-26", "%Y-%m-%d"))
-                l = pickle_loader.leads
-                print(l.columns)
-                print(
-                    l[
-                        (l.date >= date_from)
-                        & (l.date <= date_to)
-                        & (l.quiz_answers1.str.lower() == "россия")
-                    ].channel_expense
-                )
-                print("-------------------------------")
+                #print(name)
+                #print(group.columns)
+                # tz = pytz.timezone("Europe/Moscow")
+                # date_from = tz.localize(datetime.strptime("2022-10-20", "%Y-%m-%d"))
+                # date_to = tz.localize(datetime.strptime("2022-10-26", "%Y-%m-%d"))
+                # l = pickle_loader.leads
+                # print(l.columns)
+                # print(
+                #     l[
+                #         (l.date >= date_from)
+                #         & (l.date <= date_to)
+                #         & (l.quiz_answers1.str.lower() == "россия")
+                #     ]
+                # )
+                #print("-------------------------------")
+                pass
 
             name = stats_group[self._filters.groupby].unique()[0]
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
