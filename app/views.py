@@ -26,7 +26,6 @@ from app.dags.vk import reader as vk_reader, data as vk_data
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
-    StatisticsRoistatPackageEnum,
     StatisticsRoistatGroupByEnum,
     CalculateColumnEnum,
 )
@@ -633,7 +632,7 @@ class StatisticsRoistatView(TemplateView):
         url = urlparse(request.url)
         qs = dict(parse_qsl(url.query))
         qs.pop("details", None)
-        link = request.base_url
+        link = request.path
         details = request.args.get("details")
         if details not in list(map(lambda item: item[2], calc.data.name.unique())):
             details = None
