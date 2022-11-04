@@ -336,47 +336,15 @@ class Calculate:
             if not leads:
                 continue
 
-            if str(name) == "nan":
-                name = ""
             stats_group = stats.get(str(name))
-            # if stats_group is None:
-            #     print("------------------------")
-            #     print(name)
-            #     print(stats.keys())
-            #     # stats.update(
-            #     #     {
-            #     #         StatisticsRoistatPackageEnum.undefined.name: pandas.DataFrame(
-            #     #             columns=list(self._statistics.columns)
-            #     #         )
-            #     #     }
-            #     # )
-            #     # print(stats.keys())
-            #     # print("------------------------")
 
-            expenses = round(stats_group.expenses.sum())
-            if not expenses:
-                #print(name)
-                #print(group.columns)
-                # tz = pytz.timezone("Europe/Moscow")
-                # date_from = tz.localize(datetime.strptime("2022-10-20", "%Y-%m-%d"))
-                # date_to = tz.localize(datetime.strptime("2022-10-26", "%Y-%m-%d"))
-                # l = pickle_loader.leads
-                # print(l.columns)
-                # print(
-                #     l[
-                #         (l.date >= date_from)
-                #         & (l.date <= date_to)
-                #         & (l.quiz_answers1.str.lower() == "россия")
-                #     ]
-                # )
-                #print("-------------------------------")
-                pass
+            expenses = round(stats_group.expenses.sum() * 1.2)
 
             name = stats_group[self._filters.groupby].unique()[0]
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
             income = int(group.ipl.sum())
             ipl = int(round(income / leads))
-            profit = int(round(income - expenses))
+            profit = int(round(income - expenses - (leads * 250 + income * 0.35)))
             ppl = int(round(profit / leads))
             cpl = int(round(expenses / leads))
             ppl_range = detect_positive(ppl)
@@ -491,8 +459,6 @@ class StatisticsRoistatView(TemplateView):
     def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
         stats_groups = []
         for name, item in self.statistics.groupby(group):
-            if not item.expenses.sum():
-                continue
             stats_groups.append((name, item[f"{group}_title"].unique()[0]))
         leads_groups = []
         for name, item in self.leads.groupby(group):
@@ -544,7 +510,7 @@ class StatisticsRoistatView(TemplateView):
                     "qa4",
                     "qa5",
                     "qa6",
-                    "url",
+                    # "url",
                 ]
             ]
             .rename(
@@ -557,7 +523,7 @@ class StatisticsRoistatView(TemplateView):
                     "qa4": "Ответ 4",
                     "qa5": "Ответ 5",
                     "qa6": "Ответ 6",
-                    "url": "Ссылка",
+                    # "url": "Ссылка",
                 }
             )
             .sort_values(by=["Дата"])
@@ -591,8 +557,14 @@ class StatisticsRoistatView(TemplateView):
         total_leads = calc.data.leads.sum()
         total_income = calc.data.income.sum()
         total_ipl = int(round(total_income / total_leads)) if total_leads else 0
-        total_expenses = calc.data.expenses.sum()
-        total_profit = int(round(total_income - total_expenses))
+        total_expenses = round(calc.data.expenses.sum() * 1.2)
+        total_profit = int(
+            round(
+                total_income
+                - total_expenses
+                - (total_leads * 250 + total_income * 0.35)
+            )
+        )
         total_ppl = int(round(total_profit / total_leads)) if total_leads else 0
         total_cpl = int(round(total_expenses / total_leads)) if total_leads else 0
         total_ppl_range = detect_positive(total_ppl)
@@ -661,7 +633,7 @@ class StatisticsRoistatView(TemplateView):
         url = urlparse(request.url)
         qs = dict(parse_qsl(url.query))
         qs.pop("details", None)
-        link = f"{url.scheme}://{url.netloc}{url.path}"
+        link = request.base_url
         details = request.args.get("details")
         if details not in list(map(lambda item: item[2], calc.data.name.unique())):
             details = None
@@ -901,10 +873,8 @@ class VKCreateAdView(TemplateView):
                 ]
             ),
         }
-        print(params)
         try:
             response = vk("ads.createAds", **params)
-            print(response)
         except Exception as error:
             self.context("error", error)
         return self.render()
@@ -1980,9 +1950,6 @@ class VKXlsxView(TemplateView):
     def get(self):
         leads = self.leads
         ads = self.ads
-        # print(len(list(leads["traffic_channel"].unique())))
-        # print(len(list(ads["target_url"].unique())))
-        print(ads[ads.target_url.isin(leads.traffic_channel.unique())])
         self.context("leads", leads)
         return super().get()
 
