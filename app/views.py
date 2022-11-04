@@ -385,6 +385,92 @@ class Calculate:
         return self._data
 
 
+def extra_table(leads: pandas.DataFrame) -> pandas.DataFrame:
+    target_audience = pickle_loader.target_audience
+    column_names = ["Ответ 2", "Ответ 3", "Ответ 4", "Ответ 5"]
+    subcategory_names = {
+        "Ответ 2": "Возраст",
+        "Ответ 3": "Профессия",
+        "Ответ 4": "Доход",
+        "Ответ 5": "Обучение",
+    }
+    output = {}
+    for column_name in column_names:
+        result = [
+            [
+                subcategory_names[column_name] + ", Подкатегория",
+                subcategory_names[column_name] + ", Абс. знач.",
+                subcategory_names[column_name] + ", Процент",
+            ]
+        ]
+        if column_name == column_names[0]:
+            subcategories = sorted(list(leads[column_name].unique()))
+            try:
+                subcategories.pop(subcategories.index("до 18 лет"))
+                subcategories.insert(0, "до 18 лет")
+            except ValueError:
+                pass
+        elif column_name == column_names[2]:
+            available = [
+                "0 руб.",
+                "до 30 000 руб.",
+                "до 60 000 руб.",
+                "до 100 000 руб.",
+                "более 100 000 руб.",
+            ]
+            subcategories = (
+                available
+                + leads[~leads[column_name].isin(available)][column_name]
+                .unique()
+                .tolist()
+            )
+            for item in subcategories.copy():
+                if item not in leads[column_name].unique():
+                    subcategories.remove(item)
+        else:
+            subcategories = (
+                leads[leads[column_name].isin(target_audience)][column_name]
+                .unique()
+                .tolist()
+                + leads[~leads[column_name].isin(target_audience)][column_name]
+                .unique()
+                .tolist()
+            )
+        for subcategory in subcategories:
+            result.append(
+                [
+                    subcategory,
+                    len(leads[leads[column_name] == subcategory]),
+                    str(
+                        int(
+                            round(
+                                leads[leads[column_name] == subcategory].shape[0]
+                                / leads.shape[0]
+                                * 100,
+                                0,
+                            )
+                        )
+                    )
+                    + " %",
+                ]
+            )
+        output.update({column_name: pandas.DataFrame(result)})
+
+    data = pandas.concat(
+        [output["Ответ 2"], output["Ответ 3"], output["Ответ 4"], output["Ответ 5"]],
+        axis=1,
+    )
+    data.columns = data.iloc[0, :].values
+    data = data.iloc[1:, :].reset_index(drop=True).fillna("")
+    data.columns = pandas.MultiIndex.from_tuples(
+        [
+            ("", item[0]) if pandas.isnull(item[1]) else item
+            for item in data.columns.str.split(", ", expand=True).values
+        ]
+    )
+    return data
+
+
 class StatisticsRoistatView(TemplateView):
     template_name: str = "statistics/roistat/index.html"
     title: str = "Статистика Roistat"
@@ -509,7 +595,6 @@ class StatisticsRoistatView(TemplateView):
                     "qa4",
                     "qa5",
                     "qa6",
-                    # "url",
                 ]
             ]
             .rename(
@@ -522,17 +607,22 @@ class StatisticsRoistatView(TemplateView):
                     "qa4": "Ответ 4",
                     "qa5": "Ответ 5",
                     "qa6": "Ответ 6",
-                    # "url": "Ссылка",
                 }
             )
             .sort_values(by=["Дата"])
             .reset_index(drop=True)
         )
 
+        extra = extra_table(leads)
+        print(dir(extra.columns.get_level_values(0)))
+        print()
+
         return (
             {
                 "title": "Дополнительная таблица",
-                "data": pandas.DataFrame(),
+                "columns0": extra.columns.get_level_values(0).unique(),
+                "columns1": extra.columns.get_level_values(1),
+                "data": extra,
             },
             {
                 "title": f"Лиды в разбивке по {StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {statistics[f'{self.filters.groupby}_title'].unique()[0]}",

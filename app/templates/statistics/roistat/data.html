@@ -56,6 +56,32 @@
 {% if details_extra is not none %}
 <div id="statistics-extra">
     <h2>{{ details_extra.title }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in details_extra.columns0 %}
+                    <th colspan="3" class="sticky nowrap">{{ column }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in details_extra.columns1 %}
+                    <th class="sticky nowrap">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, item in details_extra.data.iterrows() %}
+                <tr>
+                    <th class="nowrap">{{ index + 1 }}</th>
+                    {% for column in details_extra.data.columns %}
+                        <td>{{ item[column] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endif %}
 
