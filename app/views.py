@@ -1,5 +1,4 @@
 import json
-
 import pytz
 import pandas
 import requests
@@ -338,6 +337,8 @@ class Calculate:
             stats_group = stats.get(str(name))
 
             expenses = round(stats_group.expenses.sum() * 1.2)
+            if not expenses and name != ":utm:email":
+                expenses = leads * 400
 
             name = stats_group[self._filters.groupby].unique()[0]
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
@@ -614,8 +615,6 @@ class StatisticsRoistatView(TemplateView):
         )
 
         extra = extra_table(leads)
-        print(dir(extra.columns.get_level_values(0)))
-        print()
 
         return (
             {

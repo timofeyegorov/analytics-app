@@ -11,6 +11,9 @@ td, th {
 table tr.details {
     background:#d4edff !important;
 }
+table tr.details > td {
+    font-weight:bold;
+}
 table tr:hover {
     background: #ecf3f8;
 }
