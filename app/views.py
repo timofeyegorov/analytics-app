@@ -475,10 +475,23 @@ def extra_table(leads: pandas.DataFrame) -> pandas.DataFrame:
 class StatisticsRoistatView(TemplateView):
     template_name: str = "statistics/roistat/index.html"
     title: str = "Статистика Roistat"
+    order: List[Dict[str, str]]
     filters: StatisticsRoistatFiltersData = None
     leads = None
     statistics = None
     extras = None
+
+    def parse_order(self, order: str, available: List[str]) -> List[Dict[str, str]]:
+        output = []
+        if order:
+            for item in order.split(","):
+                direction = "asc"
+                if item[0] == "-":
+                    direction = "desc"
+                    item = item[1:]
+                if item in available:
+                    output.append({"name": item, "direction": direction})
+        return output
 
     def get_filters(self, source: ImmutableMultiDict) -> StatisticsFiltersData:
         date = [source.get("date_from") or None, source.get("date_to") or None]
@@ -729,6 +742,17 @@ class StatisticsRoistatView(TemplateView):
         if qs:
             link = f"{link}?{urlencode(qs)}"
 
+        data = calc.data
+        order = self.parse_order(
+            request.args.get("orderby", ""), list(calc.data.columns)
+        )
+
+        data.sort_values(
+            by=list(map(lambda item: item.get("name"), order)),
+            ascending=list(map(lambda item: item.get("direction") == "asc", order)),
+            inplace=True,
+        )
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("data", calc.data)
@@ -738,6 +762,7 @@ class StatisticsRoistatView(TemplateView):
         self.context("details", details)
         self.context("details_extra", details_extra)
         self.context("details_leads", details_leads)
+        self.context("order", order)
 
         return super().get()
 

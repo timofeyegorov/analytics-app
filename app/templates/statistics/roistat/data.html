@@ -4,7 +4,8 @@
             <tr>
                 <th class="sticky nowrap">&nbsp;</th>
                 {% for column in data.columns %}
-                    <th class="sticky nowrap">{{ extras.columns[column] }}</th>
+                    {% set ordering = order_table(column, order) %}
+                    <th class="sticky nowrap ordering{% if ordering %} ordered{% endif %}" data-orderby="{{ column }}">{% if ordering %}<div class="order"><i class="remove"></i><i class="dir {{ ordering.direction }}"></i><i class="num">{{ ordering.num }}</i>{{ extras.columns[column] }}</div>{% else %}{{ extras.columns[column] }}{% endif %}</th>
                 {% endfor %}
             </tr>
         </thead>

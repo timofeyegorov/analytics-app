@@ -20,8 +20,8 @@ from app.tables import (
     calculate_leads_ta_stats,
     calculate_segments_stats,
 )
-from app.tables import calculate_channels_summary, calculate_channels_detailed
-from app.tables import calculate_channels_summary_detailed, additional_table
+from app.tables import calculate_channels_summary
+from app.tables import calculate_channels_summary_detailed
 from app.tables.audience_type import (
     calculate_audience_tables_by_date,
     calculate_audience_type_result,
@@ -31,9 +31,8 @@ from config import config
 from config import RESULTS_FOLDER
 
 import os
-import re
-from transliterate import slugify
 import numpy as np
+from typing import List, Dict, Optional
 from flask import render_template, request, redirect, Response
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
@@ -68,11 +67,22 @@ def utility_processor():
     def format_date(value: datetime) -> str:
         return value.strftime("%Y-%m-%d")
 
+    def order_table(
+        name: str, available: List[Dict[str, str]]
+    ) -> Optional[Dict[str, str]]:
+        names = list(map(lambda item: item.get("name"), available))
+        if name in names:
+            return {
+                "num": names.index(name) + 1,
+                "direction": available[names.index(name)].get("direction"),
+            }
+
     return dict(
         is_tuple=is_tuple,
         format_int=format_int,
         format_float2=format_float2,
         format_date=format_date,
+        order_table=order_table,
     )
 
 
