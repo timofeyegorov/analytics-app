@@ -57,9 +57,12 @@ class StatisticsRoistatPackageEnum(Enum):
 class CalculateColumnEnum(Enum):
     name = "Название"
     leads = "Лиды"
+    leads_month = "Лиды за месяц"
     income = "Оборот"
+    income_month = "Оборот за месяц"
     ipl = "IPL"
     expenses = "Расход"
+    expenses_month = "Расход за месяц"
     profit = "Прибыль"
     ppl = "PPL"
     cpl = "CPL"

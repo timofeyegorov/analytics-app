@@ -3,7 +3,7 @@
         <thead>
             <tr>
                 <th class="sticky nowrap">&nbsp;</th>
-                {% for column in data.columns %}
+                {% for column in columns %}
                     {% set ordering = order_table(column, order) %}
                     <th class="sticky nowrap ordering{% if ordering %} ordered{% endif %}" data-orderby="{{ column }}">{% if ordering %}<div class="order"><i class="remove"></i><i class="dir {{ ordering.direction }}"></i><i class="num">{{ ordering.num }}</i>{{ extras.columns[column] }}</div>{% else %}{{ extras.columns[column] }}{% endif %}</th>
                 {% endfor %}
@@ -11,10 +11,10 @@
         </thead>
         <tbody>
             <tr>
-                {% for column in data.columns %}
-                    {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}
+                {% for column in columns %}
+                    {% if column in ["leads", "leads_month", "income", "income_month", "ipl", "expenses", "expenses_month", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}
                         <td class="nowrap font-monospace text-right{% if is_tuple(total[column]) %} colored {{ total[column].1 }}{% endif %}">
-                            {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl"] %}
+                            {% if column in ["leads", "leads_month", "income", "income_month", "ipl", "expenses", "expenses_month", "profit", "ppl", "cpl"] %}
                                 {{ format_int(total[column]) }}
                             {% elif is_tuple(total[column]) %}
                                 {{ format_int(total[column].0) }}
@@ -33,10 +33,10 @@
             {% for index, statistic in data.iterrows() %}
                 <tr{% if statistic.get("name").2 == details %} class="details"{% endif %}>
                     <th class="nowrap">{{ index + 1 }}</th>
-                    {% for column in data.columns %}
-                        {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}
+                    {% for column in columns %}
+                        {% if column in ["leads", "leads_month", "income", "income_month", "ipl", "expenses", "expenses_month", "profit", "ppl", "cpl", "ppl_range", "ppl_30d", "leads_range", "leads_30d"] %}
                             <td class="nowrap font-monospace text-right{% if is_tuple(statistic[column]) %} colored {{ statistic[column].1 }}{% endif %}">
-                                {% if column in ["leads", "income", "ipl", "expenses", "profit", "ppl", "cpl"] %}
+                                {% if column in ["leads", "leads_month", "income", "income_month", "ipl", "expenses", "expenses_month", "profit", "ppl", "cpl"] %}
                                     {{ format_int(statistic[column]) }}
                                 {% elif is_tuple(statistic[column]) %}
                                     {{ format_int(statistic[column].0) }}

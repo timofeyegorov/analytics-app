@@ -280,9 +280,9 @@ class DetectAction:
     def __call__(
         self,
         positive_period: StatusColor,
-        positive_month: StatusColor,
+        positive_30d: StatusColor,
         activity_period: StatusColor,
-        activity_month: StatusColor,
+        activity_30d: StatusColor,
     ) -> Action:
         if activity_period == StatusColor.high:
             if positive_period in (StatusColor.high, StatusColor.middle):
@@ -290,12 +290,12 @@ class DetectAction:
             elif positive_period == StatusColor.low:
                 return Action.disable
         elif activity_period in (StatusColor.middle, StatusColor.low):
-            if activity_month == StatusColor.high:
-                if positive_month in (StatusColor.high, StatusColor.middle):
+            if activity_30d == StatusColor.high:
+                if positive_30d in (StatusColor.high, StatusColor.middle):
                     return Action.suppose
-                elif positive_month == StatusColor.low:
+                elif positive_30d == StatusColor.low:
                     return Action.disable
-            elif activity_month in (StatusColor.middle, StatusColor.low):
+            elif activity_30d in (StatusColor.middle, StatusColor.low):
                 return Action.pending
 
 
@@ -315,10 +315,14 @@ class Calculate:
         self,
         leads: pandas.DataFrame,
         statistics: pandas.DataFrame,
+        leads_30d: pandas.DataFrame,
+        statistics_30d: pandas.DataFrame,
         filters: StatisticsRoistatFiltersData,
     ):
         self._leads = leads
         self._statistics = statistics
+        self._leads_30d = leads_30d
+        self._statistics_30d = statistics_30d
         self._filters = filters
 
         stats = dict(
@@ -327,31 +331,56 @@ class Calculate:
                 self._statistics.groupby(by=self._filters.groupby, dropna=False),
             )
         )
+        stats_30d = dict(
+            map(
+                lambda item: (str(item[0]), item[1]),
+                self._statistics_30d.groupby(by=self._filters.groupby, dropna=False),
+            )
+        )
 
         self._data = pandas.DataFrame(columns=self.columns.keys())
         for name, group in self._leads.groupby(by=self._filters.groupby, dropna=False):
+            group_30d = self._leads_30d[self._leads_30d[self._filters.groupby] == name]
+
             leads = len(group)
+            leads_30d = len(group_30d)
             if not leads:
                 continue
 
             stats_group = stats.get(str(name))
+            stats_group_30d = stats_30d.get(str(name))
 
             expenses = round(stats_group.expenses.sum() * 1.2)
             if not expenses and name != ":utm:email":
                 expenses = leads * 400
 
+            expenses_month = round(stats_group_30d.expenses.sum() * 1.2)
+            if not expenses_month and name != ":utm:email":
+                expenses_month = leads_30d * 400
+
             name = stats_group[self._filters.groupby].unique()[0]
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
             income = int(group.ipl.sum())
+            income_month = int(group_30d.ipl.sum())
             ipl = int(round(income / leads))
             profit = int(round(income - expenses - (leads * 250 + income * 0.35)))
+            profit_30d = int(
+                round(
+                    income_month
+                    - expenses_month
+                    - (leads_30d * 250 + income_month * 0.35)
+                )
+            )
             ppl = int(round(profit / leads))
+            ppl_30d = int(round(profit_30d / leads_30d))
             cpl = int(round(expenses / leads))
             ppl_range = detect_positive(ppl)
-            ppl_30d = detect_positive(0)
+            ppl_30d_value = detect_positive(ppl_30d)
             leads_range = detect_activity(leads)
-            leads_30d = detect_activity(0)
-            action = detect_action(ppl_range, ppl_30d, leads_range, leads_30d)
+            leads_30d_value = detect_activity(leads_30d)
+            action = detect_action(
+                ppl_range, ppl_30d_value, leads_range, leads_30d_value
+            )
             self._data = self._data.append(
                 {
                     CalculateColumnEnum.name.name: (
@@ -360,16 +389,22 @@ class Calculate:
                         name,
                     ),
                     CalculateColumnEnum.leads.name: leads,
+                    CalculateColumnEnum.leads_month.name: leads_30d,
                     CalculateColumnEnum.income.name: income,
+                    CalculateColumnEnum.income_month.name: income_month,
                     CalculateColumnEnum.ipl.name: ipl,
                     CalculateColumnEnum.expenses.name: expenses,
+                    CalculateColumnEnum.expenses_month.name: expenses_month,
                     CalculateColumnEnum.profit.name: profit,
                     CalculateColumnEnum.ppl.name: ppl,
                     CalculateColumnEnum.cpl.name: cpl,
                     CalculateColumnEnum.ppl_range.name: (ppl, ppl_range.value),
-                    CalculateColumnEnum.ppl_30d.name: (0, ppl_30d.value),
+                    CalculateColumnEnum.ppl_30d.name: (ppl_30d, ppl_30d_value.value),
                     CalculateColumnEnum.leads_range.name: (leads, leads_range.value),
-                    CalculateColumnEnum.leads_30d.name: (0, leads_30d.value),
+                    CalculateColumnEnum.leads_30d.name: (
+                        leads_30d,
+                        leads_30d_value.value,
+                    ),
                     CalculateColumnEnum.action.name: (action.value, action.name),
                 },
                 ignore_index=True,
@@ -479,6 +514,8 @@ class StatisticsRoistatView(TemplateView):
     filters: StatisticsRoistatFiltersData = None
     leads = None
     statistics = None
+    leads_30d = None
+    statistics_30d = None
     extras = None
 
     def parse_order(self, order: str, available: List[str]) -> List[Dict[str, str]]:
@@ -527,28 +564,49 @@ class StatisticsRoistatView(TemplateView):
         statistics = pickle_loader.roistat_statistics
 
         tz = pytz.timezone("Europe/Moscow")
+        date = list(self.filters.date)
 
-        if self.filters.date[0]:
+        if date[0]:
             date_from = tz.localize(
-                datetime(
-                    year=self.filters.date[0].year,
-                    month=self.filters.date[0].month,
-                    day=self.filters.date[0].day,
-                )
+                datetime(year=date[0].year, month=date[0].month, day=date[0].day)
             )
             leads = leads[leads.date >= date_from]
             statistics = statistics[statistics.date >= date_from]
 
-        if self.filters.date[1]:
+        if date[1]:
             date_to = tz.localize(
-                datetime(
-                    year=self.filters.date[1].year,
-                    month=self.filters.date[1].month,
-                    day=self.filters.date[1].day,
-                )
+                datetime(year=date[1].year, month=date[1].month, day=date[1].day)
             )
             leads = leads[leads.date <= date_to]
             statistics = statistics[statistics.date <= date_to]
+
+        if self.filters.only_ru:
+            leads = leads[leads.qa1 == "Россия"]
+
+        return leads, statistics
+
+    def get_statistics_30d(self) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
+        leads = pickle_loader.roistat_leads
+        statistics = pickle_loader.roistat_statistics
+
+        tz = pytz.timezone("Europe/Moscow")
+        date = list(self.filters.date)
+
+        if not date[1]:
+            date[1] = tz.localize(datetime.now())
+        date[0] = date[1] - timedelta(days=30)
+
+        date_from = tz.localize(
+            datetime(year=date[0].year, month=date[0].month, day=date[0].day)
+        )
+        leads = leads[leads.date >= date_from]
+        statistics = statistics[statistics.date >= date_from]
+
+        date_to = tz.localize(
+            datetime(year=date[1].year, month=date[1].month, day=date[1].day)
+        )
+        leads = leads[leads.date <= date_to]
+        statistics = statistics[statistics.date <= date_to]
 
         if self.filters.only_ru:
             leads = leads[leads.qa1 == "Россия"]
@@ -645,20 +703,30 @@ class StatisticsRoistatView(TemplateView):
     def get(self):
         self.filters = self.get_filters(request.args)
         self.leads, self.statistics = self.get_statistics()
+        self.leads_30d, self.statistics_30d = self.get_statistics_30d()
         self.extras = self.get_extras()
         self.extras["columns"]["name"] = StatisticsRoistatGroupByEnum[
             self.filters.groupby
         ].value
 
-        calc = Calculate(self.leads, self.statistics, self.filters)
+        calc = Calculate(
+            self.leads,
+            self.statistics,
+            self.leads_30d,
+            self.statistics_30d,
+            self.filters,
+        )
 
         total_data = dict(zip(calc.columns.keys(), [None] * len(calc.columns.keys())))
 
         total_title = "Итого"
         total_leads = calc.data.leads.sum()
+        total_leads_30d = calc.data.leads_month.sum()
         total_income = calc.data.income.sum()
+        total_income_30d = calc.data.income_month.sum()
         total_ipl = int(round(total_income / total_leads)) if total_leads else 0
         total_expenses = round(calc.data.expenses.sum() * 1.2)
+        total_expenses_30d = round(calc.data.expenses_month.sum() * 1.2)
         total_profit = int(
             round(
                 total_income
@@ -666,33 +734,55 @@ class StatisticsRoistatView(TemplateView):
                 - (total_leads * 250 + total_income * 0.35)
             )
         )
+        total_profit_30d = int(
+            round(
+                total_income_30d
+                - total_expenses_30d
+                - (total_leads_30d * 250 + total_income_30d * 0.35)
+            )
+        )
         total_ppl = int(round(total_profit / total_leads)) if total_leads else 0
+        total_ppl_30d = (
+            int(round(total_profit_30d / total_leads_30d)) if total_leads_30d else 0
+        )
         total_cpl = int(round(total_expenses / total_leads)) if total_leads else 0
         total_ppl_range = detect_positive(total_ppl)
-        total_ppl_30d = detect_positive(0)
+        total_ppl_30d_value = detect_positive(total_ppl_30d)
         total_leads_range = detect_activity(total_leads)
-        total_leads_30d = detect_activity(0)
+        total_leads_30d_value = detect_activity(total_leads_30d)
         total_action = detect_action(
-            total_ppl_range, total_ppl_30d, total_leads_range, total_leads_30d
+            total_ppl_range,
+            total_ppl_30d_value,
+            total_leads_range,
+            total_leads_30d_value,
         )
 
         total_data.update(
             {
                 CalculateColumnEnum.name.name: (total_title, total_action.name),
                 CalculateColumnEnum.leads.name: total_leads,
+                CalculateColumnEnum.leads_month.name: total_leads_30d,
                 CalculateColumnEnum.income.name: total_income,
+                CalculateColumnEnum.income_month.name: total_income_30d,
                 CalculateColumnEnum.ipl.name: total_ipl,
                 CalculateColumnEnum.expenses.name: total_expenses,
+                CalculateColumnEnum.expenses_month.name: total_expenses_30d,
                 CalculateColumnEnum.profit.name: total_profit,
                 CalculateColumnEnum.ppl.name: total_ppl,
                 CalculateColumnEnum.cpl.name: total_cpl,
                 CalculateColumnEnum.ppl_range.name: (total_ppl, total_ppl_range.value),
-                CalculateColumnEnum.ppl_30d.name: (0, total_ppl_30d.value),
+                CalculateColumnEnum.ppl_30d.name: (
+                    total_ppl_30d,
+                    total_ppl_30d_value.value,
+                ),
                 CalculateColumnEnum.leads_range.name: (
                     total_leads,
                     total_leads_range.value,
                 ),
-                CalculateColumnEnum.leads_30d.name: (0, total_leads_30d.value),
+                CalculateColumnEnum.leads_30d.name: (
+                    total_leads_30d,
+                    total_leads_30d_value.value,
+                ),
                 CalculateColumnEnum.action.name: (
                     total_action.value,
                     total_action.name,
@@ -755,6 +845,24 @@ class StatisticsRoistatView(TemplateView):
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
+        self.context(
+            "columns",
+            [
+                CalculateColumnEnum.name.name,
+                CalculateColumnEnum.leads.name,
+                CalculateColumnEnum.income.name,
+                CalculateColumnEnum.ipl.name,
+                CalculateColumnEnum.expenses.name,
+                CalculateColumnEnum.profit.name,
+                CalculateColumnEnum.ppl.name,
+                CalculateColumnEnum.cpl.name,
+                CalculateColumnEnum.ppl_range.name,
+                CalculateColumnEnum.ppl_30d.name,
+                CalculateColumnEnum.leads_range.name,
+                CalculateColumnEnum.leads_30d.name,
+                CalculateColumnEnum.action.name,
+            ],
+        )
         self.context("data", calc.data)
         self.context("total", pandas.Series(total_data))
         self.context("url", link)
