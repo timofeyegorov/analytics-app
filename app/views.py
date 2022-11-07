@@ -348,7 +348,9 @@ class Calculate:
                 continue
 
             stats_group = stats.get(str(name))
-            stats_group_30d = stats_30d.get(str(name))
+            stats_group_30d = stats_30d.get(
+                str(name), pandas.DataFrame(columns=self.columns.keys())
+            )
 
             expenses = round(stats_group.expenses.sum() * 1.2)
             if not expenses and name != ":utm:email":
@@ -362,7 +364,7 @@ class Calculate:
             title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
             income = int(group.ipl.sum())
             income_month = int(group_30d.ipl.sum())
-            ipl = int(round(income / leads))
+            ipl = int(round(income / leads)) if leads else 0
             profit = int(round(income - expenses - (leads * 250 + income * 0.35)))
             profit_30d = int(
                 round(
@@ -371,9 +373,9 @@ class Calculate:
                     - (leads_30d * 250 + income_month * 0.35)
                 )
             )
-            ppl = int(round(profit / leads))
-            ppl_30d = int(round(profit_30d / leads_30d))
-            cpl = int(round(expenses / leads))
+            ppl = int(round(profit / leads)) if leads else 0
+            ppl_30d = int(round(profit_30d / leads_30d)) if leads_30d else 0
+            cpl = int(round(expenses / leads)) if leads else 0
             ppl_range = detect_positive(ppl)
             ppl_30d_value = detect_positive(ppl_30d)
             leads_range = detect_activity(leads)
