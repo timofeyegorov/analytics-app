@@ -512,12 +512,16 @@ def extra_table(leads: pandas.DataFrame) -> pandas.DataFrame:
 class StatisticsRoistatView(TemplateView):
     template_name: str = "statistics/roistat/index.html"
     title: str = "Статистика Roistat"
+
+    leads_full: pandas.DataFrame = None
+    statistics_full: pandas.DataFrame = None
+
     order: List[Dict[str, str]]
     filters: StatisticsRoistatFiltersData = None
-    leads = None
-    statistics = None
-    leads_30d = None
-    statistics_30d = None
+    leads: pandas.DataFrame = None
+    statistics: pandas.DataFrame = None
+    leads_30d: pandas.DataFrame = None
+    statistics_30d: pandas.DataFrame = None
     extras = None
 
     def parse_order(self, order: str, available: List[str]) -> List[Dict[str, str]]:
@@ -562,8 +566,8 @@ class StatisticsRoistatView(TemplateView):
         )
 
     def get_statistics(self) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
-        leads = pickle_loader.roistat_leads
-        statistics = pickle_loader.roistat_statistics
+        leads = self.leads_full.copy()
+        statistics = self.statistics_full.copy()
 
         tz = pytz.timezone("Europe/Moscow")
         date = list(self.filters.date)
@@ -588,8 +592,8 @@ class StatisticsRoistatView(TemplateView):
         return leads, statistics
 
     def get_statistics_30d(self) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
-        leads = pickle_loader.roistat_leads
-        statistics = pickle_loader.roistat_statistics
+        leads = self.leads_full.copy()
+        statistics = self.statistics_full.copy()
 
         tz = pytz.timezone("Europe/Moscow")
         date = list(self.filters.date)
@@ -703,6 +707,8 @@ class StatisticsRoistatView(TemplateView):
         )
 
     def get(self):
+        self.leads_full = pickle_loader.roistat_leads
+        self.statistics_full = pickle_loader.roistat_statistics
         self.filters = self.get_filters(request.args)
         self.leads, self.statistics = self.get_statistics()
         self.leads_30d, self.statistics_30d = self.get_statistics_30d()
