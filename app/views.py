@@ -352,11 +352,11 @@ class Calculate:
                 str(name), pandas.DataFrame(columns=self.columns.keys())
             )
 
-            expenses = round(stats_group.expenses.sum() * 1.2)
+            expenses = round(stats_group.expenses.sum())
             if not expenses and name != ":utm:email":
                 expenses = leads * 400
 
-            expenses_month = round(stats_group_30d.expenses.sum() * 1.2)
+            expenses_month = round(stats_group_30d.expenses.sum())
             if not expenses_month and name != ":utm:email":
                 expenses_month = leads_30d * 400
 
@@ -523,6 +523,22 @@ class StatisticsRoistatView(TemplateView):
     leads_30d: pandas.DataFrame = None
     statistics_30d: pandas.DataFrame = None
     extras = None
+
+    output_columns: List[str] = [
+        CalculateColumnEnum.name.name,
+        CalculateColumnEnum.leads.name,
+        CalculateColumnEnum.income.name,
+        CalculateColumnEnum.ipl.name,
+        CalculateColumnEnum.expenses.name,
+        CalculateColumnEnum.profit.name,
+        CalculateColumnEnum.ppl.name,
+        CalculateColumnEnum.cpl.name,
+        CalculateColumnEnum.ppl_range.name,
+        CalculateColumnEnum.ppl_30d.name,
+        CalculateColumnEnum.leads_range.name,
+        CalculateColumnEnum.leads_30d.name,
+        CalculateColumnEnum.action.name,
+    ]
 
     def parse_order(self, order: str, available: List[str]) -> List[Dict[str, str]]:
         output = []
@@ -702,9 +718,90 @@ class StatisticsRoistatView(TemplateView):
             },
             {
                 "title": f"Лиды в разбивке по {StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {statistics[f'{self.filters.groupby}_title'].unique()[0]}",
+                "title_short": f"{StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {statistics[f'{self.filters.groupby}_title'].unique()[0]}",
                 "data": leads,
             },
         )
+
+    def get_download_statistics(
+        self, workbook: Workbook, data: pandas.DataFrame, total_data: dict
+    ):
+        worksheet = workbook.add_worksheet("Статистика")
+        worksheet.write_row(
+            0,
+            0,
+            list(
+                map(
+                    lambda item: self.extras.get("columns").get(item),
+                    self.output_columns,
+                )
+            ),
+        )
+        exclude_columns = []
+        for index, item in enumerate(data.columns):
+            if item not in self.output_columns:
+                exclude_columns.append(index)
+        index = -1
+        for index, row in data.iterrows():
+            item = list(row.values)
+            item[0] = item[0][0]
+            item[11] = item[11][1]
+            item[12] = item[12][1]
+            item[13] = item[13][1]
+            item[14] = item[14][1]
+            item[15] = item[15][1]
+            worksheet.write_row(
+                index + 1,
+                0,
+                list(
+                    dict(
+                        filter(
+                            lambda value: value[0] not in exclude_columns,
+                            enumerate(item),
+                        )
+                    ).values()
+                ),
+            )
+        total_values = list(total_data.values())
+        total_values[0] = total_values[0][0]
+        total_values[11] = total_values[11][1]
+        total_values[12] = total_values[12][1]
+        total_values[13] = total_values[13][1]
+        total_values[14] = total_values[14][1]
+        total_values[15] = total_values[15][1]
+        worksheet.write_row(
+            index + 2,
+            0,
+            list(
+                dict(
+                    filter(
+                        lambda value: value[0] not in exclude_columns,
+                        enumerate(total_values),
+                    )
+                ).values()
+            ),
+        )
+        worksheet.autofilter("A1:M1")
+
+    def get_download_extra(self, workbook: Workbook, data):
+        worksheet = workbook.add_worksheet(data.get("title"))
+        for index, column in enumerate(data.get("columns0")):
+            worksheet.merge_range(0, index * 3, 0, index * 3 + 2, column)
+        worksheet.write_row(1, 0, data.get("columns1"))
+        for index, row in data.get("data").iterrows():
+            values = list(row.values)
+            worksheet.write_row(index + 2, 0, values)
+
+    def get_download_leads(self, workbook: Workbook, data):
+        worksheet = workbook.add_worksheet(
+            f'{data.get("title_short")[:28]}{"..." if len(data.get("title_short")) > 31 else ""}'
+        )
+        worksheet.write_row(0, 0, data.get("data").columns)
+        for index, row in data.get("data").iterrows():
+            values = list(row.values)
+            values[0] = values[0].strftime("%Y-%m-%d")
+            worksheet.write_row(index + 1, 0, values)
+        worksheet.autofilter("A1:H1")
 
     def get(self):
         self.leads_full = pickle_loader.roistat_leads
@@ -733,8 +830,8 @@ class StatisticsRoistatView(TemplateView):
         total_income = calc.data.income.sum()
         total_income_30d = calc.data.income_month.sum()
         total_ipl = int(round(total_income / total_leads)) if total_leads else 0
-        total_expenses = round(calc.data.expenses.sum() * 1.2)
-        total_expenses_30d = round(calc.data.expenses_month.sum() * 1.2)
+        total_expenses = round(calc.data.expenses.sum())
+        total_expenses_30d = round(calc.data.expenses_month.sum())
         total_profit = int(
             round(
                 total_income
@@ -798,30 +895,17 @@ class StatisticsRoistatView(TemplateView):
             }
         )
 
+        details = request.args.get("details")
+        if details not in list(map(lambda item: item[2], calc.data.name.unique())):
+            details = None
+        details_extra, details_leads = self.get_details(details)
+
         if "download" in request.args.keys():
             target = tempfile.NamedTemporaryFile(suffix=".xlsx")
             workbook = Workbook(target.name)
-            worksheet = workbook.add_worksheet("Статистика")
-            worksheet.write_row(0, 0, self.extras.get("columns").values())
-            index = -1
-            for index, row in calc.data.iterrows():
-                item = list(row.values)
-                item[0] = item[0][0]
-                item[8] = item[8][1]
-                item[9] = item[9][1]
-                item[10] = item[10][1]
-                item[11] = item[11][1]
-                item[12] = item[12][1]
-                worksheet.write_row(index + 1, 0, item)
-            total_values = list(total_data.values())
-            total_values[0] = total_values[0][0]
-            total_values[8] = total_values[8][1]
-            total_values[9] = total_values[9][1]
-            total_values[10] = total_values[10][1]
-            total_values[11] = total_values[11][1]
-            total_values[12] = total_values[12][1]
-            worksheet.write_row(index + 2, 0, total_values)
-            worksheet.autofilter("A1:M1")
+            self.get_download_statistics(workbook, calc.data, total_data)
+            self.get_download_extra(workbook, details_extra)
+            self.get_download_leads(workbook, details_leads)
             workbook.close()
             return send_file(
                 workbook.filename,
@@ -833,10 +917,6 @@ class StatisticsRoistatView(TemplateView):
         qs = dict(parse_qsl(url.query))
         qs.pop("details", None)
         link = request.path
-        details = request.args.get("details")
-        if details not in list(map(lambda item: item[2], calc.data.name.unique())):
-            details = None
-        details_extra, details_leads = self.get_details(details)
         if qs:
             link = f"{link}?{urlencode(qs)}"
 
@@ -853,24 +933,7 @@ class StatisticsRoistatView(TemplateView):
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
-        self.context(
-            "columns",
-            [
-                CalculateColumnEnum.name.name,
-                CalculateColumnEnum.leads.name,
-                CalculateColumnEnum.income.name,
-                CalculateColumnEnum.ipl.name,
-                CalculateColumnEnum.expenses.name,
-                CalculateColumnEnum.profit.name,
-                CalculateColumnEnum.ppl.name,
-                CalculateColumnEnum.cpl.name,
-                CalculateColumnEnum.ppl_range.name,
-                CalculateColumnEnum.ppl_30d.name,
-                CalculateColumnEnum.leads_range.name,
-                CalculateColumnEnum.leads_30d.name,
-                CalculateColumnEnum.action.name,
-            ],
-        )
+        self.context("columns", self.output_columns)
         self.context("data", calc.data)
         self.context("total", pandas.Series(total_data))
         self.context("url", link)
