@@ -904,8 +904,10 @@ class StatisticsRoistatView(TemplateView):
             target = tempfile.NamedTemporaryFile(suffix=".xlsx")
             workbook = Workbook(target.name)
             self.get_download_statistics(workbook, calc.data, total_data)
-            self.get_download_extra(workbook, details_extra)
-            self.get_download_leads(workbook, details_leads)
+            if details_extra:
+                self.get_download_extra(workbook, details_extra)
+            if details_leads:
+                self.get_download_leads(workbook, details_leads)
             workbook.close()
             return send_file(
                 workbook.filename,
