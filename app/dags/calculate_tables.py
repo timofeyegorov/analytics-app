@@ -937,7 +937,7 @@ def roistat_leads():
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
-    schedule_interval="0 0,4,8,12,16,20 * * *",
+    schedule_interval="0 5,13,21 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )
