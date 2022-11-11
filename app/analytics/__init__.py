@@ -111,7 +111,8 @@ def getPlotCSV():
 
 
 def get_table_one_campaign(campaign, column_unique, table, **kwargs):
-    table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+    # table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+    table.created_at = table.created_at + timedelta(seconds=3600 * 3)
     table = table[table[column_unique] == campaign]
 
     date_end = kwargs.get("date_end")
@@ -151,6 +152,7 @@ def channels_summary():
         "Цена лида": "lead_cost",
     }
 
+    tz_delta = timedelta(seconds=3600 * 3)
     date_start = request.args.get("date_start", default="")
     date_end = request.args.get("date_end", default="")
     utm_source = request.args.get("utm_source", default="")  # Значение utm_source
@@ -173,13 +175,20 @@ def channels_summary():
 
         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
             unique_sources = pkl.load(f)
-            unique_sources.created_at = pd.to_datetime(
-                unique_sources.created_at
-            ).dt.normalize()
+            unique_sources.created_at = unique_sources.created_at + tz_delta
+            # unique_sources.created_at = pd.to_datetime(
+            #     unique_sources.created_at
+            # ).dt.normalize()
             if date_start:
-                unique_sources = unique_sources[unique_sources.created_at >= date_start]
+                unique_sources = unique_sources[
+                    unique_sources.created_at
+                    >= datetime.strptime(date_start, "%Y-%m-%d")
+                ]
             if date_end:
-                unique_sources = unique_sources[unique_sources.created_at <= date_end]
+                unique_sources = unique_sources[
+                    unique_sources.created_at
+                    < (datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
+                ]
             unique_sources = unique_sources["trafficologist"].unique().tolist()
 
         # Загружаем значения фильтров
@@ -254,11 +263,15 @@ def channels_summary():
         column_unique = utm_2 or "trafficologist"
 
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
-        table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+        # table.created_at = pd.to_datetime(table.created_at).dt.normalize()
+        table.created_at = table.created_at + tz_delta
         if date_start:
             table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at
+                < (datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
+            ]
         unique_sources = table["trafficologist"].unique()
 
         if utm_source:
