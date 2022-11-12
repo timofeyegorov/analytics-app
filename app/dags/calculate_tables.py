@@ -571,7 +571,7 @@ def load_data():
     leads = telegram_restructure(leads)
     tz = pytz.timezone("Europe/Moscow")
     leads["date"] = leads.created_at.apply(
-        lambda value: tz.localize(value + datetime.timedelta(seconds=3600 * 3)).replace(
+        lambda value: tz.localize(value).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
     )
