@@ -554,13 +554,12 @@ def load_data():
         leads_old = pickle_loader.leads
     except FileNotFoundError:
         leads_old = pandas.DataFrame()
+
     data = get_leads_data()
-    with open(os.path.join(RESULTS_FOLDER, "ca_payment_analytic.pkl"), "rb") as f:
-        ca_payment_analytic = pkl.load(f)
-    with open(os.path.join(RESULTS_FOLDER, "crops.pkl"), "rb") as f:
-        crops = pkl.load(f)
-    with open(os.path.join(RESULTS_FOLDER, "trafficologists.pkl"), "rb") as f:
-        trafficologists = pkl.load(f)
+
+    ca_payment_analytic = pickle_loader.ca_payment_analytic
+    crops = pickle_loader.crops
+    trafficologists = pickle_loader.trafficologists
 
     leads = get_turnover_on_lead(data, ca_payment_analytic)
     leads = get_marginality(leads)
@@ -571,7 +570,7 @@ def load_data():
     leads = telegram_restructure(leads)
     tz = pytz.timezone("Europe/Moscow")
     leads["date"] = leads.created_at.apply(
-        lambda value: tz.localize(value).replace(
+        lambda value: tz.localize(value + datetime.timedelta(seconds=3600 * 3)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
     )
