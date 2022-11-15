@@ -570,7 +570,7 @@ def load_data():
     leads = telegram_restructure(leads)
     tz = pytz.timezone("Europe/Moscow")
     leads["date"] = leads.created_at.apply(
-        lambda value: tz.localize(value + datetime.timedelta(seconds=3600 * 3)).replace(
+        lambda value: tz.localize(value).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
     )
@@ -936,7 +936,7 @@ def roistat_leads():
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
-    schedule_interval="0 5,13,21 * * *",
+    schedule_interval="0 0,6,12,18 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )

@@ -651,7 +651,7 @@ def collect_statistics_dataframe():
 dag = DAG(
     "api_data_vk",
     description="Collect VK API data",
-    schedule_interval="0 2,10,18 * * *",
+    schedule_interval="0 3,9,15,21 * * *",
     start_date=datetime(2017, 3, 20),
     catchup=False,
 )
