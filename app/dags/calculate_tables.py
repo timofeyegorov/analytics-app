@@ -760,7 +760,7 @@ def roistat_analytics():
     ) - datetime.timedelta(days=1)
     from_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
     to_date = from_date + datetime.timedelta(days=30)
-    datetime_now = datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).replace(
+    datetime_now = datetime.datetime.now(tz=tz).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     if to_date > datetime_now:
@@ -768,7 +768,7 @@ def roistat_analytics():
     for day in range((to_date - from_date).days + 1):
         current_date: datetime = from_date + datetime.timedelta(days=day)
         print("Collect analytic:", current_date)
-        time_now = datetime.datetime.now()
+        time_now = datetime.datetime.now(tz=tz)
         response = roistat(
             "analytics",
             dimensions=[
@@ -784,7 +784,7 @@ def roistat_analytics():
                 "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
                 "to": current_date.strftime("%Y-%m-%dT23:59:59+0300"),
             },
-            metrics=["visitsCost", "leadCount", "visitCount"],
+            metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
             interval="1d",
         )
         for item_data in response.get("data"):
@@ -801,7 +801,7 @@ def roistat_analytics():
                 analytics = analytics.append(
                     {**levels, **metrics, "date": date}, ignore_index=True
                 )
-        print("---", datetime.datetime.now() - time_now)
+        print("---", datetime.datetime.now(tz=tz) - time_now)
         sleep(1)
     analytics = (
         analytics.drop_duplicates(
