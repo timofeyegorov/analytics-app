@@ -1,4 +1,5 @@
 import re
+import os
 import sys
 import pickle
 import pandas
@@ -18,10 +19,12 @@ from airflow.operators.python import PythonOperator
 
 sys.path.append(Variable.get("APP_FOLDER"))
 
-from config import CREDENTIALS_FILE
+from config import DATA_FOLDER, CREDENTIALS_FILE
 from app.dags.decorators import log_execution_time
 
-from . import DATA_PATH
+
+DATA_PATH = Path(DATA_FOLDER) / "week"
+os.makedirs(DATA_PATH, exist_ok=True)
 
 
 def parse_str(value: str) -> str:
