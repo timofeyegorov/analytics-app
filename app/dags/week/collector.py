@@ -1,5 +1,5 @@
 import re
-import csv
+import sys
 import pickle
 import pandas
 import httplib2
@@ -9,10 +9,14 @@ from typing import Tuple
 from pathlib import Path
 from datetime import date, datetime, timedelta
 
-from airflow import DAG
-from airflow.operators.python import PythonOperator
 from transliterate import slugify
 from oauth2client.service_account import ServiceAccountCredentials
+
+from airflow import DAG
+from airflow.models import Variable
+from airflow.operators.python import PythonOperator
+
+sys.path.append(Variable.get("APP_FOLDER"))
 
 from config import CREDENTIALS_FILE
 from app.dags.decorators import log_execution_time
