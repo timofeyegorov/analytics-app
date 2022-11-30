@@ -23,7 +23,7 @@ from flask.views import MethodView
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
-from app.dags.week import DATA_PATH
+from app.dags.week.collector import DATA_PATH
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
