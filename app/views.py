@@ -1,14 +1,15 @@
 import json
 import pytz
 import pandas
+import pickle
 import requests
 import tempfile
+import datetime
 
 from enum import Enum
 from math import ceil
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
-from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from urllib.parse import urlparse, parse_qsl, urlencode
 from pydantic import BaseModel, ConstrainedDate
@@ -22,6 +23,7 @@ from flask.views import MethodView
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
+from app.dags.week import DATA_PATH
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
@@ -75,6 +77,19 @@ class StatisticsFiltersData(BaseModel):
     campaign: Optional[int]
     group: Optional[int]
     groupby: str
+
+
+class WeekStatsFiltersData(BaseModel):
+    date: ConstrainedDate
+    manager: Optional[str]
+
+    def __getitem__(self, item):
+        if item == "manager":
+            return self.manager
+
+    def __setitem__(self, key, value):
+        if key == "manager":
+            self.manager = value
 
 
 class StatisticsRoistatFiltersData(BaseModel):
@@ -590,14 +605,18 @@ class StatisticsRoistatView(TemplateView):
 
         if date[0]:
             date_from = tz.localize(
-                datetime(year=date[0].year, month=date[0].month, day=date[0].day)
+                datetime.datetime(
+                    year=date[0].year, month=date[0].month, day=date[0].day
+                )
             )
             leads = leads[leads.date >= date_from]
             statistics = statistics[statistics.date >= date_from]
 
         if date[1]:
             date_to = tz.localize(
-                datetime(year=date[1].year, month=date[1].month, day=date[1].day)
+                datetime.datetime(
+                    year=date[1].year, month=date[1].month, day=date[1].day
+                )
             )
             leads = leads[leads.date <= date_to]
             statistics = statistics[statistics.date <= date_to]
@@ -615,17 +634,17 @@ class StatisticsRoistatView(TemplateView):
         date = list(self.filters.date)
 
         if not date[1]:
-            date[1] = tz.localize(datetime.now())
-        date[0] = date[1] - timedelta(days=30)
+            date[1] = tz.localize(datetime.datetime.now())
+        date[0] = date[1] - datetime.timedelta(days=30)
 
         date_from = tz.localize(
-            datetime(year=date[0].year, month=date[0].month, day=date[0].day)
+            datetime.datetime(year=date[0].year, month=date[0].month, day=date[0].day)
         )
         leads = leads[leads.date >= date_from]
         statistics = statistics[statistics.date >= date_from]
 
         date_to = tz.localize(
-            datetime(year=date[1].year, month=date[1].month, day=date[1].day)
+            datetime.datetime(year=date[1].year, month=date[1].month, day=date[1].day)
         )
         leads = leads[leads.date <= date_to]
         statistics = statistics[statistics.date <= date_to]
@@ -1986,7 +2005,7 @@ class VKXlsxAdsView(MethodView):
         workbook.close()
         return send_file(
             workbook.filename,
-            download_name=f'analytic-nu-vk-ads-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            download_name=f'analytic-nu-vk-ads-{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
             as_attachment=True,
         )
 
@@ -2171,7 +2190,7 @@ class VKXlsxLeadsView(MethodView):
         workbook.close()
         return send_file(
             workbook.filename,
-            download_name=f'analytic-nu-leads-{datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
+            download_name=f'analytic-nu-leads-{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")}.xlsx',
             as_attachment=True,
         )
 
@@ -2316,19 +2335,24 @@ class ChannelsView(TemplateView):
     title = "Каналы"
 
     def _filter_date_from(
-        self, date: datetime, leads: pandas.DataFrame
+        self, date: datetime.datetime, leads: pandas.DataFrame
     ) -> pandas.DataFrame:
         if date:
-            leads = leads[leads.created_at >= datetime.strptime(date, "%Y-%m-%d")]
+            leads = leads[
+                leads.created_at >= datetime.datetime.strptime(date, "%Y-%m-%d")
+            ]
         return leads
 
     def _filter_date_to(
-        self, date: datetime, leads: pandas.DataFrame
+        self, date: datetime.datetime, leads: pandas.DataFrame
     ) -> pandas.DataFrame:
         if date:
             leads = leads[
                 leads.created_at
-                < (datetime.strptime(date, "%Y-%m-%d") + timedelta(days=1))
+                < (
+                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                    + datetime.timedelta(days=1)
+                )
             ]
         return leads
 
@@ -2396,8 +2420,8 @@ class ChannelsView(TemplateView):
 
         if filters.get("date_from"):
             date_from = int(
-                datetime.strptime(filters.get("date_from"), "%Y-%m-%d")
-                .replace(tzinfo=timezone.utc)
+                datetime.datetime.strptime(filters.get("date_from"), "%Y-%m-%d")
+                .replace(tzinfo=datetime.timezone.utc)
                 .timestamp()
                 * 1000
             )
@@ -2406,8 +2430,8 @@ class ChannelsView(TemplateView):
 
         if filters.get("date_to"):
             date_to = int(
-                datetime.strptime(filters.get("date_to"), "%Y-%m-%d")
-                .replace(tzinfo=timezone.utc)
+                datetime.datetime.strptime(filters.get("date_to"), "%Y-%m-%d")
+                .replace(tzinfo=datetime.timezone.utc)
                 .timestamp()
                 * 1000
             )
@@ -2747,5 +2771,146 @@ class StatisticsGroupsByCampaignView(APIView):
             groups = []
 
         self.data = {"groups": groups}
+
+        return super().get()
+
+
+class WeekStatsView(TemplateView):
+    template_name = "week-stats/index.html"
+    title = "Еженедельная статистика"
+
+    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
+        date = source.get("date") or (
+            datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
+            - datetime.timedelta(weeks=10)
+        )
+        manager = source.get("manager", "__all__")
+
+        if manager == "__all__":
+            manager = None
+
+        return WeekStatsFiltersData(date=date, manager=manager)
+
+    def get_stats(self) -> pandas.DataFrame:
+        with open(DATA_PATH / "stats.pkl", "rb") as file_ref:
+            stats: pandas.DataFrame = pickle.load(file_ref)
+
+        if self.filters.date:
+            stats = stats[stats.order_from >= self.filters.date]
+
+        stats.reset_index(drop=True, inplace=True)
+
+        return stats
+
+    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
+        groups = []
+        for name, item in self.stats.groupby(group):
+            groups.append((name, item[f"{group}_title"].unique()[0]))
+        if self.filters[group] not in list(map(lambda item: item[0], groups)):
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            self.stats = self.stats[self.stats[group] == self.filters[group]]
+        return groups
+
+    def get_extras(self) -> Dict[str, Any]:
+        managers = self.get_extras_group("manager")
+        return {
+            "managers": sorted(managers, key=lambda item: item[1]),
+        }
+
+    def get_stats_week(
+        self,
+        date_from: datetime.date,
+        date_end: datetime.date,
+        stats: pandas.DataFrame,
+        days: int,
+    ) -> List[int]:
+        output = []
+
+        while date_from <= date_end:
+            date_to = date_from + datetime.timedelta(days=6)
+            output.append(
+                stats[
+                    (stats.payment_from == date_from) & (stats.payment_to == date_to)
+                ].income.sum()
+            )
+            date_from += datetime.timedelta(weeks=1)
+
+        output += [pandas.NA] * (days - len(output))
+
+        return output
+
+    def get(self):
+        tz = pytz.timezone("Europe/Moscow")
+        roistat = pickle_loader.roistat_statistics
+
+        self.filters = self.get_filters(request.args)
+        self.stats = self.get_stats()
+        self.extras = self.get_extras()
+
+        orders_from = (
+            self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
+        )
+        date_from = min(orders_from)
+        date_end = max(orders_from)
+        days = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
+
+        stats_from = [date_from]
+        stats_to = [date_end + datetime.timedelta(days=6)]
+        stats_expenses = []
+        stats_weeks = []
+
+        while date_from <= date_end:
+            date_to = date_from + datetime.timedelta(days=6)
+            expenses = round(
+                roistat[
+                    (
+                        roistat.date
+                        >= tz.localize(
+                            datetime.datetime.combine(
+                                date_from, datetime.datetime.min.time()
+                            )
+                        )
+                    )
+                    & (
+                        roistat.date
+                        <= tz.localize(
+                            datetime.datetime.combine(
+                                date_to, datetime.datetime.min.time()
+                            )
+                        )
+                    )
+                ].expenses.sum()
+            )
+            stats_week = self.get_stats_week(
+                date_from,
+                date_end,
+                self.stats[
+                    (self.stats.order_from == date_from)
+                    & (self.stats.order_to == date_to)
+                ],
+                days,
+            )
+            stats_weeks.append(stats_week)
+            stats_from.append(date_from)
+            stats_to.append(date_to)
+            stats_expenses.append(expenses)
+
+            date_from += datetime.timedelta(weeks=1)
+
+        data = pandas.DataFrame(columns=list(range(1, days + 1)), data=stats_weeks)
+        total_sum = data.sum(axis=1).astype(int)
+        data.insert(0, "Расход", stats_expenses)
+        data.insert(1, "Сумма", total_sum)
+        data = pandas.concat(
+            [pandas.DataFrame(data=[data.sum()]), data], ignore_index=True
+        )
+        data.insert(0, "С даты", stats_from)
+        data.insert(1, "По дату", stats_to)
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data.iloc[1:].reset_index(drop=True))
+        self.context("total", data.iloc[0])
 
         return super().get()

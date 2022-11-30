@@ -1,0 +1,23 @@
+<form action="{{ url_for('week_stats') }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-date">С даты</label>
+            <input type="date" name="date" id="field-date" value="{% if filters.date %}{{ filters.date }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-manager">Менеджер</label>
+            <select name="manager" id="field-manager"{% if not extras.managers %} disabled="disabled"{% endif %}>
+                {% if extras.managers %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.managers %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.manager %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Обновить</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
+    </div>
+</form>

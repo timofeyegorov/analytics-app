@@ -59,6 +59,8 @@ def utility_processor():
         return isinstance(value, tuple)
 
     def format_int(value: int) -> str:
+        if pd.isna(value):
+            return ""
         return f"{value:,}".replace(",", " ")
 
     def format_float2(value: float) -> str:
@@ -845,6 +847,10 @@ app.add_url_rule(
     view_func=views.StatisticsGroupsByCampaignView.as_view(
         "statistics_groups_by_campaign"
     ),
+)
+app.add_url_rule(
+    "/week-stats",
+    view_func=views.WeekStatsView.as_view("week_stats"),
 )
 
 
