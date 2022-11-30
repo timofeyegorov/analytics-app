@@ -15,6 +15,9 @@ table td.info {
     font-weight:bold;
     background:#d4edff !important;
 }
+table td.warning {
+    background:#fff7dd !important;
+}
 table tr.details > td {
     font-weight:bold;
 }

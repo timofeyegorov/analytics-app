@@ -23,13 +23,13 @@ from flask.views import MethodView
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
-from app.dags.week.collector import DATA_PATH
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
     StatisticsRoistatGroupByEnum,
     CalculateColumnEnum,
 )
+from config import DATA_FOLDER
 
 
 pickle_loader = PickleLoader()
@@ -2792,7 +2792,7 @@ class WeekStatsView(TemplateView):
         return WeekStatsFiltersData(date=date, manager=manager)
 
     def get_stats(self) -> pandas.DataFrame:
-        with open(DATA_PATH / "stats.pkl", "rb") as file_ref:
+        with open(Path(DATA_FOLDER) / "week" / "stats.pkl", "rb") as file_ref:
             stats: pandas.DataFrame = pickle.load(file_ref)
 
         if self.filters.date:

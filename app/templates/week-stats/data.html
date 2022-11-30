@@ -26,7 +26,7 @@
                         {% if column in ["С даты", "По дату"] %}
                             <td class="nowrap font-monospace info">{{ statistic[column] }}</td>
                         {% else %}
-                            <td class="nowrap font-monospace text-right">{{ format_int(statistic[column]) }}</td>
+                            <td class="nowrap font-monospace text-right{% if column in ["Расход", "Сумма"] %} warning{% endif %}">{{ format_int(statistic[column]) }}</td>
                         {% endif %}
                     {% endfor %}
                 </tr>
