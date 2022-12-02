@@ -295,6 +295,7 @@ label {
 .filter-block > .field > label {
     display:block;
     font-weight:bold;
+    user-select:none;
 }
 .filter-block > .field > input[type=date],
 .filter-block > .field > input[type=text],

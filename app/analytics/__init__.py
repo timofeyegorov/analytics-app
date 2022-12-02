@@ -69,6 +69,11 @@ def utility_processor():
     def format_date(value: datetime) -> str:
         return value.strftime("%Y-%m-%d")
 
+    def format_percent(value: int) -> str:
+        if pd.isna(value):
+            return ""
+        return value
+
     def order_table(
         name: str, available: List[Dict[str, str]]
     ) -> Optional[Dict[str, str]]:
@@ -85,6 +90,7 @@ def utility_processor():
         format_float2=format_float2,
         format_date=format_date,
         order_table=order_table,
+        format_percent=format_percent,
     )
 
 

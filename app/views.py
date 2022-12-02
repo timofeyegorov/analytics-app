@@ -2840,6 +2840,29 @@ class WeekStatsView(TemplateView):
 
         return output
 
+    def get_percent(
+        self, data: pandas.DataFrame, total: pandas.DataFrame, days: int
+    ) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
+        columns = ["Сумма"] + list(range(1, days + 1))
+
+        data_percent = data.copy()
+        total_percent = total.copy()
+
+        for index, row in data_percent.iterrows():
+            data_percent.loc[index, columns] = data_percent.loc[index, columns].apply(
+                lambda item: pandas.NA
+                if pandas.isna(item)
+                else round(item / row["Расход"] * 100)
+            )
+
+        total_percent[columns] = total_percent[columns].apply(
+            lambda item: pandas.NA
+            if pandas.isna(item)
+            else round(item / total_percent["Расход"] * 100)
+        )
+
+        return data_percent, total_percent
+
     def get(self):
         tz = pytz.timezone("Europe/Moscow")
         roistat = pickle_loader.roistat_statistics
@@ -2907,10 +2930,16 @@ class WeekStatsView(TemplateView):
         )
         data.insert(0, "С даты", stats_from)
         data.insert(1, "По дату", stats_to)
+        data.reset_index(drop=True, inplace=True)
+        total = data.iloc[0]
+        data = data.iloc[1:].reset_index(drop=True)
+        data_percent, total_percent = self.get_percent(data, total, days)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
-        self.context("data", data.iloc[1:].reset_index(drop=True))
-        self.context("total", data.iloc[0])
+        self.context("data", data)
+        self.context("total", total)
+        self.context("data_percent", data_percent)
+        self.context("total_percent", total_percent)
 
         return super().get()
