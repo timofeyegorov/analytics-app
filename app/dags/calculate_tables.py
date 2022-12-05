@@ -754,19 +754,18 @@ def roistat_analytics():
         analytics = pickle_loader.roistat_analytics
     except Exception:
         analytics = pandas.DataFrame(columns=roistat_analytics_columns)
-    from_date = max(
-        list(analytics.date.unique())
-        or [tz.localize(datetime.datetime.strptime("2021-04-14", "%Y-%m-%d"))]
-    ) - datetime.timedelta(days=1)
-    from_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    to_date = from_date + datetime.timedelta(days=30)
+
     datetime_now = datetime.datetime.now(tz=tz).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
-    if to_date > datetime_now:
-        to_date = datetime_now
-    for day in range((to_date - from_date).days + 1):
-        current_date: datetime = from_date + datetime.timedelta(days=day)
+    dates = [
+        datetime_now - datetime.timedelta(days=30),
+        datetime_now - datetime.timedelta(days=7),
+        datetime_now - datetime.timedelta(days=2),
+        datetime_now - datetime.timedelta(days=1),
+        datetime_now,
+    ]
+    for current_date in dates:
         print("Collect analytic:", current_date)
         time_now = datetime.datetime.now(tz=tz)
         response = roistat(
@@ -782,7 +781,7 @@ def roistat_analytics():
             ],
             period={
                 "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
-                "to": current_date.strftime("%Y-%m-%dT23:59:59+0300"),
+                "to": current_date.strftime("%Y-%m-%dT23:59:59.9999+0300"),
             },
             metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
             interval="1d",
@@ -795,43 +794,27 @@ def roistat_analytics():
                 )
                 + datetime.timedelta(seconds=3600 * 3)
             )
+            analytics.drop(analytics[analytics.date == date].index, inplace=True)
+            analytics_date = []
             for item in item_data.get("items"):
                 levels = roistat_get_levels(item.get("dimensions"))
                 metrics = roistat_get_metrics(item.get("metrics"), ["visitsCost"])
-                analytics = analytics.append(
-                    {**levels, **metrics, "date": date}, ignore_index=True
-                )
+                analytics_date.append({**levels, **metrics, "date": date})
+            analytics = analytics.append(analytics_date, ignore_index=True)
         print("---", datetime.datetime.now(tz=tz) - time_now)
         sleep(1)
-    analytics = (
-        analytics.drop_duplicates(
-            subset=[
-                "date",
-                "marker_level_1",
-                "marker_level_2",
-                "marker_level_3",
-                "marker_level_4",
-                "marker_level_5",
-                "marker_level_6",
-                "marker_level_7",
-            ],
-            keep="last",
-            ignore_index=True,
-        )
-        .sort_values(
-            by=[
-                "date",
-                "marker_level_1",
-                "marker_level_2",
-                "marker_level_3",
-                "marker_level_4",
-                "marker_level_5",
-                "marker_level_6",
-                "marker_level_7",
-            ]
-        )
-        .reset_index(drop=True)
-    )
+    analytics = analytics.sort_values(
+        by=[
+            "date",
+            "marker_level_1",
+            "marker_level_2",
+            "marker_level_3",
+            "marker_level_4",
+            "marker_level_5",
+            "marker_level_6",
+            "marker_level_7",
+        ]
+    ).reset_index(drop=True)
     with open(os.path.join(RESULTS_FOLDER, "roistat_analytics.pkl"), "wb") as f:
         pkl.dump(analytics, f)
 
