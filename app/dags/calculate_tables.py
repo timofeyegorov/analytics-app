@@ -758,14 +758,9 @@ def roistat_analytics():
     datetime_now = datetime.datetime.now(tz=tz).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
-    dates = [
-        datetime_now - datetime.timedelta(days=30),
-        datetime_now - datetime.timedelta(days=7),
-        datetime_now - datetime.timedelta(days=2),
-        datetime_now - datetime.timedelta(days=1),
-        datetime_now,
-    ]
-    for current_date in dates:
+
+    for days in range(31):
+        current_date = datetime_now - datetime.timedelta(days=days)
         print("Collect analytic:", current_date)
         time_now = datetime.datetime.now(tz=tz)
         response = roistat(
