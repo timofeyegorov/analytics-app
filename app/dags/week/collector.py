@@ -76,7 +76,7 @@ def get_stats():
         .values()
         .get(
             spreadsheetId="1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE",
-            range="A1:U100000",
+            range="A1:Z100000",
             majorDimension="ROWS",
         )
         .execute()
@@ -87,6 +87,11 @@ def get_stats():
     data = pandas.DataFrame(columns=items[0], data=items[1:])
 
     rel = {
+        "fio_platelschika": parse_str,
+        "fio_studenta": parse_str,
+        "pochta": parse_str,
+        "telefon": parse_str,
+        "ssylka_na_amocrm": parse_str,
         "menedzher": parse_str,
         "summa_oplachennaja_klientom": parse_int,
         "summa_vyruchki": parse_int,
