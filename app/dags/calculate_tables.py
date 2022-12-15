@@ -919,138 +919,138 @@ dag = DAG(
     catchup=False,
 )
 
-crops_operator = PythonOperator(
-    task_id="load_crops", python_callable=load_crops, dag=dag
-)
-trafficologists_operator = PythonOperator(
-    task_id="load_trafficologists", python_callable=load_trafficologists, dag=dag
-)
-target_audience_operator = PythonOperator(
-    task_id="load_target_audience", python_callable=load_target_audience, dag=dag
-)
-expenses_operator = PythonOperator(
-    task_id="load_trafficologists_expenses",
-    python_callable=load_trafficologists_expenses,
-    dag=dag,
-)
-expenses_levels_operator = PythonOperator(
-    task_id="load_trafficologists_expenses_levels",
-    python_callable=load_trafficologists_expenses_levels,
-    dag=dag,
-)
-statuses_operator = PythonOperator(
-    task_id="load_statuses", python_callable=load_status, dag=dag
-)
-ca_payment_analytic_operator = PythonOperator(
-    task_id="load_ca_payment_analytic",
-    python_callable=load_ca_payment_analytic,
-    dag=dag,
-)
-payments_table_operator = PythonOperator(
-    task_id="load_payments_table", python_callable=load_payments_table, dag=dag
-)
-
-payments_accumulation_operator = PythonOperator(
-    task_id="payments_accumulation", python_callable=payments_accumulation, dag=dag
-)
-
-# channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
-# turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
-
-clean_data_operator = PythonOperator(
-    task_id="load_data", python_callable=load_data, dag=dag
-)
-channels_summary_operator = PythonOperator(
-    task_id="channels_summary", python_callable=channels_summary, dag=dag
-)
-channels_detailed_operator = PythonOperator(
-    task_id="channels_detailed", python_callable=channels_detailed, dag=dag
-)
-marginality_operator = PythonOperator(
-    task_id="marginality", python_callable=marginality, dag=dag
-)
-
-audience_type_by_date_operator = PythonOperator(
-    task_id="audience_type_by_date", python_callable=audience_type_by_date, dag=dag
-)
-audience_type_operator = PythonOperator(
-    task_id="audience_type", python_callable=audience_type, dag=dag
-)
-audience_type_percent_operator = PythonOperator(
-    task_id="audience_type_percent", python_callable=audience_type_percent, dag=dag
-)
+# crops_operator = PythonOperator(
+#     task_id="load_crops", python_callable=load_crops, dag=dag
+# )
+# trafficologists_operator = PythonOperator(
+#     task_id="load_trafficologists", python_callable=load_trafficologists, dag=dag
+# )
+# target_audience_operator = PythonOperator(
+#     task_id="load_target_audience", python_callable=load_target_audience, dag=dag
+# )
+# expenses_operator = PythonOperator(
+#     task_id="load_trafficologists_expenses",
+#     python_callable=load_trafficologists_expenses,
+#     dag=dag,
+# )
+# expenses_levels_operator = PythonOperator(
+#     task_id="load_trafficologists_expenses_levels",
+#     python_callable=load_trafficologists_expenses_levels,
+#     dag=dag,
+# )
+# statuses_operator = PythonOperator(
+#     task_id="load_statuses", python_callable=load_status, dag=dag
+# )
+# ca_payment_analytic_operator = PythonOperator(
+#     task_id="load_ca_payment_analytic",
+#     python_callable=load_ca_payment_analytic,
+#     dag=dag,
+# )
+# payments_table_operator = PythonOperator(
+#     task_id="load_payments_table", python_callable=load_payments_table, dag=dag
+# )
+#
+# payments_accumulation_operator = PythonOperator(
+#     task_id="payments_accumulation", python_callable=payments_accumulation, dag=dag
+# )
+#
+# # channel_expense_operator = PythonOperator(task_id='calculate_channel_expense', python_callable=calculate_channel_expense, dag=dag)
+# # turnover_on_lead_operator = PythonOperator(task_id='calculate_turnover_on_lead', python_callable=calculate_turnover_on_lead, dag=dag)
+#
+# clean_data_operator = PythonOperator(
+#     task_id="load_data", python_callable=load_data, dag=dag
+# )
+# channels_summary_operator = PythonOperator(
+#     task_id="channels_summary", python_callable=channels_summary, dag=dag
+# )
+# channels_detailed_operator = PythonOperator(
+#     task_id="channels_detailed", python_callable=channels_detailed, dag=dag
+# )
+# marginality_operator = PythonOperator(
+#     task_id="marginality", python_callable=marginality, dag=dag
+# )
+#
+# audience_type_by_date_operator = PythonOperator(
+#     task_id="audience_type_by_date", python_callable=audience_type_by_date, dag=dag
+# )
+# audience_type_operator = PythonOperator(
+#     task_id="audience_type", python_callable=audience_type, dag=dag
+# )
+# audience_type_percent_operator = PythonOperator(
+#     task_id="audience_type_percent", python_callable=audience_type_percent, dag=dag
+# )
 
 segments_operator = PythonOperator(
     task_id="segments", python_callable=segments, dag=dag
 )
-clusters_operator = PythonOperator(
-    task_id="clusters", python_callable=clusters, dag=dag
-)
-landings_operator = PythonOperator(
-    task_id="landings", python_callable=landings, dag=dag
-)
-segments_stats_operator = PythonOperator(
-    task_id="segments_stats", python_callable=segments_stats, dag=dag
-)
-turnover_operator = PythonOperator(
-    task_id="turnover", python_callable=turnover, dag=dag
-)
-leads_ta_stats_operator = PythonOperator(
-    task_id="leads_ta_stats", python_callable=leads_ta_stats, dag=dag
-)
-traffic_sources_operator = PythonOperator(
-    task_id="traffic_sources", python_callable=traffic_sources, dag=dag
-)
-roistat_analytics_operator = PythonOperator(
-    task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
-)
-roistat_statistics_operator = PythonOperator(
-    task_id="roistat_statistics", python_callable=roistat_statistics, dag=dag
-)
-roistat_leads_operator = PythonOperator(
-    task_id="roistat_leads", python_callable=roistat_leads, dag=dag
-)
-
-crops_operator >> clean_data_operator
-trafficologists_operator >> clean_data_operator
-target_audience_operator >> clean_data_operator
-expenses_operator >> clean_data_operator
-expenses_levels_operator >> clean_data_operator
-statuses_operator >> clean_data_operator
-ca_payment_analytic_operator >> clean_data_operator
-payments_table_operator >> clean_data_operator
-
-# clean_data_operator >> channel_expense_operator
-#  clean_data_operator >> turnover_on_lead_operator
-
-clean_data_operator >> audience_type_by_date_operator
-clean_data_operator >> audience_type_operator
-clean_data_operator >> audience_type_percent_operator
-
-clean_data_operator >> payments_accumulation_operator
-clean_data_operator >> channels_summary_operator
-clean_data_operator >> channels_detailed_operator
-clean_data_operator >> marginality_operator
-# turnover_on_lead_operator >> payments_accumulation_operator
-# turnover_on_lead_operator >> channels_summary_operator
-# turnover_on_lead_operator >> channels_detailed_operator
-# turnover_on_lead_operator >> marginality_operator
-
-clean_data_operator >> segments_operator
-clean_data_operator >> clusters_operator
-clean_data_operator >> landings_operator
-clean_data_operator >> segments_stats_operator
-clean_data_operator >> turnover_operator
-clean_data_operator >> leads_ta_stats_operator
-clean_data_operator >> traffic_sources_operator
-# channel_expense_operator >> segments_operator
-# channel_expense_operator >> clusters_operator
-# channel_expense_operator >> landings_operator
-# channel_expense_operator >> segments_stats_operator
-# channel_expense_operator >> turnover_operator
-# channel_expense_operator >> leads_ta_stats
-# channel_expense_operator >> traffic_sources
-
-clean_data_operator >> roistat_analytics_operator
-roistat_analytics_operator >> roistat_statistics_operator
-roistat_statistics_operator >> roistat_leads_operator
+# clusters_operator = PythonOperator(
+#     task_id="clusters", python_callable=clusters, dag=dag
+# )
+# landings_operator = PythonOperator(
+#     task_id="landings", python_callable=landings, dag=dag
+# )
+# segments_stats_operator = PythonOperator(
+#     task_id="segments_stats", python_callable=segments_stats, dag=dag
+# )
+# turnover_operator = PythonOperator(
+#     task_id="turnover", python_callable=turnover, dag=dag
+# )
+# leads_ta_stats_operator = PythonOperator(
+#     task_id="leads_ta_stats", python_callable=leads_ta_stats, dag=dag
+# )
+# traffic_sources_operator = PythonOperator(
+#     task_id="traffic_sources", python_callable=traffic_sources, dag=dag
+# )
+# roistat_analytics_operator = PythonOperator(
+#     task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
+# )
+# roistat_statistics_operator = PythonOperator(
+#     task_id="roistat_statistics", python_callable=roistat_statistics, dag=dag
+# )
+# roistat_leads_operator = PythonOperator(
+#     task_id="roistat_leads", python_callable=roistat_leads, dag=dag
+# )
+#
+# crops_operator >> clean_data_operator
+# trafficologists_operator >> clean_data_operator
+# target_audience_operator >> clean_data_operator
+# expenses_operator >> clean_data_operator
+# expenses_levels_operator >> clean_data_operator
+# statuses_operator >> clean_data_operator
+# ca_payment_analytic_operator >> clean_data_operator
+# payments_table_operator >> clean_data_operator
+#
+# # clean_data_operator >> channel_expense_operator
+# #  clean_data_operator >> turnover_on_lead_operator
+#
+# clean_data_operator >> audience_type_by_date_operator
+# clean_data_operator >> audience_type_operator
+# clean_data_operator >> audience_type_percent_operator
+#
+# clean_data_operator >> payments_accumulation_operator
+# clean_data_operator >> channels_summary_operator
+# clean_data_operator >> channels_detailed_operator
+# clean_data_operator >> marginality_operator
+# # turnover_on_lead_operator >> payments_accumulation_operator
+# # turnover_on_lead_operator >> channels_summary_operator
+# # turnover_on_lead_operator >> channels_detailed_operator
+# # turnover_on_lead_operator >> marginality_operator
+#
+# clean_data_operator >> segments_operator
+# clean_data_operator >> clusters_operator
+# clean_data_operator >> landings_operator
+# clean_data_operator >> segments_stats_operator
+# clean_data_operator >> turnover_operator
+# clean_data_operator >> leads_ta_stats_operator
+# clean_data_operator >> traffic_sources_operator
+# # channel_expense_operator >> segments_operator
+# # channel_expense_operator >> clusters_operator
+# # channel_expense_operator >> landings_operator
+# # channel_expense_operator >> segments_stats_operator
+# # channel_expense_operator >> turnover_operator
+# # channel_expense_operator >> leads_ta_stats
+# # channel_expense_operator >> traffic_sources
+#
+# clean_data_operator >> roistat_analytics_operator
+# roistat_analytics_operator >> roistat_statistics_operator
+# roistat_statistics_operator >> roistat_leads_operator
