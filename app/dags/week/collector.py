@@ -75,7 +75,7 @@ def get_stats():
         service.spreadsheets()
         .values()
         .get(
-            spreadsheetId="1LK3S5149oNVFkd8jezBe2pyS6yxuK9-ox4WZshT34RU",
+            spreadsheetId="1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE",
             range="A1:U100000",
             majorDimension="ROWS",
         )
