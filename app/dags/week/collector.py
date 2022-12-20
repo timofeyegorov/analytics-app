@@ -53,10 +53,14 @@ def parse_bool(value: str) -> bool:
 
 
 def parse_date(value: str) -> date:
-    match = re.search(r"^(\d{2})\.(\d{2})\.(\d{4})$", str(value))
+    match = re.search(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", str(value))
     if not match:
         return pandas.NA
     groups = list(match.groups())
+    if len(groups[0]) == 1:
+        groups[0] = f"0{groups[0]}"
+    if len(groups[1]) == 1:
+        groups[1] = f"0{groups[1]}"
     return date.fromisoformat("-".join(list(reversed(groups))))
 
 
