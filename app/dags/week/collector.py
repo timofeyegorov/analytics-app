@@ -75,22 +75,8 @@ def get_stats():
     )
     http_auth = credentials.authorize(httplib2.Http())
     service = apiclient.discovery.build("sheets", "v4", http=http_auth)
-    values = (
-        service.spreadsheets()
-        .values()
-        .get(
-            spreadsheetId="1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE",
-            range="A1:Z100000",
-            majorDimension="ROWS",
-        )
-        .execute()
-    )
-
-    items = values.get("values")
-    items[0] = list(map(lambda item: slugify(item, "ru").replace("-", "_"), items[0]))
-    data = pandas.DataFrame(columns=items[0], data=items[1:])
-
-    rel = {
+    spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    rel_fields = {
         "fio_platelschika": parse_str,
         "fio_studenta": parse_str,
         "pochta": parse_str,
@@ -117,16 +103,36 @@ def get_stats():
         "marzhinalnost": parse_int,
         "zoom": parse_str,
     }
-    for column, parse_fn in rel.items():
-        data[column] = data[column].apply(parse_fn)
+    sources = []
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        values = (
+            service.spreadsheets()
+            .values()
+            .get(
+                spreadsheetId=spreadsheet_id,
+                range=sheet.get("properties").get("title"),
+                majorDimension="ROWS",
+            )
+            .execute()
+        )
+        items = values.get("values")
+        items[0] = list(
+            map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
+        )
+        data = pandas.DataFrame(columns=items[0], data=items[1:])
+        for column, parse_fn in rel_fields.items():
+            data[column] = data[column].apply(parse_fn)
+        sources.append(data)
+    data = pandas.concat(sources, ignore_index=True)
 
     data.insert(
         0,
         "menedzher_id",
         data.menedzher.apply(lambda item: slugify(item, "ru").replace("-", "_")),
     )
-
-    data.drop(columns=["mesjats_doplata"], inplace=True)
+    data = data[["menedzher_id"] + list(rel_fields.keys())]
 
     with open(Path(DATA_PATH / "sources.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
