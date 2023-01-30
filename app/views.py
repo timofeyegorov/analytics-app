@@ -2940,7 +2940,6 @@ class WeekStatsView(TemplateView):
             date_from += datetime.timedelta(weeks=1)
 
         data = pandas.DataFrame(columns=list(range(1, days + 1)), data=stats_weeks)
-        # total_sum = data.sum(axis=1).astype(int)
         total_sum = (
             pandas.DataFrame(columns=list(range(1, days + 1)), data=total_sums)
             .sum(axis=1)
@@ -2949,7 +2948,8 @@ class WeekStatsView(TemplateView):
         data.insert(0, "Расход", stats_expenses)
         data.insert(1, "Сумма", total_sum)
         data = pandas.concat(
-            [pandas.DataFrame(data=[data.sum()]), data], ignore_index=True
+            [pandas.DataFrame(data=[data.mean().astype(int)]), data],
+            ignore_index=True,
         )
         data.insert(0, "С даты", stats_from)
         data.insert(1, "По дату", stats_to)
