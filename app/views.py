@@ -2948,7 +2948,16 @@ class WeekStatsView(TemplateView):
         data.insert(0, "Расход", stats_expenses)
         data.insert(1, "Сумма", total_sum)
         data = pandas.concat(
-            [pandas.DataFrame(data=[data.mean().astype(int)]), data],
+            [
+                pandas.DataFrame(
+                    data=[
+                        data.mean().astype(int)
+                        if self.filters.accumulative
+                        else data.sum()
+                    ]
+                ),
+                data,
+            ],
             ignore_index=True,
         )
         data.insert(0, "С даты", stats_from)
