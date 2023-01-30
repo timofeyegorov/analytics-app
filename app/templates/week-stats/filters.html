@@ -16,6 +16,10 @@
             </select>
         </div>
         <div class="field field-checkbox">
+            <input type="checkbox" id="field-accumulative" name="accumulative"{% if filters.accumulative %} checked="checked"{% endif %}>
+            <label for="field-accumulative">Накопительно</label>
+        </div>
+        <div class="field field-checkbox">
             <input type="checkbox" id="field-switch">
             <label for="field-switch">Показать в процентах</label>
         </div>

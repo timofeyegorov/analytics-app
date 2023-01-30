@@ -82,6 +82,7 @@ class StatisticsFiltersData(BaseModel):
 class WeekStatsFiltersData(BaseModel):
     date: ConstrainedDate
     manager: Optional[str]
+    accumulative: bool = False
 
     def __getitem__(self, item):
         if item == "manager":
@@ -2784,12 +2785,15 @@ class WeekStatsView(TemplateView):
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
             - datetime.timedelta(weeks=10)
         )
+        accumulative = source.get("accumulative", False)
         manager = source.get("manager", "__all__")
 
         if manager == "__all__":
             manager = None
 
-        return WeekStatsFiltersData(date=date, manager=manager)
+        return WeekStatsFiltersData(
+            date=date, manager=manager, accumulative=accumulative
+        )
 
     def get_stats(self) -> pandas.DataFrame:
         with open(Path(DATA_FOLDER) / "week" / "stats.pkl", "rb") as file_ref:
@@ -2863,11 +2867,20 @@ class WeekStatsView(TemplateView):
 
         return data_percent, total_percent
 
+    def accumulate_stats_week(self, stats: List[int]) -> List[int]:
+        return list(
+            map(
+                lambda item: sum(stats[: item[0] + 1]),
+                enumerate(stats),
+            )
+        )
+
     def get(self):
         tz = pytz.timezone("Europe/Moscow")
         roistat = pickle_loader.roistat_statistics
 
         self.filters = self.get_filters(request.args)
+        print(self.filters)
         self.stats = self.get_stats()
         self.extras = self.get_extras()
 
@@ -2882,6 +2895,7 @@ class WeekStatsView(TemplateView):
         stats_to = [date_end + datetime.timedelta(days=6)]
         stats_expenses = []
         stats_weeks = []
+        total_sums = []
 
         while date_from <= date_end:
             date_to = date_from + datetime.timedelta(days=6)
@@ -2914,7 +2928,11 @@ class WeekStatsView(TemplateView):
                 ],
                 days,
             )
-            stats_weeks.append(stats_week)
+            if self.filters.accumulative:
+                stats_weeks.append(self.accumulate_stats_week(stats_week))
+            else:
+                stats_weeks.append(stats_week)
+            total_sums.append(stats_week)
             stats_from.append(date_from)
             stats_to.append(date_to)
             stats_expenses.append(expenses)
@@ -2922,7 +2940,12 @@ class WeekStatsView(TemplateView):
             date_from += datetime.timedelta(weeks=1)
 
         data = pandas.DataFrame(columns=list(range(1, days + 1)), data=stats_weeks)
-        total_sum = data.sum(axis=1).astype(int)
+        # total_sum = data.sum(axis=1).astype(int)
+        total_sum = (
+            pandas.DataFrame(columns=list(range(1, days + 1)), data=total_sums)
+            .sum(axis=1)
+            .astype(int)
+        )
         data.insert(0, "Расход", stats_expenses)
         data.insert(1, "Сумма", total_sum)
         data = pandas.concat(
