@@ -83,6 +83,7 @@ def get_stats():
         "telefon": parse_str,
         "ssylka_na_amocrm": parse_str,
         "menedzher": parse_str,
+        "gr": parse_int,
         "summa_oplachennaja_klientom": parse_int,
         "summa_vyruchki": parse_int,
         "nomer_zakaza": parse_str,
@@ -95,6 +96,7 @@ def get_stats():
         "dnej_do_prodazhi_ot_poslednej_zajavki_ljuboj": parse_int,
         "dnej_do_prodazhi_ot_poslednej_zajavki_platnoj": parse_int,
         "voronka": parse_str,
+        "data_zoom": parse_date,
         "kurs": parse_str,
         "uii_uii_terra_terra_ejaj": parse_str,
         "byl_na_intensive": parse_bool,
@@ -123,6 +125,8 @@ def get_stats():
         )
         data = pandas.DataFrame(columns=items[0], data=items[1:])
         for column, parse_fn in rel_fields.items():
+            if column not in data.columns:
+                data[column] = ""
             data[column] = data[column].apply(parse_fn)
         sources.append(data)
     data = pandas.concat(sources, ignore_index=True)
