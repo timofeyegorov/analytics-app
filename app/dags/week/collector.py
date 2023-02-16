@@ -203,22 +203,30 @@ def get_zoom():
             pandas.DataFrame(data=items[1:], columns=items[0])
             .fillna(0)
             .replace("", 0)
-            .rename(columns={"Менеджер": "manager", "Группа": "group"})
+            .rename(columns={"Менеджер": "manager_title", "Группа": "group"})
         )
-        data["manager"] = data["manager"].apply(
-            lambda item: slugify(item, "ru").replace("-", "_")
+        data.insert(
+            0,
+            "manager",
+            data["manager_title"].apply(
+                lambda item: slugify(item, "ru").replace("-", "_")
+            ),
         )
         sources = []
         for manager, group in data.groupby("manager"):
             group_index = group["group"].iloc[0]
-            group.drop(columns=["manager", "group"], inplace=True)
+            group_index_title = f'Группа "{group_index}"'
+            manager_title = group["manager_title"].iloc[0]
+            group.drop(columns=["manager", "manager_title", "group"], inplace=True)
             group = group.T
             group.reset_index(inplace=True)
             group.rename(
                 columns={"index": "date", group.columns[1]: "count"}, inplace=True
             )
             group.insert(0, "manager", manager)
-            group.insert(1, "group", group_index)
+            group.insert(1, "manager_title", manager_title)
+            group.insert(2, "group", group_index)
+            group.insert(3, "group_title", group_index_title)
             group["date"] = group["date"].apply(parse_date)
             sources.append(group)
 
