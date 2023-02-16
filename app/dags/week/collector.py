@@ -183,6 +183,99 @@ def calculate():
         pickle.dump(output, file_ref)
 
 
+@log_execution_time("get_zoom")
+def get_zoom():
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    http_auth = credentials.authorize(httplib2.Http())
+    service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+    spreadsheet_id = "1xKcTwITOBVNTarxciMo6gEJNZuMMxsWr4CS9eDnYiA8"
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        values = (
+            service.spreadsheets()
+            .values()
+            .get(
+                spreadsheetId=spreadsheet_id,
+                range=sheet.get("properties").get("title"),
+                majorDimension="ROWS",
+            )
+            .execute()
+        )
+        items = values.get("values")
+        data = (
+            pandas.DataFrame(data=items[1:], columns=items[0])
+            .fillna(0)
+            .replace("", 0)
+            .rename(columns={"Менеджер": "manager", "Группа": "group"})
+        )
+        data["manager"] = data["manager"].apply(
+            lambda item: slugify(item, "ru").replace("-", "_")
+        )
+        sources = []
+        for manager, group in data.groupby("manager"):
+            group_index = group["group"].iloc[0]
+            group.drop(columns=["manager", "group"], inplace=True)
+            group = group.T
+            group.reset_index(inplace=True)
+            group.rename(
+                columns={"index": "date", group.columns[1]: "count"}, inplace=True
+            )
+            group.insert(0, "manager", manager)
+            group.insert(1, "group", group_index)
+            sources.append(group)
+
+    zoom = pandas.concat(sources, ignore_index=True)
+
+    with open(Path(DATA_PATH / "sources_zoom.pkl"), "wb") as file_ref:
+        pickle.dump(zoom, file_ref)
+
+
+@log_execution_time("calculate_zoom")
+def calculate_zoom():
+    def detect_week(value: date) -> Tuple[date, date]:
+        start_week = 3
+        date_from = value - timedelta(
+            days=value.weekday()
+            + (7 if value.weekday() < start_week else 0)
+            - start_week
+        )
+        date_to = date_from + timedelta(days=6)
+        return date_from, date_to
+
+    with open(Path(DATA_PATH / "sources.pkl"), "rb") as sources_ref:
+        data: pandas.DataFrame = pickle.load(sources_ref)
+        data = data[~(data.data_zoom.isna() | data.data_oplaty.isna())]
+        data.reset_index(drop=True, inplace=True)
+
+        items = []
+        for index, item in data.iterrows():
+            order_week = detect_week(item.data_zoom)
+            payment_week = detect_week(item.data_oplaty)
+            items.append(
+                {
+                    "manager": item.menedzher_id,
+                    "manager_title": item.menedzher,
+                    "order_from": order_week[0],
+                    "order_to": order_week[1],
+                    "payment_from": payment_week[0],
+                    "payment_to": payment_week[1],
+                    "income": item.summa_vyruchki,
+                }
+            )
+
+        output = pandas.DataFrame(data=items)
+
+    with open(Path(DATA_PATH / "stats_zoom.pkl"), "wb") as file_ref:
+        pickle.dump(output, file_ref)
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -193,10 +286,26 @@ dag = DAG(
 
 
 get_stats_operator = PythonOperator(
-    task_id="get_stats", python_callable=get_stats, dag=dag
+    task_id="get_stats",
+    python_callable=get_stats,
+    dag=dag,
 )
 calculate_operator = PythonOperator(
-    task_id="calculate", python_callable=calculate, dag=dag
+    task_id="calculate",
+    python_callable=calculate,
+    dag=dag,
+)
+get_zoom_operator = PythonOperator(
+    task_id="get_zoom",
+    python_callable=get_zoom,
+    dag=dag,
+)
+calculate_zoom_operator = PythonOperator(
+    task_id="calculate_zoom",
+    python_callable=calculate_zoom,
+    dag=dag,
 )
 
 get_stats_operator >> calculate_operator
+get_stats_operator >> calculate_zoom_operator
+get_zoom_operator >> calculate_zoom_operator
