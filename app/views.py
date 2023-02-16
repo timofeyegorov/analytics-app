@@ -2851,7 +2851,7 @@ class WeekStatsView(TemplateView):
         date_from: datetime.date,
         date_end: datetime.date,
         stats: pandas.DataFrame,
-        days: int,
+        weeks: int,
     ) -> List[int]:
         output = []
 
@@ -2864,7 +2864,7 @@ class WeekStatsView(TemplateView):
             )
             date_from += datetime.timedelta(weeks=1)
 
-        output += [pandas.NA] * (days - len(output))
+        output += [pandas.NA] * (weeks - len(output))
 
         return output
 
@@ -2912,7 +2912,7 @@ class WeekStatsView(TemplateView):
         )
         date_from = min(orders_from)
         date_end = max(orders_from)
-        days = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
+        weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         stats_from = [date_from]
         stats_to = [date_end + datetime.timedelta(days=6)]
@@ -2949,7 +2949,7 @@ class WeekStatsView(TemplateView):
                     (self.stats.order_from == date_from)
                     & (self.stats.order_to == date_to)
                 ],
-                days,
+                weeks,
             )
             if self.filters.accumulative:
                 stats_weeks.append(self.accumulate_stats_week(stats_week))
@@ -2962,9 +2962,9 @@ class WeekStatsView(TemplateView):
 
             date_from += datetime.timedelta(weeks=1)
 
-        data = pandas.DataFrame(columns=list(range(1, days + 1)), data=stats_weeks)
+        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
         total_sum = (
-            pandas.DataFrame(columns=list(range(1, days + 1)), data=total_sums)
+            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=total_sums)
             .sum(axis=1)
             .astype(int)
         )
@@ -2988,7 +2988,7 @@ class WeekStatsView(TemplateView):
         data.reset_index(drop=True, inplace=True)
         total = data.iloc[0]
         data = data.iloc[1:].reset_index(drop=True)
-        data_percent, total_percent = self.get_percent(data, total, days)
+        data_percent, total_percent = self.get_percent(data, total, weeks)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
@@ -3031,7 +3031,6 @@ class WeekStatsZoomView(TemplateView):
         with open(Path(DATA_FOLDER) / "week" / "sources_zoom.pkl", "rb") as file_ref:
             stats: pandas.DataFrame = pickle.load(file_ref)
 
-        print(stats)
         if self.filters.date:
             stats = stats[stats.date >= self.filters.date]
 
@@ -3052,12 +3051,22 @@ class WeekStatsZoomView(TemplateView):
 
     def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
         groups = []
-        for name, item in self.stats.groupby(group):
+        for name, item in self.zoom.groupby(group):
             groups.append((name, item[f"{group}_title"].unique()[0]))
         if self.filters[group] not in list(map(lambda item: item[0], groups)):
             self.filters[group] = None
         if self.filters[group] is not None:
-            self.stats = self.stats[self.stats[group] == self.filters[group]]
+            if group == "group":
+                self.stats = self.stats[
+                    self.stats["manager"].isin(
+                        self.zoom[self.zoom[group] == self.filters[group]][
+                            "manager"
+                        ].unique()
+                    )
+                ]
+            else:
+                self.stats = self.stats[self.stats[group] == self.filters[group]]
+            self.zoom = self.zoom[self.zoom[group] == self.filters[group]]
         return groups
 
     def get_extras(self) -> Dict[str, Any]:
@@ -3073,7 +3082,7 @@ class WeekStatsZoomView(TemplateView):
         date_from: datetime.date,
         date_end: datetime.date,
         stats: pandas.DataFrame,
-        days: int,
+        weeks: int,
     ) -> List[int]:
         output = []
 
@@ -3086,7 +3095,7 @@ class WeekStatsZoomView(TemplateView):
             )
             date_from += datetime.timedelta(weeks=1)
 
-        output += [pandas.NA] * (days - len(output))
+        output += [pandas.NA] * (weeks - len(output))
 
         return output
 
@@ -3102,13 +3111,15 @@ class WeekStatsZoomView(TemplateView):
             data_percent.loc[index, columns] = data_percent.loc[index, columns].apply(
                 lambda item: pandas.NA
                 if pandas.isna(item)
-                else round(item / row["Расход"] * 100)
+                else (round(item / row["Zoom"]) if row["Zoom"] > 0 else 0)
             )
 
         total_percent[columns] = total_percent[columns].apply(
             lambda item: pandas.NA
             if pandas.isna(item)
-            else round(item / total_percent["Расход"] * 100)
+            else (
+                round(item / total_percent["Zoom"]) if total_percent["Zoom"] > 0 else 0
+            )
         )
 
         return data_percent, total_percent
@@ -3122,14 +3133,9 @@ class WeekStatsZoomView(TemplateView):
         )
 
     def get(self):
-        tz = pytz.timezone("Europe/Moscow")
-        roistat = pickle_loader.roistat_statistics
-
         self.filters = self.get_filters(request.args)
         self.zoom = self.get_zoom()
         self.stats = self.get_stats()
-        print(self.zoom)
-        print(self.stats)
         self.extras = self.get_extras()
 
         orders_from = (
@@ -3137,36 +3143,16 @@ class WeekStatsZoomView(TemplateView):
         )
         date_from = min(orders_from)
         date_end = max(orders_from)
-        days = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
+        weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         stats_from = [date_from]
         stats_to = [date_end + datetime.timedelta(days=6)]
-        stats_expenses = []
         stats_weeks = []
         total_sums = []
+        total_zooms = []
 
         while date_from <= date_end:
             date_to = date_from + datetime.timedelta(days=6)
-            expenses = round(
-                roistat[
-                    (
-                        roistat.date
-                        >= tz.localize(
-                            datetime.datetime.combine(
-                                date_from, datetime.datetime.min.time()
-                            )
-                        )
-                    )
-                    & (
-                        roistat.date
-                        <= tz.localize(
-                            datetime.datetime.combine(
-                                date_to, datetime.datetime.min.time()
-                            )
-                        )
-                    )
-                ].expenses.sum()
-            )
             stats_week = self.get_stats_week(
                 date_from,
                 date_end,
@@ -3174,7 +3160,7 @@ class WeekStatsZoomView(TemplateView):
                     (self.stats.order_from == date_from)
                     & (self.stats.order_to == date_to)
                 ],
-                days,
+                weeks,
             )
             if self.filters.accumulative:
                 stats_weeks.append(self.accumulate_stats_week(stats_week))
@@ -3183,17 +3169,21 @@ class WeekStatsZoomView(TemplateView):
             total_sums.append(stats_week)
             stats_from.append(date_from)
             stats_to.append(date_to)
-            stats_expenses.append(expenses)
+            total_zooms.append(
+                self.zoom[
+                    (self.zoom["date"] >= date_from) & (self.zoom["date"] <= date_to)
+                ]["count"].sum()
+            )
 
             date_from += datetime.timedelta(weeks=1)
 
-        data = pandas.DataFrame(columns=list(range(1, days + 1)), data=stats_weeks)
+        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
         total_sum = (
-            pandas.DataFrame(columns=list(range(1, days + 1)), data=total_sums)
+            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=total_sums)
             .sum(axis=1)
             .astype(int)
         )
-        data.insert(0, "Расход", stats_expenses)
+        data.insert(0, "Zoom", total_zooms)
         data.insert(1, "Сумма", total_sum)
         data = pandas.concat(
             [
@@ -3213,7 +3203,7 @@ class WeekStatsZoomView(TemplateView):
         data.reset_index(drop=True, inplace=True)
         total = data.iloc[0]
         data = data.iloc[1:].reset_index(drop=True)
-        data_percent, total_percent = self.get_percent(data, total, days)
+        data_percent, total_percent = self.get_percent(data, total, weeks)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)

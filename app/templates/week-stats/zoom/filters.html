@@ -5,6 +5,17 @@
             <input type="date" name="date" id="field-date" value="{% if filters.date %}{{ filters.date }}{% endif %}">
         </div>
         <div class="field">
+            <label for="field-group">Группа</label>
+            <select name="group" id="field-group"{% if not extras.groups %} disabled="disabled"{% endif %}>
+                {% if extras.groups %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.groups %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.group %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="field">
             <label for="field-manager">Менеджер</label>
             <select name="manager" id="field-manager"{% if not extras.managers %} disabled="disabled"{% endif %}>
                 {% if extras.managers %}
@@ -21,7 +32,7 @@
         </div>
         <div class="field field-checkbox">
             <input type="checkbox" id="field-switch">
-            <label for="field-switch">Показать в процентах</label>
+            <label for="field-switch">Оборот на Zoom</label>
         </div>
     </div>
     <div class="filter-actions">

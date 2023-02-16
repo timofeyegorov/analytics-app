@@ -15,7 +15,7 @@
                     {% if column in ["С даты", "По дату"] %}
                         <td class="nowrap font-monospace info">{{ total[column] }}</td>
                     {% else %}
-                        <td class="nowrap font-monospace text-right info{% if column not in ["Расход"] %} switchable{% endif %}"{% if column not in ["Расход"] %} data-absolute="{{ format_int(total[column]) }}" data-percent="{{ format_percent(total_percent[column]) }}"{% endif %}>{{ format_int(total[column]) }}</td>
+                        <td class="nowrap font-monospace text-right info{% if column not in ["Zoom"] %} switchable{% endif %}"{% if column not in ["Zoom"] %} data-absolute="{{ format_int(total[column]) }}" data-percent="{{ format_int(total_percent[column]) }}"{% endif %}>{{ format_int(total[column]) }}</td>
                     {% endif %}
                 {% endfor %}
             </tr>
@@ -26,7 +26,7 @@
                         {% if column in ["С даты", "По дату"] %}
                             <td class="nowrap font-monospace info">{{ statistic[column] }}</td>
                         {% else %}
-                            <td class="nowrap font-monospace text-right{% if column in ["Расход", "Сумма"] %} warning{% endif %}{% if column not in ["Расход"] %} switchable{% endif %}"{% if column not in ["Расход"] %} data-absolute="{{ format_int(statistic[column]) }}" data-percent="{{ format_percent(data_percent.loc[index, column]) }}"{% endif %}>{{ format_int(statistic[column]) }}</td>
+                            <td class="nowrap font-monospace text-right{% if column in ["Zoom", "Сумма"] %} warning{% endif %}{% if column not in ["Zoom"] %} switchable{% endif %}"{% if column not in ["Zoom"] %} data-absolute="{{ format_int(statistic[column]) }}" data-percent="{{ format_int(data_percent.loc[index, column]) }}"{% endif %}>{{ format_int(statistic[column]) }}</td>
                         {% endif %}
                     {% endfor %}
                 </tr>
