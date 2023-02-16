@@ -23,6 +23,7 @@ from flask.views import MethodView
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
+from app.utils import detect_week
 from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
@@ -90,6 +91,25 @@ class WeekStatsFiltersData(BaseModel):
 
     def __setitem__(self, key, value):
         if key == "manager":
+            self.manager = value
+
+
+class WeekStatsZoomFiltersData(BaseModel):
+    date: ConstrainedDate
+    group: Optional[str]
+    manager: Optional[str]
+    accumulative: bool = False
+
+    def __getitem__(self, item):
+        if item == "group":
+            return self.group
+        elif item == "manager":
+            return self.manager
+
+    def __setitem__(self, key, value):
+        if key == "group":
+            self.group = value
+        elif key == "manager":
             self.manager = value
 
 
@@ -2785,9 +2805,13 @@ class WeekStatsView(TemplateView):
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
             - datetime.timedelta(weeks=10)
         )
-        accumulative = source.get("accumulative", False)
-        manager = source.get("manager", "__all__")
+        if isinstance(date, str):
+            date = datetime.date.fromisoformat(date)
+        date = detect_week(date)[0]
 
+        accumulative = source.get("accumulative", False)
+
+        manager = source.get("manager", "__all__")
         if manager == "__all__":
             manager = None
 
@@ -2880,8 +2904,232 @@ class WeekStatsView(TemplateView):
         roistat = pickle_loader.roistat_statistics
 
         self.filters = self.get_filters(request.args)
-        print(self.filters)
         self.stats = self.get_stats()
+        self.extras = self.get_extras()
+
+        orders_from = (
+            self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
+        )
+        date_from = min(orders_from)
+        date_end = max(orders_from)
+        days = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
+
+        stats_from = [date_from]
+        stats_to = [date_end + datetime.timedelta(days=6)]
+        stats_expenses = []
+        stats_weeks = []
+        total_sums = []
+
+        while date_from <= date_end:
+            date_to = date_from + datetime.timedelta(days=6)
+            expenses = round(
+                roistat[
+                    (
+                        roistat.date
+                        >= tz.localize(
+                            datetime.datetime.combine(
+                                date_from, datetime.datetime.min.time()
+                            )
+                        )
+                    )
+                    & (
+                        roistat.date
+                        <= tz.localize(
+                            datetime.datetime.combine(
+                                date_to, datetime.datetime.min.time()
+                            )
+                        )
+                    )
+                ].expenses.sum()
+            )
+            stats_week = self.get_stats_week(
+                date_from,
+                date_end,
+                self.stats[
+                    (self.stats.order_from == date_from)
+                    & (self.stats.order_to == date_to)
+                ],
+                days,
+            )
+            if self.filters.accumulative:
+                stats_weeks.append(self.accumulate_stats_week(stats_week))
+            else:
+                stats_weeks.append(stats_week)
+            total_sums.append(stats_week)
+            stats_from.append(date_from)
+            stats_to.append(date_to)
+            stats_expenses.append(expenses)
+
+            date_from += datetime.timedelta(weeks=1)
+
+        data = pandas.DataFrame(columns=list(range(1, days + 1)), data=stats_weeks)
+        total_sum = (
+            pandas.DataFrame(columns=list(range(1, days + 1)), data=total_sums)
+            .sum(axis=1)
+            .astype(int)
+        )
+        data.insert(0, "Расход", stats_expenses)
+        data.insert(1, "Сумма", total_sum)
+        data = pandas.concat(
+            [
+                pandas.DataFrame(
+                    data=[
+                        data.mean().astype(int)
+                        if self.filters.accumulative
+                        else data.sum()
+                    ]
+                ),
+                data,
+            ],
+            ignore_index=True,
+        )
+        data.insert(0, "С даты", stats_from)
+        data.insert(1, "По дату", stats_to)
+        data.reset_index(drop=True, inplace=True)
+        total = data.iloc[0]
+        data = data.iloc[1:].reset_index(drop=True)
+        data_percent, total_percent = self.get_percent(data, total, days)
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+        self.context("total", total)
+        self.context("data_percent", data_percent)
+        self.context("total_percent", total_percent)
+
+        return super().get()
+
+
+class WeekStatsZoomView(TemplateView):
+    template_name = "week-stats/zoom/index.html"
+    title = "Еженедельная статистика по Zoom"
+
+    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
+        date = source.get("date") or (
+            datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
+            - datetime.timedelta(weeks=10)
+        )
+        if isinstance(date, str):
+            date = datetime.date.fromisoformat(date)
+        date = detect_week(date)[0]
+
+        accumulative = source.get("accumulative", False)
+
+        group = source.get("group", "__all__")
+        if group == "__all__":
+            group = None
+
+        manager = source.get("manager", "__all__")
+        if manager == "__all__":
+            manager = None
+
+        return WeekStatsZoomFiltersData(
+            date=date, group=group, manager=manager, accumulative=accumulative
+        )
+
+    def get_zoom(self) -> pandas.DataFrame:
+        with open(Path(DATA_FOLDER) / "week" / "sources_zoom.pkl", "rb") as file_ref:
+            stats: pandas.DataFrame = pickle.load(file_ref)
+
+        print(stats)
+        if self.filters.date:
+            stats = stats[stats.date >= self.filters.date]
+
+        stats.reset_index(drop=True, inplace=True)
+
+        return stats
+
+    def get_stats(self) -> pandas.DataFrame:
+        with open(Path(DATA_FOLDER) / "week" / "stats_zoom.pkl", "rb") as file_ref:
+            stats: pandas.DataFrame = pickle.load(file_ref)
+
+        if self.filters.date:
+            stats = stats[stats.order_from >= self.filters.date]
+
+        stats.reset_index(drop=True, inplace=True)
+
+        return stats
+
+    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
+        groups = []
+        for name, item in self.stats.groupby(group):
+            groups.append((name, item[f"{group}_title"].unique()[0]))
+        if self.filters[group] not in list(map(lambda item: item[0], groups)):
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            self.stats = self.stats[self.stats[group] == self.filters[group]]
+        return groups
+
+    def get_extras(self) -> Dict[str, Any]:
+        groups = self.get_extras_group("group")
+        managers = self.get_extras_group("manager")
+        return {
+            "groups": sorted(groups, key=lambda item: item[1]),
+            "managers": sorted(managers, key=lambda item: item[1]),
+        }
+
+    def get_stats_week(
+        self,
+        date_from: datetime.date,
+        date_end: datetime.date,
+        stats: pandas.DataFrame,
+        days: int,
+    ) -> List[int]:
+        output = []
+
+        while date_from <= date_end:
+            date_to = date_from + datetime.timedelta(days=6)
+            output.append(
+                stats[
+                    (stats.payment_from == date_from) & (stats.payment_to == date_to)
+                ].income.sum()
+            )
+            date_from += datetime.timedelta(weeks=1)
+
+        output += [pandas.NA] * (days - len(output))
+
+        return output
+
+    def get_percent(
+        self, data: pandas.DataFrame, total: pandas.DataFrame, days: int
+    ) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
+        columns = ["Сумма"] + list(range(1, days + 1))
+
+        data_percent = data.copy()
+        total_percent = total.copy()
+
+        for index, row in data_percent.iterrows():
+            data_percent.loc[index, columns] = data_percent.loc[index, columns].apply(
+                lambda item: pandas.NA
+                if pandas.isna(item)
+                else round(item / row["Расход"] * 100)
+            )
+
+        total_percent[columns] = total_percent[columns].apply(
+            lambda item: pandas.NA
+            if pandas.isna(item)
+            else round(item / total_percent["Расход"] * 100)
+        )
+
+        return data_percent, total_percent
+
+    def accumulate_stats_week(self, stats: List[int]) -> List[int]:
+        return list(
+            map(
+                lambda item: sum(stats[: item[0] + 1]),
+                enumerate(stats),
+            )
+        )
+
+    def get(self):
+        tz = pytz.timezone("Europe/Moscow")
+        roistat = pickle_loader.roistat_statistics
+
+        self.filters = self.get_filters(request.args)
+        self.zoom = self.get_zoom()
+        self.stats = self.get_stats()
+        print(self.zoom)
+        print(self.stats)
         self.extras = self.get_extras()
 
         orders_from = (

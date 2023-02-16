@@ -6,9 +6,8 @@ import pandas
 import httplib2
 import apiclient
 
-from typing import Tuple
 from pathlib import Path
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from transliterate import slugify
 from oauth2client.service_account import ServiceAccountCredentials
@@ -21,6 +20,7 @@ sys.path.append(Variable.get("APP_FOLDER"))
 
 from config import DATA_FOLDER, CREDENTIALS_FILE
 from app.dags.decorators import log_execution_time
+from app.utils import detect_week
 
 
 DATA_PATH = Path(DATA_FOLDER) / "week"
@@ -144,16 +144,6 @@ def get_stats():
 
 @log_execution_time("calculate")
 def calculate():
-    def detect_week(value: date) -> Tuple[date, date]:
-        start_week = 3
-        date_from = value - timedelta(
-            days=value.weekday()
-            + (7 if value.weekday() < start_week else 0)
-            - start_week
-        )
-        date_to = date_from + timedelta(days=6)
-        return date_from, date_to
-
     with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
         data: pandas.DataFrame = pickle.load(file_ref)
         data = data[
@@ -229,6 +219,7 @@ def get_zoom():
             )
             group.insert(0, "manager", manager)
             group.insert(1, "group", group_index)
+            group["date"] = group["date"].apply(parse_date)
             sources.append(group)
 
     zoom = pandas.concat(sources, ignore_index=True)
@@ -239,16 +230,6 @@ def get_zoom():
 
 @log_execution_time("calculate_zoom")
 def calculate_zoom():
-    def detect_week(value: date) -> Tuple[date, date]:
-        start_week = 3
-        date_from = value - timedelta(
-            days=value.weekday()
-            + (7 if value.weekday() < start_week else 0)
-            - start_week
-        )
-        date_to = date_from + timedelta(days=6)
-        return date_from, date_to
-
     with open(Path(DATA_PATH / "sources.pkl"), "rb") as sources_ref:
         data: pandas.DataFrame = pickle.load(sources_ref)
         data = data[~(data.data_zoom.isna() | data.data_oplaty.isna())]

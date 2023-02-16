@@ -1,0 +1,36 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in data.columns %}
+                    <th class="sticky nowrap">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th class="nowrap">&nbsp;</th>
+                {% for column in data.columns %}
+                    {% if column in ["С даты", "По дату"] %}
+                        <td class="nowrap font-monospace info">{{ total[column] }}</td>
+                    {% else %}
+                        <td class="nowrap font-monospace text-right info{% if column not in ["Расход"] %} switchable{% endif %}"{% if column not in ["Расход"] %} data-absolute="{{ format_int(total[column]) }}" data-percent="{{ format_percent(total_percent[column]) }}"{% endif %}>{{ format_int(total[column]) }}</td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% for index, statistic in data.iterrows() %}
+                <tr>
+                    <th class="nowrap">{{ index + 1 }}</th>
+                    {% for column in data.columns %}
+                        {% if column in ["С даты", "По дату"] %}
+                            <td class="nowrap font-monospace info">{{ statistic[column] }}</td>
+                        {% else %}
+                            <td class="nowrap font-monospace text-right{% if column in ["Расход", "Сумма"] %} warning{% endif %}{% if column not in ["Расход"] %} switchable{% endif %}"{% if column not in ["Расход"] %} data-absolute="{{ format_int(statistic[column]) }}" data-percent="{{ format_percent(data_percent.loc[index, column]) }}"{% endif %}>{{ format_int(statistic[column]) }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

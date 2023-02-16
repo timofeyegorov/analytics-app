@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    {% include 'base_links.html' %}
+    {% include 'week-stats/zoom/filters.html' %}
+    {% include 'week-stats/zoom/data.html' %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/week-stats/zoom/index.js') }}"></script>
+{% endblock js %}
