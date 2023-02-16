@@ -228,6 +228,7 @@ def get_zoom():
             group.insert(2, "group", group_index)
             group.insert(3, "group_title", group_index_title)
             group["date"] = group["date"].apply(parse_date)
+            group["count"] = group["count"].astype(int)
             sources.append(group)
 
     zoom = pandas.concat(sources, ignore_index=True)
