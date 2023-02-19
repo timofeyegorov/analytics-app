@@ -199,6 +199,12 @@ def get_zoom():
             .execute()
         )
         items = values.get("values")
+        for index, item in enumerate(items[1:]):
+            diff = len(items[0]) - len(item)
+            if diff < 0:
+                items[index + 1] = item[:diff]
+            elif diff > 0:
+                items[index + 1] = item + [0] * diff
         data = (
             pandas.DataFrame(data=items[1:], columns=items[0])
             .fillna(0)
