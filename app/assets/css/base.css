@@ -244,6 +244,9 @@ table.statistics .ad-detail > .image {
 table.statistics .ad-detail > .image > img {
     width:70px;
 }
+#statistics > table.hidden {
+    display:none;
+}
 
 label {
     display:block;

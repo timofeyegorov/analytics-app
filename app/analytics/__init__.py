@@ -84,6 +84,11 @@ def utility_processor():
                 "direction": available[names.index(name)].get("direction"),
             }
 
+    def render_int(value: int) -> str:
+        if pd.isna(value):
+            return ""
+        return value
+
     return dict(
         is_tuple=is_tuple,
         format_int=format_int,
@@ -91,6 +96,7 @@ def utility_processor():
         format_date=format_date,
         order_table=order_table,
         format_percent=format_percent,
+        render_int=render_int,
     )
 
 

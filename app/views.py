@@ -98,7 +98,6 @@ class WeekStatsZoomFiltersData(BaseModel):
     date: ConstrainedDate
     group: Optional[str]
     manager: Optional[str]
-    accumulative: bool = False
 
     def __getitem__(self, item):
         if item == "group":
@@ -3013,8 +3012,6 @@ class WeekStatsZoomView(TemplateView):
             date = datetime.date.fromisoformat(date)
         date = detect_week(date)[0]
 
-        accumulative = source.get("accumulative", False)
-
         group = source.get("group", "__all__")
         if group == "__all__":
             group = None
@@ -3023,9 +3020,7 @@ class WeekStatsZoomView(TemplateView):
         if manager == "__all__":
             manager = None
 
-        return WeekStatsZoomFiltersData(
-            date=date, group=group, manager=manager, accumulative=accumulative
-        )
+        return WeekStatsZoomFiltersData(date=date, group=group, manager=manager)
 
     def get_zoom(self) -> pandas.DataFrame:
         with open(Path(DATA_FOLDER) / "week" / "sources_zoom.pkl", "rb") as file_ref:
@@ -3099,39 +3094,6 @@ class WeekStatsZoomView(TemplateView):
 
         return output
 
-    def get_percent(
-        self, data: pandas.DataFrame, total: pandas.DataFrame, days: int
-    ) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
-        columns = ["Сумма"] + list(range(1, days + 1))
-
-        data_percent = data.copy()
-        total_percent = total.copy()
-
-        for index, row in data_percent.iterrows():
-            data_percent.loc[index, columns] = data_percent.loc[index, columns].apply(
-                lambda item: pandas.NA
-                if pandas.isna(item)
-                else (round(item / row["Zoom"]) if row["Zoom"] > 0 else 0)
-            )
-
-        total_percent[columns] = total_percent[columns].apply(
-            lambda item: pandas.NA
-            if pandas.isna(item)
-            else (
-                round(item / total_percent["Zoom"]) if total_percent["Zoom"] > 0 else 0
-            )
-        )
-
-        return data_percent, total_percent
-
-    def accumulate_stats_week(self, stats: List[int]) -> List[int]:
-        return list(
-            map(
-                lambda item: sum(stats[: item[0] + 1]),
-                enumerate(stats),
-            )
-        )
-
     def get(self):
         self.filters = self.get_filters(request.args)
         self.zoom = self.get_zoom()
@@ -3148,7 +3110,6 @@ class WeekStatsZoomView(TemplateView):
         stats_from = [date_from]
         stats_to = [date_end + datetime.timedelta(days=6)]
         stats_weeks = []
-        total_sums = []
         total_zooms = []
 
         while date_from <= date_end:
@@ -3162,11 +3123,7 @@ class WeekStatsZoomView(TemplateView):
                 ],
                 weeks,
             )
-            if self.filters.accumulative:
-                stats_weeks.append(self.accumulate_stats_week(stats_week))
-            else:
-                stats_weeks.append(stats_week)
-            total_sums.append(stats_week)
+            stats_weeks.append(stats_week)
             stats_from.append(date_from)
             stats_to.append(date_to)
             total_zooms.append(
@@ -3179,23 +3136,14 @@ class WeekStatsZoomView(TemplateView):
 
         data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
         total_sum = (
-            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=total_sums)
+            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
             .sum(axis=1)
             .astype(int)
         )
         data.insert(0, "Zoom", total_zooms)
         data.insert(1, "Сумма", total_sum)
         data = pandas.concat(
-            [
-                pandas.DataFrame(
-                    data=[
-                        data.mean().astype(int)
-                        if self.filters.accumulative
-                        else data.sum()
-                    ]
-                ),
-                data,
-            ],
+            [pandas.DataFrame(data=[data.sum()]), data],
             ignore_index=True,
         )
         data.insert(0, "С даты", stats_from)
@@ -3203,13 +3151,10 @@ class WeekStatsZoomView(TemplateView):
         data.reset_index(drop=True, inplace=True)
         total = data.iloc[0]
         data = data.iloc[1:].reset_index(drop=True)
-        data_percent, total_percent = self.get_percent(data, total, weeks)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("data", data)
         self.context("total", total)
-        self.context("data_percent", data_percent)
-        self.context("total_percent", total_percent)
 
         return super().get()
