@@ -109,26 +109,25 @@ def get_stats():
     for sheet in (
         service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
     ):
-        values = (
-            service.spreadsheets()
-            .values()
-            .get(
-                spreadsheetId=spreadsheet_id,
-                range=sheet.get("properties").get("title"),
-                majorDimension="ROWS",
+        title = sheet.get("properties").get("title")
+        if title == "Все оплаты":
+            values = (
+                service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+                .execute()
             )
-            .execute()
-        )
-        items = values.get("values")
-        items[0] = list(
-            map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
-        )
-        data = pandas.DataFrame(columns=items[0], data=items[1:])
-        for column, parse_fn in rel_fields.items():
-            if column not in data.columns:
-                data[column] = ""
-            data[column] = data[column].apply(parse_fn)
-        sources.append(data)
+            items = values.get("values")
+            items[0] = list(
+                map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
+            )
+            data = pandas.DataFrame(columns=items[0], data=items[1:])
+            for column, parse_fn in rel_fields.items():
+                if column not in data.columns:
+                    data[column] = ""
+                data[column] = data[column].apply(parse_fn)
+            sources.append(data)
+            break
     data = pandas.concat(sources, ignore_index=True)
 
     data.insert(
@@ -272,6 +271,11 @@ def calculate_zoom():
         pickle.dump(output, file_ref)
 
 
+@log_execution_time("update_so")
+def update_so():
+    pass
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -301,7 +305,13 @@ calculate_zoom_operator = PythonOperator(
     python_callable=calculate_zoom,
     dag=dag,
 )
+update_so_operator = PythonOperator(
+    task_id="update_so",
+    python_callable=update_so,
+    dag=dag,
+)
 
 get_stats_operator >> calculate_operator
 get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
+get_stats_operator >> update_so_operator

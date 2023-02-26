@@ -868,6 +868,10 @@ app.add_url_rule(
     "/week-stats/zoom",
     view_func=views.WeekStatsZoomView.as_view("week_stats_zoom"),
 )
+app.add_url_rule(
+    "/week-stats/so",
+    view_func=views.WeekStatsSpecialOffersView.as_view("week_stats_so"),
+)
 
 
 @app.route("/login/hh")

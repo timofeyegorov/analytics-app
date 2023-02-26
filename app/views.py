@@ -112,6 +112,24 @@ class WeekStatsZoomFiltersData(BaseModel):
             self.manager = value
 
 
+class WeekStatsSOFiltersData(BaseModel):
+    date: ConstrainedDate
+    group: Optional[str]
+    manager: Optional[str]
+
+    def __getitem__(self, item):
+        if item == "group":
+            return self.group
+        elif item == "manager":
+            return self.manager
+
+    def __setitem__(self, key, value):
+        if key == "group":
+            self.group = value
+        elif key == "manager":
+            self.manager = value
+
+
 class StatisticsRoistatFiltersData(BaseModel):
     date: Tuple[Optional[ConstrainedDate], Optional[ConstrainedDate]]
     account: Optional[str]
@@ -3130,6 +3148,167 @@ class WeekStatsZoomView(TemplateView):
                 self.zoom[
                     (self.zoom["date"] >= date_from) & (self.zoom["date"] <= date_to)
                 ]["count"].sum()
+            )
+
+            date_from += datetime.timedelta(weeks=1)
+
+        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
+        total_sum = (
+            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
+            .sum(axis=1)
+            .astype(int)
+        )
+        data.insert(0, "Zoom", total_zooms)
+        data.insert(1, "Сумма", total_sum)
+        data = pandas.concat(
+            [pandas.DataFrame(data=[data.sum()]), data],
+            ignore_index=True,
+        )
+        data.insert(0, "С даты", stats_from)
+        data.insert(1, "По дату", stats_to)
+        data.reset_index(drop=True, inplace=True)
+        total = data.iloc[0]
+        data = data.iloc[1:].reset_index(drop=True)
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+        self.context("total", total)
+
+        return super().get()
+
+
+class WeekStatsSpecialOffersView(TemplateView):
+    template_name = "week-stats/so/index.html"
+    title = "Еженедельная статистика по Special Offers"
+
+    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
+        date = source.get("date") or (
+            datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
+            - datetime.timedelta(weeks=10)
+        )
+        if isinstance(date, str):
+            date = datetime.date.fromisoformat(date)
+        date = detect_week(date)[0]
+
+        group = source.get("group", "__all__")
+        if group == "__all__":
+            group = None
+
+        manager = source.get("manager", "__all__")
+        if manager == "__all__":
+            manager = None
+
+        return WeekStatsSOFiltersData(date=date, group=group, manager=manager)
+
+    def get_so(self) -> pandas.DataFrame:
+        with open(Path(DATA_FOLDER) / "week" / "sources_so.pkl", "rb") as file_ref:
+            stats: pandas.DataFrame = pickle.load(file_ref)
+
+        if self.filters.date:
+            stats = stats[stats.date >= self.filters.date]
+
+        stats.reset_index(drop=True, inplace=True)
+
+        return stats
+
+    def get_stats(self) -> pandas.DataFrame:
+        with open(Path(DATA_FOLDER) / "week" / "stats_so.pkl", "rb") as file_ref:
+            stats: pandas.DataFrame = pickle.load(file_ref)
+
+        if self.filters.date:
+            stats = stats[stats.order_from >= self.filters.date]
+
+        stats.reset_index(drop=True, inplace=True)
+
+        return stats
+
+    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
+        groups = []
+        for name, item in self.so.groupby(group):
+            groups.append((name, item[f"{group}_title"].unique()[0]))
+        if self.filters[group] not in list(map(lambda item: item[0], groups)):
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            if group == "group":
+                self.stats = self.stats[
+                    self.stats["manager"].isin(
+                        self.zoom[self.zoom[group] == self.filters[group]][
+                            "manager"
+                        ].unique()
+                    )
+                ]
+            else:
+                self.stats = self.stats[self.stats[group] == self.filters[group]]
+            self.zoom = self.zoom[self.zoom[group] == self.filters[group]]
+        return groups
+
+    def get_extras(self) -> Dict[str, Any]:
+        groups = self.get_extras_group("group")
+        managers = self.get_extras_group("manager")
+        return {
+            "groups": sorted(groups, key=lambda item: item[1]),
+            "managers": sorted(managers, key=lambda item: item[1]),
+        }
+
+    def get_stats_week(
+        self,
+        date_from: datetime.date,
+        date_end: datetime.date,
+        stats: pandas.DataFrame,
+        weeks: int,
+    ) -> List[int]:
+        output = []
+
+        while date_from <= date_end:
+            date_to = date_from + datetime.timedelta(days=6)
+            output.append(
+                stats[
+                    (stats.payment_from == date_from) & (stats.payment_to == date_to)
+                ].income.sum()
+            )
+            date_from += datetime.timedelta(weeks=1)
+
+        output += [pandas.NA] * (weeks - len(output))
+
+        return output
+
+    def get(self):
+        self.filters = self.get_filters(request.args)
+        self.so = self.get_so()
+        self.stats = self.get_stats()
+        self.extras = self.get_extras()
+
+        orders_from = (
+            self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
+        )
+        date_from = min(orders_from)
+        date_end = max(orders_from)
+        weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
+
+        stats_from = [date_from]
+        stats_to = [date_end + datetime.timedelta(days=6)]
+        stats_weeks = []
+        total_zooms = []
+
+        while date_from <= date_end:
+            date_to = date_from + datetime.timedelta(days=6)
+            stats_week = self.get_stats_week(
+                date_from,
+                date_end,
+                self.stats[
+                    (self.stats.order_from == date_from)
+                    & (self.stats.order_to == date_to)
+                ],
+                weeks,
+            )
+            stats_weeks.append(stats_week)
+            stats_from.append(date_from)
+            stats_to.append(date_to)
+            total_zooms.append(
+                self.so[(self.so["date"] >= date_from) & (self.so["date"] <= date_to)][
+                    "count"
+                ].sum()
             )
 
             date_from += datetime.timedelta(weeks=1)
