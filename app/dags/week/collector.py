@@ -64,6 +64,14 @@ def parse_date(value: str) -> date:
     return date.fromisoformat("-".join(list(reversed(groups))))
 
 
+def get_lead_id(value: str) -> str:
+    lead_id = ""
+    if str(value).startswith("https://neuraluniversity.amocrm.ru/leads/detail/"):
+        match = re.search(r"^(\d+)", value[48:])
+        lead_id = match.group(0)
+    return lead_id
+
+
 @log_execution_time("get_stats")
 def get_stats():
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
@@ -82,6 +90,7 @@ def get_stats():
         "pochta": parse_str,
         "telefon": parse_str,
         "ssylka_na_amocrm": parse_str,
+        "id_sdelki": parse_int,
         "menedzher": parse_str,
         "gr": parse_int,
         "summa_oplachennaja_klientom": parse_int,
@@ -122,6 +131,12 @@ def get_stats():
                 map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
             )
             data = pandas.DataFrame(columns=items[0], data=items[1:])
+            data.insert(
+                5,
+                "id_sdelki",
+                data["ssylka_na_amocrm"].apply(get_lead_id),
+                allow_duplicates=True,
+            )
             for column, parse_fn in rel_fields.items():
                 if column not in data.columns:
                     data[column] = ""
@@ -312,6 +327,6 @@ update_so_operator = PythonOperator(
 )
 
 get_stats_operator >> calculate_operator
+get_stats_operator >> update_so_operator
 get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
-get_stats_operator >> update_so_operator
