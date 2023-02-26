@@ -288,7 +288,117 @@ def calculate_zoom():
 
 @log_execution_time("update_so")
 def update_so():
-    pass
+    with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
+        sources: pandas.DataFrame = pickle.load(file_ref)
+
+    rel_fields = {
+        "menedzher": parse_str,
+        "gruppa": parse_str,
+        "sdelka": parse_str,
+        "id_sdelki": parse_int,
+        "fio_klienta": parse_str,
+        "email": parse_str,
+        "telefon": parse_str,
+        "data_zoom": parse_date,
+        "data_so": parse_date,
+        "do_ili_posle_zoom": parse_str,
+    }
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    http_auth = credentials.authorize(httplib2.Http())
+    service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+    spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    sheet_id = None
+    data = None
+
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        title = sheet.get("properties").get("title")
+        if title == "SpecialOffers":
+            sheet_id = sheet.get("properties").get("sheetId")
+            values = (
+                service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+                .execute()
+            )
+            items = values.get("values", [])
+            if len(items):
+                items[0] = list(
+                    map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
+                )
+                data = pandas.DataFrame(columns=items[0], data=items[1:])
+                data.insert(
+                    3,
+                    "id_sdelki",
+                    data["sdelka"].apply(get_lead_id),
+                    allow_duplicates=True,
+                )
+                for column, parse_fn in rel_fields.items():
+                    if column not in data.columns:
+                        data[column] = ""
+                    data[column] = data[column].apply(parse_fn)
+            break
+
+    if data is not None:
+        data = data[rel_fields.keys()]
+        for index, row in data.iterrows():
+            if not pandas.isna(row["id_sdelki"]):
+                row_sources = sources[
+                    sources["id_sdelki"] == row["id_sdelki"]
+                ].sort_values(by=["data_oplaty"])
+                num = 1
+                for _, payment in row_sources.iterrows():
+                    data.loc[index, [f"data_oplaty_{num}", f"summa_oplaty_{num}"]] = [
+                        payment["data_oplaty"],
+                        payment["summa_vyruchki"],
+                    ]
+                    num += 1
+
+        if sheet_id is not None:
+            requests = [
+                {
+                    "deleteSheet": {
+                        "sheetId": sheet_id,
+                    }
+                },
+                {
+                    "addSheet": {
+                        "properties": {
+                            "title": "SpecialOffers",
+                        }
+                    }
+                },
+            ]
+            service.spreadsheets().batchUpdate(
+                spreadsheetId=spreadsheet_id, body={"requests": requests}
+            ).execute()
+
+            data.drop(columns=["id_sdelki"], inplace=True)
+            data.fillna("", inplace=True)
+            data["do_ili_posle_zoom"] = data["do_ili_posle_zoom"].apply(
+                lambda item: "" if item == "None" else item
+            )
+            data = data.astype(str)
+            data.rename(
+                columns=dict(
+                    zip(data.columns, list(map(rename_so_columns, data.columns)))
+                ),
+                inplace=True,
+            )
+            service.spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range=f"SpecialOffers!A1:ZZ{len(data)+1}",
+                valueInputOption="USER_ENTERED",
+                body={"values": [list(data.columns)] + data.values.tolist()},
+            ).execute()
 
 
 dag = DAG(
