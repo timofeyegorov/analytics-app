@@ -64,7 +64,6 @@ def parse_date(value: str) -> date:
     return date.fromisoformat("-".join(list(reversed(groups))))
 
 
-
 def get_lead_id(value: str) -> str:
     lead_id = ""
     if str(value).startswith("https://neuraluniversity.amocrm.ru/leads/detail/"):
@@ -388,6 +387,19 @@ def update_so():
                     num += 1
 
         if sheet_id is not None:
+            data.drop(columns=["id_sdelki"], inplace=True)
+            data.fillna("", inplace=True)
+            data["do_ili_posle_zoom"] = data["do_ili_posle_zoom"].apply(
+                lambda item: "" if item == "None" else item
+            )
+            data = data.astype(str)
+            data.rename(
+                columns=dict(
+                    zip(data.columns, list(map(rename_so_columns, data.columns)))
+                ),
+                inplace=True,
+            )
+            values = [list(data.columns)] + data.values.tolist()
             requests = [
                 {
                     "deleteSheet": {
@@ -405,24 +417,11 @@ def update_so():
             service.spreadsheets().batchUpdate(
                 spreadsheetId=spreadsheet_id, body={"requests": requests}
             ).execute()
-
-            data.drop(columns=["id_sdelki"], inplace=True)
-            data.fillna("", inplace=True)
-            data["do_ili_posle_zoom"] = data["do_ili_posle_zoom"].apply(
-                lambda item: "" if item == "None" else item
-            )
-            data = data.astype(str)
-            data.rename(
-                columns=dict(
-                    zip(data.columns, list(map(rename_so_columns, data.columns)))
-                ),
-                inplace=True,
-            )
             service.spreadsheets().values().update(
                 spreadsheetId=spreadsheet_id,
                 range=f"SpecialOffers!A1:ZZ{len(data)+1}",
                 valueInputOption="USER_ENTERED",
-                body={"values": [list(data.columns)] + data.values.tolist()},
+                body={"values": values},
             ).execute()
 
 
