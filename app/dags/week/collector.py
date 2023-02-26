@@ -64,12 +64,37 @@ def parse_date(value: str) -> date:
     return date.fromisoformat("-".join(list(reversed(groups))))
 
 
+
 def get_lead_id(value: str) -> str:
     lead_id = ""
     if str(value).startswith("https://neuraluniversity.amocrm.ru/leads/detail/"):
         match = re.search(r"^(\d+)", value[48:])
-        lead_id = match.group(0)
+        lead_id = match.group(1)
     return lead_id
+
+
+def rename_so_columns(value: str) -> str:
+    map_values = {
+        "menedzher": "Менеджер",
+        "gruppa": "Группа",
+        "sdelka": "Сделка",
+        "fio_klienta": "ФИО клиента",
+        "email": "Email",
+        "telefon": "Телефон",
+        "data_zoom": "Дата Zoom",
+        "data_so": "Дата SO",
+        "do_ili_posle_zoom": "До или после Zoom",
+        "data_oplaty_": "Дата оплаты ",
+        "summa_oplaty_": "Сумма оплаты ",
+    }
+    if value in map_values.keys():
+        return map_values.get(value)
+
+    match = re.search(r"^(\D+)(\d+)$", value)
+    if match and match.group(1) in map_values.keys():
+        return f"{map_values.get(match.group(1))}{match.group(2)}"
+
+    return value
 
 
 @log_execution_time("get_stats")
