@@ -114,7 +114,7 @@ class WeekStatsZoomFiltersData(BaseModel):
             self.manager = value
 
 
-class WeekStatsSOFiltersData(BaseModel):
+class WeekStatsSpecialOffersFiltersData(BaseModel):
     date: ConstrainedDate
     group: Optional[str]
     manager: Optional[str]
@@ -3215,7 +3215,7 @@ class WeekStatsSpecialOffersView(TemplateView):
         accumulative = source.get("accumulative", False)
         profit = source.get("profit", False)
 
-        return WeekStatsSOFiltersData(
+        return WeekStatsSpecialOffersFiltersData(
             date=date,
             group=group,
             manager=manager,
@@ -3311,7 +3311,7 @@ class WeekStatsSpecialOffersView(TemplateView):
         stats_from = [date_from]
         stats_to = [date_end + datetime.timedelta(days=6)]
         stats_weeks = []
-        total_zooms = []
+        total_so = []
 
         while date_from <= date_end:
             date_to = date_from + datetime.timedelta(days=6)
@@ -3327,7 +3327,7 @@ class WeekStatsSpecialOffersView(TemplateView):
             stats_weeks.append(stats_week)
             stats_from.append(date_from)
             stats_to.append(date_to)
-            total_zooms.append(
+            total_so.append(
                 self.so[(self.so["date"] >= date_from) & (self.so["date"] <= date_to)][
                     "count"
                 ].sum()
@@ -3341,7 +3341,7 @@ class WeekStatsSpecialOffersView(TemplateView):
             .sum(axis=1)
             .astype(int)
         )
-        data.insert(0, "Zoom", total_zooms)
+        data.insert(0, "SO", total_so)
         data.insert(1, "Сумма", total_sum)
         data = pandas.concat(
             [pandas.DataFrame(data=[data.sum()]), data],

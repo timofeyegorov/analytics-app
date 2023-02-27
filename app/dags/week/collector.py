@@ -589,11 +589,13 @@ def calculate_so():
             payments = tuple(zip(payment_date, payment_profit))
             items = []
             for index, item in data.iterrows():
-                order_week = detect_week(datetime.strptime(item["data_so"], "%d.%m.%Y"))
+                order_week = detect_week(
+                    datetime.strptime(item["data_so"], "%d.%m.%Y").date()
+                )
                 for day, profit in payments:
                     if item[day] and item[profit]:
                         payment_week = detect_week(
-                            datetime.strptime(item[day], "%d.%m.%Y")
+                            datetime.strptime(item[day], "%d.%m.%Y").date()
                         )
                         items.append(
                             {
@@ -662,4 +664,4 @@ get_stats_operator >> update_so_operator
 get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
 update_so_operator >> get_so_operator
-update_so_operator >> calculate_so_operator
+get_so_operator >> calculate_so_operator
