@@ -8,6 +8,8 @@ import apiclient
 
 from pathlib import Path
 from datetime import date, datetime
+from typing import List, Union
+from xlsxwriter import Workbook
 
 from transliterate import slugify
 from oauth2client.service_account import ServiceAccountCredentials
@@ -312,6 +314,14 @@ def calculate_zoom():
 
 @log_execution_time("update_so")
 def update_so():
+    def write_xlsx(data: List[List[Union[str, int]]]):
+        workbook = Workbook(DATA_PATH / "so.xlsx")
+        worksheet = workbook.add_worksheet("SpecialOffers")
+        for index, row in enumerate(data):
+            worksheet.write_row(index, 0, row)
+        worksheet.autofilter(0, 0, len(data) - 1, len(data[0]) - 1)
+        workbook.close()
+
     with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
         sources: pandas.DataFrame = pickle.load(file_ref)
 
@@ -400,6 +410,7 @@ def update_so():
                 inplace=True,
             )
             values = [list(data.columns)] + data.values.tolist()
+            write_xlsx(values)
             requests = [
                 {
                     "deleteSheet": {
