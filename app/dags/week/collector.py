@@ -525,6 +525,93 @@ def get_so():
             break
 
 
+@log_execution_time("calculate_so")
+def calculate_so():
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    http_auth = credentials.authorize(httplib2.Http())
+    service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+    spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        title = sheet.get("properties").get("title")
+        if title == "SpecialOffers":
+            values = (
+                service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+                .execute()
+            )
+            items = values.get("values")
+            items[0] = list(
+                map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
+            )
+            data: pandas.DataFrame = (
+                pandas.DataFrame(data=items[1:], columns=items[0])
+                .fillna("")
+                .rename(columns={"menedzher": "menedzher_title"})
+            )
+            data.insert(
+                0,
+                "menedzher",
+                data["menedzher_title"].apply(
+                    lambda item: slugify(item, "ru").replace("-", "_")
+                ),
+            )
+            data.insert(
+                3,
+                "gruppa_title",
+                data["gruppa"].apply(
+                    lambda item: "" if str(item) == "" else f'Группа "{item}"'
+                ),
+            )
+            data = data[(data["data_so"] != "") & (data["menedzher"] != "")]
+            payment_date = sorted(
+                list(
+                    filter(
+                        lambda item: str(item).startswith("data_oplaty_"), data.columns
+                    )
+                )
+            )
+            payment_profit = sorted(
+                list(
+                    filter(
+                        lambda item: str(item).startswith("summa_oplaty_"), data.columns
+                    )
+                )
+            )
+            payments = tuple(zip(payment_date, payment_profit))
+            items = []
+            for index, item in data.iterrows():
+                order_week = detect_week(datetime.strptime(item["data_so"], "%d.%m.%Y"))
+                for day, profit in payments:
+                    if item[day] and item[profit]:
+                        payment_week = detect_week(
+                            datetime.strptime(item[day], "%d.%m.%Y")
+                        )
+                        items.append(
+                            {
+                                "manager": item["menedzher"],
+                                "manager_title": item["menedzher_title"],
+                                "order_from": order_week[0],
+                                "order_to": order_week[1],
+                                "payment_from": payment_week[0],
+                                "payment_to": payment_week[1],
+                                "income": int(item[profit]),
+                            }
+                        )
+            output = pandas.DataFrame(data=items)
+            with open(Path(DATA_PATH / "stats_so.pkl"), "wb") as file_ref:
+                pickle.dump(output, file_ref)
+            break
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -564,9 +651,15 @@ get_so_operator = PythonOperator(
     python_callable=get_so,
     dag=dag,
 )
+calculate_so_operator = PythonOperator(
+    task_id="calculate_so",
+    python_callable=calculate_so,
+    dag=dag,
+)
 
 get_stats_operator >> calculate_operator
 get_stats_operator >> update_so_operator
 get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
 update_so_operator >> get_so_operator
+update_so_operator >> calculate_so_operator
