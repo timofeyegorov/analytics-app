@@ -402,7 +402,19 @@ def update_so():
             data["do_ili_posle_zoom"] = data["do_ili_posle_zoom"].apply(
                 lambda item: "" if item == "None" else item
             )
-            data = data.astype(str)
+            for column in data.columns:
+                if column in ["data_zoom", "data_so"] or str(column).startswith(
+                    "data_oplaty_"
+                ):
+                    data[column] = data[column].apply(
+                        lambda item: str(item.strftime("%d.%m.%Y")) if item else ""
+                    )
+                elif str(column).startswith("summa_oplaty_"):
+                    data[column] = data[column].apply(
+                        lambda item: "" if str(item) == "" else int(item)
+                    )
+                else:
+                    data[column] = data[column].apply(lambda item: f"'{item}")
             data.rename(
                 columns=dict(
                     zip(data.columns, list(map(rename_so_columns, data.columns)))
@@ -434,6 +446,76 @@ def update_so():
                 valueInputOption="USER_ENTERED",
                 body={"values": values},
             ).execute()
+
+
+# @log_execution_time("get_so")
+# def get_so():
+#     credentials = ServiceAccountCredentials.from_json_keyfile_name(
+#         CREDENTIALS_FILE,
+#         [
+#             "https://www.googleapis.com/auth/spreadsheets",
+#             "https://www.googleapis.com/auth/drive",
+#         ],
+#     )
+#     http_auth = credentials.authorize(httplib2.Http())
+#     service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+#     spreadsheet_id = "1xKcTwITOBVNTarxciMo6gEJNZuMMxsWr4CS9eDnYiA8"
+#     for sheet in (
+#         service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+#     ):
+#         values = (
+#             service.spreadsheets()
+#             .values()
+#             .get(
+#                 spreadsheetId=spreadsheet_id,
+#                 range=sheet.get("properties").get("title"),
+#                 majorDimension="ROWS",
+#             )
+#             .execute()
+#         )
+#         items = values.get("values")
+#         for index, item in enumerate(items[1:]):
+#             diff = len(items[0]) - len(item)
+#             if diff < 0:
+#                 items[index + 1] = item[:diff]
+#             elif diff > 0:
+#                 items[index + 1] = item + [0] * diff
+#         data = (
+#             pandas.DataFrame(data=items[1:], columns=items[0])
+#             .fillna(0)
+#             .replace("", 0)
+#             .rename(columns={"Менеджер": "manager_title", "Группа": "group"})
+#         )
+#         data.insert(
+#             0,
+#             "manager",
+#             data["manager_title"].apply(
+#                 lambda item: slugify(item, "ru").replace("-", "_")
+#             ),
+#         )
+#         sources = []
+#         for manager, group in data.groupby("manager"):
+#             group_index = group["group"].iloc[0]
+#             group_index_title = f'Группа "{group_index}"'
+#             manager_title = group["manager_title"].iloc[0]
+#             group.drop(columns=["manager", "manager_title", "group"], inplace=True)
+#             group = group.T
+#             group.reset_index(inplace=True)
+#             group.rename(
+#                 columns={"index": "date", group.columns[1]: "count"}, inplace=True
+#             )
+#             group.insert(0, "manager", manager)
+#             group.insert(1, "manager_title", manager_title)
+#             group.insert(2, "group", group_index)
+#             group.insert(3, "group_title", group_index_title)
+#             group["date"] = group["date"].apply(parse_date)
+#             group["count"] = group["count"].astype(int)
+#             sources.append(group)
+#
+#     zoom = pandas.concat(sources, ignore_index=True)
+#
+#     with open(Path(DATA_PATH / "sources_zoom.pkl"), "wb") as file_ref:
+#         pickle.dump(zoom, file_ref)
 
 
 dag = DAG(
@@ -470,8 +552,14 @@ update_so_operator = PythonOperator(
     python_callable=update_so,
     dag=dag,
 )
+# get_so_operator = PythonOperator(
+#     task_id="get_so",
+#     python_callable=get_so,
+#     dag=dag,
+# )
 
 get_stats_operator >> calculate_operator
 get_stats_operator >> update_so_operator
 get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
+# update_so_operator >> get_so_operator

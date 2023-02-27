@@ -57,7 +57,7 @@
                 td.filter((_, item) => item.cellIndex > 4 && item.parentElement.rowIndex === 1).each((_, item) => {
                     let row_index = item.parentElement.rowIndex,
                         cell_index = item.cellIndex;
-                    item.innerText = render_int(td.filter((_, item) => item.cellIndex > 4 && item.cellIndex <= cell_index && item.parentElement.rowIndex === row_index).map((_, item) => item.dataset.value).toArray().sum() / (is_profit ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === 1)[0].dataset.value) : td.filter((_, item) => item.cellIndex === cell_index && item.parentElement.rowIndex > 1 && `${item.dataset.value}` !== "").length));
+                    item.innerText = render_int(td.filter((_, item) => item.cellIndex > 4 && item.cellIndex <= cell_index && item.parentElement.rowIndex === row_index).map((_, item) => item.dataset.value).toArray().sum() / (is_profit ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === 1)[0].dataset.value) : td.filter((_, item) => item.cellIndex > 4 && item.parentElement.rowIndex === 1).length));
                 });
             } else {
                 td.filter((_, item) => item.cellIndex > 3 && `${item.dataset.value}` !== "").each((_, item) => {
