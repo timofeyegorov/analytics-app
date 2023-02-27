@@ -19,7 +19,7 @@
     $(() => {
 
         let accumulative_field = $("#field-accumulative"),
-            return_field = $("#field-return");
+            profit_field = $("#field-profit");
 
         let render_int = (value) => {
             let value_parse = parseFloat(value);
@@ -31,7 +31,7 @@
             let table = $("#statistics > table"),
                 td = table.find("tbody > tr > td"),
                 is_accumulative = accumulative_field[0].checked,
-                is_return = return_field[0].checked,
+                is_profit = profit_field[0].checked,
                 zooms = 0;
 
             td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === 1).each((_, item) => {
@@ -42,27 +42,27 @@
             if (is_accumulative) {
                 td.filter((_, item) => item.cellIndex === 4).slice(1).each((_, item) => {
                     let row_index = item.parentElement.rowIndex;
-                    item.innerText = render_int(parseInt(item.dataset.value) / (is_return ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === row_index)[0].dataset.value) : 1));
+                    item.innerText = render_int(parseInt(item.dataset.value) / (is_profit ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === row_index)[0].dataset.value) : 1));
                 });
                 td.filter((_, item) => item.cellIndex > 4 && item.parentElement.rowIndex > 1 && `${item.dataset.value}` !== "").each((_, item) => {
                     let row_index = item.parentElement.rowIndex,
                         cell_index = item.cellIndex;
-                    item.innerText = render_int(td.filter((_, item) => item.cellIndex > 4 && item.cellIndex <= cell_index && item.parentElement.rowIndex === row_index).map((_, item) => item.dataset.value).toArray().sum() / (is_return ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === row_index)[0].dataset.value) : 1));
+                    item.innerText = render_int(td.filter((_, item) => item.cellIndex > 4 && item.cellIndex <= cell_index && item.parentElement.rowIndex === row_index).map((_, item) => item.dataset.value).toArray().sum() / (is_profit ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === row_index)[0].dataset.value) : 1));
                 });
                 td.filter((_, item) => item.cellIndex === 4 && item.parentElement.rowIndex === 1). each((_, item) => {
                     let row_index = item.parentElement.rowIndex,
                         cell_index = item.cellIndex;
-                    item.innerText = render_int(parseInt(item.dataset.value) / td.filter((_, item) => item.cellIndex === cell_index && item.parentElement.rowIndex > 1 && `${item.dataset.value}` !== "").length / (is_return ? zooms : 1));
+                    item.innerText = render_int(parseInt(item.dataset.value) / td.filter((_, item) => item.cellIndex === cell_index && item.parentElement.rowIndex > 1 && `${item.dataset.value}` !== "").length / (is_profit ? zooms : 1));
                 });
                 td.filter((_, item) => item.cellIndex > 4 && item.parentElement.rowIndex === 1).each((_, item) => {
                     let row_index = item.parentElement.rowIndex,
                         cell_index = item.cellIndex;
-                    item.innerText = render_int(td.filter((_, item) => item.cellIndex > 4 && item.cellIndex <= cell_index && item.parentElement.rowIndex === row_index).map((_, item) => item.dataset.value).toArray().sum() / (is_return ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === 1)[0].dataset.value) : td.filter((_, item) => item.cellIndex === cell_index && item.parentElement.rowIndex > 1 && `${item.dataset.value}` !== "").length));
+                    item.innerText = render_int(td.filter((_, item) => item.cellIndex > 4 && item.cellIndex <= cell_index && item.parentElement.rowIndex === row_index).map((_, item) => item.dataset.value).toArray().sum() / (is_profit ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === 1)[0].dataset.value) : td.filter((_, item) => item.cellIndex === cell_index && item.parentElement.rowIndex > 1 && `${item.dataset.value}` !== "").length));
                 });
             } else {
                 td.filter((_, item) => item.cellIndex > 3 && `${item.dataset.value}` !== "").each((_, item) => {
                     let row_index = item.parentElement.rowIndex;
-                    item.innerText = render_int(parseInt(item.dataset.value) / (is_return ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === row_index)[0].dataset.value) : 1));
+                    item.innerText = render_int(parseInt(item.dataset.value) / (is_profit ? parseInt(td.filter((_, item) => item.cellIndex === 3 && item.parentElement.rowIndex === row_index)[0].dataset.value) : 1));
                 });
             }
         };
@@ -90,7 +90,7 @@
         };
 
         accumulative_field.bind("change", recalculate);
-        return_field.bind("change", recalculate);
+        profit_field.bind("change", recalculate);
 
         $("form").bind("submit", (event) => {
             if (!event.currentTarget[0].value) event.currentTarget[0].disabled = true;

@@ -27,12 +27,12 @@
             </select>
         </div>
         <div class="field field-checkbox">
-            <input type="checkbox" id="field-accumulative">
+            <input type="checkbox" id="field-accumulative" name="accumulative"{% if filters.accumulative %} checked="checked"{% endif %}>
             <label for="field-accumulative">Накопительно</label>
         </div>
         <div class="field field-checkbox">
-            <input type="checkbox" id="field-return">
-            <label for="field-return">Оборот на Zoom</label>
+            <input type="checkbox" id="field-profit" name="profit"{% if filters.profit %} checked="checked"{% endif %}>
+            <label for="field-profit">Оборот на Zoom</label>
         </div>
     </div>
     <div class="filter-actions">

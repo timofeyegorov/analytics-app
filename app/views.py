@@ -98,6 +98,8 @@ class WeekStatsZoomFiltersData(BaseModel):
     date: ConstrainedDate
     group: Optional[str]
     manager: Optional[str]
+    accumulative: bool = False
+    profit: bool = False
 
     def __getitem__(self, item):
         if item == "group":
@@ -116,6 +118,8 @@ class WeekStatsSOFiltersData(BaseModel):
     date: ConstrainedDate
     group: Optional[str]
     manager: Optional[str]
+    accumulative: bool = False
+    profit: bool = False
 
     def __getitem__(self, item):
         if item == "group":
@@ -2815,7 +2819,7 @@ class StatisticsGroupsByCampaignView(APIView):
 
 class WeekStatsView(TemplateView):
     template_name = "week-stats/index.html"
-    title = "Еженедельная статистика"
+    title = 'Когорты "Расход"'
 
     def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
         date = source.get("date") or (
@@ -3019,7 +3023,7 @@ class WeekStatsView(TemplateView):
 
 class WeekStatsZoomView(TemplateView):
     template_name = "week-stats/zoom/index.html"
-    title = "Еженедельная статистика по Zoom"
+    title = 'Когорты "Zoom"'
 
     def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
         date = source.get("date") or (
@@ -3038,7 +3042,16 @@ class WeekStatsZoomView(TemplateView):
         if manager == "__all__":
             manager = None
 
-        return WeekStatsZoomFiltersData(date=date, group=group, manager=manager)
+        accumulative = source.get("accumulative", False)
+        profit = source.get("profit", False)
+
+        return WeekStatsZoomFiltersData(
+            date=date,
+            group=group,
+            manager=manager,
+            accumulative=accumulative,
+            profit=profit,
+        )
 
     def get_zoom(self) -> pandas.DataFrame:
         with open(Path(DATA_FOLDER) / "week" / "sources_zoom.pkl", "rb") as file_ref:
@@ -3180,7 +3193,7 @@ class WeekStatsZoomView(TemplateView):
 
 class WeekStatsSpecialOffersView(TemplateView):
     template_name = "week-stats/so/index.html"
-    title = "Еженедельная статистика по Special Offers"
+    title = 'Когорты "Special Offers"'
 
     def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
         date = source.get("date") or (
@@ -3199,7 +3212,16 @@ class WeekStatsSpecialOffersView(TemplateView):
         if manager == "__all__":
             manager = None
 
-        return WeekStatsSOFiltersData(date=date, group=group, manager=manager)
+        accumulative = source.get("accumulative", False)
+        profit = source.get("profit", False)
+
+        return WeekStatsSOFiltersData(
+            date=date,
+            group=group,
+            manager=manager,
+            accumulative=accumulative,
+            profit=profit,
+        )
 
     def get_so(self) -> pandas.DataFrame:
         with open(Path(DATA_FOLDER) / "week" / "sources_so.pkl", "rb") as file_ref:
@@ -3233,14 +3255,14 @@ class WeekStatsSpecialOffersView(TemplateView):
             if group == "group":
                 self.stats = self.stats[
                     self.stats["manager"].isin(
-                        self.zoom[self.zoom[group] == self.filters[group]][
+                        self.so[self.so[group] == self.filters[group]][
                             "manager"
                         ].unique()
                     )
                 ]
             else:
                 self.stats = self.stats[self.stats[group] == self.filters[group]]
-            self.zoom = self.zoom[self.zoom[group] == self.filters[group]]
+            self.so = self.so[self.so[group] == self.filters[group]]
         return groups
 
     def get_extras(self) -> Dict[str, Any]:
