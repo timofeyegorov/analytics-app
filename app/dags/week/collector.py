@@ -448,74 +448,81 @@ def update_so():
             ).execute()
 
 
-# @log_execution_time("get_so")
-# def get_so():
-#     credentials = ServiceAccountCredentials.from_json_keyfile_name(
-#         CREDENTIALS_FILE,
-#         [
-#             "https://www.googleapis.com/auth/spreadsheets",
-#             "https://www.googleapis.com/auth/drive",
-#         ],
-#     )
-#     http_auth = credentials.authorize(httplib2.Http())
-#     service = apiclient.discovery.build("sheets", "v4", http=http_auth)
-#     spreadsheet_id = "1xKcTwITOBVNTarxciMo6gEJNZuMMxsWr4CS9eDnYiA8"
-#     for sheet in (
-#         service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
-#     ):
-#         values = (
-#             service.spreadsheets()
-#             .values()
-#             .get(
-#                 spreadsheetId=spreadsheet_id,
-#                 range=sheet.get("properties").get("title"),
-#                 majorDimension="ROWS",
-#             )
-#             .execute()
-#         )
-#         items = values.get("values")
-#         for index, item in enumerate(items[1:]):
-#             diff = len(items[0]) - len(item)
-#             if diff < 0:
-#                 items[index + 1] = item[:diff]
-#             elif diff > 0:
-#                 items[index + 1] = item + [0] * diff
-#         data = (
-#             pandas.DataFrame(data=items[1:], columns=items[0])
-#             .fillna(0)
-#             .replace("", 0)
-#             .rename(columns={"Менеджер": "manager_title", "Группа": "group"})
-#         )
-#         data.insert(
-#             0,
-#             "manager",
-#             data["manager_title"].apply(
-#                 lambda item: slugify(item, "ru").replace("-", "_")
-#             ),
-#         )
-#         sources = []
-#         for manager, group in data.groupby("manager"):
-#             group_index = group["group"].iloc[0]
-#             group_index_title = f'Группа "{group_index}"'
-#             manager_title = group["manager_title"].iloc[0]
-#             group.drop(columns=["manager", "manager_title", "group"], inplace=True)
-#             group = group.T
-#             group.reset_index(inplace=True)
-#             group.rename(
-#                 columns={"index": "date", group.columns[1]: "count"}, inplace=True
-#             )
-#             group.insert(0, "manager", manager)
-#             group.insert(1, "manager_title", manager_title)
-#             group.insert(2, "group", group_index)
-#             group.insert(3, "group_title", group_index_title)
-#             group["date"] = group["date"].apply(parse_date)
-#             group["count"] = group["count"].astype(int)
-#             sources.append(group)
-#
-#     zoom = pandas.concat(sources, ignore_index=True)
-#
-#     with open(Path(DATA_PATH / "sources_zoom.pkl"), "wb") as file_ref:
-#         pickle.dump(zoom, file_ref)
+@log_execution_time("get_so")
+def get_so():
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    http_auth = credentials.authorize(httplib2.Http())
+    service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+    spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        title = sheet.get("properties").get("title")
+        if title == "SpecialOffers":
+            values = (
+                service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+                .execute()
+            )
+            items = values.get("values")
+            items[0] = list(
+                map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
+            )
+            data: pandas.DataFrame = (
+                pandas.DataFrame(data=items[1:], columns=items[0])
+                .fillna("")
+                .rename(columns={"menedzher": "menedzher_title"})
+            )
+            data.insert(
+                0,
+                "menedzher",
+                data["menedzher_title"].apply(
+                    lambda item: slugify(item, "ru").replace("-", "_")
+                ),
+            )
+            data.insert(
+                3,
+                "gruppa_title",
+                data["gruppa"].apply(
+                    lambda item: "" if str(item) == "" else f'Группа "{item}"'
+                ),
+            )
+            data["data_so"] = data["data_so"].apply(parse_date)
+            data = data[(data["data_so"] != "") & (data["menedzher"] != "")]
+            sources = []
+            for (manager, date_so), group in data.groupby(["menedzher", "data_so"]):
+                first = group.iloc[0]
+                sources.append(
+                    [
+                        manager,
+                        first["menedzher_title"],
+                        first["gruppa"],
+                        first["gruppa_title"],
+                        date_so,
+                        len(group),
+                    ]
+                )
+            so = pandas.DataFrame(
+                sources,
+                columns=[
+                    "manager",
+                    "manager_title",
+                    "group",
+                    "group_title",
+                    "date",
+                    "count",
+                ],
+            )
+            with open(Path(DATA_PATH / "sources_so.pkl"), "wb") as file_ref:
+                pickle.dump(so, file_ref)
+            break
 
 
 dag = DAG(
@@ -552,14 +559,14 @@ update_so_operator = PythonOperator(
     python_callable=update_so,
     dag=dag,
 )
-# get_so_operator = PythonOperator(
-#     task_id="get_so",
-#     python_callable=get_so,
-#     dag=dag,
-# )
+get_so_operator = PythonOperator(
+    task_id="get_so",
+    python_callable=get_so,
+    dag=dag,
+)
 
 get_stats_operator >> calculate_operator
 get_stats_operator >> update_so_operator
 get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
-# update_so_operator >> get_so_operator
+update_so_operator >> get_so_operator
