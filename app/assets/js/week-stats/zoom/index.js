@@ -24,7 +24,7 @@
         let render_int = (value) => {
             let value_parse = parseFloat(value);
             if (!isNaN(value_parse) && `${value_parse}` === `${value}`) return Math.ceil(value_parse).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-            return "";
+            return "0";
         };
 
         let recalculate = () => {

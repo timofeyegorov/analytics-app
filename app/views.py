@@ -2824,7 +2824,7 @@ class WeekStatsView(TemplateView):
     def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
         date = source.get("date") or (
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
-            - datetime.timedelta(weeks=10)
+            - datetime.timedelta(weeks=9)
         )
         if isinstance(date, str):
             date = datetime.date.fromisoformat(date)
@@ -2932,7 +2932,9 @@ class WeekStatsView(TemplateView):
             self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
         )
         date_from = min(orders_from)
-        date_end = max(orders_from)
+        if date_from > self.filters.date:
+            date_from = self.filters.date
+        date_end = detect_week(datetime.date.today())[0]
         weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         stats_from = [date_from]
@@ -3028,7 +3030,7 @@ class WeekStatsZoomView(TemplateView):
     def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
         date = source.get("date") or (
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
-            - datetime.timedelta(weeks=10)
+            - datetime.timedelta(weeks=9)
         )
         if isinstance(date, str):
             date = datetime.date.fromisoformat(date)
@@ -3135,7 +3137,9 @@ class WeekStatsZoomView(TemplateView):
             self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
         )
         date_from = min(orders_from)
-        date_end = max(orders_from)
+        if date_from > self.filters.date:
+            date_from = self.filters.date
+        date_end = detect_week(datetime.date.today())[0]
         weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         stats_from = [date_from]
@@ -3198,7 +3202,7 @@ class WeekStatsSpecialOffersView(TemplateView):
     def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
         date = source.get("date") or (
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
-            - datetime.timedelta(weeks=10)
+            - datetime.timedelta(weeks=9)
         )
         if isinstance(date, str):
             date = datetime.date.fromisoformat(date)
@@ -3305,7 +3309,9 @@ class WeekStatsSpecialOffersView(TemplateView):
             self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
         )
         date_from = min(orders_from)
-        date_end = max(orders_from)
+        if date_from > self.filters.date:
+            date_from = self.filters.date
+        date_end = detect_week(datetime.date.today())[0]
         weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         stats_from = [date_from]
