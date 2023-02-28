@@ -134,6 +134,15 @@ class WeekStatsSpecialOffersFiltersData(BaseModel):
             self.manager = value
 
 
+class WeekStatsManagersFiltersData(BaseModel):
+    zoom_date_from: Optional[ConstrainedDate]
+    zoom_date_to: Optional[ConstrainedDate]
+    so_date_from: Optional[ConstrainedDate]
+    so_date_to: Optional[ConstrainedDate]
+    payment_date_from: Optional[ConstrainedDate]
+    payment_date_to: Optional[ConstrainedDate]
+
+
 class StatisticsRoistatFiltersData(BaseModel):
     date: Tuple[Optional[ConstrainedDate], Optional[ConstrainedDate]]
     account: Optional[str]
@@ -3027,7 +3036,7 @@ class WeekStatsZoomView(TemplateView):
     template_name = "week-stats/zoom/index.html"
     title = 'Когорты "Zoom"'
 
-    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
+    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsZoomFiltersData:
         date = source.get("date") or (
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
             - datetime.timedelta(weeks=9)
@@ -3199,7 +3208,9 @@ class WeekStatsSpecialOffersView(TemplateView):
     template_name = "week-stats/so/index.html"
     title = 'Когорты "Special Offers"'
 
-    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
+    def get_filters(
+        self, source: ImmutableMultiDict
+    ) -> WeekStatsSpecialOffersFiltersData:
         date = source.get("date") or (
             datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
             - datetime.timedelta(weeks=9)
@@ -3363,5 +3374,35 @@ class WeekStatsSpecialOffersView(TemplateView):
         self.context("extras", self.extras)
         self.context("data", data)
         self.context("total", total)
+
+        return super().get()
+
+
+class WeekStatsManagersView(TemplateView):
+    template_name = "week-stats/managers/index.html"
+    title = "Менеджеры"
+
+    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsManagersFiltersData:
+        def to_date(value: Optional[str] = None) -> Optional[datetime.date]:
+            if not f"{value}" or value is None:
+                return None
+            return datetime.date.fromisoformat(f"{value}")
+
+        return WeekStatsManagersFiltersData(
+            zoom_date_from=to_date(source.get("zoom_date_from")),
+            zoom_date_to=to_date(source.get("zoom_date_to")),
+            so_date_from=to_date(source.get("so_date_from")),
+            so_date_to=to_date(source.get("so_date_to")),
+            payment_date_from=to_date(source.get("payment_date_from")),
+            payment_date_to=to_date(source.get("payment_date_to")),
+        )
+
+    def get(self):
+        self.filters = self.get_filters(request.args)
+
+        data = pandas.DataFrame()
+
+        self.context("filters", self.filters)
+        self.context("data", data)
 
         return super().get()

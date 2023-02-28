@@ -1,0 +1,32 @@
+<form action="{{ url_for('week_stats_managers') }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-zoom_date_from">Zoom с даты</label>
+            <input type="date" name="zoom_date_from" id="field-zoom_date_from" value="{% if filters.zoom_date_from %}{{ filters.zoom_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-zoom_date_to">Zoom по дату</label>
+            <input type="date" name="zoom_date_to" id="field-zoom_date_to" value="{% if filters.zoom_date_to %}{{ filters.zoom_date_to }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-so_date_from">SO с даты</label>
+            <input type="date" name="so_date_from" id="field-so_date_from" value="{% if filters.so_date_from %}{{ filters.so_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-so_date_to">SO по дату</label>
+            <input type="date" name="so_date_to" id="field-so_date_to" value="{% if filters.so_date_to %}{{ filters.so_date_to }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-payment_date_from">Оплата с даты</label>
+            <input type="date" name="payment_date_from" id="field-payment_date_from" value="{% if filters.payment_date_from %}{{ filters.payment_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-payment_date_to">Оплата по дату</label>
+            <input type="date" name="payment_date_to" id="field-payment_date_to" value="{% if filters.payment_date_to %}{{ filters.payment_date_to }}{% endif %}">
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Обновить</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
+    </div>
+</form>

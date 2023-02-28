@@ -614,6 +614,11 @@ def calculate_so():
             break
 
 
+@log_execution_time("get_managers")
+def get_managers():
+    pass
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -658,6 +663,11 @@ calculate_so_operator = PythonOperator(
     python_callable=calculate_so,
     dag=dag,
 )
+get_managers_operator = PythonOperator(
+    task_id="get_managers",
+    python_callable=get_managers,
+    dag=dag,
+)
 
 get_stats_operator >> calculate_operator
 get_stats_operator >> update_so_operator
@@ -665,3 +675,5 @@ get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
 update_so_operator >> get_so_operator
 get_so_operator >> calculate_so_operator
+get_zoom_operator >> get_managers_operator
+get_so_operator >> get_managers_operator
