@@ -3424,10 +3424,10 @@ class WeekStatsManagersView(TemplateView):
             .groupby(by=["group", "group_title"])
         ):
             items = []
-            for (manager, manager_title), managers in (
+            for (manager_title, manager), managers in (
                 groups.sort_values("manager_title")
                 .reset_index(drop=True)
-                .groupby(by=["manager", "manager_title"])
+                .groupby(by=["manager_title", "manager"])
             ):
                 zoom = managers["zoom"].sum()
                 zoom_profit = managers["payment"].sum()
