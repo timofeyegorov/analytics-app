@@ -1,32 +1,24 @@
 <div id="statistics">
-    <table class="hidden">
+    <table>
         <thead>
             <tr>
-                <th class="sticky nowrap">&nbsp;</th>
                 {% for column in data.columns %}
-                    <th class="sticky nowrap">{{ column }}</th>
+                    {% if column != "is_group" %}
+                        <th class="sticky nowrap">{{ column }}</th>
+                    {% endif %}
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <th class="nowrap">&nbsp;</th>
-                {% for column in data.columns %}
-                    {% if column in ["С даты", "По дату"] %}
-                        <td class="nowrap font-monospace info">{{ total[column] }}</td>
-                    {% else %}
-                        <td class="nowrap font-monospace text-right info"></td>
-                    {% endif %}
-                {% endfor %}
-            </tr>
-            {% for index, statistic in data.iterrows() %}
+            {% for index, item in data.iterrows() %}
                 <tr>
-                    <th class="nowrap">{{ index + 1 }}</th>
                     {% for column in data.columns %}
-                        {% if column in ["С даты", "По дату"] %}
-                            <td class="nowrap font-monospace info">{{ statistic[column] }}</td>
-                        {% else %}
-                            <td class="nowrap font-monospace text-right{% if column in ["SO", "Сумма"] %} warning{% endif %}"{% if column not in ["Сумма"] %} data-value="{{ render_int(statistic[column]) }}"{% endif %}></td>
+                        {% if column != "is_group" %}
+                            {% if column == "Менеджер/Группа" %}
+                                <td class="nowrap{% if item.is_group %} info{% endif %}">{{ item[column] }}</td>
+                            {% else %}
+                                <td class="nowrap font-monospace{% if item.is_group %} info{% endif %} text-right">{{ format_int(item[column]) }}</td>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                 </tr>

@@ -61,7 +61,7 @@ def utility_processor():
     def format_int(value: int) -> str:
         if pd.isna(value):
             return ""
-        return f"{value:,}".replace(",", " ")
+        return f"{round(value):,}".replace(",", " ")
 
     def format_float2(value: float) -> str:
         return f"{value:,.2f}".replace(",", " ")

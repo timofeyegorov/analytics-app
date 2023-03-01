@@ -135,10 +135,8 @@ class WeekStatsSpecialOffersFiltersData(BaseModel):
 
 
 class WeekStatsManagersFiltersData(BaseModel):
-    zoom_date_from: Optional[ConstrainedDate]
-    zoom_date_to: Optional[ConstrainedDate]
-    so_date_from: Optional[ConstrainedDate]
-    so_date_to: Optional[ConstrainedDate]
+    value_date_from: Optional[ConstrainedDate]
+    value_date_to: Optional[ConstrainedDate]
     payment_date_from: Optional[ConstrainedDate]
     payment_date_to: Optional[ConstrainedDate]
 
@@ -3389,20 +3387,82 @@ class WeekStatsManagersView(TemplateView):
             return datetime.date.fromisoformat(f"{value}")
 
         return WeekStatsManagersFiltersData(
-            zoom_date_from=to_date(source.get("zoom_date_from")),
-            zoom_date_to=to_date(source.get("zoom_date_to")),
-            so_date_from=to_date(source.get("so_date_from")),
-            so_date_to=to_date(source.get("so_date_to")),
+            value_date_from=to_date(source.get("value_date_from")),
+            value_date_to=to_date(source.get("value_date_to")),
             payment_date_from=to_date(source.get("payment_date_from")),
             payment_date_to=to_date(source.get("payment_date_to")),
         )
 
+    def get_stats(self) -> pandas.DataFrame:
+        with open(Path(DATA_FOLDER) / "week" / "managers.pkl", "rb") as file_ref:
+            stats: pandas.DataFrame = pickle.load(file_ref)
+
+        if self.filters.value_date_from:
+            stats = stats[stats.date >= self.filters.value_date_from]
+
+        if self.filters.value_date_to:
+            stats = stats[stats.date <= self.filters.value_date_to]
+
+        if self.filters.payment_date_from:
+            stats = stats[stats.payment_date >= self.filters.payment_date_from]
+
+        if self.filters.payment_date_to:
+            stats = stats[stats.payment_date <= self.filters.payment_date_to]
+
+        stats.reset_index(drop=True, inplace=True)
+
+        return stats
+
     def get(self):
         self.filters = self.get_filters(request.args)
+        self.stats = self.get_stats()
 
-        data = pandas.DataFrame()
+        data = []
+        for (group, group_title), groups in (
+            self.stats.sort_values("group")
+            .reset_index(drop=True)
+            .groupby(by=["group", "group_title"])
+        ):
+            items = []
+            for (manager, manager_title), managers in (
+                groups.sort_values("manager_title")
+                .reset_index(drop=True)
+                .groupby(by=["manager", "manager_title"])
+            ):
+                zoom = managers["zoom"].sum()
+                zoom_profit = managers["payment"].sum()
+                so = managers["so"].sum()
+                so_profit = managers["payment"].sum()
+                items.append(
+                    {
+                        "is_group": False,
+                        "Менеджер/Группа": manager_title,
+                        "Количество Zoom": zoom,
+                        "Оборот от Zoom": zoom_profit,
+                        "Оборот на Zoom": zoom_profit / zoom if zoom else 0,
+                        "Количество SO": so,
+                        "Оборот от SO": so_profit,
+                        "Оборот на SO": so_profit / so if so else 0,
+                    }
+                )
+            data += [
+                {
+                    "is_group": True,
+                    "Менеджер/Группа": group_title,
+                    "Количество Zoom": sum(
+                        list(map(lambda item: item.get("Количество Zoom", 0), items))
+                    ),
+                    "Оборот от Zoom": 0,
+                    "Оборот на Zoom": 0,
+                    "Количество SO": sum(
+                        list(map(lambda item: item.get("Количество SO", 0), items))
+                    ),
+                    "Оборот от SO": 0,
+                    "Оборот на SO": 0,
+                }
+            ] + items
 
         self.context("filters", self.filters)
-        self.context("data", data)
+        self.context("data", pandas.DataFrame(data))
 
         return super().get()
