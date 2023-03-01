@@ -616,7 +616,78 @@ def calculate_so():
 
 @log_execution_time("get_managers")
 def get_managers():
-    pass
+    def merge_columns(value):
+        values = list(filter(lambda item: not pandas.isna(item), value))
+        return str(values[0]) if len(values) else ""
+
+    with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
+        sources: pandas.DataFrame = pickle.load(file_ref)
+        sources = (
+            sources[~sources["summa_vyruchki"].isna()]
+            .reset_index(drop=True)[
+                [
+                    "menedzher_id",
+                    "menedzher",
+                    "gr",
+                    "summa_vyruchki",
+                    "data_oplaty",
+                    "data_zoom",
+                ]
+            ]
+            .rename(
+                columns={
+                    "menedzher_id": "manager",
+                    "menedzher": "manager_title",
+                    "gr": "group",
+                    "summa_vyruchki": "payment",
+                    "data_oplaty": "payment_date",
+                    "data_zoom": "date",
+                }
+            )
+        )
+
+    with open(Path(DATA_PATH / "sources_zoom.pkl"), "rb") as file_ref:
+        sources_zoom: pandas.DataFrame = pickle.load(file_ref)
+        sources_zoom.rename(columns={"count": "zoom"}, inplace=True)
+
+    with open(Path(DATA_PATH / "sources_so.pkl"), "rb") as file_ref:
+        sources_so: pandas.DataFrame = pickle.load(file_ref)
+        sources_so.rename(columns={"count": "so"}, inplace=True)
+
+    data = pandas.merge(
+        sources,
+        pandas.merge(sources_zoom, sources_so, how="outer", on=["manager", "date"]),
+        how="outer",
+        on=["manager", "date"],
+    )
+    data = data[~data["date"].isna()].reset_index(drop=True)
+
+    data["manager_title"] = data[
+        ["manager_title", "manager_title_x", "manager_title_y"]
+    ].apply(merge_columns, axis=1)
+    data["group"] = data[["group", "group_x", "group_y"]].apply(merge_columns, axis=1)
+    data["group_title"] = data["group"].apply(lambda item: f'Группа "{item}"')
+    for column in ["payment", "zoom", "so"]:
+        data[column] = (
+            data[column]
+            .apply(lambda item: 0 if pandas.isna(item) else int(item))
+            .astype(int)
+        )
+    data = data[
+        [
+            "manager",
+            "manager_title",
+            "group",
+            "group_title",
+            "payment",
+            "payment_date",
+            "date",
+            "zoom",
+            "so",
+        ]
+    ]
+    with open(Path(DATA_PATH / "managers.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
 
 
 dag = DAG(
@@ -675,5 +746,6 @@ get_stats_operator >> calculate_zoom_operator
 get_zoom_operator >> calculate_zoom_operator
 update_so_operator >> get_so_operator
 get_so_operator >> calculate_so_operator
+get_stats_operator >> get_managers_operator
 get_zoom_operator >> get_managers_operator
 get_so_operator >> get_managers_operator
