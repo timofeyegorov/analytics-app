@@ -2908,13 +2908,17 @@ class WeekStatsView(TemplateView):
             data_percent.loc[index, columns] = data_percent.loc[index, columns].apply(
                 lambda item: pandas.NA
                 if pandas.isna(item)
-                else round(item / row["Расход"] * 100)
+                else (round(item / row["Расход"] * 100) if row["Расход"] else 0),
             )
 
         total_percent[columns] = total_percent[columns].apply(
             lambda item: pandas.NA
             if pandas.isna(item)
-            else round(item / total_percent["Расход"] * 100)
+            else (
+                round(item / total_percent["Расход"] * 100)
+                if total_percent["Расход"]
+                else 0
+            ),
         )
 
         return data_percent, total_percent
