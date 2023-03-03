@@ -3561,7 +3561,12 @@ class TildaLeadsView(APIView):
         print("- POST --------------------")
         data = request.form.to_dict()
         print(
-            list(map(lambda item: item.encode("utf-8").decode("latin-1"), data.keys()))
+            list(
+                map(
+                    lambda item: item.encode("utf-8").decode("iso-8859-1"),
+                    data.keys(),
+                )
+            )
         )
         print(data.values())
         print("---------------------------")
