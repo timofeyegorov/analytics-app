@@ -3,6 +3,7 @@ import json
 import pytz
 import pandas
 import pickle
+import chardet
 import requests
 import tempfile
 import datetime
@@ -12,7 +13,6 @@ import apiclient
 from enum import Enum
 from math import ceil
 from pathlib import Path
-from charset_normalizer import detect as detect_charset
 from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
 from transliterate import slugify
@@ -3564,7 +3564,7 @@ class TildaLeadsView(APIView):
         print(
             list(
                 map(
-                    lambda item: detect_charset(item),
+                    lambda item: chardet.detect(item),
                     data.keys(),
                 )
             )
@@ -3572,7 +3572,7 @@ class TildaLeadsView(APIView):
         print(
             list(
                 map(
-                    lambda item: detect_charset(item),
+                    lambda item: chardet.detect(item),
                     data.values(),
                 )
             )
