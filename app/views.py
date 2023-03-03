@@ -75,6 +75,9 @@ class APIView(MethodView):
     def get(self, *args, **kwargs):
         return self.render()
 
+    def post(self, *args, **kwargs):
+        return self.render()
+
 
 class StatisticsFiltersData(BaseModel):
     date: Tuple[Optional[ConstrainedDate], Optional[ConstrainedDate]]
