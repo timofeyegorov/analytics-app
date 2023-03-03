@@ -3560,7 +3560,5 @@ class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
         print(request.form)
-        print(request.values)
-        print(request.json)
         print("---------------------------")
         return super().post(*args, **kwargs)
