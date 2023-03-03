@@ -3488,71 +3488,47 @@ class WeekStatsManagersView(TemplateView):
 class SearchLeadsView(TemplateView):
     template_name = "search-leads/index.html"
     title = "Поиск лидов"
-    titles: Dict[str, str] = {}
 
     def get_filters(self, source: ImmutableMultiDict) -> SearchLeadsFiltersData:
         return SearchLeadsFiltersData(id=source.get("id", ""))
+
+    def merge_columns(self, value):
+        values = list(filter(lambda item: item != "", value))
+        return str(values[0]) if len(values) else ""
 
     def get_data(self, filters: SearchLeadsFiltersData) -> pandas.DataFrame:
         data: pandas.DataFrame = pandas.DataFrame()
 
         if filters.id:
-            credentials = ServiceAccountCredentials.from_json_keyfile_name(
-                CREDENTIALS_FILE,
-                [
-                    "https://www.googleapis.com/auth/spreadsheets",
-                    "https://www.googleapis.com/auth/drive",
-                ],
+            target_file = Path(DATA_FOLDER) / "api" / "tilda" / "leads.pkl"
+            try:
+                with open(target_file, "rb") as file_ref:
+                    source: pandas.DataFrame = pickle.load(file_ref)
+            except FileNotFoundError:
+                source: pandas.DataFrame = pandas.DataFrame()
+
+            source.rename(
+                columns=dict(
+                    map(lambda item: (item, re.sub(r"_+", " ", item)), source.columns)
+                ),
+                inplace=True,
             )
-            http_auth = credentials.authorize(httplib2.Http())
-            service = apiclient.discovery.build("sheets", "v4", http=http_auth)
-            spreadsheet_id = "1YhNHABZ99jiiB7_zHmIBlEDzigT9n0-gICmDWbivuFo"
-            for sheet in (
-                service.spreadsheets()
-                .get(spreadsheetId=spreadsheet_id)
-                .execute()
-                .get("sheets")
-            ):
-                values = (
-                    service.spreadsheets()
-                    .values()
-                    .get(
-                        spreadsheetId=spreadsheet_id,
-                        range=sheet.get("properties").get("title"),
-                        majorDimension="ROWS",
-                    )
-                    .execute()
-                ).get("values")
-                values[0] = list(map(lambda item: re.sub(r"_+", " ", item), values[0]))
-                source = pandas.DataFrame(columns=values[0], data=values[1:])
-                self.titles = dict(
-                    map(
-                        lambda item: (slugify(item, "ru").replace("-", "_"), item),
-                        source.columns,
-                    )
-                )
-                source.rename(
-                    columns=dict(zip(self.titles.values(), self.titles.keys())),
-                    inplace=True,
-                )
-                data: pandas.DataFrame = source[
-                    source["requestid"].str.contains(filters.id, case=False)
-                ]
-                break
+            data: pandas.DataFrame = source[~source["requestid"].isna()][
+                source["requestid"].str.contains(filters.id, case=False, na=False)
+            ]
+            data.fillna("", inplace=True)
+            data["Name"] = data[["name", "Name"]].apply(self.merge_columns, axis=1)
+            data["Phone"] = data[["phone", "Phone"]].apply(self.merge_columns, axis=1)
+            data["Email"] = data[["email", "Email"]].apply(self.merge_columns, axis=1)
+            data.drop(columns=["name", "phone", "email"], inplace=True)
 
         return data
-
-    def get_extras(self) -> Dict[str, Any]:
-        return {
-            "titles": self.titles,
-        }
 
     def get(self):
         filters = self.get_filters(request.args)
 
         self.context("filters", filters)
         self.context("data", self.get_data(filters))
-        self.context("extras", self.get_extras())
 
         return super().get()
 

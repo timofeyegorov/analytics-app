@@ -6,19 +6,19 @@
                 <div class="item">
                     <div class="title">{{ row.requestid }}</div>
                     <div class="main">
-                        {% for column in ["name", "phone", "email"] %}
+                        {% for column in ["Name", "Phone", "Email"] %}
                             <div class="param">
-                                <div class="label">{{ extras.titles[column] }}</div>
-                                <div class="value"><i></i><span>{{ row[column] }}</span></div>
+                                <div class="label">{{ column }}</div>
+                                <div class="value"><i></i><span>{{ row[column] }}&nbsp;</span></div>
                             </div>
                         {% endfor %}
                     </div>
                     <div class="extra">
                         {% for column in data.columns %}
-                            {% if column not in ["name", "phone", "email"] %}
+                            {% if column not in ["Name", "Phone", "Email"] %}
                                 <div class="param">
-                                    <div class="label">{{ extras.titles[column] }}</div>
-                                    <div class="value"><i></i><span>{{ row[column] }}</span></div>
+                                    <div class="label">{{ column }}</div>
+                                    <div class="value"><i></i><span>{{ row[column] }}&nbsp;</span></div>
                                 </div>
                             {% endif %}
                         {% endfor %}
