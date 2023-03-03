@@ -3564,10 +3564,7 @@ class TildaLeadsView(APIView):
         print(
             list(
                 map(
-                    lambda item: (
-                        json.detect_encoding(item[0]),
-                        json.detect_encoding(item[1]),
-                    ),
+                    lambda item: (item[0].decode("utf-8"), item[1].decode("utf-8")),
                     data.items(),
                 )
             )
