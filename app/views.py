@@ -3559,18 +3559,7 @@ class SearchLeadsView(TemplateView):
 class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
-        data = request.form.to_dict()
-        with open("tmp.txt", "w") as file_ref:
-            json.dump(data, file_ref)
-        print(pandas.DataFrame(data=[data]))
-        print(
-            list(
-                map(
-                    lambda item: bytes(item, "windows-1251").decode("utf-8"),
-                    data.keys(),
-                )
-            )
-        )
-        print(data.values())
+        data = json.loads(json.dumps(request.form.to_dict()))
+        print(data)
         print("---------------------------")
         return super().post(*args, **kwargs)
