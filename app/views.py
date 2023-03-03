@@ -1,3 +1,4 @@
+import os
 import re
 import json
 import pytz
@@ -35,7 +36,7 @@ from app.data import (
     StatisticsRoistatGroupByEnum,
     CalculateColumnEnum,
 )
-from config import DATA_FOLDER, CREDENTIALS_FILE
+from config import DATA_FOLDER, CREDENTIALS_FILE, RESULTS_FOLDER
 
 
 pickle_loader = PickleLoader()
@@ -3558,21 +3559,19 @@ class SearchLeadsView(TemplateView):
 
 class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
-        print("- POST --------------------")
-        data = request.form.to_dict()
-        print(json.dumps(request.form.to_dict()))
-        # print(
-        #     list(
-        #         map(
-        #             lambda item: (
-        #                 type(item[0]),
-        #                 type(item[1]),
-        #                 item[0].encode("utf-8"),
-        #                 item[1].encode("utf-8"),
-        #             ),
-        #             data.items(),
-        #         )
-        #     )
-        # )
-        print("---------------------------")
+        target_path = Path(DATA_FOLDER) / "api" / "tilda"
+        os.makedirs(target_path, exist_ok=True)
+        target_file = target_path / "leads.pkl"
+
+        with open(target_file, "rb") as file_ref:
+            data: pandas.DataFrame = pickle.load(file_ref)
+
+        source = request.form.to_dict()
+        data = pandas.concat([data, pandas.DataFrame([source])], ignore_index=True)
+
+        with open(target_file, "wb") as file_ref:
+            pickle.dump(data, file_ref)
+
+        self.data = {"success": True}
+
         return super().post(*args, **kwargs)
