@@ -3559,7 +3559,18 @@ class SearchLeadsView(TemplateView):
 class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
-        data = json.loads(json.dumps(request.form.to_dict()))
-        print(data)
+        data = request.form.to_dict()
+        # data = json.loads(json.dumps(request.form.to_dict()))
+        print(
+            list(
+                map(
+                    lambda item: (
+                        json.detect_encoding(item[0]),
+                        json.detect_encoding(item[1]),
+                    ),
+                    data.items(),
+                )
+            )
+        )
         print("---------------------------")
         return super().post(*args, **kwargs)
