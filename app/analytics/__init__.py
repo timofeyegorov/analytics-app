@@ -861,6 +861,10 @@ app.add_url_rule(
     ),
 )
 app.add_url_rule(
+    "/api/tilda/leads",
+    view_func=views.TildaLeadsView.as_view("tilda_leads"),
+)
+app.add_url_rule(
     "/week-stats",
     view_func=views.WeekStatsView.as_view("week_stats"),
 )
