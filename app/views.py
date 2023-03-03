@@ -3559,14 +3559,12 @@ class SearchLeadsView(TemplateView):
 class TildaLeadsView(APIView):
     def get(self, *args, **kwargs):
         print("- GET ---------------------")
-        print(args)
-        print(kwargs)
+        print(request.args)
         print("---------------------------")
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         print("- POST --------------------")
-        print(args)
-        print(kwargs)
+        print(request.args)
         print("---------------------------")
         return super().post(*args, **kwargs)
