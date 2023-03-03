@@ -12,6 +12,7 @@ import apiclient
 from enum import Enum
 from math import ceil
 from pathlib import Path
+from charset_normalizer import detect as detect_charset
 from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
 from transliterate import slugify
@@ -3559,19 +3560,22 @@ class SearchLeadsView(TemplateView):
 class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
-        print(dir(request))
-        print(request.content_type)
-        print(request.charset)
-        print(request.accept_encodings)
         data = request.form.to_dict()
         print(
             list(
                 map(
-                    lambda item: item.encode("utf-8").decode("iso-8859-1"),
+                    lambda item: detect_charset(item),
                     data.keys(),
                 )
             )
         )
-        print(data.values())
+        print(
+            list(
+                map(
+                    lambda item: detect_charset(item),
+                    data.values(),
+                )
+            )
+        )
         print("---------------------------")
         return super().post(*args, **kwargs)
