@@ -12,7 +12,6 @@ import apiclient
 from enum import Enum
 from math import ceil
 from pathlib import Path
-from charset_normalizer import detect as detect_charset
 from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
 from transliterate import slugify
@@ -3564,7 +3563,7 @@ class TildaLeadsView(APIView):
         print(
             list(
                 map(
-                    lambda item: item.encode("iso-8859-1"),
+                    lambda item: item.encode("utf-8"),
                     data.keys(),
                 )
             )
