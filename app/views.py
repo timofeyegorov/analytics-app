@@ -1,3 +1,4 @@
+import re
 import json
 import pytz
 import pandas
@@ -5,15 +6,19 @@ import pickle
 import requests
 import tempfile
 import datetime
+import httplib2
+import apiclient
 
 from enum import Enum
 from math import ceil
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
+from transliterate import slugify
 from urllib.parse import urlparse, parse_qsl, urlencode
 from pydantic import BaseModel, ConstrainedDate
 from werkzeug.datastructures import ImmutableMultiDict
+from oauth2client.service_account import ServiceAccountCredentials
 
 from xlsxwriter import Workbook
 
@@ -30,7 +35,7 @@ from app.data import (
     StatisticsRoistatGroupByEnum,
     CalculateColumnEnum,
 )
-from config import DATA_FOLDER
+from config import DATA_FOLDER, CREDENTIALS_FILE
 
 
 pickle_loader = PickleLoader()
@@ -139,6 +144,10 @@ class WeekStatsManagersFiltersData(BaseModel):
     value_date_to: Optional[ConstrainedDate]
     payment_date_from: Optional[ConstrainedDate]
     payment_date_to: Optional[ConstrainedDate]
+
+
+class SearchLeadsFiltersData(BaseModel):
+    id: str = ""
 
 
 class StatisticsRoistatFiltersData(BaseModel):
@@ -3468,5 +3477,77 @@ class WeekStatsManagersView(TemplateView):
 
         self.context("filters", self.filters)
         self.context("data", pandas.DataFrame(data))
+
+        return super().get()
+
+
+class SearchLeadsView(TemplateView):
+    template_name = "search-leads/index.html"
+    title = "Поиск лидов"
+    titles: Dict[str, str] = {}
+
+    def get_filters(self, source: ImmutableMultiDict) -> SearchLeadsFiltersData:
+        return SearchLeadsFiltersData(id=source.get("id", ""))
+
+    def get_data(self, filters: SearchLeadsFiltersData) -> pandas.DataFrame:
+        data: pandas.DataFrame = pandas.DataFrame()
+
+        if filters.id:
+            credentials = ServiceAccountCredentials.from_json_keyfile_name(
+                CREDENTIALS_FILE,
+                [
+                    "https://www.googleapis.com/auth/spreadsheets",
+                    "https://www.googleapis.com/auth/drive",
+                ],
+            )
+            http_auth = credentials.authorize(httplib2.Http())
+            service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+            spreadsheet_id = "1YhNHABZ99jiiB7_zHmIBlEDzigT9n0-gICmDWbivuFo"
+            for sheet in (
+                service.spreadsheets()
+                .get(spreadsheetId=spreadsheet_id)
+                .execute()
+                .get("sheets")
+            ):
+                values = (
+                    service.spreadsheets()
+                    .values()
+                    .get(
+                        spreadsheetId=spreadsheet_id,
+                        range=sheet.get("properties").get("title"),
+                        majorDimension="ROWS",
+                    )
+                    .execute()
+                ).get("values")
+                values[0] = list(map(lambda item: re.sub(r"_+", " ", item), values[0]))
+                source = pandas.DataFrame(columns=values[0], data=values[1:])
+                self.titles = dict(
+                    map(
+                        lambda item: (slugify(item, "ru").replace("-", "_"), item),
+                        source.columns,
+                    )
+                )
+                source.rename(
+                    columns=dict(zip(self.titles.values(), self.titles.keys())),
+                    inplace=True,
+                )
+                data: pandas.DataFrame = source[
+                    source["requestid"].str.contains(filters.id, case=False)
+                ]
+                break
+
+        return data
+
+    def get_extras(self) -> Dict[str, Any]:
+        return {
+            "titles": self.titles,
+        }
+
+    def get(self):
+        filters = self.get_filters(request.args)
+
+        self.context("filters", filters)
+        self.context("data", self.get_data(filters))
+        self.context("extras", self.get_extras())
 
         return super().get()

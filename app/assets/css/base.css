@@ -331,3 +331,48 @@ label {
 #statistics-leads {
     margin-top:1rem;
 }
+
+
+#search-leads-response > .item:not(:last-child) {
+    margin-bottom:10px;
+}
+#search-leads-response > .item > .title {
+    font-weight:600;
+    padding:15px;
+    line-height:1;
+    font-size:14px;
+    white-space:nowrap;
+    cursor:pointer;
+    background:#d4edff;
+}
+#search-leads-response > .item > .extra {
+    display:none;
+}
+#search-leads-response > .item > .extra.visible {
+    display:block;
+}
+#search-leads-response > .item > * > .param {
+    margin:5px 0 0 0;
+}
+#search-leads-response > .item > * > .param > .label {
+    line-height:1;
+    margin:0 0 3px 0;
+    padding:0 15px;
+    color:#999;
+    font-size:10px;
+    font-weight:600;
+}
+#search-leads-response > .item > * > .param > .value {
+    width:100%;
+    background:#eee;
+    padding:5px 15px;
+    font-size:16px;
+    overflow:hidden;
+    overflow-x:auto;
+}
+
+@media screen and (max-width:900px) {
+    #content {
+        padding:20px !important;
+    }
+}

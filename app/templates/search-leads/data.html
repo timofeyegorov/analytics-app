@@ -1,0 +1,30 @@
+{% if filters.id %}
+    <h4>Найдено лидов: <b>{% if data.empty %}0{% else %}{{ data|length }}{% endif %}</b></h4>
+    {% if not data.empty %}
+        <div id="search-leads-response">
+            {% for index, row in data.iterrows() %}
+                <div class="item">
+                    <div class="title">{{ row.requestid }}</div>
+                    <div class="main">
+                        {% for column in ["name", "phone", "email"] %}
+                            <div class="param">
+                                <div class="label">{{ extras.titles[column] }}</div>
+                                <div class="value">{{ row[column] }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="extra">
+                        {% for column in data.columns %}
+                            {% if column not in ["name", "phone", "email"] %}
+                                <div class="param">
+                                    <div class="label">{{ extras.titles[column] }}</div>
+                                    <div class="value">{{ row[column] }}</div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endif %}

@@ -1,0 +1,12 @@
+<form action="{{ url_for('search_leads') }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-id">Идентификатор лида</label>
+            <input type="text" name="id" id="field-id" value="{{ filters.id }}">
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Найти</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить поиск</button>
+    </div>
+</form>
