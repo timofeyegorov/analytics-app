@@ -3563,8 +3563,11 @@ class TildaLeadsView(APIView):
         os.makedirs(target_path, exist_ok=True)
         target_file = target_path / "leads.pkl"
 
-        with open(target_file, "rb") as file_ref:
-            data: pandas.DataFrame = pickle.load(file_ref)
+        try:
+            with open(target_file, "rb") as file_ref:
+                data: pandas.DataFrame = pickle.load(file_ref)
+        except FileNotFoundError:
+            data:pandas.DataFrame = pandas.DataFrame()
 
         source = request.form.to_dict()
         data = pandas.concat([data, pandas.DataFrame([source])], ignore_index=True)
