@@ -9,7 +9,7 @@
                         {% for column in ["name", "phone", "email"] %}
                             <div class="param">
                                 <div class="label">{{ extras.titles[column] }}</div>
-                                <div class="value">{{ row[column] }}</div>
+                                <div class="value"><i></i><span>{{ row[column] }}</span></div>
                             </div>
                         {% endfor %}
                     </div>
@@ -18,7 +18,7 @@
                             {% if column not in ["name", "phone", "email"] %}
                                 <div class="param">
                                     <div class="label">{{ extras.titles[column] }}</div>
-                                    <div class="value">{{ row[column] }}</div>
+                                    <div class="value"><i></i><span>{{ row[column] }}</span></div>
                                 </div>
                             {% endif %}
                         {% endfor %}
