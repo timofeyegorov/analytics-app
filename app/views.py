@@ -3559,7 +3559,9 @@ class SearchLeadsView(TemplateView):
 class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
-        print(list(map(lambda item: item.encode("latin-1").decode("utf-8"), data.keys())))
+        print(
+            list(map(lambda item: item.encode("latin-1").decode("utf-8"), data.keys()))
+        )
         print(data.values())
         print("---------------------------")
         return super().post(*args, **kwargs)
