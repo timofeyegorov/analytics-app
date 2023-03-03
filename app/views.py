@@ -3488,6 +3488,7 @@ class WeekStatsManagersView(TemplateView):
 class SearchLeadsView(TemplateView):
     template_name = "search-leads/index.html"
     title = "Поиск лидов"
+    in_updating: bool = False
 
     def get_filters(self, source: ImmutableMultiDict) -> SearchLeadsFiltersData:
         return SearchLeadsFiltersData(id=source.get("id", ""))
@@ -3506,6 +3507,9 @@ class SearchLeadsView(TemplateView):
                     source: pandas.DataFrame = pickle.load(file_ref)
             except FileNotFoundError:
                 source: pandas.DataFrame = pandas.DataFrame()
+            except Exception:
+                self.in_updating = True
+                return data
 
             source.rename(
                 columns=dict(
@@ -3529,6 +3533,7 @@ class SearchLeadsView(TemplateView):
 
         self.context("filters", filters)
         self.context("data", self.get_data(filters))
+        self.context("in_updating", self.in_updating)
 
         return super().get()
 
