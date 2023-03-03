@@ -3560,9 +3560,7 @@ class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
         data = request.form.to_dict()
-        print(request.accept_charset)
-        print(data)
-        # data = json.loads(json.dumps(request.form.to_dict()))
+        print(json.dumps(request.form.to_dict()))
         # print(
         #     list(
         #         map(
