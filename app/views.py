@@ -3560,7 +3560,7 @@ class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         print("- POST --------------------")
         data = request.form.to_dict()
-        with open("tmp.txt", "wb") as file_ref:
+        with open("tmp.txt", "w") as file_ref:
             json.dump(data, file_ref)
         print(pandas.DataFrame(data=[data]))
         print(
