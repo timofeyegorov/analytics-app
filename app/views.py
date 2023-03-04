@@ -12,6 +12,7 @@ import apiclient
 
 from enum import Enum
 from math import ceil
+from uuid import uuid4
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
@@ -3542,19 +3543,37 @@ class TildaLeadsView(APIView):
     def post(self, *args, **kwargs):
         target_path = Path(DATA_FOLDER) / "api" / "tilda"
         os.makedirs(target_path, exist_ok=True)
-        target_file = target_path / "leads.pkl"
 
+        source_path = target_path / "sources"
+        os.makedirs(source_path, exist_ok=True)
+
+        source = request.form.to_dict()
+        with open(source_path / f"{uuid4()}.json", "w") as file_ref:
+            json.dump(source, file_ref)
+
+        target_file = target_path / "leads.pkl"
         try:
             with open(target_file, "rb") as file_ref:
                 data: pandas.DataFrame = pickle.load(file_ref)
         except FileNotFoundError:
             data: pandas.DataFrame = pandas.DataFrame()
 
-        source = request.form.to_dict()
-        data = pandas.concat([data, pandas.DataFrame([source])], ignore_index=True)
+        sources = []
+        processed = []
+        for item in os.listdir(source_path):
+            json_path: Path = source_path / item
+            if json_path.suffix == ".json":
+                with open(json_path, "r") as file_ref:
+                    sources.append(json.load(file_ref))
+                    processed.append(json_path)
+
+        data = pandas.concat([data, pandas.DataFrame(sources)], ignore_index=True)
 
         with open(target_file, "wb") as file_ref:
             pickle.dump(data, file_ref)
+
+        for item in processed:
+            os.remove(item)
 
         self.data = {"success": True}
 
