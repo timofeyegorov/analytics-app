@@ -224,58 +224,57 @@ def get_zoom():
     )
     http_auth = credentials.authorize(httplib2.Http())
     service = apiclient.discovery.build("sheets", "v4", http=http_auth)
-    spreadsheet_id = "1xKcTwITOBVNTarxciMo6gEJNZuMMxsWr4CS9eDnYiA8"
+    spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    sources = []
     for sheet in (
         service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
     ):
-        values = (
-            service.spreadsheets()
-            .values()
-            .get(
-                spreadsheetId=spreadsheet_id,
-                range=sheet.get("properties").get("title"),
-                majorDimension="ROWS",
+        title = sheet.get("properties").get("title")
+        if title == "Количество Zoom":
+            values = (
+                service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+                .execute()
             )
-            .execute()
-        )
-        items = values.get("values")
-        for index, item in enumerate(items[1:]):
-            diff = len(items[0]) - len(item)
-            if diff < 0:
-                items[index + 1] = item[:diff]
-            elif diff > 0:
-                items[index + 1] = item + [0] * diff
-        data = (
-            pandas.DataFrame(data=items[1:], columns=items[0])
-            .fillna(0)
-            .replace("", 0)
-            .rename(columns={"Менеджер": "manager_title", "Группа": "group"})
-        )
-        data.insert(
-            0,
-            "manager",
-            data["manager_title"].apply(
-                lambda item: slugify(item, "ru").replace("-", "_")
-            ),
-        )
-        sources = []
-        for manager, group in data.groupby("manager"):
-            group_index = group["group"].iloc[0]
-            group_index_title = f'Группа "{group_index}"'
-            manager_title = group["manager_title"].iloc[0]
-            group.drop(columns=["manager", "manager_title", "group"], inplace=True)
-            group = group.T
-            group.reset_index(inplace=True)
-            group.rename(
-                columns={"index": "date", group.columns[1]: "count"}, inplace=True
+            items = values.get("values")
+            for index, item in enumerate(items[1:]):
+                diff = len(items[0]) - len(item)
+                if diff < 0:
+                    items[index + 1] = item[:diff]
+                elif diff > 0:
+                    items[index + 1] = item + [0] * diff
+            data = (
+                pandas.DataFrame(data=items[1:], columns=items[0])
+                .fillna(0)
+                .replace("", 0)
+                .rename(columns={"Менеджер": "manager_title", "Группа": "group"})
             )
-            group.insert(0, "manager", manager)
-            group.insert(1, "manager_title", manager_title)
-            group.insert(2, "group", group_index)
-            group.insert(3, "group_title", group_index_title)
-            group["date"] = group["date"].apply(parse_date)
-            group["count"] = group["count"].astype(int)
-            sources.append(group)
+            data.insert(
+                0,
+                "manager",
+                data["manager_title"].apply(
+                    lambda item: slugify(item, "ru").replace("-", "_")
+                ),
+            )
+            for manager, group in data.groupby("manager"):
+                group_index = group["group"].iloc[0]
+                group_index_title = f'Группа "{group_index}"'
+                manager_title = group["manager_title"].iloc[0]
+                group.drop(columns=["manager", "manager_title", "group"], inplace=True)
+                group = group.T
+                group.reset_index(inplace=True)
+                group.rename(
+                    columns={"index": "date", group.columns[1]: "count"}, inplace=True
+                )
+                group.insert(0, "manager", manager)
+                group.insert(1, "manager_title", manager_title)
+                group.insert(2, "group", group_index)
+                group.insert(3, "group_title", group_index_title)
+                group["date"] = group["date"].apply(parse_date)
+                group["count"] = group["count"].astype(int)
+                sources.append(group)
+            break
 
     zoom = pandas.concat(sources, ignore_index=True)
 
