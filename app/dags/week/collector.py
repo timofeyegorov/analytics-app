@@ -658,75 +658,317 @@ def calculate_so():
 
 @log_execution_time("get_managers")
 def get_managers():
-    # with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
-    #     sources: pandas.DataFrame = pickle.load(file_ref)
-    #     sources = (
-    #         sources[~sources["summa_vyruchki"].isna()]
-    #         .reset_index(drop=True)[
-    #             [
-    #                 "menedzher_id",
-    #                 "menedzher",
-    #                 "gr",
-    #                 "summa_vyruchki",
-    #                 "data_oplaty",
-    #                 "data_zoom",
-    #             ]
-    #         ]
-    #         .rename(
-    #             columns={
-    #                 "menedzher_id": "manager",
-    #                 "menedzher": "manager_title",
-    #                 "gr": "group",
-    #                 "summa_vyruchki": "payment",
-    #                 "data_oplaty": "payment_date",
-    #                 "data_zoom": "date",
-    #             }
-    #         )
-    #     )
-    #
-    # with open(Path(DATA_PATH / "sources_zoom.pkl"), "rb") as file_ref:
-    #     sources_zoom: pandas.DataFrame = pickle.load(file_ref)
-    #     sources_zoom.rename(columns={"count": "zoom"}, inplace=True)
-    #
-    # with open(Path(DATA_PATH / "sources_so.pkl"), "rb") as file_ref:
-    #     sources_so: pandas.DataFrame = pickle.load(file_ref)
-    #     sources_so.rename(columns={"count": "so"}, inplace=True)
-    #
-    # data = pandas.merge(
-    #     sources,
-    #     pandas.merge(sources_zoom, sources_so, how="outer", on=["manager", "date"]),
-    #     how="outer",
-    #     on=["manager", "date"],
-    # )
-    # data = data[~data["date"].isna()].reset_index(drop=True)
-    #
-    # data["manager_title"] = data[
-    #     ["manager_title", "manager_title_x", "manager_title_y"]
-    # ].apply(merge_columns, axis=1)
-    # data["group"] = data[["group", "group_x", "group_y"]].apply(merge_columns, axis=1)
-    # data["group_title"] = data["group"].apply(lambda item: f'Группа "{item}"')
-    # for column in ["payment", "zoom", "so"]:
-    #     data[column] = (
-    #         data[column]
-    #         .apply(lambda item: 0 if pandas.isna(item) else int(item))
-    #         .astype(int)
-    #     )
-    # data = data[
-    #     [
-    #         "manager",
-    #         "manager_title",
-    #         "group",
-    #         "group_title",
-    #         "payment",
-    #         "payment_date",
-    #         "date",
-    #         "zoom",
-    #         "so",
-    #     ]
-    # ]
-    # with open(Path(DATA_PATH / "managers.pkl"), "wb") as file_ref:
-    #     pickle.dump(data, file_ref)
-    pass
+    def processing_source_payments(source: pandas.DataFrame) -> pandas.DataFrame:
+        source = source[
+            [
+                "menedzher",
+                "gr",
+                "ssylka_na_amocrm",
+                "summa_vyruchki",
+                "data_oplaty",
+                "data_zoom",
+            ]
+        ].rename(
+            columns={
+                "menedzher": "manager",
+                "gr": "group",
+                "ssylka_na_amocrm": "lead",
+                "summa_vyruchki": "payment",
+                "data_oplaty": "payment_date",
+                "data_zoom": "zoom_date",
+            }
+        )
+        source["manager"] = source["manager"].apply(parse_str)
+        source["manager_id"] = source["manager"].apply(parse_slug)
+        source["group"] = source["group"].apply(parse_str)
+        source["lead"] = source["lead"].apply(parse_lead_id)
+        source["order_id"] = list(map(lambda item: item + 1, source.index))
+        source["payment"] = source["payment"].apply(parse_int)
+        source["payment_date"] = source["payment_date"].apply(parse_date)
+        source["zoom_date"] = source["zoom_date"].apply(parse_date)
+        return source[~source["lead"].isna()]
+
+    def processing_source_zoom(source: pandas.DataFrame) -> pandas.DataFrame:
+        source = (
+            source.fillna(0)
+            .replace("", 0)
+            .rename(columns={"menedzher": "manager", "gruppa": "group"})
+        )
+        for column in source.columns:
+            source[column] = source[column].apply(
+                parse_str if column in ["manager", "group"] else parse_int
+            )
+        data = []
+        for manager, items in source.groupby("manager"):
+            group = items["group"].iloc[0]
+            items.drop(columns=["manager", "group"], inplace=True)
+            items = items.T
+            items.reset_index(inplace=True)
+            items.rename(
+                columns={"index": "date", items.columns[1]: "count"}, inplace=True
+            )
+            items.insert(0, "manager", manager)
+            items.insert(1, "group", group)
+            items["date"] = (
+                items["date"]
+                .apply(lambda item: f"{item[:2]}.{item[2:4]}.{item[4:]}")
+                .apply(parse_date)
+            )
+            items["manager_id"] = items["manager"].apply(parse_slug)
+            data.append(items)
+        data = pandas.concat(data, ignore_index=True)
+        return data[data["count"] != 0].reset_index(drop=True)
+
+    def processing_source_so(source: pandas.DataFrame) -> pandas.DataFrame:
+        def column_is_payment(column: str) -> bool:
+            return (
+                column.startswith("id_oplaty_")
+                or column.startswith("data_oplaty_")
+                or column.startswith("summa_oplaty_")
+            )
+
+        columns_source = ["menedzher", "gruppa", "sdelka", "data_so"]
+        columns_target = {
+            "menedzher": "manager",
+            "gruppa": "group",
+            "sdelka": "lead",
+            "data_so": "so_date",
+        }
+        columns_payment = list(filter(column_is_payment, source.columns))
+        columns_source += columns_payment
+        source = source[columns_source].rename(columns=columns_target).fillna("")
+        source = source[~source["lead"].isna()]
+        source["manager"] = source["manager"].apply(parse_str)
+        source["manager_id"] = source["manager"].apply(parse_slug)
+        source["group"] = source["group"].apply(parse_str)
+        source["lead"] = source["lead"].apply(parse_lead_id)
+        source["so_date"] = source["so_date"].apply(parse_date)
+        for column in columns_payment:
+            parse_method = None
+            if column.startswith("data_oplaty_"):
+                parse_method = parse_date
+            elif column.startswith("id_oplaty_") or column.startswith("summa_oplaty_"):
+                parse_method = parse_int
+            if parse_method:
+                source[column] = source[column].apply(parse_method)
+        data = []
+        columns_base = list(set(source.columns) - set(columns_payment))
+        for index, row in source.iterrows():
+            row_base: pandas.Series = row[columns_base]
+            payment_len = len(
+                list(
+                    filter(
+                        lambda num: not (
+                            pandas.isna(row[f"id_oplaty_{num}"])
+                            or pandas.isna(row[f"data_oplaty_{num}"])
+                            or pandas.isna(row[f"summa_oplaty_{num}"])
+                        ),
+                        range(1, int(len(columns_payment) / 3) + 1),
+                    )
+                )
+            )
+            if payment_len:
+                for num in range(1, payment_len + 1):
+                    item = row_base.copy()
+                    item["order_id"] = row[f"id_oplaty_{num}"]
+                    item["payment_date"] = row[f"data_oplaty_{num}"]
+                    item["payment"] = row[f"summa_oplaty_{num}"]
+                    data.append(item.to_dict())
+            else:
+                item = row_base.copy()
+                item["order_id"] = pandas.NA
+                item["payment_date"] = pandas.NA
+                item["payment"] = pandas.NA
+                data.append(item.to_dict())
+        if len(data):
+            data = pandas.DataFrame(data)
+            data = data[data["manager_id"] != ""]
+            for _, group in data.groupby(by=["manager_id", "so_date"]):
+                data.loc[group.index, "so_count"] = len(
+                    group[~group["lead"].isna()]["lead"].unique()
+                )
+            data["so_count"] = data["so_count"].apply(parse_int)
+        else:
+            data = None
+        return data
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    http_auth = credentials.authorize(httplib2.Http())
+    service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+    spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    source_payments: pandas.DataFrame = None
+    source_zoom: pandas.DataFrame = None
+    source_so: pandas.DataFrame = None
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        title = sheet.get("properties").get("title")
+        values = (
+            service.spreadsheets()
+            .values()
+            .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+            .execute()
+        )
+        items = values.get("values")
+        items[0] = list(
+            map(lambda item: slugify(item, "ru").replace("-", "_"), items[0])
+        )
+        if title == "Все оплаты":
+            source_payments: pandas.DataFrame = processing_source_payments(
+                pandas.DataFrame(data=items[1:], columns=items[0])
+            )
+        elif title == "Количество Zoom":
+            source_zoom: pandas.DataFrame = processing_source_zoom(
+                pandas.DataFrame(data=items[1:], columns=items[0])
+            )
+        elif title == "SpecialOffers":
+            source_so: pandas.DataFrame = processing_source_so(
+                pandas.DataFrame(data=items[1:], columns=items[0])
+            )
+
+    group_payments = source_payments[["manager_id", "group"]]
+    group_zoom = source_zoom[["manager_id", "group"]]
+    group_so = source_so[["manager_id", "group"]]
+    groups = pandas.concat([group_payments, group_zoom, group_so])
+    managers_group = {}
+    for manager_id, group in groups.groupby(by=["manager_id"]):
+        groups_count = dict(
+            map(lambda item: (item[0], len(item[1])), group.groupby(by=["group"]))
+        )
+        groups_count = sorted(
+            groups_count.items(), key=lambda item: item[1], reverse=True
+        )
+        managers_group[manager_id] = (
+            groups_count[0][0] if len(groups_count) else pandas.NA
+        )
+
+    data_zoom = pandas.merge(
+        source_payments[~source_payments["zoom_date"].isna()],
+        source_zoom.rename(columns={"date": "zoom_date", "count": "zoom_count"}),
+        how="outer",
+        on=["manager_id", "zoom_date"],
+    ).fillna("")
+    data_zoom["manager_id"] = data_zoom["manager_id"].apply(parse_str)
+    data_zoom["zoom_date"] = data_zoom["zoom_date"].apply(parse_date)
+    data_zoom["zoom_count"] = data_zoom["zoom_count"].apply(parse_int)
+    data_zoom["group_x"] = data_zoom["group_x"].apply(parse_str)
+    data_zoom["group_y"] = data_zoom["group_y"].apply(parse_str)
+    data_zoom["manager_x"] = data_zoom["manager_x"].apply(parse_str)
+    data_zoom["manager_y"] = data_zoom["manager_y"].apply(parse_str)
+    data_zoom["lead"] = data_zoom["lead"].apply(parse_int)
+    data_zoom["order_id"] = data_zoom["order_id"].apply(parse_int)
+    data_zoom["payment"] = data_zoom["payment"].apply(parse_int)
+    data_zoom["payment_date"] = data_zoom["payment_date"].apply(parse_date)
+    data_zoom["group"] = data_zoom[["group_x", "group_y"]].apply(merge_columns, axis=1)
+    data_zoom["manager"] = data_zoom[["manager_x", "manager_y"]].apply(
+        merge_columns, axis=1
+    )
+    data_zoom = data_zoom[
+        [
+            "manager_id",
+            "manager",
+            "group",
+            "lead",
+            "order_id",
+            "payment",
+            "payment_date",
+            "zoom_date",
+            "zoom_count",
+        ]
+    ]
+
+    data_so = pandas.merge(
+        source_payments, source_so, how="outer", on=["manager_id", "order_id"]
+    ).fillna("")
+    data_so["manager_id"] = data_so["manager_id"].apply(parse_str)
+    data_so["order_id"] = data_so["order_id"].apply(parse_int)
+    data_so["so_count"] = data_so["so_count"].apply(parse_int)
+    data_so["so_date"] = data_so["so_date"].apply(parse_date)
+    data_so["group_x"] = data_so["group_x"].apply(parse_str)
+    data_so["group_y"] = data_so["group_y"].apply(parse_str)
+    data_so["manager_x"] = data_so["manager_x"].apply(parse_str)
+    data_so["manager_y"] = data_so["manager_y"].apply(parse_str)
+    data_so["payment_x"] = data_so["payment_x"].apply(parse_int)
+    data_so["payment_y"] = data_so["payment_y"].apply(parse_int)
+    data_so["payment_date_x"] = data_so["payment_date_x"].apply(parse_date)
+    data_so["payment_date_y"] = data_so["payment_date_y"].apply(parse_date)
+    data_so["lead_x"] = data_so["lead_x"].apply(parse_int)
+    data_so["lead_y"] = data_so["lead_y"].apply(parse_int)
+    data_so["group"] = data_so[["group_x", "group_y"]].apply(merge_columns, axis=1)
+    data_so["manager"] = data_so[["manager_x", "manager_y"]].apply(
+        merge_columns, axis=1
+    )
+    data_so["payment"] = data_so[["payment_x", "payment_y"]].apply(
+        merge_columns, axis=1
+    )
+    data_so["payment_date"] = data_so[["payment_date_x", "payment_date_y"]].apply(
+        merge_columns, axis=1
+    )
+    data_so["lead"] = data_so[["lead_x", "lead_y"]].apply(merge_columns, axis=1)
+    data_so = data_so[
+        [
+            "manager_id",
+            "manager",
+            "group",
+            "lead",
+            "order_id",
+            "payment",
+            "payment_date",
+            "so_date",
+            "so_count",
+        ]
+    ]
+
+    data = pandas.merge(
+        data_zoom, data_so, how="outer", on=["manager_id", "order_id", "lead"]
+    )
+    data["manager_id"] = data["manager_id"].apply(parse_str)
+    data["order_id"] = data["order_id"].apply(parse_int)
+    data["lead"] = data["lead"].apply(parse_int)
+    data["group_x"] = data["group_x"].apply(parse_str)
+    data["group_y"] = data["group_y"].apply(parse_str)
+    data["manager_x"] = data["manager_x"].apply(parse_str)
+    data["manager_y"] = data["manager_y"].apply(parse_str)
+    data["payment_x"] = data["payment_x"].apply(parse_int)
+    data["payment_y"] = data["payment_y"].apply(parse_int)
+    data["payment_date_x"] = data["payment_date_x"].apply(parse_date)
+    data["payment_date_y"] = data["payment_date_y"].apply(parse_date)
+    data["group"] = data[["group_x", "group_y"]].apply(merge_columns, axis=1)
+    data["manager"] = data[["manager_x", "manager_y"]].apply(merge_columns, axis=1)
+    data["payment"] = data[["payment_x", "payment_y"]].apply(merge_columns, axis=1)
+    data["payment_date"] = data[["payment_date_x", "payment_date_y"]].apply(
+        merge_columns, axis=1
+    )
+    data = data[
+        [
+            "manager_id",
+            "manager",
+            "group",
+            "lead",
+            "order_id",
+            "payment",
+            "payment_date",
+            "zoom_date",
+            "zoom_count",
+            "so_date",
+            "so_count",
+        ]
+    ]
+    for manager_id, group in managers_group.items():
+        data.loc[data[data["manager_id"] == manager_id].index, "group"] = group
+    data["payment"].fillna(0, inplace=True)
+    data["zoom_count"].fillna(0, inplace=True)
+    data["so_count"].fillna(0, inplace=True)
+    data["group"].fillna("", inplace=True)
+
+    with open(Path(DATA_PATH / "managers.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
 
 
 dag = DAG(
