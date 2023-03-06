@@ -3,7 +3,7 @@
         <thead>
             <tr>
                 {% for column in data.columns %}
-                    {% if column != "is_group" %}
+                    {% if column not in extras.exclude_columns %}
                         <th class="sticky nowrap">{{ column }}</th>
                     {% endif %}
                 {% endfor %}
@@ -13,11 +13,11 @@
             {% for index, item in data.iterrows() %}
                 <tr>
                     {% for column in data.columns %}
-                        {% if column != "is_group" %}
+                        {% if column not in extras.exclude_columns %}
                             {% if column == "Менеджер/Группа" %}
-                                <td class="nowrap{% if item.is_group %} info{% endif %}">{{ item[column] }}</td>
+                                <td class="nowrap{% if item.is_group %} info{% endif %}{% if item.is_total %} warning{% endif %}">{{ item[column] }}</td>
                             {% else %}
-                                <td class="nowrap font-monospace{% if item.is_group %} info{% endif %} text-right">{{ format_int(item[column]) }}</td>
+                                <td class="nowrap font-monospace{% if item.is_group %} info{% endif %}{% if item.is_total %} warning{% endif %} text-right">{{ format_int(item[column]) }}</td>
                             {% endif %}
                         {% endif %}
                     {% endfor %}

@@ -30,14 +30,14 @@ os.makedirs(DATA_PATH, exist_ok=True)
 
 
 def parse_str(value: str) -> str:
-    if str(value) == "":
+    if str(value) == "" or pandas.isna(value):
         return pandas.NA
     return re.sub(r"\s+", " ", str(value).strip())
 
 
 def parse_int(value: str) -> int:
     value = re.sub(r"\s", "", str(value))
-    if not re.search(r"^-?\d+\.?\d*$", str(value)):
+    if not re.search(r"^-?\d+\.?\d*$", str(value)) or pandas.isna(value):
         return pandas.NA
     return round(float(value))
 
@@ -55,6 +55,10 @@ def parse_bool(value: str) -> bool:
 
 
 def parse_date(value: str) -> date:
+    if pandas.isna(value):
+        return pandas.NA
+    if isinstance(value, date):
+        return value
     match = re.search(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", str(value))
     if not match:
         return pandas.NA
@@ -64,6 +68,27 @@ def parse_date(value: str) -> date:
     if len(groups[1]) == 1:
         groups[1] = f"0{groups[1]}"
     return date.fromisoformat("-".join(list(reversed(groups))))
+
+
+def parse_lead_id(value: str) -> int:
+    if pandas.isna(value):
+        return pandas.NA
+    lead_id = pandas.NA
+    if str(value).startswith("https://neuraluniversity.amocrm.ru/leads/detail/"):
+        match = re.search(r"^(\d+)", value[48:])
+        lead_id = match.group(1)
+    return lead_id
+
+
+def parse_slug(value: str) -> str:
+    if pandas.isna(value):
+        return pandas.NA
+    return slugify(value, "ru").replace("-", "_")
+
+
+def merge_columns(value):
+    values = list(filter(lambda item: not pandas.isna(item), value))
+    return values[0] if len(values) else pandas.NA
 
 
 def get_lead_id(value: str) -> str:
@@ -85,6 +110,7 @@ def rename_so_columns(value: str) -> str:
         "data_zoom": "Дата Zoom",
         "data_so": "Дата SO",
         "do_ili_posle_zoom": "До или после Zoom",
+        "id_oplaty_": "ID оплаты ",
         "data_oplaty_": "Дата оплаты ",
         "summa_oplaty_": "Сумма оплаты ",
     }
@@ -117,6 +143,7 @@ def get_stats():
         "telefon": parse_str,
         "ssylka_na_amocrm": parse_str,
         "id_sdelki": parse_int,
+        "order_id": parse_int,
         "menedzher": parse_str,
         "gr": parse_int,
         "summa_oplachennaja_klientom": parse_int,
@@ -161,6 +188,12 @@ def get_stats():
                 5,
                 "id_sdelki",
                 data["ssylka_na_amocrm"].apply(get_lead_id),
+                allow_duplicates=True,
+            )
+            data.insert(
+                6,
+                "order_id",
+                list(map(lambda item: item + 1, data.index)),
                 allow_duplicates=True,
             )
             for column, parse_fn in rel_fields.items():
@@ -389,7 +422,15 @@ def update_so():
                 ].sort_values(by=["data_oplaty"])
                 num = 1
                 for _, payment in row_sources.iterrows():
-                    data.loc[index, [f"data_oplaty_{num}", f"summa_oplaty_{num}"]] = [
+                    data.loc[
+                        index,
+                        [
+                            f"id_oplaty_{num}",
+                            f"data_oplaty_{num}",
+                            f"summa_oplaty_{num}",
+                        ],
+                    ] = [
+                        payment["order_id"],
                         payment["data_oplaty"],
                         payment["summa_vyruchki"],
                     ]
@@ -408,7 +449,9 @@ def update_so():
                     data[column] = data[column].apply(
                         lambda item: str(item.strftime("%d.%m.%Y")) if item else ""
                     )
-                elif str(column).startswith("summa_oplaty_"):
+                elif str(column).startswith("id_oplaty_") or str(column).startswith(
+                    "summa_oplaty_"
+                ):
                     data[column] = data[column].apply(
                         lambda item: "" if str(item) == "" else int(item)
                     )
@@ -615,78 +658,75 @@ def calculate_so():
 
 @log_execution_time("get_managers")
 def get_managers():
-    def merge_columns(value):
-        values = list(filter(lambda item: not pandas.isna(item), value))
-        return str(values[0]) if len(values) else ""
-
-    with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
-        sources: pandas.DataFrame = pickle.load(file_ref)
-        sources = (
-            sources[~sources["summa_vyruchki"].isna()]
-            .reset_index(drop=True)[
-                [
-                    "menedzher_id",
-                    "menedzher",
-                    "gr",
-                    "summa_vyruchki",
-                    "data_oplaty",
-                    "data_zoom",
-                ]
-            ]
-            .rename(
-                columns={
-                    "menedzher_id": "manager",
-                    "menedzher": "manager_title",
-                    "gr": "group",
-                    "summa_vyruchki": "payment",
-                    "data_oplaty": "payment_date",
-                    "data_zoom": "date",
-                }
-            )
-        )
-
-    with open(Path(DATA_PATH / "sources_zoom.pkl"), "rb") as file_ref:
-        sources_zoom: pandas.DataFrame = pickle.load(file_ref)
-        sources_zoom.rename(columns={"count": "zoom"}, inplace=True)
-
-    with open(Path(DATA_PATH / "sources_so.pkl"), "rb") as file_ref:
-        sources_so: pandas.DataFrame = pickle.load(file_ref)
-        sources_so.rename(columns={"count": "so"}, inplace=True)
-
-    data = pandas.merge(
-        sources,
-        pandas.merge(sources_zoom, sources_so, how="outer", on=["manager", "date"]),
-        how="outer",
-        on=["manager", "date"],
-    )
-    data = data[~data["date"].isna()].reset_index(drop=True)
-
-    data["manager_title"] = data[
-        ["manager_title", "manager_title_x", "manager_title_y"]
-    ].apply(merge_columns, axis=1)
-    data["group"] = data[["group", "group_x", "group_y"]].apply(merge_columns, axis=1)
-    data["group_title"] = data["group"].apply(lambda item: f'Группа "{item}"')
-    for column in ["payment", "zoom", "so"]:
-        data[column] = (
-            data[column]
-            .apply(lambda item: 0 if pandas.isna(item) else int(item))
-            .astype(int)
-        )
-    data = data[
-        [
-            "manager",
-            "manager_title",
-            "group",
-            "group_title",
-            "payment",
-            "payment_date",
-            "date",
-            "zoom",
-            "so",
-        ]
-    ]
-    with open(Path(DATA_PATH / "managers.pkl"), "wb") as file_ref:
-        pickle.dump(data, file_ref)
+    # with open(Path(DATA_PATH / "sources.pkl"), "rb") as file_ref:
+    #     sources: pandas.DataFrame = pickle.load(file_ref)
+    #     sources = (
+    #         sources[~sources["summa_vyruchki"].isna()]
+    #         .reset_index(drop=True)[
+    #             [
+    #                 "menedzher_id",
+    #                 "menedzher",
+    #                 "gr",
+    #                 "summa_vyruchki",
+    #                 "data_oplaty",
+    #                 "data_zoom",
+    #             ]
+    #         ]
+    #         .rename(
+    #             columns={
+    #                 "menedzher_id": "manager",
+    #                 "menedzher": "manager_title",
+    #                 "gr": "group",
+    #                 "summa_vyruchki": "payment",
+    #                 "data_oplaty": "payment_date",
+    #                 "data_zoom": "date",
+    #             }
+    #         )
+    #     )
+    #
+    # with open(Path(DATA_PATH / "sources_zoom.pkl"), "rb") as file_ref:
+    #     sources_zoom: pandas.DataFrame = pickle.load(file_ref)
+    #     sources_zoom.rename(columns={"count": "zoom"}, inplace=True)
+    #
+    # with open(Path(DATA_PATH / "sources_so.pkl"), "rb") as file_ref:
+    #     sources_so: pandas.DataFrame = pickle.load(file_ref)
+    #     sources_so.rename(columns={"count": "so"}, inplace=True)
+    #
+    # data = pandas.merge(
+    #     sources,
+    #     pandas.merge(sources_zoom, sources_so, how="outer", on=["manager", "date"]),
+    #     how="outer",
+    #     on=["manager", "date"],
+    # )
+    # data = data[~data["date"].isna()].reset_index(drop=True)
+    #
+    # data["manager_title"] = data[
+    #     ["manager_title", "manager_title_x", "manager_title_y"]
+    # ].apply(merge_columns, axis=1)
+    # data["group"] = data[["group", "group_x", "group_y"]].apply(merge_columns, axis=1)
+    # data["group_title"] = data["group"].apply(lambda item: f'Группа "{item}"')
+    # for column in ["payment", "zoom", "so"]:
+    #     data[column] = (
+    #         data[column]
+    #         .apply(lambda item: 0 if pandas.isna(item) else int(item))
+    #         .astype(int)
+    #     )
+    # data = data[
+    #     [
+    #         "manager",
+    #         "manager_title",
+    #         "group",
+    #         "group_title",
+    #         "payment",
+    #         "payment_date",
+    #         "date",
+    #         "zoom",
+    #         "so",
+    #     ]
+    # ]
+    # with open(Path(DATA_PATH / "managers.pkl"), "wb") as file_ref:
+    #     pickle.dump(data, file_ref)
+    pass
 
 
 dag = DAG(

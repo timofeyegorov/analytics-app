@@ -3404,6 +3404,7 @@ class WeekStatsManagersView(TemplateView):
                 return None
             return datetime.date.fromisoformat(f"{value}")
 
+        date_from_default = datetime.datetime.now().date() - datetime.timedelta(weeks=4)
         return WeekStatsManagersFiltersData(
             value_date_from=to_date(source.get("value_date_from")),
             value_date_to=to_date(source.get("value_date_to")),
@@ -3431,10 +3432,18 @@ class WeekStatsManagersView(TemplateView):
 
         return stats
 
+    def get_extras(self) -> Dict[str, Any]:
+        return {
+            "exclude_columns": ["is_group", "is_total"],
+        }
+
     def get(self):
         self.filters = self.get_filters(request.args)
         self.stats = self.get_stats()
+        self.extras = self.get_extras()
 
+        total_zoom = 0
+        total_so = 0
         data = []
         for (group, group_title), groups in (
             self.stats.sort_values("group")
@@ -3454,6 +3463,7 @@ class WeekStatsManagersView(TemplateView):
                 items.append(
                     {
                         "is_group": False,
+                        "is_total": False,
                         "Менеджер/Группа": manager_title,
                         "Количество Zoom": zoom,
                         "Оборот от Zoom": zoom_profit,
@@ -3463,24 +3473,43 @@ class WeekStatsManagersView(TemplateView):
                         "Оборот на SO": so_profit / so if so else 0,
                     }
                 )
+            total_zoom_group = sum(
+                list(map(lambda item: item.get("Количество Zoom", 0), items))
+            )
+            total_so_group = sum(
+                list(map(lambda item: item.get("Количество SO", 0), items))
+            )
+            total_zoom += total_zoom_group
+            total_so += total_so_group
             data += [
                 {
                     "is_group": True,
+                    "is_total": False,
                     "Менеджер/Группа": group_title,
-                    "Количество Zoom": sum(
-                        list(map(lambda item: item.get("Количество Zoom", 0), items))
-                    ),
+                    "Количество Zoom": total_zoom_group,
                     "Оборот от Zoom": 0,
                     "Оборот на Zoom": 0,
-                    "Количество SO": sum(
-                        list(map(lambda item: item.get("Количество SO", 0), items))
-                    ),
+                    "Количество SO": total_so_group,
                     "Оборот от SO": 0,
                     "Оборот на SO": 0,
                 }
             ] + items
+        data = [
+            {
+                "is_group": True,
+                "is_total": True,
+                "Менеджер/Группа": "Всего",
+                "Количество Zoom": total_zoom,
+                "Оборот от Zoom": 0,
+                "Оборот на Zoom": 0,
+                "Количество SO": total_so,
+                "Оборот от SO": 0,
+                "Оборот на SO": 0,
+            }
+        ] + data
 
         self.context("filters", self.filters)
+        self.context("extras", self.extras)
         self.context("data", pandas.DataFrame(data))
 
         return super().get()
