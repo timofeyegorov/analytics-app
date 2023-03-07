@@ -3418,14 +3418,14 @@ class WeekStatsManagersView(TemplateView):
 
         if self.filters.value_date_from:
             stats = stats[
-                (stats.zoom_date >= self.filters.value_date_from)
-                | (stats.so_date >= self.filters.value_date_from)
+                (stats["zoom_date"] >= self.filters.value_date_from)
+                | (stats["so_date"] >= self.filters.value_date_from)
             ]
 
         if self.filters.value_date_to:
             stats = stats[
-                (stats.zoom_date <= self.filters.value_date_to) | stats.so_date
-                <= self.filters.value_date_to
+                (stats["zoom_date"] <= self.filters.value_date_to)
+                | (stats["so_date"] <= self.filters.value_date_to)
             ]
 
         if self.filters.payment_date_from:
