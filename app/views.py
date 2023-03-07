@@ -3417,10 +3417,16 @@ class WeekStatsManagersView(TemplateView):
             stats: pandas.DataFrame = pickle.load(file_ref)
 
         if self.filters.value_date_from:
-            stats = stats[stats.date >= self.filters.value_date_from]
+            stats = stats[
+                (stats.zoom_date >= self.filters.value_date_from)
+                | (stats.so_date >= self.filters.value_date_from)
+            ]
 
         if self.filters.value_date_to:
-            stats = stats[stats.date <= self.filters.value_date_to]
+            stats = stats[
+                (stats.zoom_date <= self.filters.value_date_to) | stats.so_date
+                <= self.filters.value_date_to
+            ]
 
         if self.filters.payment_date_from:
             stats = stats[stats.payment_date >= self.filters.payment_date_from]
@@ -3444,27 +3450,35 @@ class WeekStatsManagersView(TemplateView):
 
         total_zoom = 0
         total_so = 0
+        total_profit_from_zoom = 0
+        total_profit_from_so = 0
         data = []
-        for (group, group_title), groups in (
-            self.stats.sort_values("group")
-            .reset_index(drop=True)
-            .groupby(by=["group", "group_title"])
-        ):
+
+        stats_data = self.stats.sort_values("group").reset_index(drop=True)
+        for group, groups in stats_data.groupby(by=["group"]):
             items = []
-            for (manager_title, manager), managers in (
-                groups.sort_values("manager_title")
-                .reset_index(drop=True)
-                .groupby(by=["manager_title", "manager"])
+
+            managers_data = groups.sort_values("manager").reset_index(drop=True)
+            for (manager, manager_id), managers in managers_data.groupby(
+                by=["manager", "manager_id"]
             ):
-                zoom = managers["zoom"].sum()
-                zoom_profit = managers["payment"].sum()
-                so = managers["so"].sum()
-                so_profit = managers["payment"].sum()
+                zoom = (
+                    managers[["zoom_date", "zoom_count"]]
+                    .drop_duplicates()["zoom_count"]
+                    .sum()
+                )
+                zoom_profit = managers[~managers["zoom_date"].isna()]["payment"].sum()
+                so = (
+                    managers[["so_date", "so_count"]]
+                    .drop_duplicates()["so_count"]
+                    .sum()
+                )
+                so_profit = managers[~managers["so_date"].isna()]["payment"].sum()
                 items.append(
                     {
                         "is_group": False,
                         "is_total": False,
-                        "Менеджер/Группа": manager_title,
+                        "Менеджер/Группа": manager,
                         "Количество Zoom": zoom,
                         "Оборот от Zoom": zoom_profit,
                         "Оборот на Zoom": zoom_profit / zoom if zoom else 0,
@@ -3476,35 +3490,57 @@ class WeekStatsManagersView(TemplateView):
             total_zoom_group = sum(
                 list(map(lambda item: item.get("Количество Zoom", 0), items))
             )
+            total_profit_from_zoom_group = sum(
+                list(map(lambda item: item.get("Оборот от Zoom", 0), items))
+            )
+            total_profit_on_zoom_group = (
+                round(total_profit_from_zoom_group / total_zoom_group)
+                if total_zoom_group
+                else 0
+            )
             total_so_group = sum(
                 list(map(lambda item: item.get("Количество SO", 0), items))
             )
+            total_profit_from_so_group = sum(
+                list(map(lambda item: item.get("Оборот от SO", 0), items))
+            )
+            total_profit_on_so_group = (
+                round(total_profit_from_so_group / total_so_group)
+                if total_so_group
+                else 0
+            )
             total_zoom += total_zoom_group
             total_so += total_so_group
+            total_profit_from_zoom += total_profit_from_zoom_group
+            total_profit_from_so += total_profit_from_so_group
             data += [
                 {
                     "is_group": True,
                     "is_total": False,
-                    "Менеджер/Группа": group_title,
+                    "Менеджер/Группа": f'Группа "{group}"',
                     "Количество Zoom": total_zoom_group,
-                    "Оборот от Zoom": 0,
-                    "Оборот на Zoom": 0,
+                    "Оборот от Zoom": total_profit_from_zoom_group,
+                    "Оборот на Zoom": total_profit_on_zoom_group,
                     "Количество SO": total_so_group,
-                    "Оборот от SO": 0,
-                    "Оборот на SO": 0,
+                    "Оборот от SO": total_profit_from_so_group,
+                    "Оборот на SO": total_profit_on_so_group,
                 }
             ] + items
+        total_profit_on_zoom = (
+            round(total_profit_from_zoom / total_zoom) if total_zoom else 0
+        )
+        total_profit_on_so = round(total_profit_from_so / total_so) if total_so else 0
         data = [
             {
                 "is_group": True,
                 "is_total": True,
                 "Менеджер/Группа": "Всего",
                 "Количество Zoom": total_zoom,
-                "Оборот от Zoom": 0,
-                "Оборот на Zoom": 0,
+                "Оборот от Zoom": total_profit_from_zoom,
+                "Оборот на Zoom": total_profit_on_zoom,
                 "Количество SO": total_so,
-                "Оборот от SO": 0,
-                "Оборот на SO": 0,
+                "Оборот от SO": total_profit_from_so,
+                "Оборот на SO": total_profit_on_so,
             }
         ] + data
 
