@@ -45,6 +45,13 @@ pickle_loader = PickleLoader()
 UNDEFINED = "Undefined"
 
 
+def parse_int(value: str) -> int:
+    value = re.sub(r"\s", "", str(value))
+    if not re.search(r"^-?\d+\.?\d*$", str(value)) or pandas.isna(value):
+        return pandas.NA
+    return round(float(value))
+
+
 class ContextTemplate:
     data: Dict[str, Any] = {}
 
@@ -3406,27 +3413,17 @@ class WeekStatsManagersView(TemplateView):
 
         date_from_default = datetime.datetime.now().date() - datetime.timedelta(weeks=4)
         return WeekStatsManagersFiltersData(
-            value_date_from=to_date(source.get("value_date_from")),
+            value_date_from=to_date(source.get("value_date_from", date_from_default)),
             value_date_to=to_date(source.get("value_date_to")),
-            payment_date_from=to_date(source.get("payment_date_from")),
+            payment_date_from=to_date(
+                source.get("payment_date_from", date_from_default)
+            ),
             payment_date_to=to_date(source.get("payment_date_to")),
         )
 
     def get_stats(self) -> pandas.DataFrame:
         with open(Path(DATA_FOLDER) / "week" / "managers.pkl", "rb") as file_ref:
             stats: pandas.DataFrame = pickle.load(file_ref)
-
-        if self.filters.value_date_from:
-            stats = stats[
-                (stats["zoom_date"] >= self.filters.value_date_from)
-                | (stats["so_date"] >= self.filters.value_date_from)
-            ]
-
-        if self.filters.value_date_to:
-            stats = stats[
-                (stats["zoom_date"] <= self.filters.value_date_to)
-                | (stats["so_date"] <= self.filters.value_date_to)
-            ]
 
         if self.filters.payment_date_from:
             stats = stats[stats.payment_date >= self.filters.payment_date_from]
@@ -3448,105 +3445,207 @@ class WeekStatsManagersView(TemplateView):
         self.stats = self.get_stats()
         self.extras = self.get_extras()
 
-        total_zoom = 0
-        total_so = 0
-        total_profit_from_zoom = 0
-        total_profit_from_so = 0
-        data = []
+        stats_zoom = (
+            self.stats.copy().drop(columns=["so_date", "so_count"]).drop_duplicates()
+        )
+        stats_so = (
+            self.stats.copy()
+            .drop(columns=["zoom_date", "zoom_count"])
+            .drop_duplicates()
+        )
 
-        stats_data = self.stats.sort_values("group").reset_index(drop=True)
-        for group, groups in stats_data.groupby(by=["group"]):
-            items = []
+        value_date_from = self.filters.value_date_from
+        value_date_to = self.filters.value_date_to
 
+        if value_date_from:
+            stats_zoom = stats_zoom[stats_zoom["zoom_date"] >= value_date_from]
+            stats_so = stats_so[stats_so["so_date"] >= value_date_from]
+
+        if value_date_to:
+            stats_zoom = stats_zoom[stats_zoom["zoom_date"] <= value_date_to]
+            stats_so = stats_so[stats_so["so_date"] <= value_date_to]
+
+        data_zoom = {}
+        for group, groups in stats_zoom.groupby(by=["group"]):
             managers_data = groups.sort_values("manager").reset_index(drop=True)
+            items = []
             for (manager, manager_id), managers in managers_data.groupby(
                 by=["manager", "manager_id"]
             ):
-                zoom = (
-                    managers[["zoom_date", "zoom_count"]]
-                    .drop_duplicates()["zoom_count"]
-                    .sum()
-                )
-                zoom_profit = managers[~managers["zoom_date"].isna()]["payment"].sum()
-                so = (
-                    managers[["so_date", "so_count"]]
-                    .drop_duplicates()["so_count"]
-                    .sum()
-                )
-                so_profit = managers[~managers["so_date"].isna()]["payment"].sum()
+                profit_from_zoom = managers["payment"].sum()
+                count_zoom = managers.drop_duplicates(
+                    subset=["zoom_date", "zoom_count"]
+                )["zoom_count"].sum()
                 items.append(
                     {
                         "is_group": False,
                         "is_total": False,
-                        "Менеджер/Группа": manager,
-                        "Количество Zoom": zoom,
-                        "Оборот от Zoom": zoom_profit,
-                        "Оборот на Zoom": zoom_profit / zoom if zoom else 0,
-                        "Количество SO": so,
-                        "Оборот от SO": so_profit,
-                        "Оборот на SO": so_profit / so if so else 0,
+                        "name": manager,
+                        "count_zoom": count_zoom,
+                        "profit_from_zoom": profit_from_zoom,
+                        "profit_on_zoom": round(profit_from_zoom / count_zoom)
+                        if count_zoom
+                        else 0,
                     }
                 )
-            total_zoom_group = sum(
-                list(map(lambda item: item.get("Количество Zoom", 0), items))
-            )
-            total_profit_from_zoom_group = sum(
-                list(map(lambda item: item.get("Оборот от Zoom", 0), items))
-            )
-            total_profit_on_zoom_group = (
-                round(total_profit_from_zoom_group / total_zoom_group)
-                if total_zoom_group
+            data_zoom[group] = pandas.DataFrame(items)
+
+        data_so = {}
+        for group, groups in stats_so.groupby(by=["group"]):
+            managers_data = groups.sort_values("manager").reset_index(drop=True)
+            items = []
+            for (manager, manager_id), managers in managers_data.groupby(
+                by=["manager", "manager_id"]
+            ):
+                profit_from_so = managers.drop_duplicates(subset=["order_id"])[
+                    "payment"
+                ].sum()
+                count_so = managers.drop_duplicates(subset=["so_date", "so_count"])[
+                    "so_count"
+                ].sum()
+                items.append(
+                    {
+                        "is_group": False,
+                        "is_total": False,
+                        "name": manager,
+                        "count_so": count_so,
+                        "profit_from_so": profit_from_so,
+                        "profit_on_so": round(profit_from_so / count_so)
+                        if count_so
+                        else 0,
+                    }
+                )
+            data_so[group] = pandas.DataFrame(items)
+
+        data_merge = {}
+        for group in sorted(list(set(list(data_zoom.keys()) + list(data_so.keys())))):
+            data_zoom_group = data_zoom.get(group)
+            data_so_group = data_so.get(group)
+            if data_zoom_group is not None and data_so_group is not None:
+                data_group = pandas.merge(
+                    data_zoom_group,
+                    data_so_group,
+                    how="outer",
+                    on=["is_group", "is_total", "name"],
+                )
+            else:
+                data_group = (
+                    data_zoom_group if data_zoom_group is not None else data_so_group
+                )
+            data_group["count_zoom"] = (
+                data_group["count_zoom"].apply(parse_int).fillna(0)
+                if "count_zoom" in data_group.columns
                 else 0
             )
-            total_so_group = sum(
-                list(map(lambda item: item.get("Количество SO", 0), items))
-            )
-            total_profit_from_so_group = sum(
-                list(map(lambda item: item.get("Оборот от SO", 0), items))
-            )
-            total_profit_on_so_group = (
-                round(total_profit_from_so_group / total_so_group)
-                if total_so_group
+            data_group["profit_from_zoom"] = (
+                data_group["profit_from_zoom"].apply(parse_int).fillna(0)
+                if "profit_from_zoom" in data_group.columns
                 else 0
             )
-            total_zoom += total_zoom_group
-            total_so += total_so_group
-            total_profit_from_zoom += total_profit_from_zoom_group
-            total_profit_from_so += total_profit_from_so_group
-            data += [
-                {
-                    "is_group": True,
-                    "is_total": False,
-                    "Менеджер/Группа": f'Группа "{group}"',
-                    "Количество Zoom": total_zoom_group,
-                    "Оборот от Zoom": total_profit_from_zoom_group,
-                    "Оборот на Zoom": total_profit_on_zoom_group,
-                    "Количество SO": total_so_group,
-                    "Оборот от SO": total_profit_from_so_group,
-                    "Оборот на SO": total_profit_on_so_group,
-                }
-            ] + items
-        total_profit_on_zoom = (
-            round(total_profit_from_zoom / total_zoom) if total_zoom else 0
+            data_group["profit_on_zoom"] = (
+                data_group["profit_on_zoom"].apply(parse_int).fillna(0)
+                if "profit_on_zoom" in data_group.columns
+                else 0
+            )
+            data_group["count_so"] = (
+                data_group["count_so"].apply(parse_int).fillna(0)
+                if "count_so" in data_group.columns
+                else 0
+            )
+            data_group["profit_from_so"] = (
+                data_group["profit_from_so"].apply(parse_int).fillna(0)
+                if "profit_from_so" in data_group.columns
+                else 0
+            )
+            data_group["profit_on_so"] = (
+                data_group["profit_on_so"].apply(parse_int).fillna(0)
+                if "profit_on_so" in data_group.columns
+                else 0
+            )
+            data_merge[group] = data_group
+
+        total_count_zoom = sum(
+            list(map(lambda item: item["count_zoom"].sum(), data_merge.values()))
         )
-        total_profit_on_so = round(total_profit_from_so / total_so) if total_so else 0
+        total_profit_from_zoom = sum(
+            list(map(lambda item: item["profit_from_zoom"].sum(), data_merge.values()))
+        )
+        total_profit_on_zoom = (
+            round(total_profit_from_zoom / total_count_zoom) if total_count_zoom else 0
+        )
+        total_count_so = sum(
+            list(map(lambda item: item["count_so"].sum(), data_merge.values()))
+        )
+        total_profit_from_so = sum(
+            list(map(lambda item: item["profit_from_so"].sum(), data_merge.values()))
+        )
+        total_profit_on_so = (
+            round(total_profit_from_so / total_count_so) if total_count_so else 0
+        )
         data = [
-            {
-                "is_group": True,
-                "is_total": True,
-                "Менеджер/Группа": "Всего",
-                "Количество Zoom": total_zoom,
-                "Оборот от Zoom": total_profit_from_zoom,
-                "Оборот на Zoom": total_profit_on_zoom,
-                "Количество SO": total_so,
-                "Оборот от SO": total_profit_from_so,
-                "Оборот на SO": total_profit_on_so,
+            pandas.DataFrame(
+                [
+                    {
+                        "is_group": True,
+                        "is_total": True,
+                        "name": "Всего",
+                        "count_zoom": total_count_zoom,
+                        "profit_from_zoom": total_profit_from_zoom,
+                        "profit_on_zoom": total_profit_on_zoom,
+                        "count_so": total_count_so,
+                        "profit_from_so": total_profit_from_so,
+                        "profit_on_so": total_profit_on_so,
+                    }
+                ]
+            )
+        ]
+        for group, items in data_merge.items():
+            group_count_zoom = items["count_zoom"].sum()
+            group_profit_from_zoom = items["profit_from_zoom"].sum()
+            group_profit_on_zoom = (
+                round(group_profit_from_zoom / group_count_zoom)
+                if group_count_zoom
+                else 0
+            )
+            group_count_so = items["count_so"].sum()
+            group_profit_from_so = items["profit_from_so"].sum()
+            group_profit_on_so = (
+                round(group_profit_from_so / group_count_so) if group_count_so else 0
+            )
+            data += [
+                pandas.DataFrame(
+                    [
+                        {
+                            "is_group": True,
+                            "is_total": False,
+                            "name": f'Группа "{group}"',
+                            "count_zoom": group_count_zoom,
+                            "profit_from_zoom": group_profit_from_zoom,
+                            "profit_on_zoom": group_profit_on_zoom,
+                            "count_so": group_count_so,
+                            "profit_from_so": group_profit_from_so,
+                            "profit_on_so": group_profit_on_so,
+                        }
+                    ]
+                ),
+                items,
+            ]
+
+        data = pandas.concat(data, ignore_index=True).rename(
+            columns={
+                "name": "Менеджер/Группа",
+                "count_zoom": "Количество Zoom",
+                "profit_from_zoom": "Оборот от Zoom",
+                "profit_on_zoom": "Оборот на Zoom",
+                "count_so": "Количество SO",
+                "profit_from_so": "Оборот от SO",
+                "profit_on_so": "Оборот на SO",
             }
-        ] + data
+        )
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
-        self.context("data", pandas.DataFrame(data))
+        self.context("data", data)
 
         return super().get()
 
