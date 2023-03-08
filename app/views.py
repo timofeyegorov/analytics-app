@@ -151,11 +151,35 @@ class WeekStatsSpecialOffersFiltersData(BaseModel):
             self.manager = value
 
 
-class WeekStatsManagersFiltersData(BaseModel):
+class WeekStatsFiltersEmptyData(BaseModel):
+    pass
+
+
+class WeekStatsFiltersCohortsData(WeekStatsFiltersEmptyData):
+    date: ConstrainedDate
+    group: Optional[str]
+    manager: Optional[str]
+    accumulative: bool = False
+    profit: bool = False
+
+    def __getitem__(self, item):
+        if item == "group":
+            return self.group
+        elif item == "manager":
+            return self.manager
+
+    def __setitem__(self, key, value):
+        if key == "group":
+            self.group = value
+        elif key == "manager":
+            self.manager = value
+
+
+class WeekStatsFiltersManagersData(BaseModel):
     value_date_from: Optional[ConstrainedDate]
     value_date_to: Optional[ConstrainedDate]
-    payment_date_from: Optional[ConstrainedDate]
-    payment_date_to: Optional[ConstrainedDate]
+    profit_date_from: Optional[ConstrainedDate]
+    profit_date_to: Optional[ConstrainedDate]
 
 
 class SearchLeadsFiltersData(BaseModel):
@@ -3055,31 +3079,94 @@ class WeekStatsView(TemplateView):
         return super().get()
 
 
-class WeekStatsZoomView(TemplateView):
-    template_name = "week-stats/zoom/index.html"
-    title = 'Когорты "Zoom"'
+class WeekStatsBaseView(TemplateView):
+    filters_class = WeekStatsFiltersEmptyData
+    filters: WeekStatsFiltersEmptyData
+    extras: Dict[str, Any]
 
-    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsZoomFiltersData:
-        date = source.get("date") or (
-            datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
-            - datetime.timedelta(weeks=9)
+    def get_filters_class(self) -> type:
+        return self.filters_class
+
+    def filters_initial(self) -> Dict[str, Any]:
+        return {}
+
+    def filters_preprocess(self, **kwargs) -> Dict[str, Any]:
+        return kwargs
+
+    def get_filters(self):
+        initial = self.filters_initial()
+        data = self.filters_preprocess(**initial)
+        filters_class = self.get_filters_class()
+        self.filters = filters_class(**data)
+
+    def load_dataframe(self, path: Path) -> pandas.DataFrame:
+        with open(path, "rb") as file_ref:
+            dataframe: pandas.DataFrame = pickle.load(file_ref)
+        return dataframe
+
+    def filtering_values(self):
+        raise NotImplementedError(
+            '%s must implement "filtering_values" method.' % self.__class__
         )
+
+    def get_extras(self):
+        self.extras = {}
+
+
+class WeekStatsBaseCohortsView(WeekStatsBaseView):
+    filters_class = WeekStatsFiltersCohortsData
+    filters: WeekStatsFiltersCohortsData
+
+    values: pandas.DataFrame
+    counts: pandas.DataFrame
+
+    values_path: Path
+    counts_path: Path
+
+    def filters_initial(self) -> Dict[str, Any]:
+        return {
+            "date": (datetime.datetime.now().date() - datetime.timedelta(weeks=9)),
+        }
+
+    def filters_preprocess(self, **kwargs) -> Dict[str, Any]:
+        data = super().filters_preprocess(**kwargs)
+        data.update(
+            {
+                "date": detect_week(data.get("date"))[0],
+            }
+        )
+        return data
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        date = request.args.get("date")
+        if date is None:
+            date = initial.get("date")
         if isinstance(date, str):
             date = datetime.date.fromisoformat(date)
-        date = detect_week(date)[0]
 
-        group = source.get("group", "__all__")
+        group = request.args.get("group")
+        if group is None:
+            group = initial.get("group", "__all__")
         if group == "__all__":
             group = None
 
-        manager = source.get("manager", "__all__")
+        manager = request.args.get("manager")
+        if manager is None:
+            manager = initial.get("manager", "__all__")
         if manager == "__all__":
             manager = None
 
-        accumulative = source.get("accumulative", False)
-        profit = source.get("profit", False)
+        accumulative = request.args.get("accumulative")
+        if accumulative is None:
+            accumulative = initial.get("accumulative", False)
 
-        return WeekStatsZoomFiltersData(
+        profit = request.args.get("profit")
+        if profit is None:
+            profit = initial.get("profit", False)
+
+        data = self.filters_preprocess(
             date=date,
             group=group,
             manager=manager,
@@ -3087,71 +3174,64 @@ class WeekStatsZoomView(TemplateView):
             profit=profit,
         )
 
-    def get_zoom(self) -> pandas.DataFrame:
-        with open(Path(DATA_FOLDER) / "week" / "sources_zoom.pkl", "rb") as file_ref:
-            stats: pandas.DataFrame = pickle.load(file_ref)
+        filters_class = self.get_filters_class()
 
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
         if self.filters.date:
-            stats = stats[stats.date >= self.filters.date]
+            self.values = self.values[
+                self.values["date"] >= self.filters.date
+            ].reset_index(drop=True)
+            self.counts = self.counts[
+                self.counts["date"] >= self.filters.date
+            ].reset_index(drop=True)
 
-        stats.reset_index(drop=True, inplace=True)
-
-        return stats
-
-    def get_stats(self) -> pandas.DataFrame:
-        with open(Path(DATA_FOLDER) / "week" / "stats_zoom.pkl", "rb") as file_ref:
-            stats: pandas.DataFrame = pickle.load(file_ref)
-
-        if self.filters.date:
-            stats = stats[stats.order_from >= self.filters.date]
-
-        stats.reset_index(drop=True, inplace=True)
-
-        return stats
-
-    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
-        groups = []
-        for name, item in self.zoom.groupby(group):
-            groups.append((name, item[f"{group}_title"].unique()[0]))
-        if self.filters[group] not in list(map(lambda item: item[0], groups)):
+    def get_extras_group(self, group: str) -> List[List[str]]:
+        group_id = f"{group}_id"
+        groups: pandas.DataFrame = (
+            self.values[[group_id, group]]
+            .drop_duplicates()
+            .sort_values(group)
+            .reset_index(drop=True)
+        )
+        if self.filters[group] not in list(groups[group_id]):
             self.filters[group] = None
         if self.filters[group] is not None:
-            if group == "group":
-                self.stats = self.stats[
-                    self.stats["manager"].isin(
-                        self.zoom[self.zoom[group] == self.filters[group]][
-                            "manager"
-                        ].unique()
-                    )
-                ]
-            else:
-                self.stats = self.stats[self.stats[group] == self.filters[group]]
-            self.zoom = self.zoom[self.zoom[group] == self.filters[group]]
-        return groups
+            if group in ["group", "manager"]:
+                self.counts = self.counts[
+                    self.counts[group_id] == self.filters[group]
+                ].reset_index(drop=True)
+            self.values = self.values[
+                self.values[group_id] == self.filters[group]
+            ].reset_index(drop=True)
+        return groups.values.tolist()
 
-    def get_extras(self) -> Dict[str, Any]:
-        groups = self.get_extras_group("group")
-        managers = self.get_extras_group("manager")
-        return {
-            "groups": sorted(groups, key=lambda item: item[1]),
-            "managers": sorted(managers, key=lambda item: item[1]),
+    def get_extras(self):
+        self.extras = {
+            "groups": self.get_extras_group("group"),
+            "managers": self.get_extras_group("manager"),
         }
 
-    def get_stats_week(
+    def get_values_week(
         self,
         date_from: datetime.date,
         date_end: datetime.date,
-        stats: pandas.DataFrame,
+        date_to: datetime.date,
         weeks: int,
     ) -> List[int]:
-        output = []
+        values = self.values[
+            (self.values["date"] >= date_from) & (self.values["date"] <= date_to)
+        ].reset_index(drop=True)
 
+        output = []
         while date_from <= date_end:
             date_to = date_from + datetime.timedelta(days=6)
             output.append(
-                stats[
-                    (stats.payment_from == date_from) & (stats.payment_to == date_to)
-                ].income.sum()
+                values[
+                    (values["profit_date"] >= date_from)
+                    & (values["profit_date"] <= date_to)
+                ]["profit"].sum()
             )
             date_from += datetime.timedelta(weeks=1)
 
@@ -3160,62 +3240,65 @@ class WeekStatsZoomView(TemplateView):
         return output
 
     def get(self):
-        self.filters = self.get_filters(request.args)
-        self.zoom = self.get_zoom()
-        self.stats = self.get_stats()
-        self.extras = self.get_extras()
+        self.get_filters()
 
-        orders_from = (
-            self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
+        self.values = self.load_dataframe(self.values_path)
+        self.counts = self.load_dataframe(self.counts_path)
+
+        with open(Path(DATA_FOLDER) / "week" / "groups.pkl", "rb") as file_ref:
+            groups: pandas.DataFrame = pickle.load(file_ref)
+
+        self.values = self.values.merge(groups, how="left", on=["manager_id"]).rename(
+            columns={"group": "group_id"}
         )
-        date_from = min(orders_from)
-        if date_from > self.filters.date:
-            date_from = self.filters.date
-        date_end = detect_week(datetime.date.today())[0]
+        self.values["group"] = self.values["group_id"].apply(
+            lambda item: f'Группа "{item}"'
+        )
+        self.counts = self.counts.merge(groups, how="left", on=["manager_id"]).rename(
+            columns={"group": "group_id"}
+        )
+
+        self.filtering_values()
+
+        self.get_extras()
+
+        date_from = self.filters.date
+        date_end = detect_week(datetime.datetime.now().date())[0]
         weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
-        stats_from = [date_from]
-        stats_to = [date_end + datetime.timedelta(days=6)]
-        stats_weeks = []
-        total_zooms = []
+        values_from = [date_from]
+        values_to = [date_end + datetime.timedelta(days=6)]
+        values_weeks = []
+        counts_weeks = []
 
         while date_from <= date_end:
             date_to = date_from + datetime.timedelta(days=6)
-            stats_week = self.get_stats_week(
-                date_from,
-                date_end,
-                self.stats[
-                    (self.stats.order_from == date_from)
-                    & (self.stats.order_to == date_to)
-                ],
-                weeks,
-            )
-            stats_weeks.append(stats_week)
-            stats_from.append(date_from)
-            stats_to.append(date_to)
-            total_zooms.append(
-                self.zoom[
-                    (self.zoom["date"] >= date_from) & (self.zoom["date"] <= date_to)
+            values_week = self.get_values_week(date_from, date_end, date_to, weeks)
+            values_weeks.append(values_week)
+            values_from.append(date_from)
+            values_to.append(date_to)
+            counts_weeks.append(
+                self.counts[
+                    (self.counts["date"] >= date_from)
+                    & (self.counts["date"] <= date_to)
                 ]["count"].sum()
             )
-
             date_from += datetime.timedelta(weeks=1)
 
-        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
-        total_sum = (
-            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
-            .sum(axis=1)
-            .astype(int)
-        )
-        data.insert(0, "Zoom", total_zooms)
-        data.insert(1, "Сумма", total_sum)
+        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=values_weeks)
+        data.insert(0, "Значение", counts_weeks)
+        data.insert(1, "Сумма", [pandas.NA] * weeks)
         data = pandas.concat(
-            [pandas.DataFrame(data=[data.sum()]), data],
+            [
+                pandas.DataFrame(
+                    data=[[pandas.NA] * (weeks + 2)], columns=data.columns
+                ),
+                data,
+            ],
             ignore_index=True,
         )
-        data.insert(0, "С даты", stats_from)
-        data.insert(1, "По дату", stats_to)
-        data.reset_index(drop=True, inplace=True)
+        data.insert(0, "С даты", values_from)
+        data.insert(1, "По дату", values_to)
         total = data.iloc[0]
         data = data.iloc[1:].reset_index(drop=True)
 
@@ -3227,368 +3310,240 @@ class WeekStatsZoomView(TemplateView):
         return super().get()
 
 
-class WeekStatsSpecialOffersView(TemplateView):
+class WeekStatsZoomView(WeekStatsBaseCohortsView):
+    template_name = "week-stats/zoom/index.html"
+    title = 'Когорты "Zoom"'
+    values_path = Path(DATA_FOLDER) / "week" / "zoom.pkl"
+    counts_path = Path(DATA_FOLDER) / "week" / "zoom_count.pkl"
+
+
+class WeekStatsSpecialOffersView(WeekStatsBaseCohortsView):
     template_name = "week-stats/so/index.html"
     title = 'Когорты "Special Offers"'
-
-    def get_filters(
-        self, source: ImmutableMultiDict
-    ) -> WeekStatsSpecialOffersFiltersData:
-        date = source.get("date") or (
-            datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
-            - datetime.timedelta(weeks=9)
-        )
-        if isinstance(date, str):
-            date = datetime.date.fromisoformat(date)
-        date = detect_week(date)[0]
-
-        group = source.get("group", "__all__")
-        if group == "__all__":
-            group = None
-
-        manager = source.get("manager", "__all__")
-        if manager == "__all__":
-            manager = None
-
-        accumulative = source.get("accumulative", False)
-        profit = source.get("profit", False)
-
-        return WeekStatsSpecialOffersFiltersData(
-            date=date,
-            group=group,
-            manager=manager,
-            accumulative=accumulative,
-            profit=profit,
-        )
-
-    def get_so(self) -> pandas.DataFrame:
-        with open(Path(DATA_FOLDER) / "week" / "sources_so.pkl", "rb") as file_ref:
-            stats: pandas.DataFrame = pickle.load(file_ref)
-
-        if self.filters.date:
-            stats = stats[stats.date >= self.filters.date]
-
-        stats.reset_index(drop=True, inplace=True)
-
-        return stats
-
-    def get_stats(self) -> pandas.DataFrame:
-        with open(Path(DATA_FOLDER) / "week" / "stats_so.pkl", "rb") as file_ref:
-            stats: pandas.DataFrame = pickle.load(file_ref)
-
-        if self.filters.date:
-            stats = stats[stats.order_from >= self.filters.date]
-
-        stats.reset_index(drop=True, inplace=True)
-
-        return stats
-
-    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
-        groups = []
-        for name, item in self.so.groupby(group):
-            groups.append((name, item[f"{group}_title"].unique()[0]))
-        if self.filters[group] not in list(map(lambda item: item[0], groups)):
-            self.filters[group] = None
-        if self.filters[group] is not None:
-            if group == "group":
-                self.stats = self.stats[
-                    self.stats["manager"].isin(
-                        self.so[self.so[group] == self.filters[group]][
-                            "manager"
-                        ].unique()
-                    )
-                ]
-            else:
-                self.stats = self.stats[self.stats[group] == self.filters[group]]
-            self.so = self.so[self.so[group] == self.filters[group]]
-        return groups
-
-    def get_extras(self) -> Dict[str, Any]:
-        groups = self.get_extras_group("group")
-        managers = self.get_extras_group("manager")
-        return {
-            "groups": sorted(groups, key=lambda item: item[1]),
-            "managers": sorted(managers, key=lambda item: item[1]),
-        }
-
-    def get_stats_week(
-        self,
-        date_from: datetime.date,
-        date_end: datetime.date,
-        stats: pandas.DataFrame,
-        weeks: int,
-    ) -> List[int]:
-        output = []
-
-        while date_from <= date_end:
-            date_to = date_from + datetime.timedelta(days=6)
-            output.append(
-                stats[
-                    (stats.payment_from == date_from) & (stats.payment_to == date_to)
-                ].income.sum()
-            )
-            date_from += datetime.timedelta(weeks=1)
-
-        output += [pandas.NA] * (weeks - len(output))
-
-        return output
-
-    def get(self):
-        self.filters = self.get_filters(request.args)
-        self.so = self.get_so()
-        self.stats = self.get_stats()
-        self.extras = self.get_extras()
-
-        orders_from = (
-            self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
-        )
-        date_from = min(orders_from)
-        if date_from > self.filters.date:
-            date_from = self.filters.date
-        date_end = detect_week(datetime.date.today())[0]
-        weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
-
-        stats_from = [date_from]
-        stats_to = [date_end + datetime.timedelta(days=6)]
-        stats_weeks = []
-        total_so = []
-
-        while date_from <= date_end:
-            date_to = date_from + datetime.timedelta(days=6)
-            stats_week = self.get_stats_week(
-                date_from,
-                date_end,
-                self.stats[
-                    (self.stats.order_from == date_from)
-                    & (self.stats.order_to == date_to)
-                ],
-                weeks,
-            )
-            stats_weeks.append(stats_week)
-            stats_from.append(date_from)
-            stats_to.append(date_to)
-            total_so.append(
-                self.so[(self.so["date"] >= date_from) & (self.so["date"] <= date_to)][
-                    "count"
-                ].sum()
-            )
-
-            date_from += datetime.timedelta(weeks=1)
-
-        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
-        total_sum = (
-            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
-            .sum(axis=1)
-            .astype(int)
-        )
-        data.insert(0, "SO", total_so)
-        data.insert(1, "Сумма", total_sum)
-        data = pandas.concat(
-            [pandas.DataFrame(data=[data.sum()]), data],
-            ignore_index=True,
-        )
-        data.insert(0, "С даты", stats_from)
-        data.insert(1, "По дату", stats_to)
-        data.reset_index(drop=True, inplace=True)
-        total = data.iloc[0]
-        data = data.iloc[1:].reset_index(drop=True)
-
-        self.context("filters", self.filters)
-        self.context("extras", self.extras)
-        self.context("data", data)
-        self.context("total", total)
-
-        return super().get()
+    values_path = Path(DATA_FOLDER) / "week" / "so.pkl"
+    counts_path = Path(DATA_FOLDER) / "week" / "so_count.pkl"
 
 
-class WeekStatsManagersView(TemplateView):
+class WeekStatsManagersView(WeekStatsBaseView):
     template_name = "week-stats/managers/index.html"
     title = "Менеджеры"
 
-    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsManagersFiltersData:
-        def to_date(value: Optional[str] = None) -> Optional[datetime.date]:
-            if not f"{value}" or value is None:
-                return None
-            return datetime.date.fromisoformat(f"{value}")
+    filters_class = WeekStatsFiltersManagersData
+    filters: WeekStatsFiltersManagersData
 
-        date_from_default = datetime.datetime.now().date() - datetime.timedelta(weeks=4)
-        return WeekStatsManagersFiltersData(
-            value_date_from=to_date(source.get("value_date_from", date_from_default)),
-            value_date_to=to_date(source.get("value_date_to")),
-            payment_date_from=to_date(
-                source.get("payment_date_from", date_from_default)
-            ),
-            payment_date_to=to_date(source.get("payment_date_to")),
+    values_zoom: pandas.DataFrame
+    counts_zoom: pandas.DataFrame
+    values_so: pandas.DataFrame
+    counts_so: pandas.DataFrame
+
+    values_zoom_path: Path = Path(DATA_FOLDER) / "week" / "zoom.pkl"
+    counts_zoom_path: Path = Path(DATA_FOLDER) / "week" / "zoom_count.pkl"
+    values_so_path: Path = Path(DATA_FOLDER) / "week" / "so.pkl"
+    counts_so_path: Path = Path(DATA_FOLDER) / "week" / "so_count.pkl"
+
+    def filters_initial(self) -> Dict[str, Any]:
+        date_from_default = datetime.datetime.now(
+            tz=pytz.timezone("Europe/Moscow")
+        ).date() - datetime.timedelta(weeks=4)
+        return {
+            "value_date_from": date_from_default,
+            "profit_date_from": date_from_default,
+        }
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        value_date_from = request.args.get("value_date_from") or None
+        if value_date_from is None:
+            value_date_from = initial.get("value_date_from")
+        if isinstance(value_date_from, str):
+            value_date_from = datetime.date.fromisoformat(value_date_from)
+
+        value_date_to = request.args.get("value_date_to") or None
+        if value_date_to is None:
+            value_date_to = initial.get("value_date_to")
+        if isinstance(value_date_to, str):
+            value_date_to = datetime.date.fromisoformat(value_date_to)
+
+        profit_date_from = request.args.get("profit_date_from") or None
+        if profit_date_from is None:
+            profit_date_from = initial.get("profit_date_from")
+        if isinstance(profit_date_from, str):
+            profit_date_from = datetime.date.fromisoformat(profit_date_from)
+
+        profit_date_to = request.args.get("profit_date_to") or None
+        if profit_date_to is None:
+            profit_date_to = initial.get("profit_date_to")
+        if isinstance(profit_date_to, str):
+            profit_date_to = datetime.date.fromisoformat(profit_date_to)
+
+        data = self.filters_preprocess(
+            value_date_from=value_date_from,
+            value_date_to=value_date_to,
+            profit_date_from=profit_date_from,
+            profit_date_to=profit_date_to,
         )
 
-    def get_stats(self) -> pandas.DataFrame:
-        with open(Path(DATA_FOLDER) / "week" / "managers.pkl", "rb") as file_ref:
-            stats: pandas.DataFrame = pickle.load(file_ref)
+        filters_class = self.get_filters_class()
 
-        if self.filters.payment_date_from:
-            stats = stats[stats.payment_date >= self.filters.payment_date_from]
+        self.filters = filters_class(**data)
 
-        if self.filters.payment_date_to:
-            stats = stats[stats.payment_date <= self.filters.payment_date_to]
+    def filtering_values(self):
+        if self.filters.value_date_from:
+            self.values_zoom = self.values_zoom[
+                self.values_zoom["date"] >= self.filters.value_date_from
+            ].reset_index(drop=True)
+            self.counts_zoom = self.counts_zoom[
+                self.counts_zoom["date"] >= self.filters.value_date_from
+            ].reset_index(drop=True)
+            self.values_so = self.values_so[
+                self.values_so["date"] >= self.filters.value_date_from
+            ].reset_index(drop=True)
+            self.counts_so = self.counts_so[
+                self.counts_so["date"] >= self.filters.value_date_from
+            ].reset_index(drop=True)
 
-        stats.reset_index(drop=True, inplace=True)
+        if self.filters.value_date_to:
+            self.values_zoom = self.values_zoom[
+                self.values_zoom["date"] <= self.filters.value_date_to
+            ].reset_index(drop=True)
+            self.counts_zoom = self.counts_zoom[
+                self.counts_zoom["date"] <= self.filters.value_date_to
+            ].reset_index(drop=True)
+            self.values_so = self.values_so[
+                self.values_so["date"] <= self.filters.value_date_to
+            ].reset_index(drop=True)
+            self.counts_so = self.counts_so[
+                self.counts_so["date"] <= self.filters.value_date_to
+            ].reset_index(drop=True)
 
-        return stats
+        if self.filters.profit_date_from:
+            self.values_zoom = self.values_zoom[
+                self.values_zoom["profit_date"] >= self.filters.profit_date_from
+            ].reset_index(drop=True)
+            self.values_so = self.values_so[
+                self.values_so["profit_date"] >= self.filters.profit_date_from
+            ].reset_index(drop=True)
+
+        if self.filters.profit_date_to:
+            self.values_zoom = self.values_zoom[
+                self.values_zoom["profit_date"] >= self.filters.profit_date_to
+            ].reset_index(drop=True)
+            self.values_so = self.values_so[
+                self.values_so["profit_date"] >= self.filters.profit_date_to
+            ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
-        return {
+        self.extras = {
             "exclude_columns": ["is_group", "is_total"],
         }
 
     def get(self):
-        self.filters = self.get_filters(request.args)
-        self.stats = self.get_stats()
-        self.extras = self.get_extras()
+        self.get_filters()
 
-        stats_zoom = (
-            self.stats.copy().drop(columns=["so_date", "so_count"]).drop_duplicates()
-        )
-        stats_so = (
-            self.stats.copy()
-            .drop(columns=["zoom_date", "zoom_count"])
-            .drop_duplicates()
-        )
+        self.values_zoom = self.load_dataframe(self.values_zoom_path)
+        self.counts_zoom = self.load_dataframe(self.counts_zoom_path)
+        self.values_so = self.load_dataframe(self.values_so_path)
+        self.counts_so = self.load_dataframe(self.counts_so_path)
 
-        value_date_from = self.filters.value_date_from
-        value_date_to = self.filters.value_date_to
+        self.filtering_values()
 
-        if value_date_from:
-            stats_zoom = stats_zoom[stats_zoom["zoom_date"] >= value_date_from]
-            stats_so = stats_so[stats_so["so_date"] >= value_date_from]
+        self.get_extras()
 
-        if value_date_to:
-            stats_zoom = stats_zoom[stats_zoom["zoom_date"] <= value_date_to]
-            stats_so = stats_so[stats_so["so_date"] <= value_date_to]
-
-        data_zoom = {}
-        for group, groups in stats_zoom.groupby(by=["group"]):
-            managers_data = groups.sort_values("manager").reset_index(drop=True)
-            items = []
-            for (manager, manager_id), managers in managers_data.groupby(
-                by=["manager", "manager_id"]
-            ):
-                profit_from_zoom = managers["payment"].sum()
-                count_zoom = managers.drop_duplicates(
-                    subset=["zoom_date", "zoom_count"]
-                )["zoom_count"].sum()
-                items.append(
-                    {
-                        "is_group": False,
-                        "is_total": False,
-                        "name": manager,
-                        "count_zoom": count_zoom,
-                        "profit_from_zoom": profit_from_zoom,
-                        "profit_on_zoom": round(profit_from_zoom / count_zoom)
-                        if count_zoom
-                        else 0,
-                    }
+        data_zoom = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["profit"].sum()],
+                    self.values_zoom.groupby(by=["manager_id"]),
                 )
-            data_zoom[group] = pandas.DataFrame(items)
-
-        data_so = {}
-        for group, groups in stats_so.groupby(by=["group"]):
-            managers_data = groups.sort_values("manager").reset_index(drop=True)
-            items = []
-            for (manager, manager_id), managers in managers_data.groupby(
-                by=["manager", "manager_id"]
-            ):
-                profit_from_so = managers.drop_duplicates(subset=["order_id"])[
-                    "payment"
-                ].sum()
-                count_so = managers.drop_duplicates(subset=["so_date", "so_count"])[
-                    "so_count"
-                ].sum()
-                items.append(
-                    {
-                        "is_group": False,
-                        "is_total": False,
-                        "name": manager,
-                        "count_so": count_so,
-                        "profit_from_so": profit_from_so,
-                        "profit_on_so": round(profit_from_so / count_so)
-                        if count_so
-                        else 0,
-                    }
-                )
-            data_so[group] = pandas.DataFrame(items)
-
-        data_merge = {}
-        for group in sorted(list(set(list(data_zoom.keys()) + list(data_so.keys())))):
-            data_zoom_group = data_zoom.get(group)
-            data_so_group = data_so.get(group)
-            if data_zoom_group is not None and data_so_group is not None:
-                data_group = pandas.merge(
-                    data_zoom_group,
-                    data_so_group,
-                    how="outer",
-                    on=["is_group", "is_total", "name"],
-                )
-            else:
-                data_group = (
-                    data_zoom_group if data_zoom_group is not None else data_so_group
-                )
-            data_group["count_zoom"] = (
-                data_group["count_zoom"].apply(parse_int).fillna(0)
-                if "count_zoom" in data_group.columns
-                else 0
-            )
-            data_group["profit_from_zoom"] = (
-                data_group["profit_from_zoom"].apply(parse_int).fillna(0)
-                if "profit_from_zoom" in data_group.columns
-                else 0
-            )
-            data_group["profit_on_zoom"] = (
-                data_group["profit_on_zoom"].apply(parse_int).fillna(0)
-                if "profit_on_zoom" in data_group.columns
-                else 0
-            )
-            data_group["count_so"] = (
-                data_group["count_so"].apply(parse_int).fillna(0)
-                if "count_so" in data_group.columns
-                else 0
-            )
-            data_group["profit_from_so"] = (
-                data_group["profit_from_so"].apply(parse_int).fillna(0)
-                if "profit_from_so" in data_group.columns
-                else 0
-            )
-            data_group["profit_on_so"] = (
-                data_group["profit_on_so"].apply(parse_int).fillna(0)
-                if "profit_on_so" in data_group.columns
-                else 0
-            )
-            data_merge[group] = data_group
-
-        total_count_zoom = sum(
-            list(map(lambda item: item["count_zoom"].sum(), data_merge.values()))
+            ),
+            columns=["manager_id", "profit_from_zoom"],
         )
-        total_profit_from_zoom = sum(
-            list(map(lambda item: item["profit_from_zoom"].sum(), data_merge.values()))
+        data_zoom_count = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["count"].sum()],
+                    self.counts_zoom.groupby(by=["manager_id"]),
+                )
+            ),
+            columns=["manager_id", "count_zoom"],
         )
+        data_zoom: pandas.DataFrame = data_zoom.merge(
+            data_zoom_count, how="outer", on=["manager_id"]
+        ).reset_index(drop=True)
+        data_zoom["profit_from_zoom"] = (
+            data_zoom["profit_from_zoom"].fillna(0).apply(parse_int)
+        )
+        data_zoom["count_zoom"] = data_zoom["count_zoom"].fillna(0).apply(parse_int)
+        data_zoom["profit_on_zoom"] = data_zoom.apply(
+            lambda item: item["profit_from_zoom"] / item["count_zoom"]
+            if item["count_zoom"]
+            else 0,
+            axis=1,
+        ).apply(parse_int)
+
+        data_so = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["profit"].sum()],
+                    self.values_so.groupby(by=["manager_id"]),
+                )
+            ),
+            columns=["manager_id", "profit_from_so"],
+        )
+        data_so_count = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["count"].sum()],
+                    self.counts_so.groupby(by=["manager_id"]),
+                )
+            ),
+            columns=["manager_id", "count_so"],
+        )
+        data_so: pandas.DataFrame = data_so.merge(
+            data_so_count, how="outer", on=["manager_id"]
+        ).reset_index(drop=True)
+        data_so["profit_on_so"] = data_so.apply(
+            lambda item: item["profit_from_so"] / item["count_so"]
+            if item["count_so"]
+            else 0,
+            axis=1,
+        )
+
+        data_merged: pandas.DataFrame = pandas.merge(
+            data_zoom, data_so, how="outer", on=["manager_id"]
+        ).reset_index(drop=True)
+
+        with open(Path(DATA_FOLDER) / "week" / "groups.pkl", "rb") as file_ref:
+            groups: pandas.DataFrame = pickle.load(file_ref)
+
+        data_merged = (
+            data_merged.merge(groups, how="left", on=["manager_id"])
+            .rename(columns={"group": "group_id"})
+            .sort_values(by=["group_id", "manager"])
+            .reset_index(drop=True)
+        )
+        data_merged.insert(0, "is_total", False)
+        data_merged.insert(1, "is_group", False)
+
+        total_count_zoom = data_merged["count_zoom"].sum()
+        total_profit_from_zoom = data_merged["profit_from_zoom"].sum()
         total_profit_on_zoom = (
             round(total_profit_from_zoom / total_count_zoom) if total_count_zoom else 0
         )
-        total_count_so = sum(
-            list(map(lambda item: item["count_so"].sum(), data_merge.values()))
-        )
-        total_profit_from_so = sum(
-            list(map(lambda item: item["profit_from_so"].sum(), data_merge.values()))
-        )
+        total_count_so = data_merged["count_so"].sum()
+        total_profit_from_so = data_merged["profit_from_so"].sum()
         total_profit_on_so = (
             round(total_profit_from_so / total_count_so) if total_count_so else 0
         )
+
         data = [
             pandas.DataFrame(
                 [
                     {
-                        "is_group": True,
                         "is_total": True,
-                        "name": "Всего",
+                        "is_group": True,
+                        "manager": "Всего",
                         "count_zoom": total_count_zoom,
                         "profit_from_zoom": total_profit_from_zoom,
                         "profit_on_zoom": total_profit_on_zoom,
@@ -3599,16 +3554,16 @@ class WeekStatsManagersView(TemplateView):
                 ]
             )
         ]
-        for group, items in data_merge.items():
-            group_count_zoom = items["count_zoom"].sum()
-            group_profit_from_zoom = items["profit_from_zoom"].sum()
+        for group_id, rows in data_merged.groupby(by=["group_id"]):
+            group_count_zoom = rows["count_zoom"].sum()
+            group_profit_from_zoom = rows["profit_from_zoom"].sum()
             group_profit_on_zoom = (
                 round(group_profit_from_zoom / group_count_zoom)
                 if group_count_zoom
                 else 0
             )
-            group_count_so = items["count_so"].sum()
-            group_profit_from_so = items["profit_from_so"].sum()
+            group_count_so = rows["count_so"].sum()
+            group_profit_from_so = rows["profit_from_so"].sum()
             group_profit_on_so = (
                 round(group_profit_from_so / group_count_so) if group_count_so else 0
             )
@@ -3616,9 +3571,9 @@ class WeekStatsManagersView(TemplateView):
                 pandas.DataFrame(
                     [
                         {
-                            "is_group": True,
                             "is_total": False,
-                            "name": f'Группа "{group}"',
+                            "is_group": True,
+                            "manager": f'Группа "{group_id}"',
                             "count_zoom": group_count_zoom,
                             "profit_from_zoom": group_profit_from_zoom,
                             "profit_on_zoom": group_profit_on_zoom,
@@ -3628,19 +3583,38 @@ class WeekStatsManagersView(TemplateView):
                         }
                     ]
                 ),
-                items,
+                rows,
             ]
-
-        data = pandas.concat(data, ignore_index=True).rename(
+        data = pandas.concat(data, ignore_index=True)[
+            [
+                "is_total",
+                "is_group",
+                "manager",
+                "count_zoom",
+                "profit_from_zoom",
+                "profit_on_zoom",
+                "count_so",
+                "profit_from_so",
+                "profit_on_so",
+            ]
+        ]
+        data["count_zoom"] = data["count_zoom"].fillna(0).apply(parse_int)
+        data["profit_from_zoom"] = data["profit_from_zoom"].fillna(0).apply(parse_int)
+        data["profit_on_zoom"] = data["profit_on_zoom"].fillna(0).apply(parse_int)
+        data["count_so"] = data["count_so"].fillna(0).apply(parse_int)
+        data["profit_from_so"] = data["profit_from_so"].fillna(0).apply(parse_int)
+        data["profit_on_so"] = data["profit_on_so"].fillna(0).apply(parse_int)
+        data.rename(
             columns={
-                "name": "Менеджер/Группа",
+                "manager": "Менеджер/Группа",
                 "count_zoom": "Количество Zoom",
                 "profit_from_zoom": "Оборот от Zoom",
                 "profit_on_zoom": "Оборот на Zoom",
                 "count_so": "Количество SO",
                 "profit_from_so": "Оборот от SO",
                 "profit_on_so": "Оборот на SO",
-            }
+            },
+            inplace=True,
         )
 
         self.context("filters", self.filters)
