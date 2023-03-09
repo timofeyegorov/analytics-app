@@ -3159,6 +3159,28 @@ class WeekStatsManagersView(WeekStatsBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
+        if self.filters.hide_inactive_managers:
+            two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
+            active_managers = []
+            for manager_id, rows in self.counts_zoom[
+                self.counts_zoom["date"] >= two_weeks
+            ].groupby(by=["manager_id"]):
+                if rows["count"].sum() > 0:
+                    active_managers.append(manager_id)
+            if active_managers:
+                self.values_zoom = self.values_zoom[
+                    self.values_zoom["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+                self.counts_zoom = self.counts_zoom[
+                    self.counts_zoom["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+                self.values_so = self.values_so[
+                    self.values_so["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+                self.counts_so = self.counts_so[
+                    self.counts_so["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+
         if self.filters.value_date_from:
             self.values_zoom = self.values_zoom[
                 self.values_zoom["date"] >= self.filters.value_date_from
@@ -3202,28 +3224,6 @@ class WeekStatsManagersView(WeekStatsBaseView):
             self.values_so = self.values_so[
                 self.values_so["profit_date"] <= self.filters.profit_date_to
             ].reset_index(drop=True)
-
-        if self.filters.hide_inactive_managers:
-            two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
-            active_managers = []
-            for manager_id, rows in self.counts_zoom[
-                self.counts_zoom["date"] >= two_weeks
-            ].groupby(by=["manager_id"]):
-                if rows["count"].sum() > 0:
-                    active_managers.append(manager_id)
-            if active_managers:
-                self.values_zoom = self.values_zoom[
-                    self.values_zoom["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-                self.counts_zoom = self.counts_zoom[
-                    self.counts_zoom["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-                self.values_so = self.values_so[
-                    self.values_so["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-                self.counts_so = self.counts_so[
-                    self.counts_so["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
         self.extras = {
