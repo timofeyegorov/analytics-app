@@ -3159,28 +3159,6 @@ class WeekStatsManagersView(WeekStatsBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
-        if self.filters.hide_inactive_managers:
-            two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
-            active_managers = []
-            for manager_id, rows in self.counts_zoom[
-                self.counts_zoom["date"] >= two_weeks
-            ].groupby(by=["manager_id"]):
-                if rows["count"].sum() > 0:
-                    active_managers.append(manager_id)
-            if active_managers:
-                self.values_zoom = self.values_zoom[
-                    self.values_zoom["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-                self.counts_zoom = self.counts_zoom[
-                    self.counts_zoom["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-                self.values_so = self.values_so[
-                    self.values_so["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-                self.counts_so = self.counts_so[
-                    self.counts_so["manager_id"].isin(active_managers)
-                ].reset_index(drop=True)
-
         if self.filters.value_date_from:
             self.values_zoom = self.values_zoom[
                 self.values_zoom["date"] >= self.filters.value_date_from
@@ -3237,6 +3215,28 @@ class WeekStatsManagersView(WeekStatsBaseView):
         self.counts_zoom = self.load_dataframe(self.counts_zoom_path)
         self.values_so = self.load_dataframe(self.values_so_path)
         self.counts_so = self.load_dataframe(self.counts_so_path)
+
+        if self.filters.hide_inactive_managers:
+            two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
+            active_managers = []
+            for manager_id, rows in self.counts_zoom[
+                self.counts_zoom["date"] >= two_weeks
+            ].groupby(by=["manager_id"]):
+                if rows["count"].sum() > 0:
+                    active_managers.append(manager_id)
+            print(active_managers)
+            self.values_zoom = self.values_zoom[
+                self.values_zoom["manager_id"].isin(active_managers)
+            ].reset_index(drop=True)
+            self.counts_zoom = self.counts_zoom[
+                self.counts_zoom["manager_id"].isin(active_managers)
+            ].reset_index(drop=True)
+            self.values_so = self.values_so[
+                self.values_so["manager_id"].isin(active_managers)
+            ].reset_index(drop=True)
+            self.counts_so = self.counts_so[
+                self.counts_so["manager_id"].isin(active_managers)
+            ].reset_index(drop=True)
 
         self.values_zoom = self.values_zoom[
             self.values_zoom["profit_date"] >= self.values_zoom["date"]
