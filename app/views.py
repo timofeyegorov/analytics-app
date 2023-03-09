@@ -3193,10 +3193,10 @@ class WeekStatsManagersView(WeekStatsBaseView):
 
         if self.filters.profit_date_to:
             self.values_zoom = self.values_zoom[
-                self.values_zoom["profit_date"] >= self.filters.profit_date_to
+                self.values_zoom["profit_date"] <= self.filters.profit_date_to
             ].reset_index(drop=True)
             self.values_so = self.values_so[
-                self.values_so["profit_date"] >= self.filters.profit_date_to
+                self.values_so["profit_date"] <= self.filters.profit_date_to
             ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
