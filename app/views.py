@@ -2998,6 +2998,8 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         self.values = self.load_dataframe(self.values_path)
         self.counts = self.load_dataframe(self.counts_path)
 
+        self.values = self.values[self.values["profit_date"] >= self.values["date"]]
+
         with open(Path(DATA_FOLDER) / "week" / "groups.pkl", "rb") as file_ref:
             groups: pandas.DataFrame = pickle.load(file_ref)
 
@@ -3210,6 +3212,13 @@ class WeekStatsManagersView(WeekStatsBaseView):
         self.values_so = self.load_dataframe(self.values_so_path)
         self.counts_so = self.load_dataframe(self.counts_so_path)
 
+        self.values_zoom = self.values_zoom[
+            self.values_zoom["profit_date"] >= self.values_zoom["date"]
+        ]
+        self.values_so = self.values_so[
+            self.values_so["profit_date"] >= self.values_so["date"]
+        ]
+
         self.filtering_values()
 
         self.get_extras()
@@ -3239,12 +3248,13 @@ class WeekStatsManagersView(WeekStatsBaseView):
             data_zoom["profit_from_zoom"].fillna(0).apply(parse_int)
         )
         data_zoom["count_zoom"] = data_zoom["count_zoom"].fillna(0).apply(parse_int)
-        data_zoom["profit_on_zoom"] = data_zoom.apply(
-            lambda item: item["profit_from_zoom"] / item["count_zoom"]
-            if item["count_zoom"]
-            else 0,
-            axis=1,
-        ).apply(parse_int)
+        if len(data_zoom):
+            data_zoom["profit_on_zoom"] = data_zoom.apply(
+                lambda item: item["profit_from_zoom"] / item["count_zoom"]
+                if item["count_zoom"]
+                else 0,
+                axis=1,
+            ).apply(parse_int)
 
         data_so = pandas.DataFrame(
             list(
@@ -3267,12 +3277,15 @@ class WeekStatsManagersView(WeekStatsBaseView):
         data_so: pandas.DataFrame = data_so.merge(
             data_so_count, how="outer", on=["manager_id"]
         ).reset_index(drop=True)
-        data_so["profit_on_so"] = data_so.apply(
-            lambda item: item["profit_from_so"] / item["count_so"]
-            if item["count_so"]
-            else 0,
-            axis=1,
-        )
+        data_so["profit_from_so"] = data_so["profit_from_so"].fillna(0).apply(parse_int)
+        data_so["count_so"] = data_so["count_so"].fillna(0).apply(parse_int)
+        if len(data_so):
+            data_so["profit_on_so"] = data_so.apply(
+                lambda item: item["profit_from_so"] / item["count_so"]
+                if item["count_so"]
+                else 0,
+                axis=1,
+            ).apply(parse_int)
 
         data_merged: pandas.DataFrame = pandas.merge(
             data_zoom, data_so, how="outer", on=["manager_id"]
