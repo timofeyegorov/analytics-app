@@ -3463,6 +3463,12 @@ class SearchLeadsView(TemplateView):
                 source["requestid"].str.contains(filters.id, case=False, na=False)
             ]
             data.fillna("", inplace=True)
+            if "name" not in data.columns:
+                data["name"] = ""
+            if "phone" not in data.columns:
+                data["phone"] = ""
+            if "email" not in data.columns:
+                data["email"] = ""
             data["Name"] = data[["name", "Name"]].apply(self.merge_columns, axis=1)
             data["Phone"] = data[["phone", "Phone"]].apply(self.merge_columns, axis=1)
             data["Email"] = data[["email", "Email"]].apply(self.merge_columns, axis=1)
