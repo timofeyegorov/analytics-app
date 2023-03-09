@@ -1,8 +1,19 @@
-<form action="{{ url_for('week_stats') }}">
+<form action="{{ url_for('week_stats_expenses') }}">
     <div class="filter-block">
         <div class="field">
             <label for="field-date">С даты</label>
             <input type="date" name="date" id="field-date" value="{% if filters.date %}{{ filters.date }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-group">Группа</label>
+            <select name="group" id="field-group"{% if not extras.groups %} disabled="disabled"{% endif %}>
+                {% if extras.groups %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.groups %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.group %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
         </div>
         <div class="field">
             <label for="field-manager">Менеджер</label>
@@ -20,8 +31,8 @@
             <label for="field-accumulative">Накопительно</label>
         </div>
         <div class="field field-checkbox">
-            <input type="checkbox" id="field-switch">
-            <label for="field-switch">Показать в процентах</label>
+            <input type="checkbox" id="field-profit" name="profit"{% if filters.profit %} checked="checked"{% endif %}>
+            <label for="field-profit">Показать в процентах</label>
         </div>
     </div>
     <div class="filter-actions">

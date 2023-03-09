@@ -865,8 +865,8 @@ app.add_url_rule(
     view_func=views.TildaLeadsView.as_view("tilda_leads"),
 )
 app.add_url_rule(
-    "/week-stats",
-    view_func=views.WeekStatsView.as_view("week_stats"),
+    "/week-stats/expenses",
+    view_func=views.WeekStatsExpensesView.as_view("week_stats_expenses"),
 )
 app.add_url_rule(
     "/week-stats/zoom",

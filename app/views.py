@@ -111,46 +111,6 @@ class WeekStatsFiltersData(BaseModel):
             self.manager = value
 
 
-class WeekStatsZoomFiltersData(BaseModel):
-    date: ConstrainedDate
-    group: Optional[str]
-    manager: Optional[str]
-    accumulative: bool = False
-    profit: bool = False
-
-    def __getitem__(self, item):
-        if item == "group":
-            return self.group
-        elif item == "manager":
-            return self.manager
-
-    def __setitem__(self, key, value):
-        if key == "group":
-            self.group = value
-        elif key == "manager":
-            self.manager = value
-
-
-class WeekStatsSpecialOffersFiltersData(BaseModel):
-    date: ConstrainedDate
-    group: Optional[str]
-    manager: Optional[str]
-    accumulative: bool = False
-    profit: bool = False
-
-    def __getitem__(self, item):
-        if item == "group":
-            return self.group
-        elif item == "manager":
-            return self.manager
-
-    def __setitem__(self, key, value):
-        if key == "group":
-            self.group = value
-        elif key == "manager":
-            self.manager = value
-
-
 class WeekStatsFiltersEmptyData(BaseModel):
     pass
 
@@ -2869,216 +2829,6 @@ class StatisticsGroupsByCampaignView(APIView):
         return super().get()
 
 
-class WeekStatsView(TemplateView):
-    template_name = "week-stats/index.html"
-    title = 'Когорты "Расход"'
-
-    def get_filters(self, source: ImmutableMultiDict) -> WeekStatsFiltersData:
-        date = source.get("date") or (
-            datetime.datetime.now(tz=pytz.timezone("Europe/Moscow")).date()
-            - datetime.timedelta(weeks=9)
-        )
-        if isinstance(date, str):
-            date = datetime.date.fromisoformat(date)
-        date = detect_week(date)[0]
-
-        accumulative = source.get("accumulative", False)
-
-        manager = source.get("manager", "__all__")
-        if manager == "__all__":
-            manager = None
-
-        return WeekStatsFiltersData(
-            date=date, manager=manager, accumulative=accumulative
-        )
-
-    def get_stats(self) -> pandas.DataFrame:
-        with open(Path(DATA_FOLDER) / "week" / "stats.pkl", "rb") as file_ref:
-            stats: pandas.DataFrame = pickle.load(file_ref)
-
-        if self.filters.date:
-            stats = stats[stats.order_from >= self.filters.date]
-
-        stats.reset_index(drop=True, inplace=True)
-
-        return stats
-
-    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
-        groups = []
-        for name, item in self.stats.groupby(group):
-            groups.append((name, item[f"{group}_title"].unique()[0]))
-        if self.filters[group] not in list(map(lambda item: item[0], groups)):
-            self.filters[group] = None
-        if self.filters[group] is not None:
-            self.stats = self.stats[self.stats[group] == self.filters[group]]
-        return groups
-
-    def get_extras(self) -> Dict[str, Any]:
-        managers = self.get_extras_group("manager")
-        return {
-            "managers": sorted(managers, key=lambda item: item[1]),
-        }
-
-    def get_stats_week(
-        self,
-        date_from: datetime.date,
-        date_end: datetime.date,
-        stats: pandas.DataFrame,
-        weeks: int,
-    ) -> List[int]:
-        output = []
-
-        while date_from <= date_end:
-            date_to = date_from + datetime.timedelta(days=6)
-            output.append(
-                stats[
-                    (stats.payment_from == date_from) & (stats.payment_to == date_to)
-                ].income.sum()
-            )
-            date_from += datetime.timedelta(weeks=1)
-
-        output += [pandas.NA] * (weeks - len(output))
-
-        return output
-
-    def get_percent(
-        self, data: pandas.DataFrame, total: pandas.DataFrame, days: int
-    ) -> Tuple[pandas.DataFrame, pandas.DataFrame]:
-        columns = ["Сумма"] + list(range(1, days + 1))
-
-        data_percent = data.copy()
-        total_percent = total.copy()
-
-        for index, row in data_percent.iterrows():
-            data_percent.loc[index, columns] = data_percent.loc[index, columns].apply(
-                lambda item: pandas.NA
-                if pandas.isna(item)
-                else (round(item / row["Расход"] * 100) if row["Расход"] else 0),
-            )
-
-        total_percent[columns] = total_percent[columns].apply(
-            lambda item: pandas.NA
-            if pandas.isna(item)
-            else (
-                round(item / total_percent["Расход"] * 100)
-                if total_percent["Расход"]
-                else 0
-            ),
-        )
-
-        return data_percent, total_percent
-
-    def accumulate_stats_week(self, stats: List[int]) -> List[int]:
-        return list(
-            map(
-                lambda item: sum(stats[: item[0] + 1]),
-                enumerate(stats),
-            )
-        )
-
-    def get(self):
-        tz = pytz.timezone("Europe/Moscow")
-        roistat = pickle_loader.roistat_statistics
-
-        self.filters = self.get_filters(request.args)
-        self.stats = self.get_stats()
-        self.extras = self.get_extras()
-
-        orders_from = (
-            self.stats.order_from if len(self.stats.order_from) else [self.filters.date]
-        )
-        date_from = min(orders_from)
-        if date_from > self.filters.date:
-            date_from = self.filters.date
-        date_end = detect_week(datetime.date.today())[0]
-        weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
-
-        stats_from = [date_from]
-        stats_to = [date_end + datetime.timedelta(days=6)]
-        stats_expenses = []
-        stats_weeks = []
-        total_sums = []
-
-        while date_from <= date_end:
-            date_to = date_from + datetime.timedelta(days=6)
-            expenses = round(
-                roistat[
-                    (
-                        roistat.date
-                        >= tz.localize(
-                            datetime.datetime.combine(
-                                date_from, datetime.datetime.min.time()
-                            )
-                        )
-                    )
-                    & (
-                        roistat.date
-                        <= tz.localize(
-                            datetime.datetime.combine(
-                                date_to, datetime.datetime.min.time()
-                            )
-                        )
-                    )
-                ].expenses.sum()
-            )
-            stats_week = self.get_stats_week(
-                date_from,
-                date_end,
-                self.stats[
-                    (self.stats.order_from == date_from)
-                    & (self.stats.order_to == date_to)
-                ],
-                weeks,
-            )
-            if self.filters.accumulative:
-                stats_weeks.append(self.accumulate_stats_week(stats_week))
-            else:
-                stats_weeks.append(stats_week)
-            total_sums.append(stats_week)
-            stats_from.append(date_from)
-            stats_to.append(date_to)
-            stats_expenses.append(expenses)
-
-            date_from += datetime.timedelta(weeks=1)
-
-        data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=stats_weeks)
-        total_sum = (
-            pandas.DataFrame(columns=list(range(1, weeks + 1)), data=total_sums)
-            .sum(axis=1)
-            .astype(int)
-        )
-        data.insert(0, "Расход", stats_expenses)
-        data.insert(1, "Сумма", total_sum)
-        data = pandas.concat(
-            [
-                pandas.DataFrame(
-                    data=[
-                        data.mean().astype(int)
-                        if self.filters.accumulative
-                        else data.sum()
-                    ]
-                ),
-                data,
-            ],
-            ignore_index=True,
-        )
-        data.insert(0, "С даты", stats_from)
-        data.insert(1, "По дату", stats_to)
-        data.reset_index(drop=True, inplace=True)
-        total = data.iloc[0]
-        data = data.iloc[1:].reset_index(drop=True)
-        data_percent, total_percent = self.get_percent(data, total, weeks)
-
-        self.context("filters", self.filters)
-        self.context("extras", self.extras)
-        self.context("data", data)
-        self.context("total", total)
-        self.context("data_percent", data_percent)
-        self.context("total_percent", total_percent)
-
-        return super().get()
-
-
 class WeekStatsBaseView(TemplateView):
     filters_class = WeekStatsFiltersEmptyData
     filters: WeekStatsFiltersEmptyData
@@ -3116,6 +2866,8 @@ class WeekStatsBaseView(TemplateView):
 class WeekStatsBaseCohortsView(WeekStatsBaseView):
     filters_class = WeekStatsFiltersCohortsData
     filters: WeekStatsFiltersCohortsData
+
+    value_column_name: str = "Значение"
 
     values: pandas.DataFrame
     counts: pandas.DataFrame
@@ -3198,7 +2950,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         if self.filters[group] not in list(groups[group_id]):
             self.filters[group] = None
         if self.filters[group] is not None:
-            if group in ["group", "manager"]:
+            if group in ["group", "manager"] and group_id in self.counts.columns:
                 self.counts = self.counts[
                     self.counts[group_id] == self.filters[group]
                 ].reset_index(drop=True)
@@ -3209,6 +2961,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
 
     def get_extras(self):
         self.extras = {
+            "value_column_name": self.value_column_name,
             "groups": self.get_extras_group("group"),
             "managers": self.get_extras_group("manager"),
         }
@@ -3254,9 +3007,10 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         self.values["group"] = self.values["group_id"].apply(
             lambda item: f'Группа "{item}"'
         )
-        self.counts = self.counts.merge(groups, how="left", on=["manager_id"]).rename(
-            columns={"group": "group_id"}
-        )
+        if "manager_id" in self.counts.columns:
+            self.counts = self.counts.merge(
+                groups, how="left", on=["manager_id"]
+            ).rename(columns={"group": "group_id"})
 
         self.filtering_values()
 
@@ -3286,7 +3040,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
             date_from += datetime.timedelta(weeks=1)
 
         data = pandas.DataFrame(columns=list(range(1, weeks + 1)), data=values_weeks)
-        data.insert(0, "Значение", counts_weeks)
+        data.insert(0, self.value_column_name, counts_weeks)
         data.insert(1, "Сумма", [pandas.NA] * weeks)
         data = pandas.concat(
             [
@@ -3310,11 +3064,20 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         return super().get()
 
 
+class WeekStatsExpensesView(WeekStatsBaseCohortsView):
+    template_name = "week-stats/expenses/index.html"
+    title = 'Когорты "Расход"'
+    values_path = Path(DATA_FOLDER) / "week" / "expenses.pkl"
+    counts_path = Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
+    value_column_name: str = "Расход"
+
+
 class WeekStatsZoomView(WeekStatsBaseCohortsView):
     template_name = "week-stats/zoom/index.html"
     title = 'Когорты "Zoom"'
     values_path = Path(DATA_FOLDER) / "week" / "zoom.pkl"
     counts_path = Path(DATA_FOLDER) / "week" / "zoom_count.pkl"
+    value_column_name: str = "Zoom"
 
 
 class WeekStatsSpecialOffersView(WeekStatsBaseCohortsView):
@@ -3322,6 +3085,7 @@ class WeekStatsSpecialOffersView(WeekStatsBaseCohortsView):
     title = 'Когорты "Special Offers"'
     values_path = Path(DATA_FOLDER) / "week" / "so.pkl"
     counts_path = Path(DATA_FOLDER) / "week" / "so_count.pkl"
+    value_column_name: str = "SO"
 
 
 class WeekStatsManagersView(WeekStatsBaseView):
