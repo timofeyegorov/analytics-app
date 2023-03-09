@@ -3459,8 +3459,9 @@ class SearchLeadsView(TemplateView):
                 ),
                 inplace=True,
             )
-            data: pandas.DataFrame = source[~source["requestid"].isna()][
-                source["requestid"].str.contains(filters.id, case=False, na=False)
+            data: pandas.DataFrame = source[
+                (source["requestid"].str.contains(filters.id, case=False, na=False))
+                | (source["tranid"].str.contains(filters.id, case=False, na=False))
             ]
             data.fillna("", inplace=True)
             if "name" not in data.columns:
@@ -3472,6 +3473,10 @@ class SearchLeadsView(TemplateView):
             data["Name"] = data[["name", "Name"]].apply(self.merge_columns, axis=1)
             data["Phone"] = data[["phone", "Phone"]].apply(self.merge_columns, axis=1)
             data["Email"] = data[["email", "Email"]].apply(self.merge_columns, axis=1)
+            if len(data):
+                data["__id__"] = data.apply(
+                    lambda item: item["requestid"] or item["tranid"], axis=1
+                )
             data.drop(columns=["name", "phone", "email"], inplace=True)
 
         return data

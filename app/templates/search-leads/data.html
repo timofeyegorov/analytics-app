@@ -7,7 +7,7 @@
             <div id="search-leads-response">
                 {% for index, row in data.iterrows() %}
                     <div class="item">
-                        <div class="title">{{ row.requestid }}</div>
+                        <div class="title">{{ row.__id__ }}</div>
                         <div class="main">
                             {% for column in ["Name", "Phone", "Email"] %}
                                 {% if row[column] != "" %}
