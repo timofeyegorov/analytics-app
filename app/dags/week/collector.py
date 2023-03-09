@@ -19,8 +19,9 @@ from airflow.operators.python import PythonOperator
 
 sys.path.append(Variable.get("APP_FOLDER"))
 
-from app.analytics.pickle_load import PickleLoader
 from config import DATA_FOLDER, CREDENTIALS_FILE
+from app.analytics.pickle_load import PickleLoader
+from app.dags.decorators import log_execution_time
 
 
 DATA_PATH = Path(DATA_FOLDER) / "week"
