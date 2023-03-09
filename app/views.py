@@ -140,6 +140,7 @@ class WeekStatsFiltersManagersData(BaseModel):
     value_date_to: Optional[ConstrainedDate]
     profit_date_from: Optional[ConstrainedDate]
     profit_date_to: Optional[ConstrainedDate]
+    hide_inactive_managers: bool = False
 
 
 class SearchLeadsFiltersData(BaseModel):
@@ -2877,7 +2878,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
 
     def filters_initial(self) -> Dict[str, Any]:
         return {
-            "date": (datetime.datetime.now().date() - datetime.timedelta(weeks=9)),
+            "date": datetime.datetime.now().date() - datetime.timedelta(weeks=9),
         }
 
     def filters_preprocess(self, **kwargs) -> Dict[str, Any]:
@@ -3108,9 +3109,7 @@ class WeekStatsManagersView(WeekStatsBaseView):
     counts_so_path: Path = Path(DATA_FOLDER) / "week" / "so_count.pkl"
 
     def filters_initial(self) -> Dict[str, Any]:
-        date_from_default = datetime.datetime.now(
-            tz=pytz.timezone("Europe/Moscow")
-        ).date() - datetime.timedelta(weeks=4)
+        date_from_default = datetime.datetime.now().date() - datetime.timedelta(weeks=4)
         return {
             "value_date_from": date_from_default,
             "profit_date_from": date_from_default,
@@ -3143,11 +3142,16 @@ class WeekStatsManagersView(WeekStatsBaseView):
         if isinstance(profit_date_to, str):
             profit_date_to = datetime.date.fromisoformat(profit_date_to)
 
+        hide_inactive_managers = request.args.get("hide_inactive_managers")
+        if hide_inactive_managers is None:
+            hide_inactive_managers = initial.get("hide_inactive_managers", False)
+
         data = self.filters_preprocess(
             value_date_from=value_date_from,
             value_date_to=value_date_to,
             profit_date_from=profit_date_from,
             profit_date_to=profit_date_to,
+            hide_inactive_managers=hide_inactive_managers,
         )
 
         filters_class = self.get_filters_class()
@@ -3198,6 +3202,28 @@ class WeekStatsManagersView(WeekStatsBaseView):
             self.values_so = self.values_so[
                 self.values_so["profit_date"] <= self.filters.profit_date_to
             ].reset_index(drop=True)
+
+        if self.filters.hide_inactive_managers:
+            two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
+            active_managers = []
+            for manager_id, rows in self.counts_zoom[
+                self.counts_zoom["date"] >= two_weeks
+            ].groupby(by=["manager_id"]):
+                if rows["count"].sum() > 0:
+                    active_managers.append(manager_id)
+            if active_managers:
+                self.values_zoom = self.values_zoom[
+                    self.values_zoom["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+                self.counts_zoom = self.counts_zoom[
+                    self.counts_zoom["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+                self.values_so = self.values_so[
+                    self.values_so["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
+                self.counts_so = self.counts_so[
+                    self.counts_so["manager_id"].isin(active_managers)
+                ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
         self.extras = {
