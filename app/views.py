@@ -2878,7 +2878,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
 
     def filters_initial(self) -> Dict[str, Any]:
         return {
-            "date": datetime.datetime.now().date() - datetime.timedelta(weeks=9),
+            "date": datetime.datetime.now().date() - datetime.timedelta(weeks=10),
         }
 
     def filters_preprocess(self, **kwargs) -> Dict[str, Any]:
@@ -3020,7 +3020,9 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         self.get_extras()
 
         date_from = self.filters.date
-        date_end = detect_week(datetime.datetime.now().date())[0]
+        date_end = detect_week(datetime.datetime.now().date())[0] - datetime.timedelta(
+            weeks=1
+        )
         weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         values_from = [date_from]
