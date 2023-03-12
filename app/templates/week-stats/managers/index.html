@@ -11,3 +11,7 @@
     {% include 'week-stats/managers/filters.html' %}
     {% include 'week-stats/managers/data.html' %}
 {% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/week-stats/managers/index.js') }}"></script>
+{% endblock js %}

@@ -8,6 +8,9 @@ td, th {
     border:1px solid #d8e2e9;
     font-size:.875rem;
 }
+table tr.inactive.hidden {
+    display:none;
+}
 table tr.details {
     background:#d4edff !important;
 }

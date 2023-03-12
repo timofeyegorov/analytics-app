@@ -11,7 +11,7 @@
         </thead>
         <tbody>
             {% for index, item in data.iterrows() %}
-                <tr>
+                <tr class="{% if item.inactive %}inactive{% endif %}{% if filters.hide_inactive_managers %} hidden{% endif %}">
                     {% for column in data.columns %}
                         {% if column not in extras.exclude_columns %}
                             {% if column == "Менеджер/Группа" %}

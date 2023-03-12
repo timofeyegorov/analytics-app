@@ -3098,11 +3098,13 @@ class WeekStatsManagersView(WeekStatsBaseView):
     filters_class = WeekStatsFiltersManagersData
     filters: WeekStatsFiltersManagersData
 
+    managers: pandas.DataFrame
     values_zoom: pandas.DataFrame
     counts_zoom: pandas.DataFrame
     values_so: pandas.DataFrame
     counts_so: pandas.DataFrame
 
+    managers_path: Path = Path(DATA_FOLDER) / "week" / "groups.pkl"
     values_zoom_path: Path = Path(DATA_FOLDER) / "week" / "zoom.pkl"
     counts_zoom_path: Path = Path(DATA_FOLDER) / "week" / "zoom_count.pkl"
     values_so_path: Path = Path(DATA_FOLDER) / "week" / "so.pkl"
@@ -3205,38 +3207,29 @@ class WeekStatsManagersView(WeekStatsBaseView):
 
     def get_extras(self) -> Dict[str, Any]:
         self.extras = {
-            "exclude_columns": ["is_group", "is_total"],
+            "exclude_columns": ["is_group", "is_total", "inactive"],
         }
 
     def get(self):
         self.get_filters()
 
+        self.managers = self.load_dataframe(self.managers_path)
         self.values_zoom = self.load_dataframe(self.values_zoom_path)
         self.counts_zoom = self.load_dataframe(self.counts_zoom_path)
         self.values_so = self.load_dataframe(self.values_so_path)
         self.counts_so = self.load_dataframe(self.counts_so_path)
 
-        if self.filters.hide_inactive_managers:
-            two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
-            active_managers = []
-            for manager_id, rows in self.counts_zoom[
-                self.counts_zoom["date"] >= two_weeks
-            ].groupby(by=["manager_id"]):
-                if rows["count"].sum() > 0:
-                    active_managers.append(manager_id)
-            print(active_managers)
-            self.values_zoom = self.values_zoom[
-                self.values_zoom["manager_id"].isin(active_managers)
-            ].reset_index(drop=True)
-            self.counts_zoom = self.counts_zoom[
-                self.counts_zoom["manager_id"].isin(active_managers)
-            ].reset_index(drop=True)
-            self.values_so = self.values_so[
-                self.values_so["manager_id"].isin(active_managers)
-            ].reset_index(drop=True)
-            self.counts_so = self.counts_so[
-                self.counts_so["manager_id"].isin(active_managers)
-            ].reset_index(drop=True)
+        two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
+        active_managers = []
+        for manager_id, rows in self.counts_zoom[
+            self.counts_zoom["date"] >= two_weeks
+        ].groupby(by=["manager_id"]):
+            if rows["count"].sum() > 0:
+                active_managers.append(manager_id)
+        inactive_mangers = self.managers[
+            ~self.managers["manager_id"].isin(active_managers)
+        ][["manager_id"]]
+        inactive_mangers["inactive"] = True
 
         self.values_zoom = self.values_zoom[
             self.values_zoom["profit_date"] >= self.values_zoom["date"]
@@ -3339,6 +3332,8 @@ class WeekStatsManagersView(WeekStatsBaseView):
         total_profit_on_so = (
             round(total_profit_from_so / total_count_so) if total_count_so else 0
         )
+        data_merged = data_merged.merge(inactive_mangers, how="left", on="manager_id")
+        data_merged["inactive"].fillna(False, inplace=True)
 
         data = [
             pandas.DataFrame(
@@ -3346,6 +3341,7 @@ class WeekStatsManagersView(WeekStatsBaseView):
                     {
                         "is_total": True,
                         "is_group": True,
+                        "inactive": False,
                         "manager": "Всего",
                         "count_zoom": total_count_zoom,
                         "profit_from_zoom": total_profit_from_zoom,
@@ -3376,6 +3372,7 @@ class WeekStatsManagersView(WeekStatsBaseView):
                         {
                             "is_total": False,
                             "is_group": True,
+                            "inactive": len(rows[~rows["inactive"]]) == 0,
                             "manager": f'Группа "{group_id}"',
                             "count_zoom": group_count_zoom,
                             "profit_from_zoom": group_profit_from_zoom,
@@ -3392,6 +3389,7 @@ class WeekStatsManagersView(WeekStatsBaseView):
             [
                 "is_total",
                 "is_group",
+                "inactive",
                 "manager",
                 "count_zoom",
                 "profit_from_zoom",
