@@ -10,6 +10,7 @@ from datetime import date, datetime
 from httplib2 import Http
 from apiclient import discovery
 from xlsxwriter import Workbook
+from urllib.parse import urlparse, parse_qsl
 from transliterate import slugify
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -19,7 +20,7 @@ from airflow.operators.python import PythonOperator
 
 sys.path.append(Variable.get("APP_FOLDER"))
 
-from config import DATA_FOLDER, CREDENTIALS_FILE
+from config import DATA_FOLDER, RESULTS_FOLDER, CREDENTIALS_FILE
 from app.analytics.pickle_load import PickleLoader
 from app.dags.decorators import log_execution_time
 
@@ -92,6 +93,22 @@ def parse_date(value: str) -> date:
     if len(groups[1]) == 1:
         groups[1] = f"0{groups[1]}"
     return date.fromisoformat("-".join(list(reversed(groups))))
+
+
+def detect_channel(value: str, rows: pandas.DataFrame) -> str:
+    if pandas.isna(value):
+        return "Undefined"
+    url = urlparse(value)
+    query = dict(parse_qsl(url.query))
+    rs = query.get("rs")
+    if rs is not None:
+        rs_list = rs.split("_")
+        if len(rs_list):
+            channel_dataframe = rows[rows["account"] == rs_list[0]]
+            if len(channel_dataframe):
+                channel = channel_dataframe.iloc[0]
+                return channel["account_title"]
+    return "Undefined"
 
 
 def slugify_columns(columns: List[str]) -> List[str]:
@@ -175,8 +192,20 @@ def get_stats():
                     ("summa_vyruchki", "profit", parse_int),
                     ("data_oplaty", "profit_date", parse_date),
                     ("data_zoom", "zoom_date", parse_date),
+                    ("tselevaja_ssylka", "target_link", parse_str),
                 ],
             )
+            with open(
+                Path(RESULTS_FOLDER) / "roistat_statistics.pkl", "rb"
+            ) as file_ref:
+                leads = pickle.load(file_ref)
+            for index, item in source_payments.iterrows():
+                channel = detect_channel(item["target_link"], leads)
+                if channel:
+                    source_payments.loc[index, "channel"] = channel
+            source_payments["channel"] = source_payments["channel"].apply(parse_str)
+            source_payments["channel_id"] = source_payments["channel"].apply(parse_slug)
+            source_payments.drop(columns=["target_link"], inplace=True)
             source_payments.insert(
                 0, "manager_id", source_payments["manager"].apply(parse_slug)
             )
@@ -293,7 +322,17 @@ def get_stats():
                 source_payments["order_date"].isna()
                 | source_payments["profit_date"].isna()
             )
-        ][["manager_id", "lead_id", "profit", "profit_date", "order_date"]]
+        ][
+            [
+                "manager_id",
+                "lead_id",
+                "channel_id",
+                "channel",
+                "profit",
+                "profit_date",
+                "order_date",
+            ]
+        ]
         .rename(columns={"order_date": "date"})
         .reset_index(drop=True)
     )

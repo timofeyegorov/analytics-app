@@ -119,6 +119,7 @@ class WeekStatsFiltersCohortsData(WeekStatsFiltersEmptyData):
     date: ConstrainedDate
     group: Optional[str]
     manager: Optional[str]
+    channel: Optional[str]
     accumulative: bool = False
     profit: bool = False
 
@@ -127,12 +128,16 @@ class WeekStatsFiltersCohortsData(WeekStatsFiltersEmptyData):
             return self.group
         elif item == "manager":
             return self.manager
+        elif item == "channel":
+            return self.channel
 
     def __setitem__(self, key, value):
         if key == "group":
             self.group = value
         elif key == "manager":
             self.manager = value
+        elif key == "channel":
+            self.channel = value
 
 
 class WeekStatsFiltersManagersData(BaseModel):
@@ -2911,6 +2916,12 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         if manager == "__all__":
             manager = None
 
+        channel = request.args.get("channel")
+        if channel is None:
+            channel = initial.get("channel", "__all__")
+        if channel == "__all__":
+            channel = None
+
         accumulative = request.args.get("accumulative")
         if accumulative is None:
             accumulative = initial.get("accumulative", False)
@@ -2923,6 +2934,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
             date=date,
             group=group,
             manager=manager,
+            channel=channel,
             accumulative=accumulative,
             profit=profit,
         )
@@ -2951,7 +2963,10 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
         if self.filters[group] not in list(groups[group_id]):
             self.filters[group] = None
         if self.filters[group] is not None:
-            if group in ["group", "manager"] and group_id in self.counts.columns:
+            if (
+                group in ["group", "manager", "channel"]
+                and group_id in self.counts.columns
+            ):
                 self.counts = self.counts[
                     self.counts[group_id] == self.filters[group]
                 ].reset_index(drop=True)
@@ -2965,6 +2980,7 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
             "value_column_name": self.value_column_name,
             "groups": self.get_extras_group("group"),
             "managers": self.get_extras_group("manager"),
+            "channels": self.get_extras_group("channel"),
         }
 
     def get_values_week(
