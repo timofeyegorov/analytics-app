@@ -26,6 +26,17 @@
                 {% endif %}
             </select>
         </div>
+        <div class="field">
+            <label for="field-channel">Канал трафика</label>
+            <select name="channel" id="field-channel"{% if not extras.channels %} disabled="disabled"{% endif %}>
+                {% if extras.channels %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.channels %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.channel %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
         <div class="field field-checkbox">
             <input type="checkbox" id="field-accumulative" name="accumulative"{% if filters.accumulative %} checked="checked"{% endif %}>
             <label for="field-accumulative">Накопительно</label>
