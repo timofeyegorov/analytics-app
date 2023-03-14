@@ -367,7 +367,17 @@ def get_stats():
                 source_payments["zoom_date"].isna()
                 | source_payments["profit_date"].isna()
             )
-        ][["manager_id", "lead_id", "profit", "profit_date", "zoom_date"]]
+        ][
+            [
+                "manager_id",
+                "lead_id",
+                "channel_id",
+                "channel",
+                "profit",
+                "profit_date",
+                "zoom_date",
+            ]
+        ]
         .rename(columns={"zoom_date": "date"})
         .reset_index(drop=True)
     )
@@ -387,7 +397,15 @@ def get_stats():
     # --- Собираем оплаты so ---------------------------------------------------
     so: pandas.DataFrame = (
         source_so.merge(source_payments, how="left", on=["manager_id", "lead_id"])[
-            ["manager_id", "lead_id", "profit", "profit_date", "so_date"]
+            [
+                "manager_id",
+                "lead_id",
+                "channel_id",
+                "channel",
+                "profit",
+                "profit_date",
+                "so_date",
+            ]
         ]
         .rename(columns={"so_date": "date"})
         .reset_index(drop=True)
