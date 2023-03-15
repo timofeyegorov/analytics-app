@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div class="base-links">
+        {% include 'week-stats/base_links.html' %}
+{#        <a href="https://docs.google.com/spreadsheets/d/1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE/edit#gid=919117747" class="btn btn-warning" target="_blank">Исходные данные</a>#}
+    </div>
+    {% include 'week-stats/channels/filters.html' %}
+    {% include 'week-stats/channels/data.html' %}
+{% endblock %}

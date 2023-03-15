@@ -1,0 +1,28 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                {% for column in data.columns %}
+                    {% if column not in extras.exclude_columns %}
+                        <th class="sticky nowrap">{{ column }}</th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, item in data.iterrows() %}
+                <tr>
+                    {% for column in data.columns %}
+                        {% if column not in extras.exclude_columns %}
+                            {% if column == "Канал" %}
+                                <td class="nowrap{% if item.is_total %} info warning{% endif %}">{{ item[column] }}</td>
+                            {% else %}
+                                <td class="nowrap font-monospace{% if item.is_total %} info warning{% endif %} text-right">{% if column == 'Процент' %}{{ format_float2(item[column]) }}{% else %}{{ format_int(item[column]) }}{% endif %}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

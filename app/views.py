@@ -46,10 +46,19 @@ UNDEFINED = "Undefined"
 
 
 def parse_int(value: str) -> int:
-    value = re.sub(r"\s", "", str(value))
-    if not re.search(r"^-?\d+\.?\d*$", str(value)) or pandas.isna(value):
+    value = parse_float(value)
+    if pandas.isna(value):
         return pandas.NA
-    return round(float(value))
+    return round(value)
+
+
+def parse_float(value: str) -> float:
+    if pandas.isna(value):
+        return pandas.NA
+    value = re.sub(r"\s", "", str(value))
+    if not re.search(r"^-?\d+\.?\d*$", str(value)):
+        return pandas.NA
+    return float(value)
 
 
 class ContextTemplate:
@@ -146,6 +155,13 @@ class WeekStatsFiltersManagersData(BaseModel):
     profit_date_from: Optional[ConstrainedDate]
     profit_date_to: Optional[ConstrainedDate]
     hide_inactive_managers: bool = False
+
+
+class WeekStatsFiltersChannelsData(BaseModel):
+    order_date_from: Optional[ConstrainedDate]
+    order_date_to: Optional[ConstrainedDate]
+    profit_date_from: Optional[ConstrainedDate]
+    profit_date_to: Optional[ConstrainedDate]
 
 
 class SearchLeadsFiltersData(BaseModel):
@@ -3019,7 +3035,6 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
 
         with open(Path(DATA_FOLDER) / "week" / "groups.pkl", "rb") as file_ref:
             groups: pandas.DataFrame = pickle.load(file_ref)
-
         self.values = self.values.merge(groups, how="left", on=["manager_id"]).rename(
             columns={"group": "group_id"}
         )
@@ -3030,6 +3045,10 @@ class WeekStatsBaseCohortsView(WeekStatsBaseView):
             self.counts = self.counts.merge(
                 groups, how="left", on=["manager_id"]
             ).rename(columns={"group": "group_id"})
+
+        with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
+            channels: pandas.DataFrame = pickle.load(file_ref)
+        self.values = self.values.merge(channels, how="left", on=["channel_id"])
 
         self.filtering_values()
 
@@ -3432,6 +3451,200 @@ class WeekStatsManagersView(WeekStatsBaseView):
                 "count_so": "Количество SO",
                 "profit_from_so": "Оборот от SO",
                 "profit_on_so": "Оборот на SO",
+            },
+            inplace=True,
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+
+        return super().get()
+
+
+class WeekStatsChannelsView(WeekStatsBaseView):
+    template_name = "week-stats/channels/index.html"
+    title = "Каналы трафика"
+
+    filters_class = WeekStatsFiltersChannelsData
+    filters: WeekStatsFiltersChannelsData
+
+    values_expenses: pandas.DataFrame
+    counts_expenses: pandas.DataFrame
+
+    values_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses.pkl"
+    counts_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
+
+    def filters_initial(self) -> Dict[str, Any]:
+        date_from_default = datetime.datetime.now().date() - datetime.timedelta(weeks=4)
+        return {
+            "order_date_from": date_from_default,
+            "profit_date_from": date_from_default,
+        }
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        order_date_from = request.args.get("order_date_from") or None
+        if order_date_from is None:
+            order_date_from = initial.get("order_date_from")
+        if isinstance(order_date_from, str):
+            order_date_from = datetime.date.fromisoformat(order_date_from)
+
+        order_date_to = request.args.get("order_date_to") or None
+        if order_date_to is None:
+            order_date_to = initial.get("order_date_to")
+        if isinstance(order_date_to, str):
+            order_date_to = datetime.date.fromisoformat(order_date_to)
+
+        profit_date_from = request.args.get("profit_date_from") or None
+        if profit_date_from is None:
+            profit_date_from = initial.get("profit_date_from")
+        if isinstance(profit_date_from, str):
+            profit_date_from = datetime.date.fromisoformat(profit_date_from)
+
+        profit_date_to = request.args.get("profit_date_to") or None
+        if profit_date_to is None:
+            profit_date_to = initial.get("profit_date_to")
+        if isinstance(profit_date_to, str):
+            profit_date_to = datetime.date.fromisoformat(profit_date_to)
+
+        data = self.filters_preprocess(
+            order_date_from=order_date_from,
+            order_date_to=order_date_to,
+            profit_date_from=profit_date_from,
+            profit_date_to=profit_date_to,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
+        if self.filters.order_date_from:
+            self.values_expenses = self.values_expenses[
+                self.values_expenses["date"] >= self.filters.order_date_from
+            ].reset_index(drop=True)
+            self.counts_expenses = self.counts_expenses[
+                self.counts_expenses["date"] >= self.filters.order_date_from
+            ].reset_index(drop=True)
+
+        if self.filters.order_date_to:
+            self.values_expenses = self.values_expenses[
+                self.values_expenses["date"] <= self.filters.order_date_to
+            ].reset_index(drop=True)
+            self.counts_expenses = self.counts_expenses[
+                self.counts_expenses["date"] <= self.filters.order_date_to
+            ].reset_index(drop=True)
+
+        if self.filters.profit_date_from:
+            self.values_expenses = self.values_expenses[
+                self.values_expenses["profit_date"] >= self.filters.profit_date_from
+            ].reset_index(drop=True)
+
+        if self.filters.profit_date_to:
+            self.values_expenses = self.values_expenses[
+                self.values_expenses["profit_date"] <= self.filters.profit_date_to
+            ].reset_index(drop=True)
+
+    def get_extras(self) -> Dict[str, Any]:
+        self.extras = {
+            "exclude_columns": ["is_total"],
+        }
+
+    def get(self):
+        self.get_filters()
+
+        self.values_expenses = self.load_dataframe(self.values_expenses_path)
+        self.counts_expenses = self.load_dataframe(self.counts_expenses_path)
+
+        self.values_expenses = self.values_expenses[
+            self.values_expenses["profit_date"] >= self.values_expenses["date"]
+        ]
+
+        self.filtering_values()
+
+        self.get_extras()
+
+        data_expenses = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["profit"].sum()],
+                    self.values_expenses.groupby(by=["channel_id"]),
+                )
+            ),
+            columns=["channel_id", "profit_from_expenses"],
+        )
+        data_expenses_count = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["count"].sum()],
+                    self.counts_expenses.groupby(by=["channel_id"]),
+                )
+            ),
+            columns=["channel_id", "count_expenses"],
+        )
+        data_expenses: pandas.DataFrame = data_expenses.merge(
+            data_expenses_count, how="outer", on=["channel_id"]
+        ).reset_index(drop=True)
+        data_expenses["profit_from_expenses"] = (
+            data_expenses["profit_from_expenses"].fillna(0).apply(parse_int)
+        )
+        data_expenses["count_expenses"] = (
+            data_expenses["count_expenses"].fillna(0).apply(parse_int)
+        )
+        if len(data_expenses):
+            data_expenses["profit_on_expenses"] = data_expenses.apply(
+                lambda item: item["profit_from_expenses"] / item["count_expenses"] * 100
+                if item["count_expenses"]
+                else 0,
+                axis=1,
+            ).apply(parse_float)
+
+        data_expenses.insert(0, "is_total", False)
+
+        with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
+            channels: pandas.DataFrame = pickle.load(file_ref)
+        data_expenses = data_expenses.merge(
+            channels, how="left", on=["channel_id"]
+        ).drop(columns=["channel_id"])
+
+        count_expenses = data_expenses["count_expenses"].sum()
+        profit_from_expenses = data_expenses["profit_from_expenses"].sum()
+        profit_on_expenses = (
+            round(profit_from_expenses / count_expenses * 100, 2)
+            if count_expenses
+            else 0
+        )
+        data = pandas.concat(
+            [
+                pandas.DataFrame(
+                    [
+                        {
+                            "is_total": True,
+                            "channel": "Всего",
+                            "count_expenses": count_expenses,
+                            "profit_from_expenses": profit_from_expenses,
+                            "profit_on_expenses": profit_on_expenses,
+                        }
+                    ]
+                ),
+                data_expenses,
+            ]
+        )
+        data["count_expenses"] = data["count_expenses"].fillna(0).apply(parse_int)
+        data["profit_from_expenses"] = (
+            data["profit_from_expenses"].fillna(0).apply(parse_int)
+        )
+        data["profit_on_expenses"] = (
+            data["profit_on_expenses"].fillna(0).apply(parse_float)
+        )
+        data.rename(
+            columns={
+                "channel": "Канал",
+                "count_expenses": "Расход",
+                "profit_from_expenses": "Оборот",
+                "profit_on_expenses": "Процент",
             },
             inplace=True,
         )

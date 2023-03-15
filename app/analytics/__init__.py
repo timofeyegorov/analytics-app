@@ -881,6 +881,10 @@ app.add_url_rule(
     view_func=views.WeekStatsManagersView.as_view("week_stats_managers"),
 )
 app.add_url_rule(
+    "/week-stats/channels",
+    view_func=views.WeekStatsChannelsView.as_view("week_stats_channels"),
+)
+app.add_url_rule(
     "/search-leads",
     view_func=views.SearchLeadsView.as_view("search_leads"),
 )

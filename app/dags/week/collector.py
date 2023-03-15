@@ -20,7 +20,7 @@ from airflow.operators.python import PythonOperator
 
 sys.path.append(Variable.get("APP_FOLDER"))
 
-from config import DATA_FOLDER, RESULTS_FOLDER, CREDENTIALS_FILE
+from config import DATA_FOLDER, CREDENTIALS_FILE
 from app.analytics.pickle_load import PickleLoader
 from app.dags.decorators import log_execution_time
 
@@ -160,6 +160,8 @@ def get_stats():
 
         return source
 
+    leads = PickleLoader().roistat_statistics
+
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
         [
@@ -195,10 +197,6 @@ def get_stats():
                     ("tselevaja_ssylka", "target_link", parse_str),
                 ],
             )
-            with open(
-                Path(RESULTS_FOLDER) / "roistat_statistics.pkl", "rb"
-            ) as file_ref:
-                leads = pickle.load(file_ref)
             for index, item in source_payments.iterrows():
                 channel = detect_channel(item["target_link"], leads)
                 if channel:
@@ -217,6 +215,7 @@ def get_stats():
                 )
             ].reset_index(drop=True)
             source_payments["profit"].fillna(0, inplace=True)
+            source_payments.drop(columns=["channel"], inplace=True)
 
         elif title == "Количество Zoom":
             source_zoom_count: pandas.DataFrame = processing_source(
@@ -302,20 +301,36 @@ def get_stats():
     source_so.drop(columns=["group", "manager"], inplace=True)
     # --------------------------------------------------------------------------
 
-    # --- Собираем расходы -----------------------------------------------------
-    roistat: pandas.DataFrame = PickleLoader().roistat_statistics.rename(
-        columns={"date": "datetime"}
+    # --- Собираем каналы ------------------------------------------------------
+    channels_list = list(leads["account_title"]) + ["Undefined"]
+    channels: pandas.DataFrame = (
+        pandas.DataFrame(channels_list, columns=["channel"])
+        .rename(columns={"account_title": "channel"})
+        .drop_duplicates(subset=["channel"])
+        .sort_values(by=["channel"])
+        .reset_index(drop=True)
     )
+    channels["channel_id"] = channels["channel"].apply(parse_slug)
+    # --------------------------------------------------------------------------
+
+    # --- Собираем расходы -----------------------------------------------------
+    roistat: pandas.DataFrame = leads.copy().rename(columns={"date": "datetime"})
     roistat.insert(0, "date", roistat["datetime"].apply(lambda item: item.date()))
-    roistat = roistat[["date", "expenses"]].rename(columns={"expenses": "count"})
+    roistat = roistat[["date", "account_title", "expenses"]].rename(
+        columns={"account_title": "channel", "expenses": "count"}
+    )
     roistat["count"] = roistat["count"].apply(parse_float)
     roistat = roistat[roistat["count"] > 0].reset_index(drop=True)
+    roistat["channel_id"] = roistat["channel"].apply(parse_slug)
+    roistat.drop(columns=["channel"], inplace=True)
     expenses_count_list = []
-    for expenses_date, rows in roistat.groupby(by=["date"]):
-        expenses_count_list.append([expenses_date, rows["count"].sum()])
-    expenses_count = pandas.DataFrame(expenses_count_list, columns=["date", "count"])
+    for (channel_id, expenses_date), rows in roistat.groupby(by=["channel_id", "date"]):
+        expenses_count_list.append([channel_id, expenses_date, rows["count"].sum()])
+    expenses_count = pandas.DataFrame(
+        expenses_count_list, columns=["channel_id", "date", "count"]
+    )
     expenses_count["count"] = expenses_count["count"].apply(parse_int)
-    expenses_count.sort_values(by=["date"], inplace=True)
+    expenses_count.sort_values(by=["channel_id", "date"], inplace=True)
     expenses = (
         source_payments[
             ~(
@@ -327,7 +342,6 @@ def get_stats():
                 "manager_id",
                 "lead_id",
                 "channel_id",
-                "channel",
                 "profit",
                 "profit_date",
                 "order_date",
@@ -372,7 +386,6 @@ def get_stats():
                 "manager_id",
                 "lead_id",
                 "channel_id",
-                "channel",
                 "profit",
                 "profit_date",
                 "zoom_date",
@@ -401,7 +414,6 @@ def get_stats():
                 "manager_id",
                 "lead_id",
                 "channel_id",
-                "channel",
                 "profit",
                 "profit_date",
                 "so_date",
@@ -418,6 +430,9 @@ def get_stats():
 
     with open(Path(DATA_PATH / "groups.pkl"), "wb") as file_ref:
         pickle.dump(groups, file_ref)
+
+    with open(Path(DATA_PATH / "channels.pkl"), "wb") as file_ref:
+        pickle.dump(channels, file_ref)
 
     with open(Path(DATA_PATH / "expenses.pkl"), "wb") as file_ref:
         pickle.dump(expenses, file_ref)
