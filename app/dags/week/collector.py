@@ -161,6 +161,7 @@ def get_stats():
         return source
 
     leads = PickleLoader().roistat_statistics
+    leads["channel"] = leads["account_title"].apply(parse_slug)
 
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
@@ -313,6 +314,23 @@ def get_stats():
     channels["channel_id"] = channels["channel"].apply(parse_slug)
     # --------------------------------------------------------------------------
 
+    # --- Собираем количество лидов по каналам ---------------------------------
+    channels_count_list: List[pandas.DataFrame] = []
+    channels_leads = leads.copy().rename(columns={"date": "datetime"})
+    channels_leads.insert(
+        0, "date", channels_leads["datetime"].apply(lambda item: item.date())
+    )
+    for (channel, date), items in channels_leads.groupby(by=["channel", "date"]):
+        channels_count_list.append(
+            {
+                "channel_id": channel,
+                "date": date,
+                "count": len(items),
+            }
+        )
+    channels_count = pandas.DataFrame(channels_count_list)
+    # --------------------------------------------------------------------------
+
     # --- Собираем расходы -----------------------------------------------------
     roistat: pandas.DataFrame = leads.copy().rename(columns={"date": "datetime"})
     roistat.insert(0, "date", roistat["datetime"].apply(lambda item: item.date()))
@@ -433,6 +451,9 @@ def get_stats():
 
     with open(Path(DATA_PATH / "channels.pkl"), "wb") as file_ref:
         pickle.dump(channels, file_ref)
+
+    with open(Path(DATA_PATH / "channels_count.pkl"), "wb") as file_ref:
+        pickle.dump(channels_count, file_ref)
 
     with open(Path(DATA_PATH / "expenses.pkl"), "wb") as file_ref:
         pickle.dump(expenses, file_ref)

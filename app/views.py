@@ -61,6 +61,13 @@ def parse_float(value: str) -> float:
     return float(value)
 
 
+def parse_percent(value: float) -> float:
+    value = parse_float(value)
+    if pandas.isna(value):
+        return pandas.NA
+    return float(value) * 100
+
+
 class ContextTemplate:
     data: Dict[str, Any] = {}
 
@@ -3311,6 +3318,30 @@ class WeekStatsManagersView(WeekStatsBaseView):
                 else 0,
                 axis=1,
             ).apply(parse_int)
+        data_zoom = data_zoom.merge(
+            pandas.DataFrame(
+                self.values_zoom.groupby(by=["manager_id"])["manager_id"].count(),
+                columns=["manager_id"],
+            ).rename(columns={"manager_id": "payment_count_zoom"}),
+            how="left",
+            left_on="manager_id",
+            right_index=True,
+        )
+        data_zoom["payment_count_zoom"] = (
+            data_zoom["payment_count_zoom"].fillna(0).apply(parse_int)
+        )
+        data_zoom["conversion_zoom"] = data_zoom.apply(
+            lambda item: item["payment_count_zoom"] / item["count_zoom"]
+            if item["count_zoom"]
+            else 0,
+            axis=1,
+        )
+        data_zoom["average_payment_zoom"] = data_zoom.apply(
+            lambda item: item["profit_from_zoom"] / item["payment_count_zoom"]
+            if item["payment_count_zoom"]
+            else 0,
+            axis=1,
+        )
 
         data_so = pandas.DataFrame(
             list(
@@ -3342,6 +3373,30 @@ class WeekStatsManagersView(WeekStatsBaseView):
                 else 0,
                 axis=1,
             ).apply(parse_int)
+        data_so = data_so.merge(
+            pandas.DataFrame(
+                self.values_so.groupby(by=["manager_id"])["manager_id"].count(),
+                columns=["manager_id"],
+            ).rename(columns={"manager_id": "payment_count_so"}),
+            how="left",
+            left_on="manager_id",
+            right_index=True,
+        )
+        data_so["payment_count_so"] = (
+            data_so["payment_count_so"].fillna(0).apply(parse_int)
+        )
+        data_so["conversion_so"] = data_so.apply(
+            lambda item: item["payment_count_so"] / item["count_so"]
+            if item["count_so"]
+            else 0,
+            axis=1,
+        )
+        data_so["average_payment_so"] = data_so.apply(
+            lambda item: item["profit_from_so"] / item["payment_count_so"]
+            if item["payment_count_so"]
+            else 0,
+            axis=1,
+        )
 
         data_merged: pandas.DataFrame = pandas.merge(
             data_zoom, data_so, how="outer", on=["manager_id"]
@@ -3364,11 +3419,30 @@ class WeekStatsManagersView(WeekStatsBaseView):
         total_profit_on_zoom = (
             round(total_profit_from_zoom / total_count_zoom) if total_count_zoom else 0
         )
+        total_payment_count_zoom = data_merged["payment_count_zoom"].sum()
+        total_conversion_zoom = (
+            total_payment_count_zoom / total_count_zoom if total_count_zoom else 0
+        )
+        total_average_payment_zoom = (
+            total_profit_from_zoom / total_payment_count_zoom
+            if total_payment_count_zoom
+            else 0
+        )
         total_count_so = data_merged["count_so"].sum()
         total_profit_from_so = data_merged["profit_from_so"].sum()
         total_profit_on_so = (
             round(total_profit_from_so / total_count_so) if total_count_so else 0
         )
+        total_payment_count_so = data_merged["payment_count_so"].sum()
+        total_conversion_so = (
+            total_payment_count_so / total_count_so if total_count_so else 0
+        )
+        total_average_payment_so = (
+            total_profit_from_so / total_payment_count_so
+            if total_payment_count_so
+            else 0
+        )
+
         data_merged = data_merged.merge(inactive_mangers, how="left", on="manager_id")
         data_merged["inactive"].fillna(False, inplace=True)
 
@@ -3386,6 +3460,12 @@ class WeekStatsManagersView(WeekStatsBaseView):
                         "count_so": total_count_so,
                         "profit_from_so": total_profit_from_so,
                         "profit_on_so": total_profit_on_so,
+                        "payment_count_zoom": total_payment_count_zoom,
+                        "conversion_zoom": total_conversion_zoom,
+                        "average_payment_zoom": total_average_payment_zoom,
+                        "payment_count_so": total_payment_count_so,
+                        "conversion_so": total_conversion_so,
+                        "average_payment_so": total_average_payment_so,
                     }
                 ]
             )
@@ -3398,10 +3478,28 @@ class WeekStatsManagersView(WeekStatsBaseView):
                 if group_count_zoom
                 else 0
             )
+            group_payment_count_zoom = rows["payment_count_zoom"].sum()
+            group_conversion_zoom = (
+                group_payment_count_zoom / group_count_zoom if group_count_zoom else 0
+            )
+            group_average_payment_zoom = (
+                group_profit_from_zoom / group_payment_count_zoom
+                if group_payment_count_zoom
+                else 0
+            )
             group_count_so = rows["count_so"].sum()
             group_profit_from_so = rows["profit_from_so"].sum()
             group_profit_on_so = (
                 round(group_profit_from_so / group_count_so) if group_count_so else 0
+            )
+            group_payment_count_so = rows["payment_count_so"].sum()
+            group_conversion_so = (
+                group_payment_count_so / group_count_so if group_count_so else 0
+            )
+            group_average_payment_so = (
+                group_profit_from_so / group_payment_count_so
+                if group_payment_count_so
+                else 0
             )
             data += [
                 pandas.DataFrame(
@@ -3417,6 +3515,12 @@ class WeekStatsManagersView(WeekStatsBaseView):
                             "count_so": group_count_so,
                             "profit_from_so": group_profit_from_so,
                             "profit_on_so": group_profit_on_so,
+                            "payment_count_zoom": group_payment_count_zoom,
+                            "conversion_zoom": group_conversion_zoom,
+                            "average_payment_zoom": group_average_payment_zoom,
+                            "payment_count_so": group_payment_count_so,
+                            "conversion_so": group_conversion_so,
+                            "average_payment_so": group_average_payment_so,
                         }
                     ]
                 ),
@@ -3434,14 +3538,32 @@ class WeekStatsManagersView(WeekStatsBaseView):
                 "count_so",
                 "profit_from_so",
                 "profit_on_so",
+                "payment_count_zoom",
+                "conversion_zoom",
+                "average_payment_zoom",
+                "payment_count_so",
+                "conversion_so",
+                "average_payment_so",
             ]
         ]
         data["count_zoom"] = data["count_zoom"].fillna(0).apply(parse_int)
         data["profit_from_zoom"] = data["profit_from_zoom"].fillna(0).apply(parse_int)
         data["profit_on_zoom"] = data["profit_on_zoom"].fillna(0).apply(parse_int)
+        data["payment_count_zoom"] = (
+            data["payment_count_zoom"].fillna(0).apply(parse_int)
+        )
+        data["conversion_zoom"] = data["conversion_zoom"].fillna(0).apply(parse_percent)
+        data["average_payment_zoom"] = (
+            data["average_payment_zoom"].fillna(0).apply(parse_int)
+        )
         data["count_so"] = data["count_so"].fillna(0).apply(parse_int)
         data["profit_from_so"] = data["profit_from_so"].fillna(0).apply(parse_int)
         data["profit_on_so"] = data["profit_on_so"].fillna(0).apply(parse_int)
+        data["payment_count_so"] = data["payment_count_so"].fillna(0).apply(parse_int)
+        data["conversion_so"] = data["conversion_so"].fillna(0).apply(parse_percent)
+        data["average_payment_so"] = (
+            data["average_payment_so"].fillna(0).apply(parse_int)
+        )
         data.rename(
             columns={
                 "manager": "Менеджер/Группа",
@@ -3451,6 +3573,12 @@ class WeekStatsManagersView(WeekStatsBaseView):
                 "count_so": "Количество SO",
                 "profit_from_so": "Оборот от SO",
                 "profit_on_so": "Оборот на SO",
+                "payment_count_zoom": "Оплаты Zoom",
+                "conversion_zoom": "Конверсия Zoom",
+                "average_payment_zoom": "Средний чек Zoom",
+                "payment_count_so": "Оплаты SO",
+                "conversion_so": "Конверсия SO",
+                "average_payment_so": "Средний чек SO",
             },
             inplace=True,
         )
@@ -3469,9 +3597,11 @@ class WeekStatsChannelsView(WeekStatsBaseView):
     filters_class = WeekStatsFiltersChannelsData
     filters: WeekStatsFiltersChannelsData
 
+    channels_count: pandas.DataFrame
     values_expenses: pandas.DataFrame
     counts_expenses: pandas.DataFrame
 
+    channels_count_path: Path = Path(DATA_FOLDER) / "week" / "channels_count.pkl"
     values_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses.pkl"
     counts_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
 
@@ -3528,6 +3658,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             self.counts_expenses = self.counts_expenses[
                 self.counts_expenses["date"] >= self.filters.order_date_from
             ].reset_index(drop=True)
+            self.channels_count = self.channels_count[
+                self.channels_count["date"] >= self.filters.order_date_from
+            ].reset_index(drop=True)
 
         if self.filters.order_date_to:
             self.values_expenses = self.values_expenses[
@@ -3535,6 +3668,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             ].reset_index(drop=True)
             self.counts_expenses = self.counts_expenses[
                 self.counts_expenses["date"] <= self.filters.order_date_to
+            ].reset_index(drop=True)
+            self.channels_count = self.channels_count[
+                self.channels_count["date"] <= self.filters.order_date_to
             ].reset_index(drop=True)
 
         if self.filters.profit_date_from:
@@ -3549,12 +3685,13 @@ class WeekStatsChannelsView(WeekStatsBaseView):
 
     def get_extras(self) -> Dict[str, Any]:
         self.extras = {
-            "exclude_columns": ["is_total"],
+            "exclude_columns": ["is_total", "count"],
         }
 
     def get(self):
         self.get_filters()
 
+        self.channels_count = self.load_dataframe(self.channels_count_path)
         self.values_expenses = self.load_dataframe(self.values_expenses_path)
         self.counts_expenses = self.load_dataframe(self.counts_expenses_path)
 
@@ -3595,11 +3732,41 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         )
         if len(data_expenses):
             data_expenses["profit_on_expenses"] = data_expenses.apply(
-                lambda item: item["profit_from_expenses"] / item["count_expenses"] * 100
+                lambda item: item["profit_from_expenses"] / item["count_expenses"]
                 if item["count_expenses"]
                 else 0,
                 axis=1,
             ).apply(parse_float)
+        data_expenses = data_expenses.merge(
+            self.channels_count.groupby(by=["channel_id"]).sum(),
+            how="left",
+            left_on="channel_id",
+            right_index=True,
+        )
+        data_expenses = data_expenses.merge(
+            pandas.DataFrame(
+                self.values_expenses.groupby(by=["channel_id"])["channel_id"].count(),
+                columns=["channel_id"],
+            ).rename(columns={"channel_id": "payment_count_expenses"}),
+            how="left",
+            left_on="channel_id",
+            right_index=True,
+        )
+        data_expenses["payment_count_expenses"] = (
+            data_expenses["payment_count_expenses"].fillna(0).apply(parse_int)
+        )
+        data_expenses["conversion_expenses"] = data_expenses.apply(
+            lambda item: item["payment_count_expenses"] / item["count"]
+            if item["count"]
+            else 0,
+            axis=1,
+        )
+        data_expenses["average_payment_expenses"] = data_expenses.apply(
+            lambda item: item["profit_from_expenses"] / item["payment_count_expenses"]
+            if item["payment_count_expenses"]
+            else 0,
+            axis=1,
+        )
 
         data_expenses.insert(0, "is_total", False)
 
@@ -3610,10 +3777,16 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         ).drop(columns=["channel_id"])
 
         count_expenses = data_expenses["count_expenses"].sum()
+        count_total = data_expenses["count"].sum()
         profit_from_expenses = data_expenses["profit_from_expenses"].sum()
         profit_on_expenses = (
-            round(profit_from_expenses / count_expenses * 100, 2)
-            if count_expenses
+            profit_from_expenses / count_expenses if count_expenses else 0
+        )
+        payment_count_expenses = data_expenses["payment_count_expenses"].sum()
+        conversion_expenses = payment_count_expenses / count_total if count_total else 0
+        average_payment_expenses = (
+            profit_from_expenses / payment_count_expenses
+            if payment_count_expenses
             else 0
         )
         data = pandas.concat(
@@ -3626,6 +3799,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
                             "count_expenses": count_expenses,
                             "profit_from_expenses": profit_from_expenses,
                             "profit_on_expenses": profit_on_expenses,
+                            "payment_count_expenses": payment_count_expenses,
+                            "conversion_expenses": conversion_expenses,
+                            "average_payment_expenses": average_payment_expenses,
                         }
                     ]
                 ),
@@ -3637,7 +3813,10 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             data["profit_from_expenses"].fillna(0).apply(parse_int)
         )
         data["profit_on_expenses"] = (
-            data["profit_on_expenses"].fillna(0).apply(parse_float)
+            data["profit_on_expenses"].fillna(0).apply(parse_percent)
+        )
+        data["conversion_expenses"] = (
+            data["conversion_expenses"].fillna(0).apply(parse_percent)
         )
         data.rename(
             columns={
@@ -3645,6 +3824,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
                 "count_expenses": "Расход",
                 "profit_from_expenses": "Оборот",
                 "profit_on_expenses": "Процент",
+                "payment_count_expenses": "Оплаты",
+                "conversion_expenses": "Конверсия",
+                "average_payment_expenses": "Средний чек",
             },
             inplace=True,
         )

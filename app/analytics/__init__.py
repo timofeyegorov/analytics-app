@@ -63,13 +63,16 @@ def utility_processor():
             return ""
         return f"{round(value):,}".replace(",", " ")
 
+    def format_float1(value: float) -> str:
+        return f"{value:,.1f}".replace(",", " ")
+
     def format_float2(value: float) -> str:
         return f"{value:,.2f}".replace(",", " ")
 
     def format_date(value: datetime) -> str:
         return value.strftime("%Y-%m-%d")
 
-    def format_percent(value: int) -> str:
+    def format_percent(value: float) -> str:
         if pd.isna(value):
             return ""
         return value
@@ -92,6 +95,7 @@ def utility_processor():
     return dict(
         is_tuple=is_tuple,
         format_int=format_int,
+        format_float1=format_float1,
         format_float2=format_float2,
         format_date=format_date,
         order_table=order_table,
