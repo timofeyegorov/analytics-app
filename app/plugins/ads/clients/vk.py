@@ -42,6 +42,6 @@ class VKClient:
         error = response.get("error")
         if error:
             raise Exception(
-                f'[{error.get("error_code") or "Unknown"}]: {error.get("error_msg") or "Unknown"}'
+                f'[{error.get("error_code") or "Unknown"}]: {error.get("error_msg") or "Unknown"} - {method} - {kwargs}'
             )
         return response.get("response")
