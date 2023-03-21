@@ -1,12 +1,13 @@
 import os
 import sys
-import json
 import pandas
 import pickle
+import httplib2
+import apiclient
 
 from pathlib import Path
 from datetime import datetime
-from typing import Tuple, List, Dict, Any
+from oauth2client.service_account import ServiceAccountCredentials
 
 from airflow import DAG
 from airflow.models import Variable
@@ -14,49 +15,43 @@ from airflow.operators.python import PythonOperator
 
 sys.path.append(Variable.get("APP_FOLDER"))
 
-from config import DATA_FOLDER
+from config import DATA_FOLDER, CREDENTIALS_FILE
 from app.dags.decorators import log_execution_time
 
 
 @log_execution_time("update")
 def update():
-    def read_json(value: Path) -> Tuple[Dict[str, Any], Path]:
-        with open(value, "r") as file_ref:
-            return json.load(file_ref), value
-
-    target_path = Path(DATA_FOLDER) / "api" / "tilda"
-    os.makedirs(target_path, exist_ok=True)
-
-    source_path = target_path / "sources"
-    os.makedirs(source_path, exist_ok=True)
-
-    queue = []
-    for item in os.listdir(source_path):
-        json_path: Path = source_path / item
-        if json_path.suffix == ".json":
-            queue.append(json_path)
-
-    if not len(queue):
-        return
-
-    sources_list: List[Tuple[Dict[str, Any], Path]] = list(map(read_json, queue))
-
-    target_file = target_path / "leads.pkl"
-    try:
-        with open(target_file, "rb") as file_ref:
-            data: pandas.DataFrame = pickle.load(file_ref)
-    except FileNotFoundError:
-        data: pandas.DataFrame = pandas.DataFrame()
-
-    data = pandas.concat(
-        [data, pandas.DataFrame(list(map(lambda item: item[0], sources_list)))],
-        ignore_index=True,
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
     )
+    http_auth = credentials.authorize(httplib2.Http())
+    service = apiclient.discovery.build("sheets", "v4", http=http_auth)
+    spreadsheet_id = "1YhNHABZ99jiiB7_zHmIBlEDzigT9n0-gICmDWbivuFo"
+    for sheet in (
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+    ):
+        values = (
+            service.spreadsheets()
+            .values()
+            .get(
+                spreadsheetId=spreadsheet_id,
+                range=sheet.get("properties").get("title"),
+                majorDimension="ROWS",
+            )
+            .execute()
+        )
+        items = values.get("values")
 
-    with open(target_file, "wb") as file_ref:
-        pickle.dump(data, file_ref)
+        target_path = Path(DATA_FOLDER) / "api" / "tilda"
+        os.makedirs(target_path, exist_ok=True)
+        target_file = target_path / "leads.pkl"
 
-    list(map(os.remove, list(map(lambda item: item[1], sources_list))))
+        with open(target_file, "wb") as file_ref:
+            pickle.dump(pandas.DataFrame(items[1:], columns=items[0]), file_ref)
 
 
 dag = DAG(
