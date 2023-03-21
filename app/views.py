@@ -3871,8 +3871,7 @@ class SearchLeadsView(TemplateView):
                 inplace=True,
             )
             data: pandas.DataFrame = source[
-                (source["requestid"].str.contains(filters.id, case=False, na=False))
-                | (source["tranid"].str.contains(filters.id, case=False, na=False))
+                source["requestid"].str.contains(filters.id, case=False, na=False)
             ]
             data.fillna("", inplace=True)
             if "name" not in data.columns:
