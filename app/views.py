@@ -3900,17 +3900,3 @@ class SearchLeadsView(TemplateView):
         self.context("in_updating", self.in_updating)
 
         return super().get()
-
-
-class TildaLeadsView(APIView):
-    def post(self, *args, **kwargs):
-        source_path = Path(DATA_FOLDER) / "api" / "tilda" / "sources"
-        os.makedirs(source_path, exist_ok=True)
-
-        source = request.form.to_dict()
-        with open(source_path / f"{uuid4()}.json", "w") as file_ref:
-            json.dump(source, file_ref)
-
-        self.data = {"success": True}
-
-        return super().post(*args, **kwargs)
