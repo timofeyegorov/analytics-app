@@ -3753,8 +3753,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             right_index=True,
         )
         data_expenses["payment_count_expenses"] = (
-            data_expenses["payment_count_expenses"].fillna(0).apply(parse_int)
+            data_expenses["payment_count_expenses"].apply(parse_int).fillna(0)
         )
+        data_expenses["count"] = data_expenses["count"].apply(parse_int).fillna(0)
         data_expenses["conversion_expenses"] = data_expenses.apply(
             lambda item: item["payment_count_expenses"] / item["count"]
             if item["count"]
@@ -3808,15 +3809,15 @@ class WeekStatsChannelsView(WeekStatsBaseView):
                 data_expenses,
             ]
         )
-        data["count_expenses"] = data["count_expenses"].fillna(0).apply(parse_int)
+        data["count_expenses"] = data["count_expenses"].apply(parse_int).fillna(0)
         data["profit_from_expenses"] = (
-            data["profit_from_expenses"].fillna(0).apply(parse_int)
+            data["profit_from_expenses"].apply(parse_int).fillna(0)
         )
         data["profit_on_expenses"] = (
-            data["profit_on_expenses"].fillna(0).apply(parse_percent)
+            data["profit_on_expenses"].apply(parse_percent).fillna(0)
         )
         data["conversion_expenses"] = (
-            data["conversion_expenses"].fillna(0).apply(parse_percent)
+            data["conversion_expenses"].apply(parse_percent).fillna(0)
         )
         data.rename(
             columns={

@@ -4,7 +4,7 @@ import sys
 import pandas
 import pickle
 
-from typing import Tuple, List, Union, Callable
+from typing import Tuple, List, Dict, Optional, Union, Callable
 from pathlib import Path
 from datetime import date, datetime
 from httplib2 import Http
@@ -41,7 +41,7 @@ def parse_lead_id(value: str) -> int:
     lead_id = pandas.NA
     if str(value).startswith("https://neuraluniversity.amocrm.ru/leads/detail/"):
         match = re.search(r"^(\d+)", value[48:])
-        lead_id = match.group(1)
+        lead_id = int(match.group(1))
     return lead_id
 
 
@@ -95,20 +95,210 @@ def parse_date(value: str) -> date:
     return date.fromisoformat("-".join(list(reversed(groups))))
 
 
-def detect_channel(value: str, rows: pandas.DataFrame) -> str:
+def parse_lead_url(value: str) -> str:
     if pandas.isna(value):
-        return "Undefined"
-    url = urlparse(value)
-    query = dict(parse_qsl(url.query))
-    rs = query.get("rs")
-    if rs is not None:
-        rs_list = rs.split("_")
-        if len(rs_list):
-            channel_dataframe = rows[rows["account"] == rs_list[0]]
-            if len(channel_dataframe):
-                channel = channel_dataframe.iloc[0]
-                return channel["account_title"]
-    return "Undefined"
+        return pandas.NA
+    url = urlparse(value)._replace(params=None, query=None, fragment=None).geturl()
+    if isinstance(url, bytes):
+        url = url.decode("utf-8")
+    return url
+
+
+def count_query_params_concurrency(target: dict, value: dict) -> int:
+    columns = list(set(list(target.keys()) + list(value.keys())))
+    return len(
+        list(
+            filter(
+                lambda item: target.get(item) == value.get(item)
+                and target.get(item) is not None
+                and value.get(item) is not None,
+                columns,
+            )
+        )
+    )
+
+
+def compare_exact_params(params: List[str], target: dict, value: dict) -> bool:
+    output = False
+    columns = list(set(list(target.keys()) + list(value.keys())))
+    for param in params:
+        if param in columns and target.get(param) == value.get(param):
+            output = True
+            break
+    return output
+
+
+def matched_url(
+    target_query: Dict[str, str], matched_query_dict: Dict[str, str]
+) -> List[int]:
+    target_query = dict(
+        map(
+            lambda item: (
+                item[0],
+                re.sub(
+                    r"\s+",
+                    " ",
+                    re.sub(r"\++", " ", re.sub(r"(#[^#]+)$", "", item[1])),
+                ),
+            ),
+            target_query.items(),
+        )
+    )
+    matched_query_dict = dict(
+        map(
+            lambda row: (
+                row[0],
+                dict(
+                    map(
+                        lambda item: (
+                            item[0],
+                            re.sub(
+                                r"\s+",
+                                " ",
+                                re.sub(r"\++", " ", re.sub(r"(#[^#]+)$", "", item[1])),
+                            ),
+                        ),
+                        row[1].items(),
+                    )
+                ),
+            ),
+            matched_query_dict.items(),
+        )
+    )
+    exact_match = dict(
+        filter(lambda item: item[1] == target_query, matched_query_dict.items())
+    )
+    matched_keys = list(exact_match.keys())
+    if len(matched_keys):
+        return matched_keys
+
+    exact_match_params = dict(
+        filter(
+            lambda item: compare_exact_params(
+                ["yclid", "rs", "roistat"], target_query, item[1]
+            ),
+            matched_query_dict.items(),
+        )
+    )
+    exact_match_params_keys = list(exact_match_params.keys())
+    if len(exact_match_params_keys):
+        return exact_match_params_keys
+
+    count_concurrency = dict(
+        map(
+            lambda item: (
+                item[0],
+                count_query_params_concurrency(target_query, item[1]),
+            ),
+            matched_query_dict.items(),
+        )
+    )
+    max_concurrency = max(count_concurrency.values())
+    if max_concurrency > 0:
+        return list(
+            dict(
+                filter(
+                    lambda item: item[1] == max_concurrency,
+                    count_concurrency.items(),
+                )
+            ).keys()
+        )
+    else:
+        return []
+
+
+def detect_lead(item: pandas.Series, rows: pandas.DataFrame) -> Optional[pandas.Series]:
+    url = item["amo"]
+    target = item["target_link"]
+    if pandas.isna(target):
+        return
+
+    target_parsed = urlparse(target, allow_fragments=False)
+    target_query = dict(parse_qsl(target_parsed.query))
+    target_short = target_parsed._replace(
+        params=None, query=None, fragment=None
+    ).geturl()
+
+    if not target_parsed.netloc:
+        return
+
+    lead: pandas.Series = None
+
+    amo = rows[(rows["amo_current"] == url) | (rows["amo_main"] == url)].sort_values(
+        by=["date"]
+    )
+    matched: pandas.DataFrame = amo[amo["target_short"] == target_short]
+    if len(matched):
+        matched_query = dict(
+            map(
+                lambda item: (
+                    item[0],
+                    dict(
+                        parse_qsl(
+                            urlparse(
+                                item[1]["traffic_channel"], allow_fragments=False
+                            ).query
+                        )
+                    ),
+                ),
+                matched.iterrows(),
+            )
+        )
+        indexes = matched_url(target_query, matched_query)
+        if len(indexes):
+            matched_leads = matched.loc[indexes]
+            matched_leads["updated_at"] = matched_leads["updated_at"].apply(
+                lambda item: datetime.fromtimestamp(item)
+                if isinstance(item, int)
+                else item
+            )
+            matched_leads.sort_values(by="updated_at", ascending=False, inplace=True)
+            lead = matched_leads.iloc[0]
+
+    if lead is None:
+        amo = rows[
+            (
+                (rows["amo_current"] == "")
+                | rows["amo_current"].isna()
+                | rows["amo_current"].isnull()
+            )
+            & (
+                (rows["amo_main"] == "")
+                | rows["amo_main"].isna()
+                | rows["amo_main"].isnull()
+            )
+        ]
+        matched = amo[amo["target_short"] == target_short]
+        if len(matched):
+            matched_query = dict(
+                map(
+                    lambda item: (
+                        item[0],
+                        dict(
+                            parse_qsl(
+                                urlparse(
+                                    item[1]["traffic_channel"], allow_fragments=False
+                                ).query
+                            )
+                        ),
+                    ),
+                    matched.iterrows(),
+                )
+            )
+            indexes = matched_url(target_query, matched_query)
+            if len(indexes):
+                matched_leads = matched.loc[indexes]
+                matched_leads["updated_at"] = matched_leads["updated_at"].apply(
+                    lambda item: datetime.fromtimestamp(item)
+                    if isinstance(item, int)
+                    else item
+                )
+                matched_leads.sort_values(
+                    by="updated_at", ascending=False, inplace=True
+                )
+                lead = matched_leads.iloc[0]
+
+    return lead
 
 
 def slugify_columns(columns: List[str]) -> List[str]:
@@ -160,8 +350,24 @@ def get_stats():
 
         return source
 
+    with open("app/dags/results/leads.pkl", "rb") as file_ref:
+        tilda = pickle.load(file_ref)
+    tilda["amo_current"] = tilda["current_lead_amo"].apply(parse_lead_url)
+    tilda["amo_main"] = tilda["main_lead_amo"].apply(parse_lead_url)
+    tilda["target_short"] = tilda["traffic_channel"].apply(
+        lambda item: urlparse(item, allow_fragments=False)
+        ._replace(params=None, query=None, fragment=None)
+        .geturl()
+    )
+
     leads = PickleLoader().roistat_statistics
     leads["channel"] = leads["account_title"].apply(parse_slug)
+    url_account = PickleLoader().roistat_leads[["url", "account"]]
+    url_account = url_account.merge(
+        leads[["account", "account_title"]].drop_duplicates(ignore_index=True),
+        how="left",
+        on="account",
+    ).drop_duplicates(ignore_index=True)
 
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
@@ -190,7 +396,7 @@ def get_stats():
                 [
                     ("menedzher", "manager", parse_str),
                     ("gr", "group", parse_str_with_empty),
-                    ("ssylka_na_amocrm", "lead_id", parse_lead_id),
+                    ("ssylka_na_amocrm", "amo", parse_lead_url),
                     ("data_poslednej_zajavki_platnoj", "order_date", parse_date),
                     ("summa_vyruchki", "profit", parse_int),
                     ("data_oplaty", "profit_date", parse_date),
@@ -198,10 +404,19 @@ def get_stats():
                     ("tselevaja_ssylka", "target_link", parse_str),
                 ],
             )
+            source_payments["lead_id"] = source_payments["amo"].apply(parse_lead_id)
             for index, item in source_payments.iterrows():
-                channel = detect_channel(item["target_link"], leads)
-                if channel:
-                    source_payments.loc[index, "channel"] = channel
+                lead = detect_lead(item, tilda)
+                channel = "Undefined"
+                if lead is not None:
+                    accounts = list(
+                        url_account[url_account["url"] == lead["traffic_channel"]][
+                            "account_title"
+                        ].unique()
+                    )
+                    if len(accounts):
+                        channel = accounts[0]
+                source_payments.loc[index, "channel"] = channel
             source_payments["channel"] = source_payments["channel"].apply(parse_str)
             source_payments["channel_id"] = source_payments["channel"].apply(parse_slug)
             source_payments.drop(columns=["target_link"], inplace=True)
