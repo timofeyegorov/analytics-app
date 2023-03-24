@@ -350,8 +350,7 @@ def get_stats():
 
         return source
 
-    with open("app/dags/results/leads.pkl", "rb") as file_ref:
-        tilda = pickle.load(file_ref)
+    tilda = PickleLoader().leads
     tilda["amo_current"] = tilda["current_lead_amo"].apply(parse_lead_url)
     tilda["amo_main"] = tilda["main_lead_amo"].apply(parse_lead_url)
     tilda["target_short"] = tilda["traffic_channel"].apply(
