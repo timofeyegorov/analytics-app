@@ -3768,6 +3768,10 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             else 0,
             axis=1,
         )
+        data_expenses["lead_price"] = data_expenses.apply(
+            lambda item: item["count_expenses"] / item["count"] if item["count"] else 0,
+            axis=1,
+        )
 
         data_expenses.insert(0, "is_total", False)
 
@@ -3790,6 +3794,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             if payment_count_expenses
             else 0
         )
+        lead_price = count_expenses / count_total if count_total else 0
         data = pandas.concat(
             [
                 pandas.DataFrame(
@@ -3800,9 +3805,11 @@ class WeekStatsChannelsView(WeekStatsBaseView):
                             "count_expenses": count_expenses,
                             "profit_from_expenses": profit_from_expenses,
                             "profit_on_expenses": profit_on_expenses,
+                            "count": count_total,
                             "payment_count_expenses": payment_count_expenses,
                             "conversion_expenses": conversion_expenses,
                             "average_payment_expenses": average_payment_expenses,
+                            "lead_price": lead_price,
                         }
                     ]
                 ),
@@ -3825,9 +3832,11 @@ class WeekStatsChannelsView(WeekStatsBaseView):
                 "count_expenses": "Расход",
                 "profit_from_expenses": "Оборот",
                 "profit_on_expenses": "Процент",
+                "count": "Лиды",
                 "payment_count_expenses": "Оплаты",
                 "conversion_expenses": "Конверсия",
                 "average_payment_expenses": "Средний чек",
+                "lead_price": "Цена лида",
             },
             inplace=True,
         )

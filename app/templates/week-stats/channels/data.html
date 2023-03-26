@@ -17,7 +17,7 @@
                             {% if column == "Канал" %}
                                 <td class="nowrap{% if item.is_total %} info warning{% endif %}">{{ item[column] }}</td>
                             {% else %}
-                                <td class="nowrap font-monospace{% if item.is_total %} info warning{% endif %} text-right">{% if column in ['Процент', 'Конверсия'] %}{{ format_float1(item[column]) }}{% else %}{{ format_int(item[column]) }}{% endif %}{% if column in ["Расход", "Оборот", "Средний чек"] %} ₽{% endif %}{% if column in ["Процент", "Конверсия"] %} %{% endif %}</td>
+                                <td class="nowrap font-monospace{% if item.is_total %} info warning{% endif %} text-right">{% if column in ['Процент', 'Конверсия'] %}{{ format_float1(item[column]) }}{% else %}{{ format_int(item[column]) }}{% endif %}{% if column in ["Расход", "Оборот", "Средний чек", "Цена лида"] %} ₽{% endif %}{% if column in ["Процент", "Конверсия"] %} %{% endif %}</td>
                             {% endif %}
                         {% endif %}
                     {% endfor %}

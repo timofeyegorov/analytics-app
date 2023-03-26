@@ -530,14 +530,24 @@ def get_stats():
 
     # --- Собираем количество лидов по каналам ---------------------------------
     channels_count_list: List[pandas.DataFrame] = []
-    channels_leads = leads.copy().rename(columns={"date": "datetime"})
+    channels_leads = PickleLoader().roistat_leads.rename(columns={"date": "datetime"})
     channels_leads.insert(
         0, "date", channels_leads["datetime"].apply(lambda item: item.date())
     )
-    for (channel, date), items in channels_leads.groupby(by=["channel", "date"]):
+    channels_rel = leads.copy()[["account", "account_title"]].drop_duplicates()
+    channels_rel.loc[channels_rel["account"] == "", "account"] = "prjamye_vizity"
+    channels_rel.loc[channels_rel["account_title"] == "Undefined", "account"] = ""
+    channels_rel.drop_duplicates(subset=["account"], inplace=True)
+    channels_leads = channels_leads.merge(
+        channels_rel,
+        how="left",
+        on="account",
+    )
+    channels_leads["channel_id"] = channels_leads["account_title"].apply(parse_slug)
+    for (channel_id, date), items in channels_leads.groupby(by=["channel_id", "date"]):
         channels_count_list.append(
             {
-                "channel_id": channel,
+                "channel_id": channel_id,
                 "date": date,
                 "count": len(items),
             }
