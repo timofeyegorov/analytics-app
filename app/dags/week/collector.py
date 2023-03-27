@@ -407,6 +407,7 @@ def get_stats():
             for index, item in source_payments.iterrows():
                 lead = detect_lead(item, tilda)
                 channel = "Undefined"
+                ipl = 0
                 if lead is not None:
                     accounts = list(
                         url_account[url_account["url"] == lead["traffic_channel"]][
@@ -415,9 +416,12 @@ def get_stats():
                     )
                     if len(accounts):
                         channel = accounts[0]
+                        ipl = lead["turnover_on_lead"]
                 source_payments.loc[index, "channel"] = channel
+                source_payments.loc[index, "ipl"] = ipl
             source_payments["channel"] = source_payments["channel"].apply(parse_str)
             source_payments["channel_id"] = source_payments["channel"].apply(parse_slug)
+            source_payments["ipl"] = source_payments["ipl"].apply(parse_int)
             source_payments.drop(columns=["target_link"], inplace=True)
             source_payments.insert(
                 0, "manager_id", source_payments["manager"].apply(parse_slug)

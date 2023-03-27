@@ -3712,6 +3712,20 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             ),
             columns=["channel_id", "profit_from_expenses"],
         )
+
+        data_expenses_ipl = pandas.DataFrame(
+            list(
+                map(
+                    lambda item: [item[0], item[1]["ipl"].sum()],
+                    self.values_expenses.groupby(by=["channel_id"]),
+                )
+            ),
+            columns=["channel_id", "ipl"],
+        )
+        data_expenses: pandas.DataFrame = data_expenses.merge(
+            data_expenses_ipl, how="outer", on=["channel_id"]
+        ).reset_index(drop=True)
+
         data_expenses_count = pandas.DataFrame(
             list(
                 map(
@@ -3724,6 +3738,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         data_expenses: pandas.DataFrame = data_expenses.merge(
             data_expenses_count, how="outer", on=["channel_id"]
         ).reset_index(drop=True)
+
         data_expenses["profit_from_expenses"] = (
             data_expenses["profit_from_expenses"].fillna(0).apply(parse_int)
         )
@@ -3779,9 +3794,8 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             axis=1,
         )
         data_expenses["ipl"] = data_expenses.apply(
-            lambda item: (item["profit_from_expenses"] - item["count_expenses"])
-            / item["count"]
-            if item["count"]
+            lambda item: item["ipl"] / item["payment_count_expenses"]
+            if item["payment_count_expenses"]
             else 0,
             axis=1,
         )
@@ -3796,6 +3810,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
 
         count_expenses = data_expenses["count_expenses"].sum()
         count_total = data_expenses["count"].sum()
+        ipl_total = data_expenses["ipl"].sum()
         profit_from_expenses = data_expenses["profit_from_expenses"].sum()
         profit_on_expenses = (
             profit_from_expenses / count_expenses if count_expenses else 0
@@ -3809,9 +3824,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         )
         lead_price = count_expenses / count_total if count_total else 0
         profit_on_lead = profit_from_expenses / count_total if count_total else 0
-        ipl = (
-            (profit_from_expenses - count_expenses) / count_total if count_total else 0
-        )
+        ipl = ipl_total / payment_count_expenses if payment_count_expenses else 0
         data = pandas.concat(
             [
                 pandas.DataFrame(
