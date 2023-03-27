@@ -591,6 +591,7 @@ def get_stats():
                 "profit",
                 "profit_date",
                 "order_date",
+                "ipl",
             ]
         ]
         .rename(columns={"order_date": "date"})
