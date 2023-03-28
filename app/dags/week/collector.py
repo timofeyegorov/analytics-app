@@ -360,13 +360,12 @@ def get_stats():
     )
 
     leads = PickleLoader().roistat_statistics
-    leads["channel"] = leads["account_title"].apply(parse_slug)
-    url_account = PickleLoader().roistat_leads[["url", "account"]]
+    url_account = PickleLoader().roistat_leads[["url", "account", "qa1"]]
     url_account = url_account.merge(
         leads[["account", "account_title"]].drop_duplicates(ignore_index=True),
         how="left",
         on="account",
-    ).drop_duplicates(ignore_index=True)
+    ).drop_duplicates(subset=["url", "account", "account_title"], ignore_index=True)
 
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
@@ -407,21 +406,22 @@ def get_stats():
             for index, item in source_payments.iterrows():
                 lead = detect_lead(item, tilda)
                 channel = "Undefined"
-                ipl = 0
+                country = ""
                 if lead is not None:
-                    accounts = list(
-                        url_account[url_account["url"] == lead["traffic_channel"]][
-                            "account_title"
-                        ].unique()
-                    )
+                    account_by_url = url_account[
+                        url_account["url"] == lead["traffic_channel"]
+                    ]
+                    accounts = list(account_by_url["account_title"].unique())
+                    countries = list(account_by_url["qa1"].unique())
                     if len(accounts):
                         channel = accounts[0]
-                        ipl = lead["turnover_on_lead"]
+                    if len(countries):
+                        country = countries[0]
                 source_payments.loc[index, "channel"] = channel
-                source_payments.loc[index, "ipl"] = ipl
+                source_payments.loc[index, "country"] = country
             source_payments["channel"] = source_payments["channel"].apply(parse_str)
             source_payments["channel_id"] = source_payments["channel"].apply(parse_slug)
-            source_payments["ipl"] = source_payments["ipl"].apply(parse_int)
+            source_payments["country"] = source_payments["country"].apply(parse_str)
             source_payments.drop(columns=["target_link"], inplace=True)
             source_payments.insert(
                 0, "manager_id", source_payments["manager"].apply(parse_slug)
@@ -591,7 +591,7 @@ def get_stats():
                 "profit",
                 "profit_date",
                 "order_date",
-                "ipl",
+                "country",
             ]
         ]
         .rename(columns={"order_date": "date"})

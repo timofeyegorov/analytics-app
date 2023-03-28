@@ -68,6 +68,12 @@ def parse_percent(value: float) -> float:
     return float(value) * 100
 
 
+def parse_slug(value: str) -> str:
+    if str(value) == "" or pandas.isna(value):
+        return pandas.NA
+    return slugify(str(value), "ru").replace("-", "_")
+
+
 class ContextTemplate:
     data: Dict[str, Any] = {}
 
@@ -3597,6 +3603,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
     filters_class = WeekStatsFiltersChannelsData
     filters: WeekStatsFiltersChannelsData
 
+    roistat: pandas.DataFrame
     channels_count: pandas.DataFrame
     values_expenses: pandas.DataFrame
     counts_expenses: pandas.DataFrame
@@ -3661,6 +3668,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             self.channels_count = self.channels_count[
                 self.channels_count["date"] >= self.filters.order_date_from
             ].reset_index(drop=True)
+            self.roistat = self.roistat[
+                self.roistat["date"] >= self.filters.order_date_from
+            ].reset_index(drop=True)
 
         if self.filters.order_date_to:
             self.values_expenses = self.values_expenses[
@@ -3671,6 +3681,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             ].reset_index(drop=True)
             self.channels_count = self.channels_count[
                 self.channels_count["date"] <= self.filters.order_date_to
+            ].reset_index(drop=True)
+            self.roistat = self.roistat[
+                self.roistat["date"] <= self.filters.order_date_to
             ].reset_index(drop=True)
 
         if self.filters.profit_date_from:
@@ -3690,6 +3703,29 @@ class WeekStatsChannelsView(WeekStatsBaseView):
 
     def get(self):
         self.get_filters()
+
+        channels = (
+            PickleLoader()
+            .roistat_statistics[["account", "account_title"]]
+            .drop_duplicates()
+        )
+        channels.loc[channels["account"] == "", "account"] = "prjamye_vizity"
+        channels.loc[channels["account_title"] == "Undefined", "account"] = ""
+        channels = (
+            channels.drop_duplicates(subset=["account"])
+            .rename(columns={"account_title": "channel"})
+            .reset_index(drop=True)
+        )
+        channels["channel_id"] = channels["channel"].apply(parse_slug)
+
+        self.roistat = PickleLoader().roistat_leads
+        self.roistat = self.roistat[["date", "account", "ipl"]]
+        self.roistat["date"] = self.roistat["date"].apply(lambda item: item.date())
+        self.roistat = self.roistat.merge(
+            channels,
+            how="left",
+            on="account",
+        )
 
         self.channels_count = self.load_dataframe(self.channels_count_path)
         self.values_expenses = self.load_dataframe(self.values_expenses_path)
@@ -3713,17 +3749,18 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             columns=["channel_id", "profit_from_expenses"],
         )
 
-        data_expenses_ipl = pandas.DataFrame(
-            list(
-                map(
-                    lambda item: [item[0], item[1]["ipl"].sum()],
-                    self.values_expenses.groupby(by=["channel_id"]),
-                )
-            ),
-            columns=["channel_id", "ipl"],
-        )
+        data_expenses_ipl_list = []
+        for channel_id, rows in self.values_expenses.groupby(by=["channel_id"]):
+            roistat_leads = self.roistat[self.roistat["channel_id"] == channel_id]
+            data_expenses_ipl_list.append(
+                {
+                    "channel_id": channel_id,
+                    "ipl": roistat_leads["ipl"].sum() / len(roistat_leads),
+                }
+            )
+        data_expenses_ipl = pandas.DataFrame(data=data_expenses_ipl_list)
         data_expenses: pandas.DataFrame = data_expenses.merge(
-            data_expenses_ipl, how="outer", on=["channel_id"]
+            data_expenses_ipl, how="left", on=["channel_id"]
         ).reset_index(drop=True)
 
         data_expenses_count = pandas.DataFrame(
@@ -3739,6 +3776,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             data_expenses_count, how="outer", on=["channel_id"]
         ).reset_index(drop=True)
 
+        data_expenses["ipl"] = data_expenses["ipl"].fillna(0).apply(parse_int)
         data_expenses["profit_from_expenses"] = (
             data_expenses["profit_from_expenses"].fillna(0).apply(parse_int)
         )
@@ -3793,12 +3831,6 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             else 0,
             axis=1,
         )
-        data_expenses["ipl"] = data_expenses.apply(
-            lambda item: item["ipl"] / item["payment_count_expenses"]
-            if item["payment_count_expenses"]
-            else 0,
-            axis=1,
-        )
 
         data_expenses.insert(0, "is_total", False)
 
@@ -3810,7 +3842,6 @@ class WeekStatsChannelsView(WeekStatsBaseView):
 
         count_expenses = data_expenses["count_expenses"].sum()
         count_total = data_expenses["count"].sum()
-        ipl_total = data_expenses["ipl"].sum()
         profit_from_expenses = data_expenses["profit_from_expenses"].sum()
         profit_on_expenses = (
             profit_from_expenses / count_expenses if count_expenses else 0
@@ -3824,7 +3855,10 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         )
         lead_price = count_expenses / count_total if count_total else 0
         profit_on_lead = profit_from_expenses / count_total if count_total else 0
-        ipl = ipl_total / payment_count_expenses if payment_count_expenses else 0
+        ipl_available = data_expenses[data_expenses["ipl"] > 0]
+        ipl = (
+            ipl_available["ipl"].sum() / len(ipl_available) if len(ipl_available) else 0
+        )
         data = pandas.concat(
             [
                 pandas.DataFrame(
