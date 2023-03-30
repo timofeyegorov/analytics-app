@@ -335,6 +335,15 @@ def get_stats():
     def processing_source(
         values: List[List[str]], columns_info: List[Tuple[str, str, Callable]]
     ) -> pandas.DataFrame:
+        columns_count = max(list(map(lambda item: len(item), values[1:])))
+        headers_count = len(values[0])
+        if columns_count > headers_count:
+            values[0] += list(
+                map(
+                    lambda item: f"Undefined {item}",
+                    range(columns_count - headers_count),
+                )
+            )
         source = pandas.DataFrame(data=values[1:], columns=slugify_columns(values[0]))
 
         undefined_columns = list(
