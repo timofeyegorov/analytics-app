@@ -3608,7 +3608,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
     values_expenses: pandas.DataFrame
     counts_expenses: pandas.DataFrame
 
-    channels_count_path: Path = Path(DATA_FOLDER) / "week" / "channels_count.pkl"
+    channels_count_path: Path = Path(DATA_FOLDER) / "week" / "channels_count_russia.pkl"
     values_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses.pkl"
     counts_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
 
@@ -3658,6 +3658,13 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
+        self.values_expenses = self.values_expenses[
+            self.values_expenses["country"].str.contains("Россия", case=False)
+        ]
+        self.roistat = self.roistat[
+            self.roistat["country"].str.contains("Россия", case=False)
+        ]
+
         if self.filters.order_date_from:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["date"] >= self.filters.order_date_from
@@ -3719,7 +3726,9 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         channels["channel_id"] = channels["channel"].apply(parse_slug)
 
         self.roistat = PickleLoader().roistat_leads
-        self.roistat = self.roistat[["date", "account", "ipl"]]
+        self.roistat = self.roistat[["date", "account", "ipl", "qa1"]].rename(
+            columns={"qa1": "country"}
+        )
         self.roistat["date"] = self.roistat["date"].apply(lambda item: item.date())
         self.roistat = self.roistat.merge(
             channels,

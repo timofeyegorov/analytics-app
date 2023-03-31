@@ -430,7 +430,9 @@ def get_stats():
                 source_payments.loc[index, "country"] = country
             source_payments["channel"] = source_payments["channel"].apply(parse_str)
             source_payments["channel_id"] = source_payments["channel"].apply(parse_slug)
-            source_payments["country"] = source_payments["country"].apply(parse_str)
+            source_payments["country"] = (
+                source_payments["country"].apply(parse_str).fillna("")
+            )
             source_payments.drop(columns=["target_link"], inplace=True)
             source_payments.insert(
                 0, "manager_id", source_payments["manager"].apply(parse_slug)
@@ -542,7 +544,6 @@ def get_stats():
     # --------------------------------------------------------------------------
 
     # --- Собираем количество лидов по каналам ---------------------------------
-    channels_count_list: List[pandas.DataFrame] = []
     channels_leads = PickleLoader().roistat_leads.rename(columns={"date": "datetime"})
     channels_leads.insert(
         0, "date", channels_leads["datetime"].apply(lambda item: item.date())
@@ -557,6 +558,8 @@ def get_stats():
         on="account",
     )
     channels_leads["channel_id"] = channels_leads["account_title"].apply(parse_slug)
+
+    channels_count_list: List[pandas.DataFrame] = []
     for (channel_id, date), items in channels_leads.groupby(by=["channel_id", "date"]):
         channels_count_list.append(
             {
@@ -566,6 +569,19 @@ def get_stats():
             }
         )
     channels_count = pandas.DataFrame(channels_count_list)
+
+    channels_count_list_russia: List[pandas.DataFrame] = []
+    for (channel_id, date), items in channels_leads[
+        channels_leads["qa1"].str.contains("Россия", case=False)
+    ].groupby(by=["channel_id", "date"]):
+        channels_count_list_russia.append(
+            {
+                "channel_id": channel_id,
+                "date": date,
+                "count": len(items),
+            }
+        )
+    channels_count_russia = pandas.DataFrame(channels_count_list_russia)
     # --------------------------------------------------------------------------
 
     # --- Собираем расходы -----------------------------------------------------
@@ -692,6 +708,9 @@ def get_stats():
 
     with open(Path(DATA_PATH / "channels_count.pkl"), "wb") as file_ref:
         pickle.dump(channels_count, file_ref)
+
+    with open(Path(DATA_PATH / "channels_count_russia.pkl"), "wb") as file_ref:
+        pickle.dump(channels_count_russia, file_ref)
 
     with open(Path(DATA_PATH / "expenses.pkl"), "wb") as file_ref:
         pickle.dump(expenses, file_ref)
