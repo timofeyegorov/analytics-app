@@ -305,6 +305,7 @@ label {
 }
 .filter-block > .field > input[type=date],
 .filter-block > .field > input[type=text],
+.filter-block > .field > input[type=month],
 .filter-block > .field > select {
     width:200px;
     height:30px;

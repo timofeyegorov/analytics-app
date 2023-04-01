@@ -3336,18 +3336,19 @@ class WeekStatsManagersView(WeekStatsBaseView):
         data_zoom["payment_count_zoom"] = (
             data_zoom["payment_count_zoom"].fillna(0).apply(parse_int)
         )
-        data_zoom["conversion_zoom"] = data_zoom.apply(
-            lambda item: item["payment_count_zoom"] / item["count_zoom"]
-            if item["count_zoom"]
-            else 0,
-            axis=1,
-        )
-        data_zoom["average_payment_zoom"] = data_zoom.apply(
-            lambda item: item["profit_from_zoom"] / item["payment_count_zoom"]
-            if item["payment_count_zoom"]
-            else 0,
-            axis=1,
-        )
+        if len(data_zoom):
+            data_zoom["conversion_zoom"] = data_zoom.apply(
+                lambda item: item["payment_count_zoom"] / item["count_zoom"]
+                if item["count_zoom"]
+                else 0,
+                axis=1,
+            )
+            data_zoom["average_payment_zoom"] = data_zoom.apply(
+                lambda item: item["profit_from_zoom"] / item["payment_count_zoom"]
+                if item["payment_count_zoom"]
+                else 0,
+                axis=1,
+            )
 
         data_so = pandas.DataFrame(
             list(
@@ -3391,18 +3392,19 @@ class WeekStatsManagersView(WeekStatsBaseView):
         data_so["payment_count_so"] = (
             data_so["payment_count_so"].fillna(0).apply(parse_int)
         )
-        data_so["conversion_so"] = data_so.apply(
-            lambda item: item["payment_count_so"] / item["count_so"]
-            if item["count_so"]
-            else 0,
-            axis=1,
-        )
-        data_so["average_payment_so"] = data_so.apply(
-            lambda item: item["profit_from_so"] / item["payment_count_so"]
-            if item["payment_count_so"]
-            else 0,
-            axis=1,
-        )
+        if len(data_so):
+            data_so["conversion_so"] = data_so.apply(
+                lambda item: item["payment_count_so"] / item["count_so"]
+                if item["count_so"]
+                else 0,
+                axis=1,
+            )
+            data_so["average_payment_so"] = data_so.apply(
+                lambda item: item["profit_from_so"] / item["payment_count_so"]
+                if item["payment_count_so"]
+                else 0,
+                axis=1,
+            )
 
         data_merged: pandas.DataFrame = pandas.merge(
             data_zoom, data_so, how="outer", on=["manager_id"]

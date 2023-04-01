@@ -16,6 +16,12 @@
             <label for="field-profit_date_to">Оплата по дату</label>
             <input type="date" name="profit_date_to" id="field-profit_date_to" value="{% if filters.profit_date_to %}{{ filters.profit_date_to }}{% endif %}">
         </div>
+    </div>
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-month">Месяц</label>
+            <input type="month" id="field-month">
+        </div>
         <div class="field field-checkbox">
             <input type="checkbox" id="field-hide_inactive_managers" name="hide_inactive_managers"{% if filters.hide_inactive_managers %} checked="checked"{% endif %}>
             <label for="field-hide_inactive_managers">Скрыть всех не работающих менеджеров</label>
