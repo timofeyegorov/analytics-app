@@ -25,6 +25,10 @@
             $("form").submit();
         });
 
+        $(".filter-block > .field.month > span").bind("click", (event) => {
+            $("#field-month").val(event.currentTarget.dataset.value).trigger("input");
+        });
+
     });
 
 

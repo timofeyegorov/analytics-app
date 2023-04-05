@@ -331,6 +331,20 @@ label {
     content:'';
     clear:both;
 }
+.filter-block > .field.month {
+    line-height:1;
+    font-size:12px;
+}
+.filter-block > .field.month > span {
+    display:inline-block;
+    padding:5px 10px;
+    margin-right:5px;
+    line-height:1;
+    color:#fff;
+    background:#6c757d;
+    border-radius:.25rem;
+    cursor:pointer;
+}
 #statistics-extra,
 #statistics-leads {
     margin-top:1rem;
