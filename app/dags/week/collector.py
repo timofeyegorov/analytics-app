@@ -5,6 +5,7 @@ import pandas
 import pickle
 
 from typing import Tuple, List, Dict, Optional, Union, Callable
+from colour import Color
 from pathlib import Path
 from datetime import date, datetime
 from httplib2 import Http
@@ -12,6 +13,7 @@ from apiclient import discovery
 from xlsxwriter import Workbook
 from urllib.parse import urlparse, parse_qsl
 from transliterate import slugify
+from googleapiclient.discovery import Resource
 from oauth2client.service_account import ServiceAccountCredentials
 
 from airflow import DAG
@@ -102,6 +104,23 @@ def parse_lead_url(value: str) -> str:
     if isinstance(url, bytes):
         url = url.decode("utf-8")
     return url
+
+
+def parse_cell_data(cell: Dict[str, Dict[str, Any]]) -> str:
+    value = cell.get("formattedValue", "") or ""
+    if value.strip().lower() in ["о", "o"]:
+        value = ""
+    color = cell.get("effectiveFormat", {}).get("backgroundColor")
+    lead_id = parse_lead_id(value)
+    if not pandas.isna(lead_id) and (
+        not color or Color(rgb=list(color.values())[:3]).get_hex_l() != "#98e098"
+    ):
+        value = ""
+    return value
+
+
+def parse_row_data(row: List[Dict[str, dict]]) -> List[str]:
+    return list(map(parse_cell_data, row.get("values")))
 
 
 def count_query_params_concurrency(target: dict, value: dict) -> int:
@@ -328,6 +347,54 @@ def rename_so_columns(value: str) -> str:
         return f"{map_values.get(match.group(1))}{match.group(2)}"
 
     return value
+
+
+def read_zoom_month(
+    service: Resource, spreadsheet_id: str, month: date
+) -> pandas.DataFrame:
+    spreadsheets = (
+        service.spreadsheets()
+        .get(spreadsheetId=spreadsheet_id, includeGridData=True)
+        .execute()
+    )
+    prepare_data = []
+    for sheet in spreadsheets.get("sheets"):
+        title = sheet.get("properties").get("title")
+        if sheet.get("properties").get("hidden") is True:
+            continue
+        match_day = re.match(r"^[а-яА-Я]{2},?\s*(\d+)$", title.strip())
+        if not match_day:
+            continue
+        current_date = month.replace(day=int(match_day.group(1)))
+        for source in sheet.get("data"):
+            values = list(map(parse_row_data, source.get("rowData")))
+            columns = values[0]
+            columns[0] = "manager"
+            values = values[1:]
+            source_data = pandas.DataFrame(
+                list(map(lambda item: dict(zip(columns, item)), values))
+            )
+            for index, row in source_data.iterrows():
+                for column, value in row.items():
+                    match_time = re.match(r"^(\d{,2}):(\d{,2})$", column)
+                    if not match_time:
+                        continue
+                    value = parse_lead_id(value)
+                    if pandas.isna(value):
+                        continue
+                    prepare_data.append(
+                        {
+                            "manager": row["manager"],
+                            "date": current_date,
+                            "time": datetime.strptime(
+                                "%02i:%02i"
+                                % (int(match_time.group(1)), int(match_time.group(2))),
+                                "%H:%M",
+                            ).time(),
+                            "lead": value,
+                        }
+                    )
+    return pandas.DataFrame(prepare_data)
 
 
 @log_execution_time("get_stats")
@@ -857,6 +924,33 @@ def update_so():
                 valueInputOption="USER_ENTERED",
                 body={"values": values},
             ).execute()
+
+
+def get_managers_zooms():
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        CREDENTIALS_FILE,
+        [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    http_auth = credentials.authorize(Http())
+    service = discovery.build("sheets", "v4", http=http_auth)
+
+    spreadsheet_ids = {
+        202304: "1dnMAO9-q0j5i6TrvnlyovGA-flsnZmhgBi9skodsxuI",
+    }
+    data = pandas.DataFrame()
+    for month, spreadsheet_id in spreadsheet_ids.items():
+        month_data = read_zoom_month(
+            service=service,
+            spreadsheet_id=spreadsheet_id,
+            month=datetime.strptime(str(month), "%Y%m").date(),
+        )
+        data = pandas.concat([data, month_data])
+
+    with open(Path(DATA_PATH / "managers_zooms.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
 
 
 dag = DAG(

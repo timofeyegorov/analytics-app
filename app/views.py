@@ -3733,9 +3733,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             "exclude_columns": ["is_total", "count"],
         }
 
-    def get(self):
-        self.get_filters()
-
+    def get_accounts_as_channel(self) -> pandas.DataFrame:
         channels = (
             PickleLoader()
             .roistat_statistics[["account", "account_title"]]
@@ -3749,6 +3747,10 @@ class WeekStatsChannelsView(WeekStatsBaseView):
             .reset_index(drop=True)
         )
         channels["channel_id"] = channels["channel"].apply(parse_slug)
+        return channels
+
+    def get(self):
+        self.get_filters()
 
         self.roistat = PickleLoader().roistat_leads
         self.roistat = self.roistat[["date", "account", "ipl", "qa1"]].rename(
@@ -3756,7 +3758,7 @@ class WeekStatsChannelsView(WeekStatsBaseView):
         )
         self.roistat["date"] = self.roistat["date"].apply(lambda item: item.date())
         self.roistat = self.roistat.merge(
-            channels,
+            self.get_accounts_as_channel(),
             how="left",
             on="account",
         )
