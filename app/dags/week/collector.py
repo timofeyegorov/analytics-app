@@ -4,7 +4,7 @@ import sys
 import pandas
 import pickle
 
-from typing import Tuple, List, Dict, Optional, Union, Callable
+from typing import Tuple, List, Dict, Any, Optional, Union, Callable
 from colour import Color
 from pathlib import Path
 from datetime import date, datetime
