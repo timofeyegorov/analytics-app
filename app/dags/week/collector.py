@@ -926,6 +926,7 @@ def update_so():
             ).execute()
 
 
+@log_execution_time("get_managers_zooms")
 def get_managers_zooms():
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
@@ -970,6 +971,11 @@ get_stats_operator = PythonOperator(
 update_so_operator = PythonOperator(
     task_id="update_so",
     python_callable=update_so,
+    dag=dag,
+)
+get_managers_zooms_operator = PythonOperator(
+    task_id="get_managers_zooms",
+    python_callable=get_managers_zooms,
     dag=dag,
 )
 
