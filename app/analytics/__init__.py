@@ -888,6 +888,10 @@ app.add_url_rule(
     "/search-leads",
     view_func=views.SearchLeadsView.as_view("search_leads"),
 )
+app.add_url_rule(
+    "/zooms",
+    view_func=views.ZoomsView.as_view("zooms"),
+)
 
 
 @app.route("/login/hh")

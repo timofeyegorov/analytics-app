@@ -1,0 +1,36 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                {% for column in data.columns %}
+                    {% if column not in extras.exclude_columns %}
+                        <th class="sticky nowrap">{{ column }}</th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, item in data.iterrows() %}
+                <tr class="{% if item.inactive %}inactive{% endif %}{% if filters.hide_inactive_managers %} hidden{% endif %}">
+                    {% if item.is_group %}
+                        <td class="nowrap info" colspan="4">{{ item[column] }}</td>
+                    {% else %}
+                        {% for column in data.columns %}
+                            {% if column not in extras.exclude_columns %}
+                                {% if column == "Лид" %}
+                                    <td class="nowrap"><a href="https://neuraluniversity.amocrm.ru/leads/detail/{{ item[column] }}" target="_blank">{{ item[column] }}</a></td>
+                                {% elif column == "Дата" %}
+                                    <td class="nowrap">{{ format_date(item[column]) }}</td>
+                                {% elif column == "Оплата" %}
+                                    <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                                {% else %}
+                                    <td class="nowrap">{{ item[column] }}</td>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

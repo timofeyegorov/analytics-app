@@ -177,6 +177,20 @@ class WeekStatsFiltersChannelsData(BaseModel):
     profit_date_to: Optional[ConstrainedDate]
 
 
+class ZoomsFiltersData(BaseModel):
+    date_from: Optional[ConstrainedDate]
+    date_to: Optional[ConstrainedDate]
+    manager: Optional[str]
+
+    def __getitem__(self, item):
+        if item == "manager":
+            return self.manager
+
+    def __setitem__(self, key, value):
+        if key == "manager":
+            self.manager = value
+
+
 class SearchLeadsFiltersData(BaseModel):
     id: str = ""
 
@@ -2864,7 +2878,7 @@ class StatisticsGroupsByCampaignView(APIView):
         return super().get()
 
 
-class WeekStatsBaseView(TemplateView):
+class FilteringBaseView(TemplateView):
     filters_class = WeekStatsFiltersEmptyData
     filters: WeekStatsFiltersEmptyData
     extras: Dict[str, Any]
@@ -2898,7 +2912,103 @@ class WeekStatsBaseView(TemplateView):
         self.extras = {}
 
 
-class WeekStatsBaseCohortsView(WeekStatsBaseView):
+class ZoomsView(FilteringBaseView):
+    template_name = "zooms/index.html"
+    title = "Zooms"
+    filters_class = ZoomsFiltersData
+    filters: ZoomsFiltersData
+    values: pandas.DataFrame
+    values_path: Path = Path(DATA_FOLDER) / "week" / "managers_zooms.pkl"
+
+    def filtering_values(self):
+        if self.filters.date_from:
+            self.values = self.values[self.values["date"] >= self.filters.date_from]
+
+        if self.filters.date_to:
+            self.values = self.values[self.values["date"] <= self.filters.date_to]
+
+        self.values.reset_index(drop=True, inplace=True)
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        date_from = request.args.get("date_from")
+        if date_from is None:
+            date_from = initial.get("date_from")
+        if isinstance(date_from, str):
+            date_from = datetime.date.fromisoformat(date_from)
+
+        date_to = request.args.get("date_to")
+        if date_to is None:
+            date_to = initial.get("date_to")
+        if isinstance(date_to, str):
+            date_to = datetime.date.fromisoformat(date_to)
+
+        manager = request.args.get("manager")
+        if manager is None:
+            manager = initial.get("manager", "__all__")
+        if manager == "__all__":
+            manager = None
+
+        data = self.filters_preprocess(
+            date_from=date_from,
+            date_to=date_to,
+            manager=manager,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def get_extras_group(self, group: str) -> List[List[str]]:
+        group_id = f"{group}_id"
+        groups: pandas.DataFrame = (
+            self.values[[group_id, group]]
+            .drop_duplicates()
+            .sort_values(group)
+            .reset_index(drop=True)
+        )
+        if self.filters[group] not in list(groups[group_id]):
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            self.values = self.values[
+                self.values[group_id] == self.filters[group]
+            ].reset_index(drop=True)
+        return groups.values.tolist()
+
+    def get_extras(self):
+        self.extras = {
+            "managers": self.get_extras_group("manager"),
+        }
+
+    def get(self):
+        self.get_filters()
+        self.values = self.load_dataframe(self.values_path)
+        self.filtering_values()
+        self.get_extras()
+
+        data = self.values.sort_values(by=["group", "manager", "date"])
+
+        data = data[["group", "manager", "date", "lead", "profit"]]
+        data.rename(
+            columns={
+                "group": "Группа",
+                "manager": "Менеджер",
+                "date": "Дата",
+                "lead": "Лид",
+                "profit": "Оплата",
+            },
+            inplace=True,
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+
+        return super().get()
+
+
+class WeekStatsBaseCohortsView(FilteringBaseView):
     filters_class = WeekStatsFiltersCohortsData
     filters: WeekStatsFiltersCohortsData
 
@@ -3141,7 +3251,7 @@ class WeekStatsSpecialOffersView(WeekStatsBaseCohortsView):
     value_column_name: str = "SO"
 
 
-class WeekStatsManagersView(WeekStatsBaseView):
+class WeekStatsManagersView(FilteringBaseView):
     template_name = "week-stats/managers/index.html"
     title = "Менеджеры"
 
@@ -3621,7 +3731,7 @@ class WeekStatsManagersView(WeekStatsBaseView):
         return super().get()
 
 
-class WeekStatsChannelsView(WeekStatsBaseView):
+class WeekStatsChannelsView(FilteringBaseView):
     template_name = "week-stats/channels/index.html"
     title = "Каналы трафика"
 

@@ -1,0 +1,27 @@
+<form action="{{ url_for('zooms') }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-date_from">С даты</label>
+            <input type="date" name="date_from" id="field-date_from" value="{% if filters.date_from %}{{ filters.date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-date_to">По дату</label>
+            <input type="date" name="date_to" id="field-date_to" value="{% if filters.date_to %}{{ filters.date_to }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-manager">Менеджер</label>
+            <select name="manager" id="field-manager"{% if not extras.managers %} disabled="disabled"{% endif %}>
+                {% if extras.managers %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.managers %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.manager %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Обновить</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
+    </div>
+</form>

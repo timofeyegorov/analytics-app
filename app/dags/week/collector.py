@@ -397,6 +397,55 @@ def read_zoom_month(
     return pandas.DataFrame(prepare_data)
 
 
+def read_payments(service: Resource, spreadsheet_id: str) -> pandas.DataFrame:
+    spreadsheets = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    payments_columns = ["manager_id", "lead", "date", "profit"]
+    output = pandas.DataFrame(columns=payments_columns)
+    for sheet in spreadsheets.get("sheets"):
+        title = sheet.get("properties").get("title")
+        if title == "Все оплаты":
+            values = (
+                service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=title, majorDimension="ROWS")
+                .execute()
+            ).get("values")
+            columns = slugify_columns(values[0])
+            values = values[1:]
+            payments = pandas.DataFrame(
+                list(map(lambda item: dict(zip(columns, item)), values))
+            )
+            payments["lead"] = payments["ssylka_na_amocrm"].apply(parse_lead_id)
+            payments["manager_id"] = payments["menedzher"].apply(parse_slug)
+            payments["date"] = payments["data_zoom"].apply(parse_date)
+            payments["profit"] = payments["summa_vyruchki"].apply(parse_int).fillna(0)
+            payments = payments[payments_columns]
+            payments = payments[
+                (
+                    ~(
+                        payments["date"].isna()
+                        | payments["lead"].isna()
+                        | payments["manager_id"].isna()
+                    )
+                )
+                & (payments["profit"] > 0)
+            ]
+            output = pandas.DataFrame(
+                list(
+                    map(
+                        lambda item: dict(
+                            zip(
+                                payments_columns,
+                                list(item[0]) + [item[1]["profit"].sum()],
+                            )
+                        ),
+                        payments.groupby(by=["manager_id", "lead", "date"]),
+                    )
+                )
+            )
+    return output
+
+
 @log_execution_time("get_stats")
 def get_stats():
     def processing_source(
@@ -949,6 +998,20 @@ def get_managers_zooms():
             month=datetime.strptime(str(month), "%Y%m").date(),
         )
         data = pandas.concat([data, month_data])
+
+    data["manager_id"] = data["manager"].apply(parse_slug)
+
+    with open(Path(DATA_PATH / "groups.pkl"), "rb") as file_ref:
+        groups = pickle.load(file_ref)
+
+    data = data.merge(groups[["manager_id", "group"]], how="left", on="manager_id")
+    data.rename(columns={"group": "group_id"}, inplace=True)
+    data["group_id"].fillna("", inplace=True)
+    data["group"] = data["group_id"].apply(lambda item: f'Группа "{item}"')
+
+    payments = read_payments(service, "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE")
+    data = data.merge(payments, how="left", on=["manager_id", "lead", "date"])
+    data["profit"] = data["profit"].fillna(0).apply(parse_int)
 
     with open(Path(DATA_PATH / "managers_zooms.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
