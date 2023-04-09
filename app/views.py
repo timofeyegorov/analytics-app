@@ -52,6 +52,15 @@ def parse_int(value: str) -> int:
     return round(value)
 
 
+def parse_positive_int_value(value: Optional[str] = None) -> Optional[int]:
+    if value is None:
+        return pandas.NA
+    value = parse_float(value)
+    if pandas.isna(value) or value < 0:
+        return pandas.NA
+    return round(value)
+
+
 def parse_float(value: str) -> float:
     if pandas.isna(value):
         return pandas.NA
@@ -68,10 +77,57 @@ def parse_percent(value: float) -> float:
     return float(value) * 100
 
 
+def parse_bool_from_int(value: Optional[Any]) -> bool:
+    if pandas.isna(value) or value is None:
+        return False
+    return bool(int(value))
+
+
+def parse_bool(value: Optional[Any]) -> bool:
+    if pandas.isna(value) or value is None:
+        return False
+    return bool(value)
+
+
+def parse_estimate(value: pandas.Series) -> float:
+    percent = value["purchase_probability"]
+    profit = value["potential_order_amount"]
+    if pandas.isna(percent) or pandas.isna(profit):
+        return pandas.NA
+    return profit * percent / 100
+
+
+def parse_percent_value(value: Optional[float] = None) -> Optional[float]:
+    if value is None:
+        return pandas.NA
+    value = parse_float(value)
+    if pandas.isna(value) or value < 0 or value > 100:
+        return pandas.NA
+    return int(value)
+
+
 def parse_slug(value: str) -> str:
     if str(value) == "" or pandas.isna(value):
         return pandas.NA
     return slugify(str(value), "ru").replace("-", "_")
+
+
+def parse_date(value: str) -> datetime.date:
+    if pandas.isna(value) or value is None:
+        return pandas.NA
+    if isinstance(value, datetime.date):
+        return value
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    match = re.search(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", str(value))
+    if not match:
+        return pandas.NA
+    groups = list(match.groups())
+    if len(groups[0]) == 1:
+        groups[0] = f"0{groups[0]}"
+    if len(groups[1]) == 1:
+        groups[1] = f"0{groups[1]}"
+    return datetime.date.fromisoformat("-".join(list(reversed(groups))))
 
 
 class ContextTemplate:
@@ -2919,6 +2975,9 @@ class ZoomsView(FilteringBaseView):
     filters: ZoomsFiltersData
     values: pandas.DataFrame
     values_path: Path = Path(DATA_FOLDER) / "week" / "managers_zooms.pkl"
+    controllable_path: Path = (
+        Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
+    )
 
     def filtering_values(self):
         if self.filters.date_from:
@@ -2978,23 +3037,76 @@ class ZoomsView(FilteringBaseView):
 
     def get_extras(self):
         self.extras = {
+            "exclude_columns": [
+                "manager_id",
+                "estimate",
+                "purchase_probability",
+                "potential_order_amount",
+                "expected_payment_date",
+                "on_control",
+            ],
             "managers": self.get_extras_group("manager"),
         }
 
     def get(self):
         self.get_filters()
         self.values = self.load_dataframe(self.values_path)
+        try:
+            self.controllable = self.load_dataframe(self.controllable_path)
+        except FileNotFoundError:
+            self.controllable = pandas.DataFrame(
+                columns=[
+                    "manager_id",
+                    "lead",
+                    "date",
+                    "purchase_probability",
+                    "potential_order_amount",
+                    "expected_payment_date",
+                    "on_control",
+                ]
+            )
         self.filtering_values()
         self.get_extras()
 
+        self.values = self.values.merge(
+            self.controllable, how="left", on=["manager_id", "lead", "date"]
+        )
+        self.values.fillna(pandas.NA, inplace=True)
+
         data = self.values.sort_values(by=["group", "manager", "date"])
 
-        data = data[["group", "manager", "date", "lead", "profit"]]
+        data = data[
+            [
+                "group",
+                "manager",
+                "date",
+                "lead",
+                "profit",
+                "manager_id",
+                "purchase_probability",
+                "potential_order_amount",
+                "expected_payment_date",
+                "on_control",
+            ]
+        ]
+        data["estimate"] = (
+            data.apply(parse_estimate, axis=1).apply(parse_int).fillna("")
+        )
+        data["purchase_probability"] = (
+            data["purchase_probability"].apply(parse_int).fillna("")
+        )
+        data["potential_order_amount"] = (
+            data["potential_order_amount"].apply(parse_int).fillna("")
+        )
+        data["expected_payment_date"] = (
+            data["expected_payment_date"].apply(parse_date).fillna("")
+        )
+        data["on_control"] = data["on_control"].apply(parse_bool).fillna("")
         data.rename(
             columns={
                 "group": "Группа",
                 "manager": "Менеджер",
-                "date": "Дата",
+                "date": "Дата зума",
                 "lead": "Лид",
                 "profit": "Оплата",
             },
@@ -4123,3 +4235,69 @@ class SearchLeadsView(TemplateView):
         self.context("in_updating", self.in_updating)
 
         return super().get()
+
+
+class ChangeZoomView(APIView):
+    def post(self, manager_id: str, lead: str, date: str):
+        file_path = Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
+        available_values = {
+            "manager_id": parse_slug,
+            "lead": parse_int,
+            "date": parse_date,
+            "purchase_probability": parse_percent_value,
+            "potential_order_amount": parse_positive_int_value,
+            "expected_payment_date": parse_date,
+            "on_control": parse_bool_from_int,
+        }
+        post = dict(
+            filter(
+                lambda item: item[0] in available_values.keys(),
+                {
+                    **dict(request.form),
+                    "manager_id": manager_id,
+                    "lead": lead,
+                    "date": date,
+                }.items(),
+            )
+        )
+        values = pandas.DataFrame([post])
+        for column in values.columns:
+            values[column] = values[column].apply(available_values.get(column))
+
+        source = pandas.DataFrame(columns=available_values.keys())
+        try:
+            with open(file_path, "rb") as file_ref:
+                source = pandas.concat([source, pickle.load(file_ref)])
+        except FileNotFoundError:
+            pass
+
+        source_one = source[
+            (source["manager_id"] == values.loc[0, "manager_id"])
+            & (source["lead"] == values.loc[0, "lead"])
+            & (source["date"] == values.loc[0, "date"])
+        ]
+        if len(source_one):
+            source_data = source_one.iloc[0].to_dict()
+            source_data.update(**values.iloc[0].to_dict())
+            source.drop(index=source_one.index, inplace=True)
+            values = pandas.DataFrame([source_data])
+
+        source = pandas.concat([source, values])
+        source.fillna(pandas.NA, inplace=True)
+        source.reset_index(drop=True, inplace=True)
+        with open(file_path, "wb") as file_ref:
+            pickle.dump(source, file_ref)
+
+        info = values.iloc[0]
+        if pandas.isna(info["purchase_probability"]) or pandas.isna(
+            info["potential_order_amount"]
+        ):
+            estimate = ""
+        else:
+            estimate = f'{round(info["potential_order_amount"] * info["purchase_probability"] / 100):,} ₽'.replace(
+                ",", " "
+            )
+
+        self.data = {"estimate": estimate}
+
+        return super().post()

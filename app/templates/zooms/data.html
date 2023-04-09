@@ -7,11 +7,16 @@
                         <th class="sticky nowrap">{{ column }}</th>
                     {% endif %}
                 {% endfor %}
+                <th class="sticky nowrap">Вероятность<br>покупки</th>
+                <th class="sticky nowrap">Потенциальная<br>сумма<br>заказа</th>
+                <th class="sticky nowrap">Ожидаемая<br>дата<br>оплаты</th>
+                <th class="sticky nowrap">Оценочный<br>оборот</th>
+                <th class="sticky nowrap">На<br>контроле</th>
             </tr>
         </thead>
         <tbody>
             {% for index, item in data.iterrows() %}
-                <tr class="{% if item.inactive %}inactive{% endif %}{% if filters.hide_inactive_managers %} hidden{% endif %}">
+                <tr class="{% if item.inactive %}inactive{% endif %}{% if filters.hide_inactive_managers %} hidden{% endif %}" data-manager_id="{{ item["manager_id"] }}" data-lead="{{ item["Лид"] }}" data-date="{{ format_date(item["Дата зума"]) }}">
                     {% if item.is_group %}
                         <td class="nowrap info" colspan="4">{{ item[column] }}</td>
                     {% else %}
@@ -19,8 +24,8 @@
                             {% if column not in extras.exclude_columns %}
                                 {% if column == "Лид" %}
                                     <td class="nowrap"><a href="https://neuraluniversity.amocrm.ru/leads/detail/{{ item[column] }}" target="_blank">{{ item[column] }}</a></td>
-                                {% elif column == "Дата" %}
-                                    <td class="nowrap">{{ format_date(item[column]) }}</td>
+                                {% elif column == "Дата зума" %}
+                                    <td class="nowrap font-monospace">{{ format_date(item[column]) }}</td>
                                 {% elif column == "Оплата" %}
                                     <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
                                 {% else %}
@@ -29,6 +34,35 @@
                             {% endif %}
                         {% endfor %}
                     {% endif %}
+                    <td class="nowrap font-monospace">
+                        <select class="controllable purchase-probability" data-name="purchase_probability" data-value="{{ item["purchase_probability"] }}">
+                            <option value=""{% if item["purchase_probability"] == "" %} selected="selected"{% endif %}></option>
+                            <option value="0"{% if item["purchase_probability"] == 0 %} selected="selected"{% endif %}>0</option>
+                            <option value="10"{% if item["purchase_probability"] == 10 %} selected="selected"{% endif %}>10</option>
+                            <option value="20"{% if item["purchase_probability"] == 20 %} selected="selected"{% endif %}>20</option>
+                            <option value="30"{% if item["purchase_probability"] == 30 %} selected="selected"{% endif %}>30</option>
+                            <option value="40"{% if item["purchase_probability"] == 40 %} selected="selected"{% endif %}>40</option>
+                            <option value="50"{% if item["purchase_probability"] == 50 %} selected="selected"{% endif %}>50</option>
+                            <option value="60"{% if item["purchase_probability"] == 60 %} selected="selected"{% endif %}>60</option>
+                            <option value="70"{% if item["purchase_probability"] == 70 %} selected="selected"{% endif %}>70</option>
+                            <option value="80"{% if item["purchase_probability"] == 80 %} selected="selected"{% endif %}>80</option>
+                            <option value="90"{% if item["purchase_probability"] == 90 %} selected="selected"{% endif %}>90</option>
+                            <option value="100"{% if item["purchase_probability"] == 100 %} selected="selected"{% endif %}>100</option>
+                        </select> %
+                    </td>
+                    <td class="nowrap font-monospace">
+                        <input type="number" min="0" class="controllable potential-order-amount" value="{{ item["potential_order_amount"] }}" data-name="potential_order_amount" data-value="{{ item["potential_order_amount"] }}"> ₽
+                    </td>
+                    <td class="nowrap">
+                        <input type="date" class="controllable expected-payment-date" value="{{ item["expected_payment_date"] }}" data-name="expected_payment_date" data-value="{{ item["expected_payment_date"] }}">
+                    </td>
+                    <td class="nowrap font-monospace text-right estimate">{% if item["estimate"] != "" %}{{ format_int(item["estimate"]) }} ₽{% endif %}</td>
+                    <td class="nowrap">
+                        <select class="controllable on-control" data-name="on_control" data-value="0">
+                            <option value="0"{% if item["on_control"] == False %} selected="selected"{% endif %}>нет</option>
+                            <option value="1"{% if item["on_control"] == True %} selected="selected"{% endif %}>да</option>
+                        </select>
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

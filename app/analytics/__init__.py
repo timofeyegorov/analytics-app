@@ -892,6 +892,10 @@ app.add_url_rule(
     "/zooms",
     view_func=views.ZoomsView.as_view("zooms"),
 )
+app.add_url_rule(
+    "/api/change-zoom/<manager_id>/<lead>/<date>",
+    view_func=views.ChangeZoomView.as_view("change_zoom"),
+)
 
 
 @app.route("/login/hh")

@@ -423,3 +423,27 @@ label {
         padding:20px !important;
     }
 }
+
+
+.purchase-probability,
+.potential-order-amount,
+.expected-payment-date,
+.on-control {
+    width:auto;
+    height:30px;
+    font-family:monospace !important;
+}
+.potential-order-amount {
+    width:100px;
+}
+td {
+    transition:background-color 1s ease-in-out;
+}
+td.error {
+    background-color:#ffcfcf;
+    transition:none;
+}
+td.success {
+    background-color:#bbffbb;
+    transition:none;
+}
