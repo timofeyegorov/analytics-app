@@ -4288,12 +4288,15 @@ class ChangeZoomView(APIView):
         with open(file_path, "wb") as file_ref:
             pickle.dump(source, file_ref)
 
-        info = values.iloc[0]
-        if pandas.isna(info["purchase_probability"]) or pandas.isna(
-            info["potential_order_amount"]
+        info: pandas.Series = values.iloc[0]
+        info_columns = list(info.keys())
+        estimate = ""
+        if (
+            "purchase_probability" in info_columns
+            and "potential_order_amount" in info_columns
+            and not pandas.isna(info["purchase_probability"])
+            and not pandas.isna(info["potential_order_amount"])
         ):
-            estimate = ""
-        else:
             estimate = f'{round(info["potential_order_amount"] * info["purchase_probability"] / 100):,} ₽'.replace(
                 ",", " "
             )
