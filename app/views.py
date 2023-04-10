@@ -3896,6 +3896,7 @@ class WeekStatsManagersView(FilteringBaseView):
                             "is_group": True,
                             "inactive": len(rows[~rows["inactive"]]) == 0,
                             "manager": f'Группа "{group_id}"',
+                            "manager_id": "Итого",
                             "count_zoom": group_count_zoom,
                             "profit_from_zoom": group_profit_from_zoom,
                             "profit_on_zoom": group_profit_on_zoom,
