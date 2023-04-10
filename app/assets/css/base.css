@@ -256,7 +256,7 @@ label {
     line-height:1;
     margin:0 0 5px 0;
     font-weight:bold;
-    font-size:.875rem;
+    font-size:.75rem;
     white-space:nowrap;
 }
 
@@ -306,6 +306,7 @@ label {
 .filter-block > .field > input[type=date],
 .filter-block > .field > input[type=text],
 .filter-block > .field > input[type=month],
+.filter-block > .field > input[type=number],
 .filter-block > .field > select {
     width:200px;
     height:30px;

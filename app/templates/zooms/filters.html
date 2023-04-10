@@ -1,11 +1,11 @@
 <form action="{{ url_for('zooms') }}">
     <div class="filter-block">
         <div class="field">
-            <label for="field-date_from">С даты</label>
+            <label for="field-date_from">Дата зума с</label>
             <input type="date" name="date_from" id="field-date_from" value="{% if filters.date_from %}{{ filters.date_from }}{% endif %}">
         </div>
         <div class="field">
-            <label for="field-date_to">По дату</label>
+            <label for="field-date_to">Дата зума по</label>
             <input type="date" name="date_to" id="field-date_to" value="{% if filters.date_to %}{{ filters.date_to }}{% endif %}">
         </div>
         <div class="field">
@@ -40,6 +40,32 @@
         <div class="field" style="display:none">
             <label for="field-month">Месяц</label>
             <input type="month" id="field-month">
+        </div>
+    </div>
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-purchase_probability_from">Вероятность покупки с</label>
+            <input type="number" name="purchase_probability_from" id="field-purchase_probability_from" value="{% if filters.purchase_probability_from %}{{ filters.purchase_probability_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-purchase_probability_to">Вероятность покупки по</label>
+            <input type="number" name="purchase_probability_to" id="field-purchase_probability_to" value="{% if filters.purchase_probability_to %}{{ filters.purchase_probability_to }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-expected_payment_date_from">Ожидаемая дата оплаты с</label>
+            <input type="date" name="expected_payment_date_from" id="field-expected_payment_date_from" value="{% if filters.expected_payment_date_from %}{{ filters.expected_payment_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-expected_payment_date_to">Ожидаемая дата оплаты по</label>
+            <input type="date" name="expected_payment_date_to" id="field-expected_payment_date_to" value="{% if filters.expected_payment_date_to %}{{ filters.expected_payment_date_to }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-on_control">На контроле</label>
+            <select name="on_control" id="field-on_control">
+                <option value="__all__"{% if filters.on_control is none %} selected="selected"{% endif %}>-- Все --</option>
+                <option value="0"{% if filters.on_control is false %} selected="selected"{% endif %}>Нет</option>
+                <option value="1"{% if filters.on_control is true %} selected="selected"{% endif %}>Да</option>
+            </select>
         </div>
     </div>
     <div class="filter-actions">

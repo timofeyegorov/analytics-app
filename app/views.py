@@ -18,7 +18,7 @@ from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
 from transliterate import slugify
 from urllib.parse import urlparse, parse_qsl, urlencode
-from pydantic import BaseModel, ConstrainedDate
+from pydantic import BaseModel, ConstrainedDate, conint
 from werkzeug.datastructures import ImmutableMultiDict
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -240,6 +240,11 @@ class ZoomsFiltersData(BaseModel):
     date_to: Optional[ConstrainedDate]
     group: Optional[str]
     manager: Optional[str]
+    purchase_probability_from: Optional[conint(ge=0, le=100)]
+    purchase_probability_to: Optional[conint(ge=0, le=100)]
+    expected_payment_date_from: Optional[ConstrainedDate]
+    expected_payment_date_to: Optional[ConstrainedDate]
+    on_control: Optional[bool]
 
     def __getitem__(self, item):
         if item == "group":
@@ -2986,12 +2991,46 @@ class ZoomsView(FilteringBaseView):
         Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
     )
 
+    def filters_initial(self) -> Dict[str, Any]:
+        return {
+            "date_from": datetime.datetime.now().date() - datetime.timedelta(weeks=1),
+        }
+
     def filtering_values(self):
         if self.filters.date_from:
             self.values = self.values[self.values["date"] >= self.filters.date_from]
 
         if self.filters.date_to:
             self.values = self.values[self.values["date"] <= self.filters.date_to]
+
+        if self.filters.purchase_probability_from is not None:
+            self.values = self.values[
+                self.values["purchase_probability"]
+                >= self.filters.purchase_probability_from
+            ]
+
+        if self.filters.purchase_probability_to is not None:
+            self.values = self.values[
+                self.values["purchase_probability"]
+                <= self.filters.purchase_probability_to
+            ]
+
+        if self.filters.expected_payment_date_from:
+            self.values = self.values[
+                self.values["expected_payment_date"]
+                >= self.filters.expected_payment_date_from
+            ]
+
+        if self.filters.expected_payment_date_to:
+            self.values = self.values[
+                self.values["expected_payment_date"]
+                <= self.filters.expected_payment_date_to
+            ]
+
+        if self.filters.on_control is not None:
+            self.values = self.values[
+                self.values["on_control"] == self.filters.on_control
+            ]
 
         self.values.reset_index(drop=True, inplace=True)
 
@@ -3002,13 +3041,46 @@ class ZoomsView(FilteringBaseView):
         if date_from is None:
             date_from = initial.get("date_from")
         if isinstance(date_from, str):
-            date_from = datetime.date.fromisoformat(date_from)
+            date_from = (
+                datetime.date.fromisoformat(date_from) if str(date_from) else None
+            )
 
         date_to = request.args.get("date_to")
         if date_to is None:
             date_to = initial.get("date_to")
         if isinstance(date_to, str):
-            date_to = datetime.date.fromisoformat(date_to)
+            date_to = datetime.date.fromisoformat(date_to) if str(date_to) else None
+
+        purchase_probability_from = (
+            request.args.get("purchase_probability_from") or None
+        )
+        purchase_probability_to = request.args.get("purchase_probability_to") or None
+
+        expected_payment_date_from = (
+            request.args.get("expected_payment_date_from") or None
+        )
+        if expected_payment_date_from is None:
+            expected_payment_date_from = initial.get("expected_payment_date_from")
+        if isinstance(expected_payment_date_from, str):
+            expected_payment_date_from = datetime.date.fromisoformat(
+                expected_payment_date_from
+            )
+
+        expected_payment_date_to = request.args.get("expected_payment_date_to") or None
+        if expected_payment_date_to is None:
+            expected_payment_date_to = initial.get("expected_payment_date_to")
+        if isinstance(expected_payment_date_to, str):
+            expected_payment_date_to = datetime.date.fromisoformat(
+                expected_payment_date_to
+            )
+
+        on_control = request.args.get("on_control")
+        if on_control is None:
+            on_control = initial.get("on_control", "__all__")
+        if on_control == "__all__":
+            on_control = None
+        if on_control is not None:
+            on_control = parse_bool_from_int(on_control)
 
         group = request.args.get("group")
         if group is None:
@@ -3027,6 +3099,11 @@ class ZoomsView(FilteringBaseView):
             date_to=date_to,
             group=group,
             manager=manager,
+            purchase_probability_from=purchase_probability_from,
+            purchase_probability_to=purchase_probability_to,
+            expected_payment_date_from=expected_payment_date_from,
+            expected_payment_date_to=expected_payment_date_to,
+            on_control=on_control,
         )
 
         filters_class = self.get_filters_class()
@@ -3104,15 +3181,43 @@ class ZoomsView(FilteringBaseView):
                     "on_control",
                 ]
             )
-        self.filtering_values()
-        self.get_extras()
 
         self.values = self.values.merge(
             self.controllable, how="left", on=["manager_id", "lead", "date"]
         )
         self.values.fillna(pandas.NA, inplace=True)
+        if len(self.values):
+            self.values["estimate"] = (
+                self.values.apply(parse_estimate, axis=1).apply(parse_int).fillna("")
+            )
+        self.values["purchase_probability"] = (
+            self.values["purchase_probability"].apply(parse_int).fillna("")
+        )
+        self.values["potential_order_amount"] = (
+            self.values["potential_order_amount"].apply(parse_int).fillna("")
+        )
+        self.values["expected_payment_date"] = (
+            self.values["expected_payment_date"].apply(parse_date).fillna("")
+        )
+        self.values["on_control"] = (
+            self.values["on_control"].apply(parse_bool).fillna("")
+        )
+
+        self.filtering_values()
+        self.get_extras()
 
         data = self.values.sort_values(by=["group", "manager", "date"])
+
+        total = pandas.Series(
+            {
+                "name": "Итого",
+                "profit": data["profit"].sum(),
+                "potential_order_amount": data[data["potential_order_amount"] != ""][
+                    "potential_order_amount"
+                ].sum(),
+                "estimate": data[data["estimate"] != ""]["estimate"].sum(),
+            }
+        )
 
         data = data[
             [
@@ -3123,26 +3228,13 @@ class ZoomsView(FilteringBaseView):
                 "profit",
                 "manager_id",
                 "group_id",
+                "estimate",
                 "purchase_probability",
                 "potential_order_amount",
                 "expected_payment_date",
                 "on_control",
             ]
         ]
-        if len(data):
-            data["estimate"] = (
-                data.apply(parse_estimate, axis=1).apply(parse_int).fillna("")
-            )
-        data["purchase_probability"] = (
-            data["purchase_probability"].apply(parse_int).fillna("")
-        )
-        data["potential_order_amount"] = (
-            data["potential_order_amount"].apply(parse_int).fillna("")
-        )
-        data["expected_payment_date"] = (
-            data["expected_payment_date"].apply(parse_date).fillna("")
-        )
-        data["on_control"] = data["on_control"].apply(parse_bool).fillna("")
         data.rename(
             columns={
                 "group": "Группа",
@@ -3156,6 +3248,7 @@ class ZoomsView(FilteringBaseView):
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
+        self.context("total", total)
         self.context("data", data)
 
         return super().get()
@@ -3542,7 +3635,7 @@ class WeekStatsManagersView(FilteringBaseView):
             )
         )
         self.extras = {
-            "exclude_columns": ["is_group", "is_total", "inactive"],
+            "exclude_columns": ["is_group", "is_total", "inactive", "manager_id"],
             "month": month,
         }
 
@@ -3826,6 +3919,7 @@ class WeekStatsManagersView(FilteringBaseView):
                 "is_group",
                 "inactive",
                 "manager",
+                "manager_id",
                 "count_zoom",
                 "profit_from_zoom",
                 "profit_on_zoom",

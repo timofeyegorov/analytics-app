@@ -15,6 +15,15 @@
             </tr>
         </thead>
         <tbody>
+            <tr>
+                <td class="nowrap info" colspan="4">{{ total["name"] }}</td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["profit"]) }} ₽</td>
+                <td class="nowrap info"></td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["potential_order_amount"]) }} ₽</td>
+                <td class="nowrap info"></td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["estimate"]) }} ₽</td>
+                <td class="nowrap info"></td>
+            </tr>
             {% for index, item in data.iterrows() %}
                 <tr class="{% if item.inactive %}inactive{% endif %}{% if filters.hide_inactive_managers %} hidden{% endif %}" data-manager_id="{{ item["manager_id"] }}" data-lead="{{ item["Лид"] }}" data-date="{{ format_date(item["Дата зума"]) }}">
                     {% if item.is_group %}
