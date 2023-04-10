@@ -19,6 +19,28 @@
                 {% endif %}
             </select>
         </div>
+        <div class="field">
+            <label for="field-group">Группа</label>
+            <select name="group" id="field-group"{% if not extras.groups %} disabled="disabled"{% endif %}>
+                {% if extras.groups %}
+                    <option value="__all__">-- Все --</option>
+                    {% for option in extras.groups %}
+                        <option value="{{ option.0 }}"{% if option.0 == filters.group %} selected="selected"{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+    </div>
+    <div class="filter-block" style="margin-top:-.5rem">
+        <div class="field month">
+            {% for item in extras.month %}
+                <span data-value="{{ item.0 }}">{{ item.1 }}</span>
+            {% endfor %}
+        </div>
+        <div class="field" style="display:none">
+            <label for="field-month">Месяц</label>
+            <input type="month" id="field-month">
+        </div>
     </div>
     <div class="filter-actions">
         <button class="btn btn-primary">Обновить</button>

@@ -78,6 +78,8 @@ def parse_percent(value: float) -> float:
 
 
 def parse_bool_from_int(value: Optional[Any]) -> bool:
+    if str(value).lower() == "on":
+        value = 1
     if pandas.isna(value) or value is None:
         return False
     return bool(int(value))
@@ -236,14 +238,19 @@ class WeekStatsFiltersChannelsData(BaseModel):
 class ZoomsFiltersData(BaseModel):
     date_from: Optional[ConstrainedDate]
     date_to: Optional[ConstrainedDate]
+    group: Optional[str]
     manager: Optional[str]
 
     def __getitem__(self, item):
-        if item == "manager":
+        if item == "group":
+            return self.group
+        elif item == "manager":
             return self.manager
 
     def __setitem__(self, key, value):
-        if key == "manager":
+        if key == "group":
+            self.group = value
+        elif key == "manager":
             self.manager = value
 
 
@@ -3003,6 +3010,12 @@ class ZoomsView(FilteringBaseView):
         if isinstance(date_to, str):
             date_to = datetime.date.fromisoformat(date_to)
 
+        group = request.args.get("group")
+        if group is None:
+            group = initial.get("group", "__all__")
+        if group == "__all__":
+            group = None
+
         manager = request.args.get("manager")
         if manager is None:
             manager = initial.get("manager", "__all__")
@@ -3012,6 +3025,7 @@ class ZoomsView(FilteringBaseView):
         data = self.filters_preprocess(
             date_from=date_from,
             date_to=date_to,
+            group=group,
             manager=manager,
         )
 
@@ -3036,16 +3050,41 @@ class ZoomsView(FilteringBaseView):
         return groups.values.tolist()
 
     def get_extras(self):
+        cyr_month = [
+            "январь",
+            "февраль",
+            "март",
+            "апрель",
+            "май",
+            "июнь",
+            "июль",
+            "август",
+            "сентябрь",
+            "октябрь",
+            "ноябрь",
+            "декабрь",
+        ]
+        date = datetime.datetime.now()
+        year = date.year
+        month = list(
+            map(
+                lambda item: ("%i-%02i" % (year, item), cyr_month[item - 1]),
+                range(1, date.month + 1),
+            )
+        )
         self.extras = {
             "exclude_columns": [
                 "manager_id",
+                "group_id",
                 "estimate",
                 "purchase_probability",
                 "potential_order_amount",
                 "expected_payment_date",
                 "on_control",
             ],
+            "groups": self.get_extras_group("group"),
             "managers": self.get_extras_group("manager"),
+            "month": month,
         }
 
     def get(self):
@@ -3083,15 +3122,17 @@ class ZoomsView(FilteringBaseView):
                 "lead",
                 "profit",
                 "manager_id",
+                "group_id",
                 "purchase_probability",
                 "potential_order_amount",
                 "expected_payment_date",
                 "on_control",
             ]
         ]
-        data["estimate"] = (
-            data.apply(parse_estimate, axis=1).apply(parse_int).fillna("")
-        )
+        if len(data):
+            data["estimate"] = (
+                data.apply(parse_estimate, axis=1).apply(parse_int).fillna("")
+            )
         data["purchase_probability"] = (
             data["purchase_probability"].apply(parse_int).fillna("")
         )
