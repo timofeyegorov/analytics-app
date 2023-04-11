@@ -3212,6 +3212,7 @@ class ZoomsView(FilteringBaseView):
             {
                 "name": "Итого",
                 "profit": data["profit"].sum(),
+                "lead": len(data),
                 "potential_order_amount": data[data["potential_order_amount"] != ""][
                     "potential_order_amount"
                 ].sum(),

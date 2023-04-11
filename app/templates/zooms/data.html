@@ -16,7 +16,8 @@
         </thead>
         <tbody>
             <tr>
-                <td class="nowrap info" colspan="4">{{ total["name"] }}</td>
+                <td class="nowrap info" colspan="3">{{ total["name"] }}</td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["lead"]) }}</td>
                 <td class="nowrap info font-monospace text-right">{{ format_int(total["profit"]) }} ₽</td>
                 <td class="nowrap info"></td>
                 <td class="nowrap info font-monospace text-right">{{ format_int(total["potential_order_amount"]) }} ₽</td>
