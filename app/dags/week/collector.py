@@ -633,28 +633,6 @@ def get_stats():
             source_payments["profit"].fillna(0, inplace=True)
             source_payments.drop(columns=["channel"], inplace=True)
 
-        # elif title == "Количество Zoom":
-        #     source_zoom_count: pandas.DataFrame = processing_source(
-        #         values,
-        #         [
-        #             ("menedzher", "manager", parse_str),
-        #             ("gruppa", "group", parse_str_with_empty),
-        #         ]
-        #         + list(
-        #             map(lambda item: (parse_slug(item), item, parse_int), values[0][2:])
-        #         ),
-        #     )
-        #     source_zoom_count.insert(
-        #         0, "manager_id", source_zoom_count["manager"].apply(parse_slug)
-        #     )
-        #     source_zoom_count = source_zoom_count[
-        #         ~(
-        #             source_zoom_count["manager_id"].isna()
-        #             | (source_zoom_count["manager_id"] == "")
-        #         )
-        #     ].reset_index(drop=True)
-        #     source_zoom_count.fillna(0, inplace=True)
-
         elif title == "SpecialOffers":
             source_so: pandas.DataFrame = processing_source(
                 values,
@@ -680,7 +658,6 @@ def get_stats():
     manager_group = pandas.concat(
         [
             source_payments[["manager_id", "manager", "group"]],
-            # source_zoom_count[["manager_id", "manager", "group"]],
             source_so[["manager_id", "manager", "group"]],
         ],
         ignore_index=True,
@@ -713,7 +690,6 @@ def get_stats():
         .reset_index(drop=True)
     )
     source_payments.drop(columns=["group", "manager"], inplace=True)
-    # source_zoom_count.drop(columns=["group", "manager"], inplace=True)
     source_so.drop(columns=["group", "manager"], inplace=True)
     # --------------------------------------------------------------------------
 
@@ -829,25 +805,6 @@ def get_stats():
         .sort_values(by=["date"])
         .reset_index(drop=True)
     )
-    # zoom_count_list = []
-    # for manager_id, manager_id_rows in source_zoom_count.groupby(by=["manager_id"]):
-    #     counts = pandas.DataFrame([manager_id_rows.drop(columns=["manager_id"]).sum()])
-    #     counts = counts.T
-    #     counts.reset_index(inplace=True)
-    #     counts.rename(
-    #         columns={"index": "date", counts.columns[1]: "count"}, inplace=True
-    #     )
-    #     counts.insert(0, "manager_id", manager_id)
-    #     counts["date"] = counts["date"].apply(parse_date)
-    #     counts["count"] = counts["count"].apply(parse_int)
-    #     counts = counts[counts["count"] > 0].reset_index(drop=True)
-    #     if len(counts):
-    #         zoom_count_list.append(counts)
-    # zoom_count = (
-    #     pandas.concat(zoom_count_list, ignore_index=True)
-    #     .sort_values(by=["date"])
-    #     .reset_index(drop=True)
-    # )
     # --------------------------------------------------------------------------
 
     # --- Собираем оплаты zoom -------------------------------------------------

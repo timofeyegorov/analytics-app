@@ -4043,13 +4043,6 @@ class WeekStatsChannelsView(FilteringBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
-        self.values_expenses = self.values_expenses[
-            self.values_expenses["country"].str.contains("Россия", case=False)
-        ]
-        self.roistat = self.roistat[
-            self.roistat["country"].str.contains("Россия", case=False)
-        ]
-
         if self.filters.order_date_from:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["date"] >= self.filters.order_date_from
