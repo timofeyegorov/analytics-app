@@ -11,3 +11,7 @@
     {% include 'week-stats/channels/filters.html' %}
     {% include 'week-stats/channels/data.html' %}
 {% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/week-stats/channels/index.js') }}"></script>
+{% endblock js %}

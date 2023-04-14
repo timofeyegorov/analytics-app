@@ -17,6 +17,17 @@
             <input type="date" name="profit_date_to" id="field-profit_date_to" value="{% if filters.profit_date_to %}{{ filters.profit_date_to }}{% endif %}">
         </div>
     </div>
+    <div class="filter-block" style="margin-top:-.5rem">
+        <div class="field month">
+            {% for item in extras.month %}
+                <span data-value="{{ item.0 }}">{{ item.1 }}</span>
+            {% endfor %}
+        </div>
+        <div class="field" style="display:none">
+            <label for="field-month">Месяц</label>
+            <input type="month" id="field-month">
+        </div>
+    </div>
     <div class="filter-actions">
         <button class="btn btn-primary">Обновить</button>
         <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>

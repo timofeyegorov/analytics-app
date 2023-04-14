@@ -4082,8 +4082,31 @@ class WeekStatsChannelsView(FilteringBaseView):
             ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
+        cyr_month = [
+            "январь",
+            "февраль",
+            "март",
+            "апрель",
+            "май",
+            "июнь",
+            "июль",
+            "август",
+            "сентябрь",
+            "октябрь",
+            "ноябрь",
+            "декабрь",
+        ]
+        date = datetime.datetime.now()
+        year = date.year
+        month = list(
+            map(
+                lambda item: ("%i-%02i" % (year, item), cyr_month[item - 1]),
+                range(1, date.month + 1),
+            )
+        )
         self.extras = {
             "exclude_columns": ["is_total", "count"],
+            "month": month,
         }
 
     def get_accounts_as_channel(self) -> pandas.DataFrame:
