@@ -95,6 +95,13 @@
             $("#field-month").val(event.currentTarget.dataset.value).trigger("input");
         });
 
+        $(".excel-download").bind("click", (event) => {
+            let form = $(event.currentTarget).closest("form");
+            form[0].method = "post";
+            form[0].action = window.location.href;
+            form.submit();
+        });
+
     });
 
 

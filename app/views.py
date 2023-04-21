@@ -24,7 +24,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 from xlsxwriter import Workbook
 
-from flask import request, render_template, send_file, abort
+from flask import request, render_template, send_file, abort, send_file
 from flask.views import MethodView
 
 from app.plugins.ads import vk
@@ -3164,7 +3164,7 @@ class ZoomsView(FilteringBaseView):
             "month": month,
         }
 
-    def get(self):
+    def get(self, is_download=False):
         self.get_filters()
         self.values = self.load_dataframe(self.values_path)
         try:
@@ -3252,7 +3252,70 @@ class ZoomsView(FilteringBaseView):
         self.context("total", total)
         self.context("data", data)
 
-        return super().get()
+        if is_download:
+            return data, total
+        else:
+            return super().get()
+
+    def fill_yes_no(self, value: bool) -> str:
+        if value is True:
+            return "Да"
+        elif value is False:
+            return "Нет"
+        else:
+            return ""
+
+    def post(self, *args, **kwargs):
+        data, total = self.get(is_download=True)
+        data["Лид"] = data["Лид"].apply(
+            lambda item: f"https://neuraluniversity.amocrm.ru/leads/detail/{item}/"
+        )
+        data["on_control"] = data["on_control"].apply(self.fill_yes_no)
+        total.rename(
+            {
+                "name": "Группа",
+                "profit": "Оплата",
+                "lead": "Лид",
+            },
+            inplace=True,
+        )
+        data = pandas.concat([pandas.DataFrame([total]), data])
+        data.rename(
+            columns={
+                "potential_order_amount": "Потенциальная сумма заказа",
+                "estimate": "Оценочный оборот",
+                "purchase_probability": "Вероятность покупки",
+                "expected_payment_date": "Ожидаемая дата оплаты",
+                "on_control": "На контроле",
+            },
+            inplace=True,
+        )
+        columns = [
+            "Группа",
+            "Менеджер",
+            "Дата зума",
+            "Лид",
+            "Оплата",
+            "Вероятность покупки",
+            "Потенциальная сумма заказа",
+            "Ожидаемая дата оплаты",
+            "Оценочный оборот",
+            "На контроле",
+        ]
+        data = data.reindex(columns, axis=1)
+        data.fillna("", inplace=True)
+        data.reset_index(drop=True, inplace=True)
+        target = tempfile.NamedTemporaryFile(
+            delete=False, prefix="zooms-", suffix=".xlsx"
+        )
+        with pandas.ExcelWriter(target.name, engine="xlsxwriter") as writer:
+            data.to_excel(writer)
+        return send_file(
+            target.name,
+            as_attachment=True,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            download_name="zooms.xlsx",
+        )
 
 
 class WeekStatsBaseCohortsView(FilteringBaseView):
