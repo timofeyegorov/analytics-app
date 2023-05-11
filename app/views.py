@@ -538,16 +538,30 @@ class Calculate:
                 str(name), pandas.DataFrame(columns=self.columns.keys())
             )
 
-            expenses = round(stats_group.expenses.sum())
+            expenses = (
+                round(stats_group.expenses.sum()) if stats_group is not None else 0
+            )
             if not expenses and name != ":utm:email":
                 expenses = leads * 400
 
-            expenses_month = round(stats_group_30d.expenses.sum())
+            expenses_month = (
+                round(stats_group_30d.expenses.sum())
+                if stats_group_30d is not None
+                else 0
+            )
             if not expenses_month and name != ":utm:email":
                 expenses_month = leads_30d * 400
 
-            name = stats_group[self._filters.groupby].unique()[0]
-            title = stats_group[f"{self._filters.groupby}_title"].unique()[0]
+            name = (
+                stats_group[self._filters.groupby].unique()[0]
+                if stats_group is not None
+                else "undefined"
+            )
+            title = (
+                stats_group[f"{self._filters.groupby}_title"].unique()[0]
+                if stats_group is not None
+                else "Undefined"
+            )
             income = int(group.ipl.sum())
             income_month = int(group_30d.ipl.sum())
             ipl = int(round(income / leads)) if leads else 0
@@ -865,6 +879,8 @@ class StatisticsRoistatView(TemplateView):
         if name is None:
             return None, None
 
+        if name == "undefined":
+            name = ""
         leads = self.leads[self.leads[self.filters.groupby] == name]
         statistics = self.statistics[self.statistics[self.filters.groupby] == name]
 
@@ -899,6 +915,7 @@ class StatisticsRoistatView(TemplateView):
 
         extra = extra_table(leads)
 
+        stats_grouped = statistics[f"{self.filters.groupby}_title"].unique()
         return (
             {
                 "title": "Дополнительная таблица",
@@ -907,8 +924,8 @@ class StatisticsRoistatView(TemplateView):
                 "data": extra,
             },
             {
-                "title": f"Лиды в разбивке по {StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {statistics[f'{self.filters.groupby}_title'].unique()[0]}",
-                "title_short": f"{StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {statistics[f'{self.filters.groupby}_title'].unique()[0]}",
+                "title": f"Лиды в разбивке по {StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {stats_grouped[0] if len(stats_grouped) else 'Undefined'}",
+                "title_short": f"{StatisticsRoistatGroupByEnum[self.filters.groupby].value} = {stats_grouped[0] if len(stats_grouped) else 'Undefined'}",
                 "data": leads,
             },
         )
@@ -1003,6 +1020,13 @@ class StatisticsRoistatView(TemplateView):
         self.extras["columns"]["name"] = StatisticsRoistatGroupByEnum[
             self.filters.groupby
         ].value
+
+        """
+        self.leads: 
+        self.statistics: 
+        self.leads_30d: 
+        self.statistics_30d: 
+        """
 
         calc = Calculate(
             self.leads,
