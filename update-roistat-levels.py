@@ -2,6 +2,7 @@
 
 import pickle
 
+from tqdm import tqdm
 from pathlib import Path
 from datetime import datetime, time, timedelta
 from argparse import ArgumentParser
@@ -19,23 +20,22 @@ class ArgumentParserService(ArgumentParser):
             "-df",
             "--date-from",
             type=lambda value: datetime.strptime(value, "%d.%m.%Y").date(),
-            required=True,
             help="From date. Format %%d.%%m.%%Y",
         )
         self.add_argument(
             "-dt",
             "--date-to",
             type=lambda value: datetime.strptime(value, "%d.%m.%Y").date(),
-            required=True,
             help="To date. Format %%d.%%m.%%Y",
         )
 
     @property
     def args(self):
         args = self.parse_args()
-        assert (
-            args.date_from <= args.date_to
-        ), "From date must be less or equivalent date to"
+        if args.date_from and args.date_to:
+            assert (
+                args.date_from <= args.date_to
+            ), "From date must be less or equivalent date to"
         return args
 
 
@@ -45,10 +45,13 @@ def run():
     args = ArgumentParserService().args
     leads = pickle_loader.roistat_leads
     leads["d"] = leads["date"].apply(lambda item: item.date())
-    leads = leads[(leads["d"] >= args.date_from) & (leads["d"] <= args.date_to)]
+    if args.date_from is not None:
+        leads = leads[leads["d"] >= args.date_from]
+    if args.date_to is not None:
+        leads = leads[leads["d"] <= args.date_to]
     leads = leads.loc[:, leads.columns != "d"]
     leads.rename(columns={"url": "traffic_channel"}, inplace=True)
-    for index, lead in leads.iterrows():
+    for index, lead in tqdm(leads.iterrows(), total=len(leads), desc="-- Progress"):
         stats = statistics[statistics.date == lead.date]
         levels = RoistatDetectLevels(lead, stats)
         leads.loc[index, columns] = [

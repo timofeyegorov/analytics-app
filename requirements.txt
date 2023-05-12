@@ -18,3 +18,4 @@ XlsxWriter==3.0.3
 pytz==2022.2.1
 colour==0.1.5
 openpyxl==3.1.2
+tqdm==4.65.0

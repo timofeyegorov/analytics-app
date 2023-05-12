@@ -15,6 +15,7 @@ from enum import Enum
 from time import sleep
 from typing import List, Dict, Optional, Any
 from pandas import DataFrame
+from pathlib import Path
 from urllib.parse import urlparse, parse_qsl, ParseResult
 
 sys.path.append(Variable.get("APP_FOLDER"))
@@ -704,32 +705,33 @@ def roistat_leads():
         pkl.dump(leads, f)
 
 
-# @log_execution_time("roistat_update_levels")
-# def roistat_update_levels():
-#     statistics = pickle_loader.roistat_statistics
-#     columns = ["account", "campaign", "group", "ad"]
-#     args = ArgumentParserService().args
-#     leads = pickle_loader.roistat_leads
-#     leads["d"] = leads["date"].apply(lambda item: item.date())
-#     leads = leads[(leads["d"] >= args.date_from) & (leads["d"] <= args.date_to)]
-#     leads = leads.loc[:, leads.columns != "d"]
-#     leads.rename(columns={"url": "traffic_channel"}, inplace=True)
-#
-#     for index, lead in leads.iterrows():
-#         stats = statistics[statistics.date == lead.date]
-#         levels = RoistatDetectLevels(lead, stats)
-#         leads.loc[index, columns] = [
-#             levels.account,
-#             levels.campaign,
-#             levels.group,
-#             levels.ad,
-#         ]
-#     leads.rename(columns={"traffic_channel": "url"}, inplace=True)
-#
-#     source = pickle_loader.roistat_leads
-#     source.loc[leads.index, columns] = leads[columns].values
-#     with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
-#         pickle.dump(source, file_ref)
+@log_execution_time("roistat_update_levels")
+def roistat_update_levels():
+    statistics = pickle_loader.roistat_statistics
+    columns = ["account", "campaign", "group", "ad"]
+    date_to = datetime.datetime.now()
+    date_from = date_to - datetime.timedelta(weeks=1)
+    leads = pickle_loader.roistat_leads
+    leads["d"] = leads["date"].apply(lambda item: item.date())
+    leads = leads[(leads["d"] >= date_from.date()) & (leads["d"] <= date_to.date())]
+    leads = leads.loc[:, leads.columns != "d"]
+    leads.rename(columns={"url": "traffic_channel"}, inplace=True)
+
+    for index, lead in leads.iterrows():
+        stats = statistics[statistics.date == lead.date]
+        levels = RoistatDetectLevels(lead, stats)
+        leads.loc[index, columns] = [
+            levels.account,
+            levels.campaign,
+            levels.group,
+            levels.ad,
+        ]
+    leads.rename(columns={"traffic_channel": "url"}, inplace=True)
+
+    source = pickle_loader.roistat_leads
+    source.loc[leads.index, columns] = leads[columns].values
+    with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
+        pkl.dump(source, file_ref)
 
 
 dag = DAG(
@@ -831,6 +833,9 @@ roistat_statistics_operator = PythonOperator(
 roistat_leads_operator = PythonOperator(
     task_id="roistat_leads", python_callable=roistat_leads, dag=dag
 )
+roistat_update_levels_operator = PythonOperator(
+    task_id="roistat_update_levels", python_callable=roistat_update_levels, dag=dag
+)
 
 crops_operator >> clean_data_operator
 trafficologists_operator >> clean_data_operator
@@ -875,3 +880,4 @@ clean_data_operator >> traffic_sources_operator
 clean_data_operator >> roistat_analytics_operator
 roistat_analytics_operator >> roistat_statistics_operator
 roistat_statistics_operator >> roistat_leads_operator
+roistat_leads_operator >> roistat_update_levels_operator
