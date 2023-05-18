@@ -895,6 +895,8 @@ class StatisticsRoistatView(TemplateView):
                     "qa4",
                     "qa5",
                     "qa6",
+                    "email",
+                    "url",
                 ]
             ]
             .rename(
@@ -907,6 +909,8 @@ class StatisticsRoistatView(TemplateView):
                     "qa4": "Ответ 4",
                     "qa5": "Ответ 5",
                     "qa6": "Ответ 6",
+                    "email": "E-mail",
+                    "url": "URL",
                 }
             )
             .sort_values(by=["Дата"])
