@@ -35,7 +35,9 @@ from app.data import (
     StatisticsProviderEnum,
     StatisticsGroupByEnum,
     StatisticsRoistatGroupByEnum,
+    StatisticsUTMGroupByEnum,
     CalculateColumnEnum,
+    StatisticsUTMColumnEnum,
 )
 from config import DATA_FOLDER, CREDENTIALS_FILE, RESULTS_FOLDER
 
@@ -286,6 +288,41 @@ class StatisticsRoistatFiltersData(BaseModel):
             self.campaign = value
         elif key == "group":
             self.group = value
+
+
+class StatisticsUTMFiltersData(BaseModel):
+    date: Tuple[Optional[ConstrainedDate], Optional[ConstrainedDate]]
+    utm_source: Optional[str]
+    utm_medium: Optional[str]
+    utm_campaign: Optional[str]
+    utm_term: Optional[str]
+    utm_content: Optional[str]
+    groupby: str
+    only_ru: bool
+
+    def __getitem__(self, item):
+        if item == "utm_source":
+            return self.utm_source
+        elif item == "utm_medium":
+            return self.utm_medium
+        elif item == "utm_campaign":
+            return self.utm_campaign
+        elif item == "utm_term":
+            return self.utm_term
+        elif item == "utm_content":
+            return self.utm_content
+
+    def __setitem__(self, key, value):
+        if key == "utm_source":
+            self.utm_source = value
+        elif key == "utm_medium":
+            self.utm_medium = value
+        elif key == "utm_campaign":
+            self.utm_campaign = value
+        elif key == "utm_term":
+            self.utm_term = value
+        elif key == "utm_content":
+            self.utm_content = value
 
 
 class StatisticsView(TemplateView):
@@ -1025,13 +1062,6 @@ class StatisticsRoistatView(TemplateView):
             self.filters.groupby
         ].value
 
-        """
-        self.leads: 
-        self.statistics: 
-        self.leads_30d: 
-        self.statistics_30d: 
-        """
-
         calc = Calculate(
             self.leads,
             self.statistics,
@@ -1155,6 +1185,273 @@ class StatisticsRoistatView(TemplateView):
         self.context("extras", self.extras)
         self.context("columns", self.output_columns)
         self.context("data", calc.data)
+        self.context("total", pandas.Series(total_data))
+        self.context("url", link)
+        self.context("qs_tail", "&" if qs else "?")
+        self.context("details", details)
+        self.context("details_extra", details_extra)
+        self.context("details_leads", details_leads)
+        self.context("order", order)
+
+        return super().get()
+
+
+class StatisticsUTMView(TemplateView):
+    template_name: str = "statistics/utm/index.html"
+    title: str = "Статистика UTM"
+
+    leads: pandas.DataFrame = None
+    filters: StatisticsUTMFiltersData = None
+
+    output_columns: List[str] = [
+        StatisticsUTMColumnEnum.name.name,
+        StatisticsUTMColumnEnum.leads.name,
+        StatisticsUTMColumnEnum.income.name,
+        StatisticsUTMColumnEnum.ipl.name,
+    ]
+
+    def parse_order(self, order: str, available: List[str]) -> List[Dict[str, str]]:
+        output = []
+        if order:
+            for item in order.split(","):
+                direction = "asc"
+                if item[0] == "-":
+                    direction = "desc"
+                    item = item[1:]
+                if item in available:
+                    output.append({"name": item, "direction": direction})
+        return output
+
+    def get_filters(self, source: ImmutableMultiDict) -> StatisticsUTMFiltersData:
+        date = [source.get("date_from") or None, source.get("date_to") or None]
+        utm_source = source.get("utm_source", "__all__")
+        utm_medium = source.get("utm_medium", "__all__")
+        utm_campaign = source.get("utm_campaign", "__all__")
+        utm_term = source.get("utm_term", "__all__")
+        utm_content = source.get("utm_content", "__all__")
+        groupby = source.get("groupby")
+        only_ru = bool(source.get("only_ru"))
+
+        if utm_source == "__all__":
+            utm_source = None
+        if utm_medium == "__all__":
+            utm_medium = None
+        if utm_campaign == "__all__":
+            utm_campaign = None
+        if utm_term == "__all__":
+            utm_term = None
+        if utm_content == "__all__":
+            utm_content = None
+
+        try:
+            StatisticsUTMGroupByEnum[groupby]
+        except KeyError:
+            groupby = StatisticsUTMGroupByEnum.utm_source.name
+
+        return StatisticsUTMFiltersData(
+            date=date,
+            utm_source=utm_source,
+            utm_medium=utm_medium,
+            utm_campaign=utm_campaign,
+            utm_term=utm_term,
+            utm_content=utm_content,
+            groupby=groupby,
+            only_ru=only_ru,
+        )
+
+    def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
+        values = list(self.leads[group].unique())
+        output = tuple(zip(values, values))
+        if self.filters[group] not in values:
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            self.leads = self.leads[self.leads[group] == self.filters[group]]
+        return output
+
+    def get_extras(self) -> Dict[str, Any]:
+        utm_sources = self.get_extras_group("utm_source")
+        utm_mediums = self.get_extras_group("utm_medium")
+        utm_campaigns = self.get_extras_group("utm_campaign")
+        utm_terms = self.get_extras_group("utm_term")
+        utm_contents = self.get_extras_group("utm_content")
+
+        return {
+            "groupby": list(
+                map(
+                    lambda item: (item[0], item[1]),
+                    StatisticsUTMGroupByEnum.dict().items(),
+                )
+            ),
+            "utm_sources": sorted(utm_sources, key=lambda item: item[1]),
+            "utm_mediums": sorted(utm_mediums, key=lambda item: item[1]),
+            "utm_campaigns": sorted(utm_campaigns, key=lambda item: item[1]),
+            "utm_terms": sorted(utm_terms, key=lambda item: item[1]),
+            "utm_contents": sorted(utm_contents, key=lambda item: item[1]),
+            "columns": StatisticsUTMColumnEnum.dict(),
+        }
+
+    def get_details(
+        self, name: str = None
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+        if name is None:
+            return None, None
+
+        title = name
+        if not title:
+            title = "Undefined"
+
+        leads = self.leads[self.leads[self.filters.groupby] == name]
+
+        leads = (
+            leads[
+                [
+                    "date",
+                    "ipl",
+                    "qa1",
+                    "qa2",
+                    "qa3",
+                    "qa4",
+                    "qa5",
+                    "qa6",
+                    "email",
+                    "url",
+                ]
+            ]
+            .rename(
+                columns={
+                    "date": "Дата",
+                    "ipl": "IPL",
+                    "qa1": "Ответ 1",
+                    "qa2": "Ответ 2",
+                    "qa3": "Ответ 3",
+                    "qa4": "Ответ 4",
+                    "qa5": "Ответ 5",
+                    "qa6": "Ответ 6",
+                    "email": "E-mail",
+                    "url": "URL",
+                }
+            )
+            .sort_values(by=["Дата"])
+            .reset_index(drop=True)
+        )
+
+        extra = extra_table(leads)
+
+        return (
+            {
+                "title": "Дополнительная таблица",
+                "columns0": extra.columns.get_level_values(0).unique(),
+                "columns1": extra.columns.get_level_values(1),
+                "data": extra,
+            },
+            {
+                "title": f"Лиды в разбивке по {StatisticsUTMGroupByEnum[self.filters.groupby].value} = {title}",
+                "title_short": f"{StatisticsUTMGroupByEnum[self.filters.groupby].value} = {title}",
+                "data": leads,
+            },
+        )
+
+    def get_statistics(self) -> pandas.DataFrame:
+        leads = self.leads.copy()
+
+        tz = pytz.timezone("Europe/Moscow")
+        date = list(self.filters.date)
+
+        if date[0]:
+            date_from = tz.localize(
+                datetime.datetime(
+                    year=date[0].year, month=date[0].month, day=date[0].day
+                )
+            )
+            leads = leads[leads.date >= date_from]
+
+        if date[1]:
+            date_to = tz.localize(
+                datetime.datetime(
+                    year=date[1].year, month=date[1].month, day=date[1].day
+                )
+            )
+            leads = leads[leads.date <= date_to]
+
+        if self.filters.only_ru:
+            leads = leads[leads.qa1 == "Россия"]
+
+        return leads
+
+    def get(self):
+        self.leads = pickle_loader.roistat_leads
+        self.filters = self.get_filters(request.args)
+        self.leads = self.get_statistics()
+        self.extras = self.get_extras()
+        self.extras["columns"]["name"] = StatisticsUTMGroupByEnum[
+            self.filters.groupby
+        ].value
+
+        data = pandas.DataFrame(columns=self.extras["columns"].keys())
+        for name, group in self.leads.groupby(by=self.filters.groupby, dropna=False):
+            leads = len(group)
+            if not leads:
+                continue
+            income = int(group.ipl.sum())
+            ipl = int(round(income / leads)) if leads else 0
+            data = data.append(
+                {
+                    StatisticsUTMColumnEnum.name.name: (
+                        name,
+                        "Undefined" if not name else name,
+                    ),
+                    StatisticsUTMColumnEnum.leads.name: leads,
+                    StatisticsUTMColumnEnum.income.name: income,
+                    StatisticsUTMColumnEnum.ipl.name: ipl,
+                },
+                ignore_index=True,
+            )
+
+        data = data.reset_index(drop=True)
+
+        total_data = dict(
+            zip(
+                self.extras["columns"].keys(),
+                [None] * len(self.extras["columns"].keys()),
+            )
+        )
+        total_title = "Итого"
+        total_leads = data.leads.sum()
+        total_income = data.income.sum()
+        total_ipl = int(round(total_income / total_leads)) if total_leads else 0
+        total_data.update(
+            {
+                CalculateColumnEnum.name.name: total_title,
+                CalculateColumnEnum.leads.name: total_leads,
+                CalculateColumnEnum.income.name: total_income,
+                CalculateColumnEnum.ipl.name: total_ipl,
+            }
+        )
+
+        details = request.args.get("details")
+        if details not in list(map(lambda item: item[0], data.name.unique())):
+            details = None
+        details_extra, details_leads = self.get_details(details)
+
+        url = urlparse(request.url)
+        qs = dict(parse_qsl(url.query))
+        qs.pop("details", None)
+        link = request.path
+        if qs:
+            link = f"{link}?{urlencode(qs)}"
+
+        order = self.parse_order(request.args.get("orderby", ""), list(data.columns))
+
+        data.sort_values(
+            by=list(map(lambda item: item.get("name"), order)),
+            ascending=list(map(lambda item: item.get("direction") == "asc", order)),
+            inplace=True,
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("columns", self.output_columns)
+        self.context("data", data)
         self.context("total", pandas.Series(total_data))
         self.context("url", link)
         self.context("qs_tail", "&" if qs else "?")

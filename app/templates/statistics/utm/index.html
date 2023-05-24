@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    {% include 'base_links.html' %}
+    {% include 'statistics/utm/filters.html' %}
+    {% include 'statistics/utm/data.html' %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/statistics/utm/index.js') }}"></script>
+{% endblock js %}

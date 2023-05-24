@@ -1,0 +1,115 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in columns %}
+                    {% set ordering = order_table(column, order) %}
+                    <th class="sticky nowrap ordering{% if ordering %} ordered{% endif %}" data-orderby="{{ column }}">{% if ordering %}<div class="order"><i class="remove"></i><i class="dir {{ ordering.direction }}"></i><i class="num">{{ ordering.num }}</i>{{ extras.columns[column] }}</div>{% else %}{{ extras.columns[column] }}{% endif %}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% for column in columns %}
+                    {% if column in ["leads", "income", "ipl"] %}
+                        <td class="nowrap font-monospace text-right">
+                            {% if column in ["leads", "income", "ipl"] %}
+                                {{ format_int(total[column]) }}
+                            {% else %}
+                                {{ total[column] }}
+                            {% endif %}
+                        </td>
+                    {% elif column == "name" %}
+                        <th>&nbsp;</th>
+                        <td class="colored">{{ total[column] }}</td>
+                    {% else %}
+                        <td>{{ total[column] }}</td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% for index, statistic in data.iterrows() %}
+                <tr{% if statistic.get("name").0 == details %} class="details"{% endif %}>
+                    <th class="nowrap">{{ index + 1 }}</th>
+                    {% for column in columns %}
+                        {% if column in ["leads", "income", "ipl"] %}
+                            <td class="nowrap font-monospace text-right">
+                                {% if column in ["leads", "income", "ipl"] %}
+                                    {{ format_int(statistic[column]) }}
+                                {% else %}
+                                    {{ statistic[column] }}
+                                {% endif %}
+                            </td>
+                        {% else %}
+                            <td class="nowrap{% if is_tuple(statistic[column]) %} colored{% endif %}">{% if column == "name" %}<a href="{{ url }}{{ qs_tail }}details={{ statistic[column].0 }}">{% endif %}{% if is_tuple(statistic[column]) %}{{ statistic[column].1 }}{% else %}{{ statistic[column] }}{% endif %}{% if column == "name" %}</a>{% endif %}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if details_extra is not none %}
+<div id="statistics-extra">
+    <h2>{{ details_extra.title }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in details_extra.columns0 %}
+                    <th colspan="3" class="sticky nowrap">{{ column }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in details_extra.columns1 %}
+                    <th class="sticky nowrap">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, item in details_extra.data.iterrows() %}
+                <tr>
+                    <th class="nowrap">{{ index + 1 }}</th>
+                    {% for column in details_extra.data.columns %}
+                        <td>{{ item[column] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if details_leads is not none %}
+<div id="statistics-leads">
+    <h2>{{ details_leads.title }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="sticky nowrap">&nbsp;</th>
+                {% for column in details_leads.data.columns %}
+                    <th class="sticky nowrap">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, item in details_leads.data.iterrows() %}
+                <tr>
+                    <th class="nowrap">{{ index + 1 }}</th>
+                    {% for column in details_leads.data.columns %}
+                        {% if column == "Дата" %}
+                            <td class="nowrap font-monospace">{{ format_date(item[column]) }}</td>
+                        {% elif column == "IPL" %}
+                            <td class="nowrap font-monospace text-right">{{ format_float2(item[column]) }}</td>
+                        {% else %}
+                            <td class="nowrap">{{ item[column] }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}

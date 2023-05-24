@@ -37,6 +37,18 @@ class StatisticsRoistatGroupByEnum(Enum):
         return dict(map(lambda item: (item.name, item.value), cls))
 
 
+class StatisticsUTMGroupByEnum(Enum):
+    utm_source = "UTM source"
+    utm_medium = "UTM medium"
+    utm_campaign = "UTM campaign"
+    utm_term = "UTM term"
+    utm_content = "UTM content"
+
+    @classmethod
+    def dict(cls) -> Dict[str, str]:
+        return dict(map(lambda item: (item.name, item.value), cls))
+
+
 class StatisticsRoistatPackageEnum(Enum):
     vk = "ВКонтакте"
     yandex_direct = "Яндекс.Директ"
@@ -71,6 +83,17 @@ class CalculateColumnEnum(Enum):
     leads_range = "Лиды range"
     leads_30d = "Лиды 30d"
     action = "Действие"
+
+    @classmethod
+    def dict(cls) -> Dict[str, str]:
+        return dict(map(lambda item: (item.name, item.value), cls))
+
+
+class StatisticsUTMColumnEnum(Enum):
+    name = "Название"
+    leads = "Лиды"
+    income = "Оборот"
+    ipl = "IPL"
 
     @classmethod
     def dict(cls) -> Dict[str, str]:
