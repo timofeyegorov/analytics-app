@@ -897,6 +897,10 @@ app.add_url_rule(
     view_func=views.ZoomsView.as_view("zooms"),
 )
 app.add_url_rule(
+    "/intensives",
+    view_func=views.IntensivesView.as_view("intensives"),
+)
+app.add_url_rule(
     "/api/change-zoom/<manager_id>/<lead>/<date>",
     view_func=views.ChangeZoomView.as_view("change_zoom"),
 )

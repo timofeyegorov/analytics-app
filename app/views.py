@@ -261,6 +261,11 @@ class ZoomsFiltersData(BaseModel):
             self.manager = value
 
 
+class IntensivesFiltersData(BaseModel):
+    date_from: Optional[ConstrainedDate]
+    date_to: Optional[ConstrainedDate]
+
+
 class SearchLeadsFiltersData(BaseModel):
     id: str = ""
 
@@ -4846,3 +4851,60 @@ class ChangeZoomView(APIView):
         self.data = {"estimate": estimate}
 
         return super().post()
+
+
+class IntensivesView(FilteringBaseView):
+    template_name = "intensives/index.html"
+    title = "Интенсивы"
+
+    filters_class = IntensivesFiltersData
+    filters: IntensivesFiltersData
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        date_from = request.args.get("date_from")
+        if date_from is None:
+            date_from = initial.get("date_from")
+        if isinstance(date_from, str):
+            date_from = (
+                datetime.date.fromisoformat(date_from) if str(date_from) else None
+            )
+
+        date_to = request.args.get("date_to")
+        if date_to is None:
+            date_to = initial.get("date_to")
+        if isinstance(date_to, str):
+            date_to = datetime.date.fromisoformat(date_to) if str(date_to) else None
+
+        data = self.filters_preprocess(
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def get(self, is_download=False):
+        self.get_filters()
+        self.get_extras()
+
+        data = pandas.DataFrame(
+            columns=[
+                "lead",
+                "profit",
+                "potential_order_amount",
+                "estimate",
+            ]
+        )
+        total = pandas.Series(
+            {"lead": 0, "profit": 0, "potential_order_amount": 0, "estimate": 0}
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+        self.context("total", total)
+
+        return super().get()
