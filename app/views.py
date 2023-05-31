@@ -4860,6 +4860,9 @@ class IntensivesView(FilteringBaseView):
     filters_class = IntensivesFiltersData
     filters: IntensivesFiltersData
 
+    extras: Dict[str, Any] = {}
+    source: pandas.DataFrame
+
     def get_filters(self):
         initial = self.filters_initial()
 
@@ -4886,21 +4889,60 @@ class IntensivesView(FilteringBaseView):
 
         self.filters = filters_class(**data)
 
+    def filtering_values(self):
+        if self.filters.date_from:
+            self.source = self.source[self.source["date"] >= self.filters.date_from]
+
+        if self.filters.date_to:
+            self.source = self.source[self.source["date"] <= self.filters.date_to]
+
+        self.source.reset_index(drop=True, inplace=True)
+
+    def get_extras(self):
+        self.extras = {
+            "exclude_columns": [],
+        }
+
     def get(self, is_download=False):
+        self.source = pickle_loader.intensives
         self.get_filters()
+        self.filtering_values()
         self.get_extras()
 
-        data = pandas.DataFrame(
-            columns=[
-                "lead",
-                "profit",
-                "potential_order_amount",
-                "estimate",
-            ]
-        )
+        intensives = []
+        for group_name, group in self.source.groupby(by=["date"]):
+            intensives.append(
+                [group_name, group["deals"].sum(), group["profit"].sum(), 0]
+            )
+
+        data = pandas.DataFrame(intensives, columns=["date", "deals", "profit", "ppd"])
+        if len(data):
+            data["ppd"] = data.apply(
+                lambda item: round(item["profit"] / item["deals"])
+                if item["deals"]
+                else 0,
+                axis=1,
+            )
+
+        columns = {
+            "date": "Дата интенсива",
+            "deals": "Количество сделок",
+            "profit": "Выручка",
+            "ppd": "Выручка за сделку",
+        }
+        total_deals = data["deals"].sum()
+        total_profit = data["profit"].sum()
         total = pandas.Series(
-            {"lead": 0, "profit": 0, "potential_order_amount": 0, "estimate": 0}
+            {
+                columns.get("date"): "Итого",
+                columns.get("deals"): total_deals,
+                columns.get("profit"): total_profit,
+                columns.get("ppd"): round(total_profit / total_deals)
+                if total_deals
+                else 0,
+            }
         )
+        data.rename(columns=columns, inplace=True)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)

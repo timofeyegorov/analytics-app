@@ -75,3 +75,8 @@ class PickleLoader:
     def roistat_leads(self) -> pandas.DataFrame:
         data = self._load(self.pickle_files_path / "roistat_leads.pkl")
         return data
+
+    @property
+    def intensives(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "intensives.pkl")
+        return data
