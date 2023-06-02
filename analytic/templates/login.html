@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='css/login.css') }}" rel="stylesheet">
+{% endblock css %}
+
+{% block content %}
+    <div class="card p-3">
+        {{ form.render() }}
+    </div>
+{% endblock %}

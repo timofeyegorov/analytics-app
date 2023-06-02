@@ -69,7 +69,7 @@ clear_builder_cache:
 
 # Run
 
-run_debug:
-	./debug.py
+run:
+	flask --app analytic run --host 0.0.0.0 --port 8000 --debug
 
 containers_restart: remove build create start
