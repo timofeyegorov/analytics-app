@@ -218,7 +218,7 @@ def get_intensives_registration_stats():
 
 @log_execution_time("get_intensives_preorder_stats")
 def get_intensives_preorder_stats():
-    source = get_intensives_emails("1kNVxlBWFwiK6jGktyPQAlqVqzKB5mM_NLmwriaYfv1Q")
+    source = get_intensives_emails("1bz2ubZ0_2wdF0jJhUFNKXvV2xIBxQ9d986QAybPPEL4")
     dataframe = processing_intensives_stats(source)
     with open(Path(RESULTS_FOLDER, "intensives_preorder.pkl"), "wb") as file_ref:
         pickle.dump(dataframe, file_ref)
