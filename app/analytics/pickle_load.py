@@ -7,6 +7,9 @@ from config import RESULTS_FOLDER
 
 
 class PickleLoader:
+    def __call__(self, name: str, *args, **kwargs) -> pandas.DataFrame:
+        return self.__getattribute__(name)
+
     def _load(self, pkl_path: Path):
         with open(pkl_path, "rb") as pkl_path_ref:
             return pickle.load(pkl_path_ref)
@@ -77,6 +80,11 @@ class PickleLoader:
         return data
 
     @property
-    def intensives(self) -> pandas.DataFrame:
-        data = self._load(self.pickle_files_path / "intensives.pkl")
+    def intensives_registration(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "intensives_registration.pkl")
+        return data
+
+    @property
+    def intensives_preorder(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "intensives_preorder.pkl")
         return data

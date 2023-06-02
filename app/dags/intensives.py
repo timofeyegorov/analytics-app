@@ -140,9 +140,9 @@ def get_intensives_payments(service: GoogleAPIClientResource) -> pandas.DataFram
     return dataframe
 
 
-def get_intensives_emails() -> pandas.DataFrame:
+def get_intensives_emails(spreadsheet_id: str) -> pandas.DataFrame:
     response = requests.get(
-        f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1kNVxlBWFwiK6jGktyPQAlqVqzKB5mM_NLmwriaYfv1Q&exportFormat=xlsx"
+        f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key={spreadsheet_id}&exportFormat=xlsx"
     )
     dataframe = pandas.DataFrame()
     xlsx = load_workbook(filename=BytesIO(response.content))
@@ -178,13 +178,11 @@ def get_intensives_emails() -> pandas.DataFrame:
     return dataframe.sort_values(by=["data_intensiva"], ignore_index=True)
 
 
-@log_execution_time("get_intensives_stats")
-def get_intensives_stats():
+def processing_intensives_stats(source: pandas.DataFrame) -> pandas.DataFrame:
     service = get_google_service()
     payments = get_intensives_payments(service)
-    intensives = get_intensives_emails()
     values = []
-    for group_name, group in intensives.groupby(by=["e_mail"], sort=False):
+    for group_name, group in source.groupby(by=["e_mail"], sort=False):
         rows = list(group.itertuples())
         for index, row in enumerate(rows):
             try:
@@ -207,8 +205,22 @@ def get_intensives_stats():
                     row_payments["profit"].sum(),
                 )
             )
-    dataframe = pandas.DataFrame(values, columns=["date", "email", "deals", "profit"])
-    with open(Path(RESULTS_FOLDER, "intensives.pkl"), "wb") as file_ref:
+    return pandas.DataFrame(values, columns=["date", "email", "deals", "profit"])
+
+
+@log_execution_time("get_intensives_registration_stats")
+def get_intensives_registration_stats():
+    source = get_intensives_emails("1kNVxlBWFwiK6jGktyPQAlqVqzKB5mM_NLmwriaYfv1Q")
+    dataframe = processing_intensives_stats(source)
+    with open(Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb") as file_ref:
+        pickle.dump(dataframe, file_ref)
+
+
+@log_execution_time("get_intensives_preorder_stats")
+def get_intensives_preorder_stats():
+    source = get_intensives_emails("1kNVxlBWFwiK6jGktyPQAlqVqzKB5mM_NLmwriaYfv1Q")
+    dataframe = processing_intensives_stats(source)
+    with open(Path(RESULTS_FOLDER, "intensives_preorder.pkl"), "wb") as file_ref:
         pickle.dump(dataframe, file_ref)
 
 
@@ -220,8 +232,13 @@ dag = DAG(
     catchup=False,
 )
 
-get_intensives_stats_operator = PythonOperator(
-    task_id="get_intensives_stats",
-    python_callable=get_intensives_stats,
+get_intensives_registration_stats_operator = PythonOperator(
+    task_id="get_intensives_registration_stats",
+    python_callable=get_intensives_registration_stats,
+    dag=dag,
+)
+get_intensives_preorder_stats_operator = PythonOperator(
+    task_id="get_intensives_preorder_stats",
+    python_callable=get_intensives_preorder_stats,
     dag=dag,
 )

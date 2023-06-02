@@ -4853,15 +4853,15 @@ class ChangeZoomView(APIView):
         return super().post()
 
 
-class IntensivesView(FilteringBaseView):
+class IntensivesBaseView(FilteringBaseView):
     template_name = "intensives/index.html"
-    title = "Интенсивы"
 
     filters_class = IntensivesFiltersData
     filters: IntensivesFiltersData
 
     extras: Dict[str, Any] = {}
     source: pandas.DataFrame
+    source_type: str
 
     def get_filters(self):
         initial = self.filters_initial()
@@ -4904,7 +4904,7 @@ class IntensivesView(FilteringBaseView):
         }
 
     def get(self, is_download=False):
-        self.source = pickle_loader.intensives
+        self.source = pickle_loader(self.source_type)
         self.get_filters()
         self.filtering_values()
         self.get_extras()
@@ -4950,3 +4950,13 @@ class IntensivesView(FilteringBaseView):
         self.context("total", total)
 
         return super().get()
+
+
+class IntensivesRegistrationView(IntensivesBaseView):
+    title = "Сделки с регистраций на интенсивы"
+    source_type = "intensives_registration"
+
+
+class IntensivesPreorderView(IntensivesBaseView):
+    title = "Сделки с предзаказов на интенсивах"
+    source_type = "intensives_preorder"
