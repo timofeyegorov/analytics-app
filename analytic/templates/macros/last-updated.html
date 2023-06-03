@@ -1,9 +1,0 @@
-{% macro last_updated(name) %}
-    {% if redis.hget(name, 'status') and redis.hget(name, 'message') %}
-        {% if redis.hget(name, 'status').decode('utf-8') == 'ok' %}
-            <div class="alert alert-success">Последнее обновление: {{ redis.hget(name, 'last_updated').decode('utf-8') }}</div>
-        {% else %}
-            <div class="alert alert-danger">Последнее обновление: {{ redis.hget(name, 'message').decode('utf-8') }}</div>
-        {% endif %}
-    {% endif %}
-{% endmacro %}
