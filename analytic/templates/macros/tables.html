@@ -1,4 +1,4 @@
-{% macro wide_table(tables, skip=1) -%}
+{% macro wide_table(tables, skip=1) %}
     <style>
         .col-disabled {
             display: none;
@@ -59,9 +59,9 @@
             }
         })
     </script> -->
-{%- endmacro %}
+{% endmacro %}
 
-{% macro tabs(tables, macro, tab) -%}
+{% macro tabs(tables, macro, tab) %}
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         {% for header, _ in tables.items() %}
             <li class="nav-item" role="presentation">
@@ -100,4 +100,4 @@
         })
 
     </script>
-{%- endmacro %}
+{% endmacro %}

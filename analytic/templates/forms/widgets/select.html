@@ -1,0 +1,13 @@
+<select{{ render_attrs(attrs) }}>
+    {% for item in options %}
+        {% if item.name %}
+            <optgroup label="{{ item.name }}">
+                {% for option in item.options %}
+                    <option value="{{ option[1] }}"{% if option[3] %} selected="selected"{% endif %}>{{ option[2] }}</option>
+                {% endfor %}
+            </optgroup>
+        {% else %}
+            <option value="{{ item[1] }}"{% if item[3] %} selected="selected"{% endif %}>{{ item[2] }}</option>
+        {% endif %}
+    {% endfor %}
+</select>

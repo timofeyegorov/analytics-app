@@ -1,15 +1,18 @@
+from typing import List, Any
+
 from flask import render_template
 from wtforms.widgets import (
-    Input,
+    Input as InputWT,
     TextInput as TextInputWT,
     PasswordInput as PasswordInputWT,
     SubmitInput as SubmitInputWT,
     DateInput as DateInputWT,
+    Select as SelectWT,
 )
 from markupsafe import Markup
 
 
-class BaseInput(Input):
+class BaseInput(InputWT):
     template: str = "forms/widgets/input.html"
 
     def __call__(self, field, **kwargs):
@@ -36,6 +39,47 @@ class BaseInput(Input):
         return self.template
 
 
+class BaseSelect(SelectWT):
+    template: str = "forms/widgets/select.html"
+    validation_attrs = []
+
+    def __call__(self, field, **kwargs):
+        if not field.is_action:
+            kwargs.setdefault("name", field.id)
+        kwargs.setdefault("id", field.id)
+        if self.multiple:
+            kwargs["multiple"] = "multiple"
+        flags = getattr(field, "flags", {})
+        for k in dir(flags):
+            if k in self.validation_attrs and k not in kwargs:
+                kwargs[k] = getattr(flags, k)
+        kwargs.setdefault("class", "form-select")
+        if field.has_groups():
+            options = []
+            for group, choices in field.iter_groups():
+                if group:
+                    options.append(
+                        {
+                            "name": group,
+                            "options": self._get_options_from_generator(choices),
+                        }
+                    )
+                else:
+                    options += self._get_options_from_generator(choices)
+        else:
+            options = self._get_options_from_generator(field.iter_choices())
+        kwargs.update(**field.get_attrs())
+        return Markup(
+            render_template(self.get_template(), attrs=kwargs, options=options)
+        )
+
+    def _get_options_from_generator(self, options) -> List[List[Any]]:
+        return list(map(lambda item: ["option"] + list(item), options))
+
+    def get_template(self) -> str:
+        return self.template
+
+
 class BaseSubmit(BaseInput):
     def __call__(self, field, **kwargs):
         kwargs.setdefault("value", field.placeholder)
@@ -53,6 +97,10 @@ class PasswordInput(BaseInput, PasswordInputWT):
 
 class DateInput(BaseInput, DateInputWT):
     validation_attrs = ["max", "min", "step"]
+
+
+class Select(BaseSelect, SelectWT):
+    validation_attrs = []
 
 
 class SubmitInput(BaseSubmit, SubmitInputWT):

@@ -4,14 +4,18 @@
 (($) => {
 
 
+    Array.prototype.in = function(value) {
+        return this.indexOf(value) > -1;
+    };
+
+
     $(() => {
 
         $("form.form-filter").bind("submit", (event) => {
-            let form = event.currentTarget,
-                form_data = new FormData(form);
-            form_data.forEach((value, name) => {
-                let field = $(form).find(`[name=${name}]`)[0];
-                if (field.nodeName === "INPUT" && ["date"].indexOf(field.type) > -1) {
+            $.map(event.currentTarget, (field) => {
+                if (field.nodeName === "INPUT" && ["date", "submit"].in(field.type)) {
+                    field.disabled = ["submit"].in(field.type) ? true : field.value === "";
+                } else if (field.nodeName === "SELECT" && ["select-one"].in(field.type)) {
                     field.disabled = field.value === "";
                 }
             });

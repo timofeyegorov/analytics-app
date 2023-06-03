@@ -3,17 +3,19 @@ import datetime
 from typing import Dict, Optional
 from flask import render_template
 from wtforms import (
-    Field,
+    Field as FieldWT,
     StringField as StringFieldWT,
     PasswordField as PasswordFieldWT,
     SubmitField as SubmitFieldWT,
     DateField as DateFieldWT,
+    SelectField as SelectFieldWT,
 )
 from markupsafe import Markup
+
 from . import widgets
 
 
-class BaseField(Field):
+class BaseField(FieldWT):
     template: str = "forms/field.html"
     placeholder: str
     is_action: bool = False
@@ -45,6 +47,10 @@ class BaseField(Field):
         return Markup(render_template(self.get_template(), field=self))
 
 
+class StringBaseField(BaseField):
+    pass
+
+
 class DateBaseField(BaseField):
     def process_formdata(self, valuelist):
         if isinstance(valuelist, list):
@@ -64,11 +70,25 @@ class DateBaseField(BaseField):
         raise ValueError(f'Некорректное значение даты: {" ".join(valuelist)}')
 
 
-class StringField(BaseField, StringFieldWT):
+class SelectBaseField(BaseField):
+    def update_choices(self, choices=None):
+        if callable(choices):
+            choices = choices()
+        if choices is not None:
+            self.choices = choices if isinstance(choices, dict) else list(choices)
+        else:
+            self.choices = None
+
+
+class SubmitBaseField(BaseField):
+    pass
+
+
+class StringField(StringBaseField, StringFieldWT):
     widget = widgets.TextInput()
 
 
-class PasswordField(BaseField, PasswordFieldWT):
+class PasswordField(StringBaseField, PasswordFieldWT):
     widget = widgets.PasswordInput()
 
 
@@ -76,7 +96,15 @@ class DateField(DateBaseField, DateFieldWT):
     widget = widgets.DateInput()
 
 
-class SubmitField(BaseField, SubmitFieldWT):
+class SelectField(SelectBaseField, SelectFieldWT):
+    widget = widgets.Select()
+
+    def __init__(self, *args, **kwargs):
+        kwargs.update({"validate_choice": False})
+        super().__init__(*args, **kwargs)
+
+
+class SubmitField(SubmitBaseField, SubmitFieldWT):
     widget = widgets.SubmitInput()
 
 

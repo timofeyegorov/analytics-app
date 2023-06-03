@@ -1,8 +1,9 @@
 import pickle
 
-from flask import Flask
 from typing import Any
 from pathlib import Path
+
+from flask import Flask
 
 
 class PickleApplication:

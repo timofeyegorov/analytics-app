@@ -1,11 +1,11 @@
 from analytic import forms
 
-from .serializers import SegmentsSerializer, TurnoverSerializer
+from . import serializers
 
 
 class SegmentsForm(forms.FilterForm):
     action = "segments"
-    serializer_class = SegmentsSerializer
+    serializer_class = serializers.SegmentsSerializer
     template = "group1/segments/form.html"
 
     date_start = forms.fields.DateField(label="С даты")
@@ -21,14 +21,14 @@ class SegmentsForm(forms.FilterForm):
             if date_start and date_end and date_start > date_end:
                 is_valid = False
                 self.set_error(
-                    "Начальная дата должна быть меньше или равна конечно даты."
+                    "Начальная дата должна быть меньше или равна конечной даты."
                 )
         return is_valid
 
 
 class TurnoverForm(forms.FilterForm):
     action = "turnover"
-    serializer_class = TurnoverSerializer
+    serializer_class = serializers.TurnoverSerializer
     template = "group1/turnover/form.html"
 
     date_request_start = forms.fields.DateField(label="С даты создания")
@@ -38,14 +38,99 @@ class TurnoverForm(forms.FilterForm):
     update = forms.fields.SubmitField(placeholder="Обновить", is_action=True)
     reset = forms.fields.ResetField(placeholder="Сбросить", is_action=True)
 
-    # def validate_on_submit(self, *args, **kwargs) -> bool:
-    #     is_valid = super().validate_on_submit(*args, **kwargs)
-    #     if is_valid:
-    #         date_start = self.serializer.date_start
-    #         date_end = self.serializer.date_end
-    #         if date_start and date_end and date_start > date_end:
-    #             is_valid = False
-    #             self.set_error(
-    #                 "Начальная дата должна быть меньше или равна конечно даты."
-    #             )
-    #     return is_valid
+    def validate_on_submit(self, *args, **kwargs) -> bool:
+        is_valid = super().validate_on_submit(*args, **kwargs)
+        if is_valid:
+            date_request_start = self.serializer.date_request_start
+            date_request_end = self.serializer.date_request_end
+            date_payment_start = self.serializer.date_payment_start
+            date_payment_end = self.serializer.date_payment_end
+            if (
+                date_request_start
+                and date_request_end
+                and date_request_start > date_request_end
+            ):
+                is_valid = False
+                self.set_error(
+                    "Начальная дата создания должна быть меньше или равна конечной даты создания."
+                )
+            if (
+                date_payment_start
+                and date_payment_end
+                and date_payment_start > date_payment_end
+            ):
+                is_valid = False
+                self.set_error(
+                    "Начальная дата оплаты должна быть меньше или равна конечной даты оплаты."
+                )
+        return is_valid
+
+
+class ClustersForm(forms.FilterForm):
+    action = "clusters"
+    serializer_class = serializers.ClustersSerializer
+    template = "group1/clusters/form.html"
+
+    date_start = forms.fields.DateField(label="С даты")
+    date_end = forms.fields.DateField(label="По дату")
+    update = forms.fields.SubmitField(placeholder="Обновить", is_action=True)
+    reset = forms.fields.ResetField(placeholder="Сбросить", is_action=True)
+
+    def validate_on_submit(self, *args, **kwargs) -> bool:
+        is_valid = super().validate_on_submit(*args, **kwargs)
+        if is_valid:
+            date_start = self.serializer.date_start
+            date_end = self.serializer.date_end
+            if date_start and date_end and date_start > date_end:
+                is_valid = False
+                self.set_error(
+                    "Начальная дата должна быть меньше или равна конечной даты."
+                )
+        return is_valid
+
+
+class LandingsForm(forms.FilterForm):
+    action = "landings"
+    serializer_class = serializers.LandingsSerializer
+    template = "group1/landings/form.html"
+
+    date_start = forms.fields.DateField(label="С даты")
+    date_end = forms.fields.DateField(label="По дату")
+    update = forms.fields.SubmitField(placeholder="Обновить", is_action=True)
+    reset = forms.fields.ResetField(placeholder="Сбросить", is_action=True)
+
+    def validate_on_submit(self, *args, **kwargs) -> bool:
+        is_valid = super().validate_on_submit(*args, **kwargs)
+        if is_valid:
+            date_start = self.serializer.date_start
+            date_end = self.serializer.date_end
+            if date_start and date_end and date_start > date_end:
+                is_valid = False
+                self.set_error(
+                    "Начальная дата должна быть меньше или равна конечной даты."
+                )
+        return is_valid
+
+
+class ChannelsForm(forms.FilterForm):
+    action = "channels"
+    serializer_class = serializers.ChannelsSerializer
+    template = "group1/channels/form.html"
+
+    date_from = forms.fields.DateField(label="С даты")
+    date_to = forms.fields.DateField(label="По дату")
+    account = forms.fields.SelectField(label="Аккаунт", choices=[])
+    update = forms.fields.SubmitField(placeholder="Обновить", is_action=True)
+    reset = forms.fields.ResetField(placeholder="Сбросить", is_action=True)
+
+    def validate_on_submit(self, *args, **kwargs) -> bool:
+        is_valid = super().validate_on_submit(*args, **kwargs)
+        if is_valid:
+            date_from = self.serializer.date_from
+            date_to = self.serializer.date_to
+            if date_from and date_to and date_from > date_to:
+                is_valid = False
+                self.set_error(
+                    "Начальная дата должна быть меньше или равна конечной даты."
+                )
+        return is_valid

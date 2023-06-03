@@ -479,108 +479,6 @@ pickle_loader = PickleLoader()
 #     return render_template("audience_type_percent.html", tables=tables, tab=tab)
 #
 #
-#
-# @app.route("/turnover")
-# def turnover():
-#     date_request_start = request.args.get("date_request_start")
-#     date_request_end = request.args.get("date_request_end")
-#     date_payment_start = request.args.get("date_payment_start")
-#     date_payment_end = request.args.get("date_payment_end")
-#     tab = request.args.get("tab")
-#     if date_request_start or date_request_end or date_payment_start or date_payment_end:
-#         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
-#             table = pkl.load(f)
-#         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
-#         table.date_payment = pd.to_datetime(table.date_payment).dt.normalize()
-#         if date_request_start:
-#             table = table[
-#                 table.created_at >= datetime.strptime(date_request_start, "%Y-%m-%d")
-#             ]
-#         if date_request_end:
-#             table = table[
-#                 table.created_at <= datetime.strptime(date_request_end, "%Y-%m-%d")
-#             ]
-#         if date_payment_start:
-#             table = table[
-#                 table.date_payment >= datetime.strptime(date_payment_start, "%Y-%m-%d")
-#             ]
-#         if date_payment_end:
-#             table = table[
-#                 table.date_payment <= datetime.strptime(date_payment_end, "%Y-%m-%d")
-#             ]
-#         if len(table) == 0:
-#             return render_template(
-#                 "turnover.html", error="Нет данных для заданного периода"
-#             )
-#         # return render_template(
-#         #     'turnover.html',
-#         #     error='Not enough data',
-#         #     date_request_start=date_request_start,
-#         #     date_request_end=date_request_end,
-#         #     date_payment_start=date_payment_start,
-#         #     date_payment_end=date_payment_end,
-#         #     tab=tab
-#         #     )
-#         tables = calculate_turnover(table)
-#         return render_template(
-#             "turnover.html",
-#             tables=tables,
-#             # date_request_start=date_request_start,
-#             # date_request_end=date_request_end,
-#             # date_payment_start=date_payment_start,
-#             # date_payment_end=date_payment_end,
-#             tab=tab,
-#         )
-#     tables = get_turnover()
-#
-#     return render_template(
-#         "turnover.html",
-#         tables=tables,
-#         # date_request_start=date_request_start,
-#         # date_request_end=date_request_end,
-#         # date_payment_start=date_payment_start,
-#         # date_payment_end=date_payment_end,
-#         tab=tab,
-#     )
-#
-#
-# @app.route("/clusters")
-# def clusters():
-#     date_start = request.args.get("date_start")
-#     date_end = request.args.get("date_end")
-#     tab = request.args.get("tab")
-#     if date_start or date_end:
-#         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
-#             table = pkl.load(f)
-#         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
-#         if date_start:
-#             table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
-#         if date_end:
-#             table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
-#         if len(table) == 0:
-#             return render_template(
-#                 "clusters.html",
-#                 error="Not enough data",
-#                 date_start=date_start,
-#                 date_end=date_end,
-#                 tab=tab,
-#             )
-#         tables = calculate_clusters(table)
-#         return render_template(
-#             "clusters.html",
-#             tables=tables,
-#             # date_start=date_start, date_end=date_end,
-#             tab=tab,
-#         )
-#     tables = get_clusters()
-#     return render_template(
-#         "clusters.html",
-#         tables=tables,
-#         # date_start=date_start, date_end=date_end,
-#         tab=tab,
-#     )
-#
-#
 # @app.route("/traffic_sources")
 # def traffic_sources():
 #     date_start = request.args.get("date_start")
@@ -683,35 +581,7 @@ pickle_loader = PickleLoader()
 #     table = get_leads_ta_stats()
 #     return render_template("leads_ta_stats.html", table=table)
 #
-#
-# @app.route("/landings")
-# def landings():
-#     date_start = request.args.get("date_start")
-#     date_end = request.args.get("date_end")
-#     if date_start or date_end:
-#         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
-#             table = pkl.load(f)
-#         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
-#         if date_start:
-#             table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
-#         if date_end:
-#             table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
-#         if len(table) == 0:
-#             return render_template(
-#                 "landings.html", error="Нет данных для заданного периода"
-#             )
-#         table = calculate_landings(table)
-#         return render_template(
-#             "landings.html", tables=table, date_start=date_start, date_end=date_end
-#         )
-#     tables = get_landings()
-#     return render_template(
-#         "landings.html",
-#         tables=tables,
-#         # date_start=date_start, date_end=date_end
-#     )
-#
-#
+
 # @app.route("/vacancies")
 # def vacancies():
 #     redirect_uri = "https://analytic.neural-university.ru/login/hh"

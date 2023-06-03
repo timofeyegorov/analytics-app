@@ -40,12 +40,12 @@
                     axis_y.append($(`<div class="item">&nbsp;${channel.name}</div>`));
                         let line = $(`<div class="item"><div class="wrapper"></div></div>`);
                     let line_days = days_layout.clone();
-                    for (let index in channel.dates) {
-                        let d = channel.dates[index].getDate(),
-                            m = channel.dates[index].getMonth(),
-                            y = channel.dates[index].getFullYear();
-                        line_days.find(`span._${channel.dates[index].getTime()}`).addClass("colored").attr("title", `${d} ${month[1][m]} ${y}`);
-                    }
+                    $.map(channel.dates, (item) => {
+                        let d = item.getDate(),
+                            m = item.getMonth(),
+                            y = item.getFullYear();
+                        line_days.find(`span._${item.getTime()}`).addClass("colored").attr("title", `${d} ${month[1][m]} ${y}`);
+                    })
                     line.children(".wrapper").append(line_days.find("span"));
                     board.find(".wrapper > .gantt").append(line);
                 }
