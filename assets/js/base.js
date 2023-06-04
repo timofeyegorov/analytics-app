@@ -13,7 +13,7 @@
 
         $("form.form-filter").bind("submit", (event) => {
             $.map(event.currentTarget, (field) => {
-                if (field.nodeName === "INPUT" && ["date", "submit"].in(field.type)) {
+                if (field.nodeName === "INPUT" && ["text", "date", "hidden", "submit"].in(field.type)) {
                     field.disabled = ["submit"].in(field.type) ? true : field.value === "";
                 } else if (field.nodeName === "SELECT" && ["select-one"].in(field.type)) {
                     field.disabled = field.value === "";

@@ -1,6 +1,9 @@
+import re
+
 from typing import Dict, Type
 from markupsafe import Markup
 from collections import OrderedDict
+from transliterate import slugify
 
 from flask import render_template, url_for, request
 from flask_wtf import FlaskForm
@@ -40,7 +43,7 @@ class BaseForm(FlaskForm):
 
     def render(self) -> str:
         attrs = {
-            "id": f"form-{self.action}",
+            "id": f'form-{slugify(re.sub(r":+", "__", self.action), "ru")}',
             "action": url_for(self.action),
             "method": self.method.value,
             "autocomplete": "OFF",

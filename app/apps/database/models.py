@@ -1,7 +1,7 @@
 from flask import current_app
 
 
-db = current_app.ext("sqlalchemy")
+db = current_app.app("database")
 
 
 class BaseMixin:

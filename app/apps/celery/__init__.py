@@ -1,14 +1,15 @@
-from flask import Flask
 from celery import Celery
 from celery.schedules import crontab
 
-from app.core.application import Application
+from flask import Flask
 
 
-class CeleryApp(Application, Celery):
+class CeleryApp(Celery):
     def __init__(self, flask_app: Flask, *args, **kwargs):
         kwargs.update({"main": flask_app.name})
         super().__init__(*args, **kwargs)
+
+        flask_app.extensions.update({"celery": self})
 
         self.conf.update(
             {

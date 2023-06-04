@@ -1,6 +1,12 @@
 <div class="field{% if field.errors %} error{% endif %}">
     {{ field.label }}
-    <div class="wrapper">{{ field }}</div>
+    <div class="wrapper">
+        {% if index == "" %}
+            {{ field }}
+        {% else %}
+            {{ field(index=index) }}
+        {% endif %}
+    </div>
     {% if field.errors %}
         <div class="error">
             <ul>

@@ -1,4 +1,4 @@
-import pickle
+import pandas
 
 from typing import Any
 from pathlib import Path
@@ -11,6 +11,7 @@ class PickleApp:
 
     def __init__(self, flask_app: Flask):
         self.flask_app = flask_app
+        flask_app.extensions.update({"pickle": self})
 
     def get_path(self, name: str) -> Path:
         return (
@@ -20,6 +21,4 @@ class PickleApp:
         )
 
     def load(self, name: str) -> Any:
-        with open(self.get_path(name), "rb") as file_ref:
-            data = pickle.load(file_ref)
-        return data
+        return pandas.read_pickle(self.get_path(name))

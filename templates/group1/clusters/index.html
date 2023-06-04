@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% from 'macros/tables.html' import tabs %}
+
+{% block content %}
+    <div class="card p-3">
+        {{ form.render() }}
+    </div>
+    {% if tables %}
+        {% macro table(header, dict, loop) %}
+            <div class="tab-pane fade {{'show active' if loop.index == 1 and tab is none or tab|int == loop.index else ''}}" id="turnover-{{loop.index}}" role="tabpanel" aria-labelledby="turnover-{{loop.index}}-tab">
+                <h3>Размер кластера: {{ dict['Размер кластера'] }}</h3>
+                {% if dict['Размер кластера'] != 0 %}
+                    <h4>Кластер</h4>
+                    {{ dict['Датасет'].to_html(index=False) |safe }}
+                {% endif %}
+            </div>
+        {% endmacro %}
+        {{ tabs(tables, table, tab) }}
+    {% endif %}
+{% endblock %}

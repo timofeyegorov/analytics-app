@@ -1,6 +1,14 @@
 from typing import Dict, Any, Type
 
-from flask import render_template, request, session, redirect, url_for, current_app
+from flask import (
+    render_template,
+    request,
+    session,
+    redirect,
+    url_for,
+    current_app,
+    Response,
+)
 from flask.views import MethodView
 from flask.typing import ResponseReturnValue
 from flask_wtf.form import SUBMIT_METHODS
@@ -36,6 +44,27 @@ class BaseView(AuthViewMixin):
 
     def post(self, *args, **kwargs):
         return self.render()
+
+
+class DownloadView(AuthViewMixin):
+    mimetype: str
+    filename: str
+    file: Any
+
+    def get(self, *args, **kwargs):
+        return Response(
+            self.file,
+            mimetype=self.get_mimetype(),
+            headers={
+                "Content-disposition": f"attachment; filename={self.get_filename()}"
+            },
+        )
+
+    def get_mimetype(self) -> str:
+        return self.mimetype
+
+    def get_filename(self) -> str:
+        return self.filename
 
 
 class TemplateView(BaseView):

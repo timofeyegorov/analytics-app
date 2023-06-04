@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="card p-3">
+        {{ form.render() }}
+    </div>
+    {% if tables %}
+        {% for header, table in tables.items() %}
+            <div class="group">
+                <h2>{{ header }}</h2>
+                {{ table.to_html() |safe }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

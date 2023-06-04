@@ -1,14 +1,14 @@
 import os
 
-from flask import Flask
+from typing import Any
 
-from app.core.application import Application
+from flask import Flask
 
 from .config import Config
 from .routing import Routing
 
 
-class FlaskApp(Application, Flask):
+class FlaskApp(Flask):
     config_class = Config
     routing_class = Routing
     routing: Routing
@@ -17,6 +17,9 @@ class FlaskApp(Application, Flask):
         super().__init__(*args, **kwargs)
         self.routing = self.get_routing()
         self.config.from_mapping(os.environ)
+
+    def app(self, name: str) -> Any:
+        return self.extensions.get(name)
 
     def get_routing(self) -> Routing:
         return self.routing_class()

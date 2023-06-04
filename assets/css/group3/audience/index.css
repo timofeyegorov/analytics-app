@@ -1,0 +1,23 @@
+#content > .tab-content > .tab-pane {
+    display:none;
+    flex-wrap:wrap;
+    gap:1rem;
+}
+#content > .tab-content > .tab-pane.active {
+    display:flex;
+}
+#content > .tab-content > .tab-pane > .group > .card {
+    border-top:0;
+    border-top-left-radius:0;
+    border-top-right-radius:0;
+}
+form > .utm-filters {
+    gap:.5rem;
+}
+form > .utm-filters > h6 {
+    margin:0;
+}
+form > .utm-filters > .group > .action > .wrapper > a {
+    display:inline-block;
+    width:120px;
+}

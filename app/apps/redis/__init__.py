@@ -1,12 +1,11 @@
-from urllib.parse import urlparse
-from flask import Flask
 from redis import StrictRedis
+from urllib.parse import urlparse
 
-from app.core.application import Application
+from flask import Flask
 
 
-class RedisApp(Application, StrictRedis):
-    def __init__(self, flask_app: Flask, *args, **kwargs):
+class RedisApp(StrictRedis):
+    def __init__(self, flask_app: Flask = None, *args, **kwargs):
         url = urlparse(flask_app.config.get("REDIS_URL", ""))
         try:
             host, port = url.netloc.split(":", 2)
@@ -21,3 +20,5 @@ class RedisApp(Application, StrictRedis):
         super().__init__(*args, **kwargs)
 
         flask_app.jinja_env.globals["redis"] = self
+
+        flask_app.extensions.update({"redis": self})

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% from 'macros/tables.html' import tabs %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='css/group3/marginality/index.css') }}" rel="stylesheet">
+{% endblock css %}
+
+{% block content %}
+    {% if tables %}
+        {% for name, table in tables.items() %}
+            <div class="group">
+                <h2>{{ name }}</h2>
+                {{ table.to_html() |safe }}
+                <div class="card p-3">
+                    <div class="links">
+                        <a href="{{ url_for('group3:get_plot_csv') }}?value=marginality, {{ name }}" class="btn btn-primary">Скачать отчет в csv</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,2 @@
+<a href="{{ url_for('group3:audience:absolute') }}" class="btn btn{% if request.url_rule.endpoint != 'group3:audience:absolute' %}-outline{% endif %}-dark">Абсолютные</a>
+<a href="{{ url_for('group3:audience:relative') }}" class="btn btn{% if request.url_rule.endpoint != 'group3:audience:relative' %}-outline{% endif %}-dark">Относительные</a>

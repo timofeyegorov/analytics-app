@@ -4,18 +4,21 @@
     <link href="{{ url_for('static', filename='css/index.css') }}" rel="stylesheet">
 {% endblock css %}
 
+{% block base_links %}{% endblock base_links %}
+
 {% block content %}
     <div class="card p-3 text-center">
         <div class="group">
-{#            <a href="{{ url_for('segments') }}" class="btn btn-primary">Сегменты</a>#}
-{#            <a href="{{ url_for('turnover') }}" class="btn btn-primary">Обороты</a>#}
-{#            <a href="{{ url_for('clusters') }}" class="btn btn-primary">Кластеры</a>#}
-{#            <a href="{{ url_for('landings') }}" class="btn btn-primary">Лэндинги</a>#}
-{#            <a href="{{ url_for('channels') }}" class="btn btn-primary">Каналы</a>#}
-{#            <a href="/traffic_sources" class="btn btn-primary m-1">Источники трафика</a>#}
-{#            <a href="/segments_stats" class="btn btn-primary m-1">Сегменты статистика</a>#}
-{#            <a href="/leads_ta_stats" class="btn btn-primary m-1">Лиды по ЦА статистика</a>#}
-{#            <br><br><hr style="width:50%; margin: auto"><br>#}
+            <a href="{{ url_for('group1:segments') }}" class="btn btn-primary">Сегменты</a>
+            <a href="{{ url_for('group1:turnover') }}" class="btn btn-primary">Обороты</a>
+            <a href="{{ url_for('group1:clusters') }}" class="btn btn-primary">Кластеры</a>
+            <a href="{{ url_for('group1:landings') }}" class="btn btn-primary">Лэндинги</a>
+            <a href="{{ url_for('group1:channels') }}" class="btn btn-primary">Каналы</a>
+            <a href="{{ url_for('group1:traffic_sources') }}" class="btn btn-primary">Источники трафика</a>
+            <a href="{{ url_for('group1:segments_stats') }}" class="btn btn-primary">Сегменты статистика</a>
+            <a href="{{ url_for('group1:leads_ta_stats') }}" class="btn btn-primary">Лиды по ЦА статистика</a>
+        </div>
+        <div class="group">
 {#            <a href="/statistics" class="btn btn-primary m-1">Статистика</a>#}
 {#            <a href="{{ url_for('zooms') }}" class="btn btn-primary m-1">Zooms</a>#}
 {#            <a href="{{ url_for('week_stats_expenses') }}" class="btn btn-primary m-1">Когорты</a>#}
@@ -23,11 +26,11 @@
 {#            <a href="{{ url_for('statistics_utm') }}" class="btn btn-primary m-1">Статистика UTM</a>#}
 {#            <a href="/channels_summary" class="btn btn-primary m-1">Источники - сводная таблица</a>#}
 {#            <a href="/channels_detailed" class="btn btn-primary m-1">Источники - детализированные отчеты</a>#}
-{#            <br><br><hr style="width:30%; margin: auto"><br>#}
-{#            <a href="/payments_accumulation" class="btn btn-primary m-1">Оплаты и ROI - накопление</a>#}
-{#            <a href="/marginality" class="btn btn-primary m-1">Маржинальность</a>#}
-{#            <a href="/audience_type" class="btn btn-primary m-1">Типы ЦА по дням</a>#}
-{#            <br><br><hr style="width:10%; margin: auto"><br>#}
+        </div>
+        <div class="group">
+            <a href="{{ url_for('group3:payments_accumulation') }}" class="btn btn-primary">Оплаты и ROI - накопление</a>
+            <a href="{{ url_for('group3:marginality') }}" class="btn btn-primary">Маржинальность</a>
+            <a href="{{ url_for('group3:audience:absolute') }}" class="btn btn-primary">Типы ЦА по дням</a>
         </div>
         <div class="group">
 {#            <a href="/trafficologists" class="btn btn-success m-1">Трафикологи</a>#}
@@ -37,7 +40,6 @@
 {#            <a href="/expenses" class="btn btn-success m-1">Расходы</a>#}
 {#            <a href="{{ url_for('vk_statistics') }}" class="btn btn-success m-1">ВК</a>#}
 {#            <a href="{{ url_for('search_leads') }}" class="btn btn-success m-1">Поиск лидов</a>#}
-{#            <br><br><hr style="width:10%; margin: auto"><br>#}
         </div>
         <div class="group">
             {{ form.render() }}
