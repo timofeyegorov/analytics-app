@@ -4890,6 +4890,9 @@ class IntensivesBaseView(FilteringBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
+        if self.source is None:
+            return
+
         if self.filters.date_from:
             self.source = self.source[self.source["date"] >= self.filters.date_from]
 
@@ -4904,16 +4907,20 @@ class IntensivesBaseView(FilteringBaseView):
         }
 
     def get(self, is_download=False):
-        self.source = pickle_loader(self.source_type)
+        try:
+            self.source = pickle_loader(self.source_type)
+        except FileNotFoundError:
+            self.source = None
         self.get_filters()
         self.filtering_values()
         self.get_extras()
 
         intensives = []
-        for group_name, group in self.source.groupby(by=["date"]):
-            intensives.append(
-                [group_name, group["deals"].sum(), group["profit"].sum(), 0]
-            )
+        if self.source is not None:
+            for group_name, group in self.source.groupby(by=["date"]):
+                intensives.append(
+                    [group_name, group["deals"].sum(), group["profit"].sum(), 0]
+                )
 
         data = pandas.DataFrame(intensives, columns=["date", "deals", "profit", "ppd"])
         if len(data):

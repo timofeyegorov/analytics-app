@@ -6,7 +6,7 @@ import datetime
 import requests
 
 from io import BytesIO
-from typing import Tuple, List, Callable
+from typing import Tuple, List, Optional, Callable
 from pathlib import Path
 from httplib2 import Http
 from openpyxl import load_workbook
@@ -140,7 +140,7 @@ def get_intensives_payments(service: GoogleAPIClientResource) -> pandas.DataFram
     return dataframe
 
 
-def get_intensives_emails(spreadsheet_id: str) -> pandas.DataFrame:
+def get_intensives_emails(spreadsheet_id: str) -> Optional[pandas.DataFrame]:
     response = requests.get(
         f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key={spreadsheet_id}&exportFormat=xlsx"
     )
@@ -175,6 +175,8 @@ def get_intensives_emails(spreadsheet_id: str) -> pandas.DataFrame:
             ],
             ignore_index=True,
         )
+    if dataframe.empty:
+        return
     return dataframe.sort_values(by=["data_intensiva"], ignore_index=True)
 
 
@@ -211,17 +213,19 @@ def processing_intensives_stats(source: pandas.DataFrame) -> pandas.DataFrame:
 @log_execution_time("get_intensives_registration_stats")
 def get_intensives_registration_stats():
     source = get_intensives_emails("1kNVxlBWFwiK6jGktyPQAlqVqzKB5mM_NLmwriaYfv1Q")
-    dataframe = processing_intensives_stats(source)
-    with open(Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb") as file_ref:
-        pickle.dump(dataframe, file_ref)
+    if source is not None:
+        dataframe = processing_intensives_stats(source)
+        with open(Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb") as file_ref:
+            pickle.dump(dataframe, file_ref)
 
 
 @log_execution_time("get_intensives_preorder_stats")
 def get_intensives_preorder_stats():
     source = get_intensives_emails("1bz2ubZ0_2wdF0jJhUFNKXvV2xIBxQ9d986QAybPPEL4")
-    dataframe = processing_intensives_stats(source)
-    with open(Path(RESULTS_FOLDER, "intensives_preorder.pkl"), "wb") as file_ref:
-        pickle.dump(dataframe, file_ref)
+    if source is not None:
+        dataframe = processing_intensives_stats(source)
+        with open(Path(RESULTS_FOLDER, "intensives_preorder.pkl"), "wb") as file_ref:
+            pickle.dump(dataframe, file_ref)
 
 
 dag = DAG(
