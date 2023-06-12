@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/amocrm/jsoneditor.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/amocrm/api.js') }}"></script>
+<script>window.JSONEditorContent = {{ response|safe }}</script>
+{% endblock js %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='css/amocrm/jsoneditor.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/amocrm/api.css') }}" rel="stylesheet">
+{% endblock css %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div id="methods">
+        <ul>
+            <li><a href="/" class="btn btn-success">В меню</a></li>
+            <li><a href="{{ url_for('amocrm_lead', lead='33062616') }}" class="btn btn-success">Лид</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='account') }}" class="btn btn{% if method != 'account' %}-outline{% endif %}-primary">Параметры аккаунта</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='leads') }}" class="btn btn{% if method != 'leads' %}-outline{% endif %}-primary">Список сделок</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='leads_by_id') }}?lead=33062616" class="btn btn{% if method != 'leads_by_id' %}-outline{% endif %}-primary">Получение сделки по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='leads_pipelines') }}" class="btn btn{% if method != 'leads_pipelines' %}-outline{% endif %}-primary">Список воронок сделок</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='leads_pipelines_by_id') }}?pipeline=4583250" class="btn btn{% if method != 'leads_pipelines_by_id' %}-outline{% endif %}-primary">Получение воронки сделок по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='leads_pipelines_by_id_statuses') }}?pipeline=4583250" class="btn btn{% if method != 'leads_pipelines_by_id_statuses' %}-outline{% endif %}-primary">Список статусов воронки сделок</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='leads_pipelines_by_id_statuses_by_id') }}?pipeline=4583250&status=42185859" class="btn btn{% if method != 'leads_pipelines_by_id_statuses_by_id' %}-outline{% endif %}-primary">Получение статуса воронки сделок по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='contacts') }}" class="btn btn{% if method != 'contacts' %}-outline{% endif %}-primary">Список контактов</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='contacts_by_id') }}?contact=31646259" class="btn btn{% if method != 'contacts_by_id' %}-outline{% endif %}-primary">Получение контакта по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='companies') }}" class="btn btn{% if method != 'companies' %}-outline{% endif %}-primary">Список компаний</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='companies_by_id') }}?company=45508061" class="btn btn{% if method != 'companies_by_id' %}-outline{% endif %}-primary">Получение компании по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='catalogs') }}" class="btn btn{% if method != 'catalogs' %}-outline{% endif %}-primary">Доступные списки</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='catalogs_by_id') }}?catalog=6622" class="btn btn{% if method != 'catalogs_by_id' %}-outline{% endif %}-primary">Получение списка по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='catalogs_by_id_elements') }}?catalog=6622" class="btn btn{% if method != 'catalogs_by_id_elements' %}-outline{% endif %}-primary">Доступные элементы списка</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='catalogs_by_id_elements_by_id') }}?catalog=6622&element=1498162" class="btn btn{% if method != 'catalogs_by_id_elements_by_id' %}-outline{% endif %}-primary">Получение элемента списка по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='tasks') }}" class="btn btn{% if method != 'tasks' %}-outline{% endif %}-primary">Список задач</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='tasks_by_id') }}?task=3730683" class="btn btn{% if method != 'tasks_by_id' %}-outline{% endif %}-primary">Получение задачи по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='entity_tags') }}?entity=leads" class="btn btn{% if method != 'entity_tags' %}-outline{% endif %}-primary">Список тегов для сущности</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='events') }}" class="btn btn{% if method != 'events' %}-outline{% endif %}-primary">Список событий</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='events_by_id') }}?event=01h2n6jg59c4jr189z7yhj3jtk" class="btn btn{% if method != 'events_by_id' %}-outline{% endif %}-primary">Получение события по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='events_types') }}" class="btn btn{% if method != 'events_types' %}-outline{% endif %}-primary">Получение типов событий</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='entity_notes') }}?entity=leads" class="btn btn{% if method != 'entity_notes' %}-outline{% endif %}-primary">Список примечаний по типу сущности</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='entity_by_id_notes') }}?entity=leads&id=33062616" class="btn btn{% if method != 'entity_by_id_notes' %}-outline{% endif %}-primary">Список примечаний по конкретной сущности, по ID сущности</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='entity_by_id_notes_by_id') }}?entity=leads&id=33062616&note=276896082" class="btn btn{% if method != 'entity_by_id_notes_by_id' %}-outline{% endif %}-primary">Получение примечания по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='users') }}" class="btn btn{% if method != 'users' %}-outline{% endif %}-primary">Список пользователей</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='users_by_id') }}?user=2871913" class="btn btn{% if method != 'users_by_id' %}-outline{% endif %}-primary">Получение пользователя по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='roles') }}" class="btn btn{% if method != 'roles' %}-outline{% endif %}-primary">Список ролей пользователей</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='roles_by_id') }}?role=231540" class="btn btn{% if method != 'roles_by_id' %}-outline{% endif %}-primary">Получение роли по ID</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='webhooks') }}" class="btn btn{% if method != 'webhooks' %}-outline{% endif %}-primary">Список установленных вебхуков в аккаунте</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='widgets') }}" class="btn btn{% if method != 'widgets' %}-outline{% endif %}-primary">Список виджетов</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='widgets_by_code') }}?code=amo_mailsputnik" class="btn btn{% if method != 'widgets_by_code' %}-outline{% endif %}-primary">Информация о виджете по его коду</a></li>
+            <li><a href="{{ url_for('amocrm_api', method_name='chats_templates') }}" class="btn btn{% if method != 'chats_templates' %}-outline{% endif %}-primary">Список шаблонов</a></li>
+        </ul>
+    </div>
+    <div class="data">
+        <div id="jsoneditor"></div>
+    </div>
+{% endblock %}

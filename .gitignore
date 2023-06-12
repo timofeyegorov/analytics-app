@@ -8,3 +8,4 @@ celerybeat-schedule
 /app/dags/results/
 /app/dags/data/
 /service-*.py
+/amocrm-*

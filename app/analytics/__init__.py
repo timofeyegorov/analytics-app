@@ -45,7 +45,7 @@ import pickle as pkl
 import json
 import html
 
-from app import views
+from app import views, views_amocrm
 
 from .pickle_load import PickleLoader
 
@@ -907,6 +907,14 @@ app.add_url_rule(
 app.add_url_rule(
     "/api/change-zoom/<manager_id>/<lead>/<date>",
     view_func=views.ChangeZoomView.as_view("change_zoom"),
+)
+app.add_url_rule(
+    "/amocrm/lead/<int:lead>",
+    view_func=views_amocrm.LeadView.as_view("amocrm_lead"),
+)
+app.add_url_rule(
+    "/amocrm/api/<string:method_name>",
+    view_func=views_amocrm.ApiView.as_view("amocrm_api"),
 )
 
 

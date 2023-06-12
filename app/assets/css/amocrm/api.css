@@ -1,0 +1,21 @@
+td {
+    border:0;
+}
+#jsoneditor {
+    height:100%;
+}
+#methods {
+    margin:0 0 1rem 0;
+}
+#methods > ul {
+    display:flex;
+    flex-wrap:wrap;
+    gap:.5rem;
+    margin:0;
+    padding:0;
+}
+#methods > ul > li {
+    display:block;
+    margin:0;
+    padding:0;
+}
