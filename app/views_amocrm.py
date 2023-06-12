@@ -44,7 +44,6 @@ class AmoCRMEvents:
     @classmethod
     def parse_1(cls, value: Any, *args, **kwargs) -> str:
         # Новая сделка
-        print(kwargs.get("notes"))
         return (
             str(
                 kwargs.get("notes")
@@ -591,7 +590,6 @@ class LeadView(AmoCRMAPIBaseView):
                     ),
                 }
             )
-        # print(json.dumps(notes_dict, indent=2, ensure_ascii=False))
 
         return {
             "ID сделки": lead.get("id"),
