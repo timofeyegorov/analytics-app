@@ -1067,18 +1067,28 @@ def get_managers_sales():
         inplace=True,
     )
     columns_rel = {
-        "data_oplaty": "date",
+        "data_oplaty": "payment_date",
+        "data_poslednej_zajavki_platnoj": "order_date",
         "menedzher": "manager",
         "kurs": "course",
         "summa_vyruchki": "profit",
         "mesjats_doplata": "surcharge",
     }
     data = data[columns_rel.keys()].rename(columns=columns_rel)
-    data["surcharge"] = data["surcharge"].apply(lambda item: item == "доплата")
-    data["date"] = data["date"].apply(lambda item: item.date())
-    data["profit"] = data["profit"].fillna(0).apply(parse_float)
+    data["payment_date"] = (
+        data["payment_date"]
+        .apply(parse_date)
+        .apply(lambda item: pandas.NA if pandas.isna(item) else item.date())
+    )
+    data["order_date"] = (
+        data["order_date"]
+        .apply(parse_date)
+        .apply(lambda item: pandas.NA if pandas.isna(item) else item.date())
+    )
     data["manager"] = data["manager"].apply(parse_str).fillna("undefined")
     data["course"] = data["course"].apply(parse_str).fillna("undefined")
+    data["profit"] = data["profit"].fillna(0).apply(parse_float)
+    data["surcharge"] = data["surcharge"].apply(lambda item: item == "доплата")
 
     with open(Path(DATA_PATH / "managers_sales.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
