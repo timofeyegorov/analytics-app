@@ -1,0 +1,4 @@
+table tr.manager > td {
+    font-weight:bold;
+    background:#d4edff !important;
+}

@@ -1,28 +1,37 @@
 <div id="statistics">
-    <table>
-        <thead>
-            <tr>
-                {% for column in data.columns %}
-                    {% if column not in extras.exclude_columns %}
-                        <th class="sticky nowrap">{{ column }}</th>
-                    {% endif %}
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for index, item in data.iterrows() %}
+    {% if not data.empty %}
+        <table>
+            <thead>
                 <tr>
+                    <th class="sticky nowrap"></th>
                     {% for column in data.columns %}
                         {% if column not in extras.exclude_columns %}
-                            {% if column == "Канал" %}
-                                <td class="nowrap{% if item.is_total %} info warning{% endif %}">{{ item[column] }}</td>
-                            {% else %}
-                                <td class="nowrap font-monospace{% if item.is_total %} info warning{% endif %} text-right">{% if column in ['Процент', 'Конверсия'] %}{{ format_float1(item[column]) }}{% else %}{{ format_int(item[column]) }}{% endif %}{% if column in ["Расход", "Оборот", "Средний чек", "Цена лида", "Оборот на лид", "IPL"] %} ₽{% endif %}{% if column in ["Процент", "Конверсия"] %} %{% endif %}</td>
-                            {% endif %}
+                            <th class="sticky nowrap">{{ column }}</th>
                         {% endif %}
                     {% endfor %}
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for index, item in data.iterrows() %}
+                    <tr{% if item.is_manager %} class="manager"{% endif %}>
+                        <th class="font-monospace text-right">{{ loop.index }}</th>
+                        {% for column in data.columns %}
+                            {% if column not in extras.exclude_columns %}
+                                {% if column in ["Оборот", "Доплаты"] %}
+                                    <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                                {% elif column in ["Процент оборота от менеджера", "Процент оборота от компании"] %}
+                                    <td class="nowrap font-monospace text-right">{{ format_float2(item[column]) }} %</td>
+                                {% else %}
+                                    <td class="nowrap">{{ item[column] }}</td>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        Нет данных
+    {% endif %}
 </div>
+

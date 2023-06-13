@@ -4386,6 +4386,10 @@ class ManagersSalesView(FilteringBaseView):
     filters_class = ManagersSalesFiltersData
     filters: ManagersSalesFiltersData
 
+    sales: pandas.DataFrame
+
+    sales_path: Path = Path(DATA_FOLDER) / "week" / "managers_sales.pkl"
+
     def get_filters(self):
         initial = self.filters_initial()
 
@@ -4412,34 +4416,74 @@ class ManagersSalesView(FilteringBaseView):
 
     def filtering_values(self):
         if self.filters.payment_date_from:
-            # self.values_expenses = self.values_expenses[
-            #     self.values_expenses["date"] >= self.filters.payment_date_from
-            # ].reset_index(drop=True)
-            # self.counts_expenses = self.counts_expenses[
-            #     self.counts_expenses["date"] >= self.filters.payment_date_from
-            # ].reset_index(drop=True)
-            # self.channels_count = self.channels_count[
-            #     self.channels_count["date"] >= self.filters.payment_date_from
-            # ].reset_index(drop=True)
-            # self.roistat = self.roistat[
-            #     self.roistat["date"] >= self.filters.payment_date_from
-            # ].reset_index(drop=True)
-            pass
+            self.sales = self.sales[
+                self.sales["date"] >= self.filters.payment_date_from
+            ].reset_index(drop=True)
+        if self.filters.payment_date_to:
+            self.sales = self.sales[
+                self.sales["date"] <= self.filters.payment_date_to
+            ].reset_index(drop=True)
+
+    def get_extras(self) -> Dict[str, Any]:
+        self.extras = {
+            "exclude_columns": ["is_manager"],
+        }
 
     def get(self):
         self.get_filters()
 
-        # self.channels_count = self.load_dataframe(self.channels_count_path)
-        # self.values_expenses = self.load_dataframe(self.values_expenses_path)
-        # self.counts_expenses = self.load_dataframe(self.counts_expenses_path)
+        self.sales = self.load_dataframe(self.sales_path)
+        self.sales.sort_values(by=["manager"], inplace=True, ignore_index=True)
 
         self.filtering_values()
         self.get_extras()
 
-        data = pandas.DataFrame()
+        sales = self.sales[~self.sales["surcharge"]]
+        source = []
+        profit_total = sales["profit"].sum()
+        for manager_name, manager in sales.groupby(by=["manager"]):
+            profit_manager = manager["profit"].sum()
+            surcharge_manager = self.sales[
+                self.sales["surcharge"] & (self.sales["manager"] == manager_name)
+            ]
+            source.append(
+                {
+                    "is_manager": True,
+                    "name": manager_name,
+                    "profit": profit_manager,
+                    "profit_percent": 100,
+                    "profit_percent_total": profit_manager / profit_total * 100,
+                    "surcharge": surcharge_manager["profit"].sum(),
+                }
+            )
+            for course_name, course in manager.groupby(by=["course"]):
+                profit_course = course["profit"].sum()
+                surcharge_course = surcharge_manager[
+                    surcharge_manager["course"] == course_name
+                ]
+                source.append(
+                    {
+                        "is_manager": False,
+                        "name": course_name,
+                        "profit": profit_course,
+                        "profit_percent": profit_course / profit_manager * 100,
+                        "profit_percent_total": profit_course / profit_total * 100,
+                        "surcharge": surcharge_course["profit"].sum(),
+                    }
+                )
+
+        data = pandas.DataFrame(source).rename(
+            columns={
+                "name": "",
+                "profit": "Оборот",
+                "profit_percent": "Процент оборота от менеджера",
+                "profit_percent_total": "Процент оборота от компании",
+                "surcharge": "Доплаты",
+            }
+        )
 
         self.context("filters", self.filters)
-        # self.context("extras", self.extras)
+        self.context("extras", self.extras)
         self.context("data", data)
 
         return super().get()
