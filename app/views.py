@@ -4440,9 +4440,12 @@ class ManagersSalesView(FilteringBaseView):
 
         sales = self.sales[~self.sales["surcharge"]]
         source = []
-        profit_total = sales["profit"].sum()
+        profit_total = self.sales["profit"].sum()
         for manager_name, manager in sales.groupby(by=["manager"]):
             profit_manager = manager["profit"].sum()
+            profit_manager_total = self.sales[self.sales["manager"] == manager_name][
+                "profit"
+            ].sum()
             surcharge_manager = self.sales[
                 self.sales["surcharge"] & (self.sales["manager"] == manager_name)
             ]
@@ -4451,7 +4454,7 @@ class ManagersSalesView(FilteringBaseView):
                     "is_manager": True,
                     "name": manager_name,
                     "profit": profit_manager,
-                    "profit_percent": 100,
+                    "profit_percent": profit_manager / profit_manager_total * 100,
                     "profit_percent_total": profit_manager / profit_total * 100,
                     "surcharge": surcharge_manager["profit"].sum(),
                 }
@@ -4466,7 +4469,7 @@ class ManagersSalesView(FilteringBaseView):
                         "is_manager": False,
                         "name": course_name,
                         "profit": profit_course,
-                        "profit_percent": profit_course / profit_manager * 100,
+                        "profit_percent": profit_course / profit_manager_total * 100,
                         "profit_percent_total": profit_course / profit_total * 100,
                         "surcharge": surcharge_course["profit"].sum(),
                     }
@@ -4476,8 +4479,8 @@ class ManagersSalesView(FilteringBaseView):
             columns={
                 "name": "",
                 "profit": "Оборот",
-                "profit_percent": "% от менеджера",
-                "profit_percent_total": "% от компании",
+                "profit_percent": "% от менеджера с учетом доплат",
+                "profit_percent_total": "% от компании с учетом доплат",
                 "surcharge": "Доплаты",
             }
         )
