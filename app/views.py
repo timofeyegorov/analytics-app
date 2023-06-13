@@ -4476,8 +4476,8 @@ class ManagersSalesView(FilteringBaseView):
             columns={
                 "name": "",
                 "profit": "Оборот",
-                "profit_percent": "Процент оборота от менеджера",
-                "profit_percent_total": "Процент оборота от компании",
+                "profit_percent": "% от менеджера",
+                "profit_percent_total": "% от компании",
                 "surcharge": "Доплаты",
             }
         )

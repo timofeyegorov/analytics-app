@@ -19,10 +19,10 @@
                             {% if column not in extras.exclude_columns %}
                                 {% if column in ["Оборот", "Доплаты"] %}
                                     <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
-                                {% elif column in ["Процент оборота от менеджера", "Процент оборота от компании"] %}
+                                {% elif column in ["% от менеджера", "% от компании"] %}
                                     <td class="nowrap font-monospace text-right">{{ format_float2(item[column]) }} %</td>
                                 {% else %}
-                                    <td class="nowrap">{{ item[column] }}</td>
+                                    <td>{{ item[column] }}</td>
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
