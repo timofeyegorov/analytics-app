@@ -1056,6 +1056,34 @@ def get_managers_zooms():
         pickle.dump(data, file_ref)
 
 
+@log_execution_time("get_managers_sales")
+def get_managers_sales():
+    response = requests.get(
+        f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE&exportFormat=xlsx"
+    )
+    data: pandas.DataFrame = pandas.read_excel(BytesIO(response.content))
+    data.rename(
+        columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
+        inplace=True,
+    )
+    columns_rel = {
+        "data_oplaty": "date",
+        "menedzher": "manager",
+        "kurs": "course",
+        "summa_vyruchki": "profit",
+        "mesjats_doplata": "surcharge",
+    }
+    data = data[columns_rel.keys()].rename(columns=columns_rel)
+    data["surcharge"] = data["surcharge"].apply(lambda item: item == "доплата")
+    data["date"] = data["date"].apply(lambda item: item.date())
+    data["profit"] = data["profit"].fillna(0).apply(parse_float)
+    data["manager"] = data["manager"].apply(parse_str).fillna("undefined")
+    data["course"] = data["course"].apply(parse_str).fillna("undefined")
+
+    with open(Path(DATA_PATH / "managers_sales.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -1078,6 +1106,11 @@ update_so_operator = PythonOperator(
 get_managers_zooms_operator = PythonOperator(
     task_id="get_managers_zooms",
     python_callable=get_managers_zooms,
+    dag=dag,
+)
+get_managers_sales_operator = PythonOperator(
+    task_id="get_managers_sales",
+    python_callable=get_managers_sales,
     dag=dag,
 )
 

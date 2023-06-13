@@ -261,6 +261,11 @@ class ZoomsFiltersData(BaseModel):
             self.manager = value
 
 
+class ManagersSalesFiltersData(BaseModel):
+    payment_date_from: Optional[ConstrainedDate]
+    payment_date_to: Optional[ConstrainedDate]
+
+
 class IntensivesFiltersData(BaseModel):
     date_from: Optional[ConstrainedDate]
     date_to: Optional[ConstrainedDate]
@@ -4374,6 +4379,72 @@ class WeekStatsManagersView(FilteringBaseView):
         return super().get()
 
 
+class ManagersSalesView(FilteringBaseView):
+    template_name = "managers/sales/index.html"
+    title = "Продажи менеджеров"
+
+    filters_class = ManagersSalesFiltersData
+    filters: ManagersSalesFiltersData
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        payment_date_from = request.args.get("payment_date_from") or None
+        if payment_date_from is None:
+            payment_date_from = initial.get("payment_date_from")
+        if isinstance(payment_date_from, str):
+            payment_date_from = datetime.date.fromisoformat(payment_date_from)
+
+        payment_date_to = request.args.get("payment_date_to") or None
+        if payment_date_to is None:
+            payment_date_to = initial.get("payment_date_to")
+        if isinstance(payment_date_to, str):
+            payment_date_to = datetime.date.fromisoformat(payment_date_to)
+
+        data = self.filters_preprocess(
+            payment_date_from=payment_date_from,
+            payment_date_to=payment_date_to,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
+        if self.filters.payment_date_from:
+            # self.values_expenses = self.values_expenses[
+            #     self.values_expenses["date"] >= self.filters.payment_date_from
+            # ].reset_index(drop=True)
+            # self.counts_expenses = self.counts_expenses[
+            #     self.counts_expenses["date"] >= self.filters.payment_date_from
+            # ].reset_index(drop=True)
+            # self.channels_count = self.channels_count[
+            #     self.channels_count["date"] >= self.filters.payment_date_from
+            # ].reset_index(drop=True)
+            # self.roistat = self.roistat[
+            #     self.roistat["date"] >= self.filters.payment_date_from
+            # ].reset_index(drop=True)
+            pass
+
+    def get(self):
+        self.get_filters()
+
+        # self.channels_count = self.load_dataframe(self.channels_count_path)
+        # self.values_expenses = self.load_dataframe(self.values_expenses_path)
+        # self.counts_expenses = self.load_dataframe(self.counts_expenses_path)
+
+        self.filtering_values()
+        self.get_extras()
+
+        data = pandas.DataFrame()
+
+        self.context("filters", self.filters)
+        # self.context("extras", self.extras)
+        self.context("data", data)
+
+        return super().get()
+
+
 class WeekStatsChannelsView(FilteringBaseView):
     template_name = "week-stats/channels/index.html"
     title = "Каналы трафика"
@@ -4563,7 +4634,9 @@ class WeekStatsChannelsView(FilteringBaseView):
                     "ipl": roistat_leads["ipl"].sum() / len(roistat_leads),
                 }
             )
-        data_expenses_ipl = pandas.DataFrame(data=data_expenses_ipl_list)
+        data_expenses_ipl = pandas.DataFrame(
+            data=data_expenses_ipl_list, columns=["channel_id", "ipl"]
+        )
         data_expenses: pandas.DataFrame = data_expenses.merge(
             data_expenses_ipl, how="left", on=["channel_id"]
         ).reset_index(drop=True)

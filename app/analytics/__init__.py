@@ -916,6 +916,10 @@ app.add_url_rule(
     "/amocrm/api/<string:method_name>",
     view_func=views_amocrm.ApiView.as_view("amocrm_api"),
 )
+app.add_url_rule(
+    "/managers/sales",
+    view_func=views.ManagersSalesView.as_view("managers_sales"),
+)
 
 
 @app.route("/login/hh")
