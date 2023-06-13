@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div class="base-links">
+        {% include 'managers/base_links.html' %}
+    </div>
+    {% include 'managers/sales/courses/filters.html' %}
+    {% include 'managers/sales/courses/data.html' %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/managers/sales/courses/index.js') }}"></script>
+{% endblock js %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='css/managers/sales/courses/index.css') }}" rel="stylesheet">
+{% endblock css %}

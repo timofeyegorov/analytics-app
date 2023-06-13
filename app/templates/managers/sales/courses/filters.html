@@ -1,0 +1,16 @@
+<form action="{{ url_for('managers_sales_courses') }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-payment_date_from">Оплата с даты</label>
+            <input type="date" name="payment_date_from" id="field-payment_date_from" value="{% if filters.payment_date_from %}{{ filters.payment_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-payment_date_to">Оплата по дату</label>
+            <input type="date" name="payment_date_to" id="field-payment_date_to" value="{% if filters.payment_date_to %}{{ filters.payment_date_to }}{% endif %}">
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Обновить</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
+    </div>
+</form>

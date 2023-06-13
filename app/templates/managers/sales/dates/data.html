@@ -1,0 +1,37 @@
+<div id="statistics">
+    {% if not data.empty %}
+        <table>
+            <thead>
+                <tr>
+                    <th class="sticky nowrap"></th>
+                    {% for column in data.columns %}
+                        {% if column not in extras.exclude_columns %}
+                            <th class="sticky nowrap">{{ column }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, item in data.iterrows() %}
+                    <tr{% if item.is_date %} class="date"{% endif %}>
+                        <th class="font-monospace text-right">{{ loop.index }}</th>
+                        {% for column in data.columns %}
+                            {% if column not in extras.exclude_columns %}
+                                {% if column in ["Оборот"] %}
+                                    <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                                {% elif column in ["% от менеджера", "% от компании"] %}
+                                    <td class="nowrap font-monospace text-right">{{ format_float2(item[column]) }} %</td>
+                                {% else %}
+                                    <td>{{ item[column] }}</td>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        Нет данных
+    {% endif %}
+</div>
+

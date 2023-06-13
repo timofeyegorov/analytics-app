@@ -261,9 +261,23 @@ class ZoomsFiltersData(BaseModel):
             self.manager = value
 
 
-class ManagersSalesFiltersData(BaseModel):
+class ManagersSalesCoursesFiltersData(BaseModel):
     payment_date_from: Optional[ConstrainedDate]
     payment_date_to: Optional[ConstrainedDate]
+
+
+class ManagersSalesDatesFiltersData(BaseModel):
+    payment_date_from: Optional[ConstrainedDate]
+    payment_date_to: Optional[ConstrainedDate]
+    course: Optional[str]
+
+    def __getitem__(self, item):
+        if item == "course":
+            return self.course
+
+    def __setitem__(self, key, value):
+        if key == "course":
+            self.course = value
 
 
 class IntensivesFiltersData(BaseModel):
@@ -4379,12 +4393,12 @@ class WeekStatsManagersView(FilteringBaseView):
         return super().get()
 
 
-class ManagersSalesView(FilteringBaseView):
-    template_name = "managers/sales/index.html"
-    title = "Продажи менеджеров"
+class ManagersSalesCoursesView(FilteringBaseView):
+    template_name = "managers/sales/courses/index.html"
+    title = "Продажи менеджеров по курсам"
 
-    filters_class = ManagersSalesFiltersData
-    filters: ManagersSalesFiltersData
+    filters_class = ManagersSalesCoursesFiltersData
+    filters: ManagersSalesCoursesFiltersData
 
     sales: pandas.DataFrame
 
@@ -4417,11 +4431,11 @@ class ManagersSalesView(FilteringBaseView):
     def filtering_values(self):
         if self.filters.payment_date_from:
             self.sales = self.sales[
-                self.sales["date"] >= self.filters.payment_date_from
+                self.sales["payment_date"] >= self.filters.payment_date_from
             ].reset_index(drop=True)
         if self.filters.payment_date_to:
             self.sales = self.sales[
-                self.sales["date"] <= self.filters.payment_date_to
+                self.sales["payment_date"] <= self.filters.payment_date_to
             ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
@@ -4441,7 +4455,7 @@ class ManagersSalesView(FilteringBaseView):
         sales = self.sales[~self.sales["surcharge"]]
         source = []
         profit_total = self.sales["profit"].sum()
-        for manager_name, manager in sales.groupby(by=["manager"]):
+        for manager_name, manager in sales.groupby(by=["manager"], sort=False):
             profit_manager = manager["profit"].sum()
             profit_manager_total = self.sales[self.sales["manager"] == manager_name][
                 "profit"
@@ -4482,6 +4496,165 @@ class ManagersSalesView(FilteringBaseView):
                 "profit_percent": "% от менеджера с учетом доплат",
                 "profit_percent_total": "% от компании с учетом доплат",
                 "surcharge": "Доплаты",
+            }
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+
+        return super().get()
+
+
+class ManagersSalesDatesView(FilteringBaseView):
+    template_name = "managers/sales/dates/index.html"
+    title = "Продажи менеджеров по датам заявок"
+
+    filters_class = ManagersSalesDatesFiltersData
+    filters: ManagersSalesDatesFiltersData
+
+    sales: pandas.DataFrame
+
+    sales_path: Path = Path(DATA_FOLDER) / "week" / "managers_sales.pkl"
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        payment_date_from = request.args.get("payment_date_from") or None
+        if payment_date_from is None:
+            payment_date_from = initial.get("payment_date_from")
+        if isinstance(payment_date_from, str):
+            payment_date_from = datetime.date.fromisoformat(payment_date_from)
+
+        payment_date_to = request.args.get("payment_date_to") or None
+        if payment_date_to is None:
+            payment_date_to = initial.get("payment_date_to")
+        if isinstance(payment_date_to, str):
+            payment_date_to = datetime.date.fromisoformat(payment_date_to)
+
+        course = request.args.get("course")
+        if course is None:
+            course = initial.get("course", "__all__")
+        if course == "__all__":
+            course = None
+
+        data = self.filters_preprocess(
+            payment_date_from=payment_date_from,
+            payment_date_to=payment_date_to,
+            course=course,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
+        if self.filters.payment_date_from:
+            self.sales = self.sales[
+                self.sales["payment_date"] >= self.filters.payment_date_from
+            ].reset_index(drop=True)
+        if self.filters.payment_date_to:
+            self.sales = self.sales[
+                self.sales["payment_date"] <= self.filters.payment_date_to
+            ].reset_index(drop=True)
+
+    def get_extras_group(self, group: str) -> List[List[str]]:
+        group_id = f"{group}_id"
+        groups: pandas.DataFrame = (
+            self.sales[[group_id, group]]
+            .drop_duplicates()
+            .sort_values(group)
+            .reset_index(drop=True)
+        )
+        if self.filters[group] not in list(groups[group_id]):
+            self.filters[group] = None
+        if self.filters[group] is not None:
+            self.sales = self.sales[
+                self.sales[group_id] == self.filters[group]
+            ].reset_index(drop=True)
+        return groups.values.tolist()
+
+    def get_extras(self) -> Dict[str, Any]:
+        self.extras = {
+            "courses": self.get_extras_group("course"),
+            "exclude_columns": ["is_date"],
+        }
+
+    def get(self):
+        self.get_filters()
+
+        self.sales = self.load_dataframe(self.sales_path)
+        self.sales["course_id"] = self.sales["course"].apply(parse_slug)
+        self.sales.sort_values(
+            by=["order_date"], ascending=[False], inplace=True, ignore_index=True
+        )
+
+        self.filtering_values()
+        self.get_extras()
+
+        months = [
+            "январь",
+            "февраль",
+            "март",
+            "апрель",
+            "май",
+            "июнь",
+            "июль",
+            "август",
+            "сентябрь",
+            "октябрь",
+            "ноябрь",
+            "декабрь",
+        ]
+        current_year = datetime.datetime.now().year
+        self.sales["order_date_name"] = self.sales["order_date"].apply(
+            lambda item: "undefined"
+            if pandas.isna(item)
+            else (
+                f"{item.year}, {months[item.month-1]}"
+                if item.year == current_year
+                else f"{item.year}"
+            )
+        )
+
+        source = []
+        profit_total = self.sales["profit"].sum()
+        for order_date_name, order_date in self.sales.groupby(
+            by=["order_date_name"], sort=False
+        ):
+            profit_order_date = order_date["profit"].sum()
+            profit_order_date_total = self.sales[
+                self.sales["order_date_name"] == order_date_name
+            ]["profit"].sum()
+            source.append(
+                {
+                    "is_date": True,
+                    "name": order_date_name,
+                    "profit": profit_order_date,
+                    "profit_percent": profit_order_date / profit_order_date_total * 100,
+                    "profit_percent_total": profit_order_date / profit_total * 100,
+                }
+            )
+            for manager_name, manager in order_date.groupby(by=["manager"]):
+                profit_manager = manager["profit"].sum()
+                source.append(
+                    {
+                        "is_date": False,
+                        "name": manager_name,
+                        "profit": profit_manager,
+                        "profit_percent": profit_manager
+                        / profit_order_date_total
+                        * 100,
+                        "profit_percent_total": profit_manager / profit_total * 100,
+                    }
+                )
+
+        data = pandas.DataFrame(source).rename(
+            columns={
+                "name": "",
+                "profit": "Оборот",
+                "profit_percent": "% от менеджера",
+                "profit_percent_total": "% от компании",
             }
         )
 

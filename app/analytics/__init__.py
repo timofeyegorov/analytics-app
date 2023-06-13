@@ -917,8 +917,12 @@ app.add_url_rule(
     view_func=views_amocrm.ApiView.as_view("amocrm_api"),
 )
 app.add_url_rule(
-    "/managers/sales",
-    view_func=views.ManagersSalesView.as_view("managers_sales"),
+    "/managers/sales/courses",
+    view_func=views.ManagersSalesCoursesView.as_view("managers_sales_courses"),
+)
+app.add_url_rule(
+    "/managers/sales/date",
+    view_func=views.ManagersSalesDatesView.as_view("managers_sales_dates"),
 )
 
 
