@@ -4603,6 +4603,7 @@ class ManagersSalesDatesView(FilteringBaseView):
         )
 
         self.filtering_values()
+        profit_total = self.sales["profit"].sum()
         self.get_extras()
 
         months = [
@@ -4631,7 +4632,6 @@ class ManagersSalesDatesView(FilteringBaseView):
         )
 
         source = []
-        profit_total = self.sales["profit"].sum()
         for order_date_name, order_date in self.sales.groupby(
             by=["order_date_name"], sort=False
         ):
