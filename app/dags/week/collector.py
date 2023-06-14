@@ -1061,7 +1061,7 @@ def get_managers_sales():
     response = requests.get(
         f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE&exportFormat=xlsx"
     )
-    data: pandas.DataFrame = pandas.read_excel(BytesIO(response.content))
+    data: pandas.DataFrame = pandas.read_excel(BytesIO(response.content), "Все оплаты")
     data.rename(
         columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
         inplace=True,

@@ -27,6 +27,7 @@ from xlsxwriter import Workbook
 from flask import request, render_template, send_file, abort, send_file
 from flask.views import MethodView
 
+from app import decorators
 from app.plugins.ads import vk
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
@@ -145,6 +146,10 @@ class TemplateView(MethodView):
     context: ContextTemplate = ContextTemplate()
     template_name: str
     title: str = ""
+
+    @decorators.auth
+    def dispatch_request(self, *args, **kwargs):
+        return super().dispatch_request(*args, **kwargs)
 
     def get_template_name(self) -> str:
         return self.template_name
@@ -1714,6 +1719,10 @@ class VKCreateAdView(TemplateView):
 
 
 class VKXlsxAdsView(MethodView):
+    @decorators.auth
+    def dispatch_request(self, *args, **kwargs):
+        return super().dispatch_request(*args, **kwargs)
+
     def create_ads(
         self, workbook: Workbook, categories: Dict[int, str], countries: Dict[int, str]
     ):
@@ -2531,6 +2540,10 @@ class VKXlsxAdsView(MethodView):
 
 
 class VKXlsxLeadsView(MethodView):
+    @decorators.auth
+    def dispatch_request(self, *args, **kwargs):
+        return super().dispatch_request(*args, **kwargs)
+
     def create_leads(self, workbook: Workbook):
         leads = pickle_loader.leads
         leads = leads.drop(

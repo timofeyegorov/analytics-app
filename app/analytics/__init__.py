@@ -27,6 +27,7 @@ from app.tables.audience_type import (
     calculate_audience_type_result,
     calculate_audience_type_percent_result,
 )
+from app import decorators
 from config import config
 from config import RESULTS_FOLDER
 
@@ -104,7 +105,8 @@ def utility_processor():
     )
 
 
-@app.route("/getPlotCSV")
+@app.route("/getPlotCSV", endpoint="get_plot_csv")
+@decorators.auth
 def getPlotCSV():
     marginality = request.args.get("value")
     if ", " in marginality:
@@ -155,7 +157,8 @@ def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     return table
 
 
-@app.route("/channels_summary", methods=["GET", "POST"])
+@app.route("/channels_summary", methods=["GET", "POST"], endpoint="channels_summary")
+@decorators.auth
 def channels_summary():
     columns_dict = {
         "Канал": "canal",
@@ -399,7 +402,8 @@ def channels_summary():
         # )
 
 
-@app.route("/channels_detailed")
+@app.route("/channels_detailed", endpoint="channels_detailed")
+@decorators.auth
 def channels_detailed():
     tab = request.args.get("tab")
     tables = get_channels_detailed()
@@ -409,21 +413,24 @@ def channels_detailed():
 app.add_url_rule("/channels", view_func=views.ChannelsView.as_view("channels"))
 
 
-@app.route("/payments_accumulation")
+@app.route("/payments_accumulation", endpoint="payments_accumulation")
+@decorators.auth
 def payments_accumulation():
     tab = request.args.get("tab")
     tables = get_payments_accumulation()
     return render_template("payments_accumulation.html", tables=tables, tab=tab)
 
 
-@app.route("/marginality")
+@app.route("/marginality", endpoint="marginality")
+@decorators.auth
 def marginality():
     tab = request.args.get("tab")
     tables = get_marginality()
     return render_template("marginality.html", tables=tables, tab=tab)
 
 
-@app.route("/audience_type")
+@app.route("/audience_type", endpoint="audience_type")
+@decorators.auth
 def audience_type():
     tab = request.args.get("tab")
     date_start = request.args.get("date_start")
@@ -476,7 +483,8 @@ def audience_type():
     return render_template("audience_type.html", tables=tables, tab=tab)
 
 
-@app.route("/audience_type_percent")
+@app.route("/audience_type_percent", endpoint="audience_type_percent")
+@decorators.auth
 def audience_type_percent():
     tab = request.args.get("tab")
     date_start = request.args.get("date_start")
@@ -529,7 +537,8 @@ def audience_type_percent():
     return render_template("audience_type_percent.html", tables=tables, tab=tab)
 
 
-@app.route("/segments")
+@app.route("/segments", endpoint="segments")
+@decorators.auth
 def segments():
     date_start = request.args.get("date_start")
     date_end = request.args.get("date_end")
@@ -557,7 +566,8 @@ def segments():
     )
 
 
-@app.route("/turnover")
+@app.route("/turnover", endpoint="turnover")
+@decorators.auth
 def turnover():
     date_request_start = request.args.get("date_request_start")
     date_request_end = request.args.get("date_request_end")
@@ -621,7 +631,8 @@ def turnover():
     )
 
 
-@app.route("/clusters")
+@app.route("/clusters", endpoint="clusters")
+@decorators.auth
 def clusters():
     date_start = request.args.get("date_start")
     date_end = request.args.get("date_end")
@@ -658,7 +669,8 @@ def clusters():
     )
 
 
-@app.route("/traffic_sources")
+@app.route("/traffic_sources", endpoint="traffic_sources")
+@decorators.auth
 def traffic_sources():
     date_start = request.args.get("date_start")
     date_end = request.args.get("date_end")
@@ -696,7 +708,8 @@ def traffic_sources():
     )
 
 
-@app.route("/segments_stats")
+@app.route("/segments_stats", endpoint="segments_stats")
+@decorators.auth
 def segments_stats():
     date_start = request.args.get("date_start")
     date_end = request.args.get("date_end")
@@ -734,7 +747,8 @@ def segments_stats():
     )
 
 
-@app.route("/leads_ta_stats")
+@app.route("/leads_ta_stats", endpoint="leads_ta_stats")
+@decorators.auth
 def leads_ta_stats():
     date_start = request.args.get("date_start")
     date_end = request.args.get("date_end")
@@ -761,7 +775,8 @@ def leads_ta_stats():
     return render_template("leads_ta_stats.html", table=table)
 
 
-@app.route("/landings")
+@app.route("/landings", endpoint="landings")
+@decorators.auth
 def landings():
     date_start = request.args.get("date_start")
     date_end = request.args.get("date_end")
@@ -789,7 +804,8 @@ def landings():
     )
 
 
-@app.route("/vacancies")
+@app.route("/vacancies", endpoint="vacancies")
+@decorators.auth
 def vacancies():
     redirect_uri = "https://analytic.neural-university.ru/login/hh"
     client_id = config["hh"]["client_id"]
@@ -926,7 +942,8 @@ app.add_url_rule(
 )
 
 
-@app.route("/login/hh")
+@app.route("/login/hh", endpoint="login_hh")
+@decorators.auth
 def parse_vacancies():
     token = request.args.get("code")
     url = "https://hh.ru/oauth/token"

@@ -1,28 +1,31 @@
-from app import app
-from .database.auth import get_session
+from app import app, decorators
+from app.database.auth import auth_user
 
-from flask import make_response, request, render_template, redirect
+from flask import request, session, render_template, redirect, url_for
 from hashlib import md5
 
-@app.route('/login', methods=['get'])
+
+@app.route("/login", methods=["get"], endpoint="login")
+@decorators.auth
 def login_page():
-    return render_template('login.html')
+    return render_template("login.html")
 
-@app.route('/login', methods=['post'])
+
+@app.route("/login", methods=["post"], endpoint="login_post")
+@decorators.auth
 def login_action():
-    login = request.form.get('login')
-    password = request.form.get('password')
-    password = md5(password.encode('utf-8')).hexdigest()
-    session = get_session(login, password)
-    if session is None:
-        return render_template('login.html', error='Неверный логин или пароль')
+    login = request.form.get("login")
+    password = request.form.get("password")
+    password = md5(password.encode("utf-8")).hexdigest()
+    user = auth_user(login, password)
+    if user is None:
+        return render_template("login.html", error="Неверный логин или пароль")
     else:
-        resp = make_response(redirect('/'))
-        resp.set_cookie('token', session['token'])
-        return resp
+        session.setdefault("uid", user.id)
+        return redirect(url_for("root"))
 
-@app.route('/logout', methods=['get'])
+
+@app.route("/logout", methods=["get"], endpoint="logout")
 def logout():
-    resp = make_response(redirect('/'))
-    resp.set_cookie('token', '')
-    return resp
+    session.clear()
+    return redirect(url_for("login"))

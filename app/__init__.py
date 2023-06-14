@@ -14,6 +14,7 @@ from celery import Celery
 from celery.schedules import crontab
 from datetime import datetime, timedelta
 from app.plugins.tg_report import TGReportChannelsSummary
+from app import decorators
 
 
 # def fig_leads_dynamics():
@@ -85,24 +86,23 @@ def report_channels_summary(debug: bool = False):
     report.send()
 
 
-@app.route("/")
-@app.route("/index")
+@app.route("/", endpoint="root")
+@app.route("/index", endpoint="index")
+@decorators.auth
 def index():
-    token = request.cookies.get("token")
-    if check_token(token):
-        return render_template("index.html")  # , fig_leads_dynamics=fig_leads_dynamics)
-    else:
-        return redirect("/login")
+    return render_template("index.html")  # , fig_leads_dynamics=fig_leads_dynamics)
 
 
-@app.route("/leads")
+@app.route("/leads", endpoint="leads")
+@decorators.auth
 def data():
     data = get_leads_data()
     data.traffic_channel = data.traffic_channel.str.split("?").str[0]
     return render_template("leads.html", tables={"Leads": data.drop(columns=["id"])})
 
 
-@app.route("/trafficologists")
+@app.route("/trafficologists", endpoint="trafficologists")
+@decorators.auth
 def trafficologist_page(trafficologist_error=None, account_error=None):
     with open(os.path.join(RESULTS_FOLDER, "trafficologists.pkl"), "rb") as f:
         trafficologists = pkl.load(f)
@@ -120,7 +120,8 @@ def trafficologist_page(trafficologist_error=None, account_error=None):
     # account_error=account_error)
 
 
-@app.route("/target_audience")
+@app.route("/target_audience", endpoint="target_audience")
+@decorators.auth
 def target_audience():
     with open(os.path.join(RESULTS_FOLDER, "target_audience.pkl"), "rb") as f:
         target_audience = pkl.load(f)
@@ -128,7 +129,8 @@ def target_audience():
     return render_template("target_audience.html", target_audience=target_audience)
 
 
-@app.route("/crops")
+@app.route("/crops", endpoint="crops")
+@decorators.auth
 def crops():
     with open(os.path.join(RESULTS_FOLDER, "crops_list.pkl"), "rb") as f:
         crops = pkl.load(f)
@@ -136,7 +138,8 @@ def crops():
     return render_template("crops.html", crops=crops)
 
 
-@app.route("/expenses")
+@app.route("/expenses", endpoint="expenses")
+@decorators.auth
 def expenses():
     with open(
         os.path.join(RESULTS_FOLDER, "expenses.json"), "r", encoding="cp1251"
@@ -236,7 +239,8 @@ def expenses():
     return render_template("expenses.html", exp=output_dict)
 
 
-@app.route("/statuses")
+@app.route("/statuses", endpoint="statuses")
+@decorators.auth
 def statuses_page():
     with open(os.path.join(RESULTS_FOLDER, "statuses.pkl"), "rb") as f:
         statuses = pkl.load(f)
