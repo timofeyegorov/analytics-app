@@ -1094,6 +1094,104 @@ def get_managers_sales():
         pickle.dump(data, file_ref)
 
 
+@log_execution_time("get_intensives_emails")
+def get_intensives_emails():
+    data_columns = ["course", "date", "email"]
+
+    def sources_read(url: str) -> pandas.ExcelFile:
+        print(f"   | Read source from url: {url}")
+        response = requests.get(url)
+        return pandas.ExcelFile(BytesIO(response.content))
+
+    def get_download_url(url: str) -> str:
+        print(f"   | Download file from url: {url}")
+        url = urlparse(url)
+        tails = list(filter(None, url.path.split("/")))
+        return f"https://docs.google.com/spreadsheets/d/{tails[2]}/export?format=xlsx&id={tails[2]}"
+
+    def read_excel(course_name: str, file: pandas.ExcelFile) -> pandas.DataFrame:
+        print(f"   | Read excel document: {file.sheet_names}")
+        dataframe = pandas.DataFrame(columns=data_columns)
+        for sheet_name in file.sheet_names:
+            try:
+                date = datetime.strptime(sheet_name, "%d.%m.%Y").date()
+            except ValueError:
+                continue
+            data: pandas.DataFrame = file.parse(sheet_name)
+            if data.empty:
+                data = pandas.DataFrame(columns=data_columns)
+            data.rename(
+                columns=dict(zip(data.columns, slugify_columns(list(data.columns)))),
+                inplace=True,
+            )
+            data.rename(columns={"e_mail": "email"}, inplace=True)
+            data.drop_duplicates(inplace=True, ignore_index=True)
+            data["email"] = data["email"].apply(parse_str)
+            data["date"] = date
+            data["course"] = course_name
+            dataframe = pandas.concat([dataframe, data], ignore_index=True)
+        return dataframe
+
+    print("-> Read summary")
+    summary_file = sources_read(
+        get_download_url(
+            "https://docs.google.com/spreadsheets/d/1KdI82fdMge4PQ3FqLfQkYdUj28ogMLhh/edit#gid=279427510"
+        )
+    )
+    print()
+    summary: pandas.DataFrame = summary_file.parse()
+    summary.rename(
+        columns=dict(
+            zip(list(summary.columns), slugify_columns(list(summary.columns)))
+        ),
+        inplace=True,
+    )
+    summary.rename(
+        columns={
+            "fajl_s_registratsijami": "intensives_registrations",
+            "fajl_s_predzakazami": "intensives_preorders",
+        },
+        inplace=True,
+    )
+    for column in summary.columns:
+        summary[column] = summary[column].apply(parse_str)
+    sources = {
+        "intensives_registrations": pandas.DataFrame(columns=data_columns),
+        "intensives_preorders": pandas.DataFrame(columns=data_columns),
+    }
+    for _, summary_row in summary.iterrows():
+        print()
+        print("-> Read sources")
+        sources["intensives_registrations"] = pandas.concat(
+            [
+                sources["intensives_registrations"],
+                read_excel(
+                    summary_row["intensiv"],
+                    sources_read(
+                        get_download_url(summary_row.intensives_registrations)
+                    ),
+                ),
+            ],
+            ignore_index=True,
+        )
+        print("   |")
+        sources["intensives_preorders"] = pandas.concat(
+            [
+                sources["intensives_preorders"],
+                read_excel(
+                    summary_row["intensiv"],
+                    sources_read(get_download_url(summary_row.intensives_preorders)),
+                ),
+            ],
+            ignore_index=True,
+        )
+        print()
+
+    for source_name, source in sources.items():
+        with open(Path(DATA_PATH / f"{source_name}.pkl"), "wb") as file_ref:
+            pickle.dump(source, file_ref)
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -1121,6 +1219,11 @@ get_managers_zooms_operator = PythonOperator(
 get_managers_sales_operator = PythonOperator(
     task_id="get_managers_sales",
     python_callable=get_managers_sales,
+    dag=dag,
+)
+get_intensives_emails_operator = PythonOperator(
+    task_id="get_intensives_emails",
+    python_callable=get_intensives_emails,
     dag=dag,
 )
 
