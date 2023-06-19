@@ -557,7 +557,9 @@ def get_stats():
     leads = PickleLoader().roistat_statistics
     url_account = PickleLoader().roistat_leads[["url", "account", "qa1"]]
     url_account = url_account.merge(
-        leads[["account", "account_title"]].drop_duplicates(ignore_index=True),
+        leads[["account", "account_title"]].drop_duplicates(
+            subset=["account"], keep="last", ignore_index=True
+        ),
         how="left",
         on="account",
     ).drop_duplicates(subset=["url", "account", "account_title"], ignore_index=True)

@@ -290,6 +290,11 @@ class IntensivesFiltersData(BaseModel):
     date_to: Optional[ConstrainedDate]
 
 
+class IntensivesDealsFiltersData(BaseModel):
+    date_from: Optional[ConstrainedDate]
+    date_to: Optional[ConstrainedDate]
+
+
 class SearchLeadsFiltersData(BaseModel):
     id: str = ""
 
@@ -4845,7 +4850,6 @@ class WeekStatsChannelsView(FilteringBaseView):
         ]
 
         self.filtering_values()
-
         self.get_extras()
 
         data_expenses = pandas.DataFrame(
@@ -5159,11 +5163,303 @@ class ChangeZoomView(APIView):
         return super().post()
 
 
-class IntensivesBaseView(FilteringBaseView):
+class IntensivesCourseDateAPIView(APIView):
+    def post(self, course: str, date: str, *args, **kwargs):
+        values_path = Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
+        date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        try:
+            with open(values_path, "rb") as file_ref:
+                values: pandas.DataFrame = pickle.load(file_ref)
+        except FileNotFoundError:
+            values = pandas.DataFrame(
+                columns=[
+                    "course",
+                    "date",
+                    "registrations",
+                    "members",
+                    "reachability",
+                    "so",
+                ]
+            )
+        indexes = list(
+            values[(values["course"] == course) & (values["date"] == date)].index
+        )
+        if indexes:
+            values.drop(labels=indexes, axis=0, inplace=True)
+            values.reset_index(drop=True, inplace=True)
+        row = {**dict(request.form), "course": course, "date": date}
+        values = pandas.concat([values, pandas.DataFrame([row])], ignore_index=True)
+        with open(values_path, "wb") as file_ref:
+            pickle.dump(values, file_ref)
+        return super().post(*args, **kwargs)
+
+
+class IntensivesView(FilteringBaseView):
     template_name = "intensives/index.html"
+    title = "Выручки с мероприятий и активностей"
 
     filters_class = IntensivesFiltersData
     filters: IntensivesFiltersData
+
+    sources_registrations_path: Path = (
+        Path(DATA_FOLDER) / "week" / "intensives_registrations.pkl"
+    )
+    sources_preorders_path: Path = (
+        Path(DATA_FOLDER) / "week" / "intensives_preorders.pkl"
+    )
+    sources_values_path: Path = Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
+
+    extras: Dict[str, Any] = {}
+    sources_registrations: pandas.DataFrame
+    sources_preorders: pandas.DataFrame
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        date_from = request.args.get("date_from")
+        if date_from is None:
+            date_from = initial.get("date_from")
+        if isinstance(date_from, str):
+            date_from = (
+                datetime.date.fromisoformat(date_from) if str(date_from) else None
+            )
+
+        date_to = request.args.get("date_to")
+        if date_to is None:
+            date_to = initial.get("date_to")
+        if isinstance(date_to, str):
+            date_to = datetime.date.fromisoformat(date_to) if str(date_to) else None
+
+        data = self.filters_preprocess(
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
+        if self.sources_registrations is None or self.sources_preorders is None:
+            return
+
+        if self.filters.date_from:
+            self.sources_registrations = self.sources_registrations[
+                self.sources_registrations["date"] >= self.filters.date_from
+            ]
+            self.sources_preorders = self.sources_preorders[
+                self.sources_preorders["date"] >= self.filters.date_from
+            ]
+
+        if self.filters.date_to:
+            self.sources_registrations = self.sources_registrations[
+                self.sources_registrations["date"] <= self.filters.date_to
+            ]
+            self.sources_preorders = self.sources_preorders[
+                self.sources_preorders["date"] <= self.filters.date_to
+            ]
+
+        self.sources_registrations.reset_index(drop=True, inplace=True)
+        self.sources_preorders.reset_index(drop=True, inplace=True)
+
+    def get_extras(self):
+        self.extras = {
+            "exclude_columns": [],
+        }
+
+    def parse_conversion_registration_deal(self, item: pandas.Series) -> Any:
+        if (
+            pandas.isna(item["deals_registrations"])
+            or pandas.isna(item["registrations"])
+            or item["registrations"] == 0
+        ):
+            return ""
+        return item["deals_registrations"] / item["registrations"]
+
+    def parse_conversion_member_deal(self, item: pandas.Series) -> Any:
+        if (
+            pandas.isna(item["deals_registrations"])
+            or pandas.isna(item["members"])
+            or item["members"] == 0
+        ):
+            return ""
+        return item["deals_registrations"] / item["members"]
+
+    def parse_conversion_so_deal(self, item: pandas.Series) -> Any:
+        if (
+            pandas.isna(item["deals_registrations"])
+            or pandas.isna(item["so"])
+            or item["so"] == 0
+        ):
+            return ""
+        return item["deals_registrations"] / item["so"]
+
+    def parse_ppd(self, item: pandas.Series) -> Any:
+        return 0
+
+    def parse_ppm(self, item: pandas.Series) -> Any:
+        return 0
+
+    def parse_ppr(self, item: pandas.Series) -> Any:
+        return 0
+
+    def parse_ppso(self, item: pandas.Series) -> Any:
+        return 0
+
+    def get(self, is_download=False):
+        try:
+            self.sources_registrations = pandas.read_pickle(
+                self.sources_registrations_path
+            )
+        except FileNotFoundError:
+            self.sources_registrations = None
+
+        try:
+            self.sources_preorders = pandas.read_pickle(self.sources_preorders_path)
+        except FileNotFoundError:
+            self.sources_preorders = None
+
+        try:
+            values = pandas.read_pickle(self.sources_values_path)
+        except FileNotFoundError:
+            values = pandas.DataFrame(
+                columns=[
+                    "course",
+                    "date",
+                    "registrations",
+                    "members",
+                    "reachability",
+                    "so",
+                ]
+            )
+        values.fillna("", inplace=True)
+
+        self.get_filters()
+        self.filtering_values()
+        self.get_extras()
+
+        data = pandas.DataFrame(
+            columns=[
+                "course",
+                "date",
+                "deals_registrations",
+                "conversion_registration_deal",
+                "conversion_member_deal",
+                "conversion_so_deal",
+                "profit_registrations",
+                "ppd",
+                "ppm",
+                "ppr",
+                "deals_preorders",
+                "profit_preorders",
+                "ppso",
+            ]
+        )
+
+        registrations = []
+        if self.sources_registrations is not None:
+            for (course_name, date), course in self.sources_registrations.groupby(
+                by=["course", "date"]
+            ):
+                deals_preorders = self.sources_preorders[
+                    (self.sources_preorders["course"] == course_name)
+                    & (self.sources_preorders["date"] == date)
+                ]
+                registrations.append(
+                    {
+                        "course": course_name,
+                        "date": date,
+                        "deals_registrations": len(course),
+                        "deals_preorders": len(deals_preorders),
+                    }
+                )
+            data = pandas.concat(
+                [
+                    data,
+                    pandas.DataFrame(registrations).sort_values(
+                        by=["course", "date"], ascending=[True, False]
+                    ),
+                ],
+                ignore_index=True,
+            )
+
+        data = pandas.merge(data, values, on=["course", "date"])
+        data = data[
+            [
+                "course",
+                "date",
+                "registrations",
+                "members",
+                "reachability",
+                "so",
+                "deals_registrations",
+                "conversion_registration_deal",
+                "conversion_member_deal",
+                "conversion_so_deal",
+                "profit_registrations",
+                "ppd",
+                "ppm",
+                "ppr",
+                "deals_preorders",
+                "profit_preorders",
+                "ppso",
+            ]
+        ]
+        data["registrations"] = data["registrations"].apply(parse_int)
+        data["members"] = data["members"].apply(parse_int)
+        data["reachability"] = data["reachability"].apply(parse_int)
+        data["so"] = data["so"].apply(parse_int)
+        data["deals_registrations"] = data["deals_registrations"].apply(parse_int)
+        data["conversion_registration_deal"] = data.apply(
+            self.parse_conversion_registration_deal, axis=1
+        )
+        data["conversion_member_deal"] = data.apply(
+            self.parse_conversion_member_deal, axis=1
+        )
+        data["conversion_so_deal"] = data.apply(self.parse_conversion_so_deal, axis=1)
+        data["profit_registrations"] = data["profit_registrations"].apply(parse_int)
+        data["ppd"] = data.apply(self.parse_ppd, axis=1)
+        data["ppm"] = data.apply(self.parse_ppm, axis=1)
+        data["ppr"] = data.apply(self.parse_ppr, axis=1)
+        data["deals_preorders"] = data["deals_preorders"].apply(parse_int)
+        data["profit_preorders"] = data["profit_preorders"].apply(parse_int)
+        data["ppso"] = data.apply(self.parse_ppso, axis=1)
+
+        data.rename(
+            columns={
+                "course": "Мероприятие",
+                "date": "Дата",
+                "registrations": "Количество регистраций",
+                "members": "Количество участников",
+                "reachability": "Доходимость",
+                "so": "Количество SO",
+                "deals_registrations": "Количество сделок (с регистраций)",
+                "conversion_registration_deal": "Конверсия с регистрации в сделку",
+                "conversion_member_deal": "Конверсия с участника в сделку",
+                "conversion_so_deal": "Конверсия с SO в сделку",
+                "profit_registrations": "Выручка (с регистраций)",
+                "ppd": "Оборот на сделку (по файлу с регистрациями)",
+                "ppm": "Оборот на участника",
+                "ppr": "Оборот на регистрацию",
+                "deals_preorders": "Количество сделок (с предзаказов)",
+                "profit_preorders": "Выручка (с предзаказов)",
+                "ppso": "Оборот на сделку (по файлу с SO)",
+            },
+            inplace=True,
+        )
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+
+        return super().get()
+
+
+class IntensivesBaseView(FilteringBaseView):
+    template_name = "intensives/deals/index.html"
+
+    filters_class = IntensivesDealsFiltersData
+    filters: IntensivesDealsFiltersData
 
     extras: Dict[str, Any] = {}
     source: pandas.DataFrame

@@ -913,12 +913,20 @@ app.add_url_rule(
     view_func=views.ZoomsView.as_view("zooms"),
 )
 app.add_url_rule(
+    "/intensives",
+    view_func=views.IntensivesView.as_view("intensives"),
+)
+app.add_url_rule(
     "/intensives/registration",
     view_func=views.IntensivesRegistrationView.as_view("intensives_registration"),
 )
 app.add_url_rule(
     "/intensives/preorder",
     view_func=views.IntensivesPreorderView.as_view("intensives_preorder"),
+)
+app.add_url_rule(
+    "/api/intensives/<course>/<date>",
+    view_func=views.IntensivesCourseDateAPIView.as_view("api_intensives_course_date"),
 )
 app.add_url_rule(
     "/api/change-zoom/<manager_id>/<lead>/<date>",

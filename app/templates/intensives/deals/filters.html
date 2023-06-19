@@ -1,11 +1,11 @@
 <form action="{{ request.path }}">
     <div class="filter-block">
         <div class="field">
-            <label for="field-date_from">Дата мероприятия с</label>
+            <label for="field-date_from">Дата интенсива с</label>
             <input type="date" name="date_from" id="field-date_from" value="{% if filters.date_from %}{{ filters.date_from }}{% endif %}">
         </div>
         <div class="field">
-            <label for="field-date_to">Дата мероприятия по</label>
+            <label for="field-date_to">Дата интенсива по</label>
             <input type="date" name="date_to" id="field-date_to" value="{% if filters.date_to %}{{ filters.date_to }}{% endif %}">
         </div>
     </div>

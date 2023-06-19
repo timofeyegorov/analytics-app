@@ -1,0 +1,36 @@
+<div id="statistics">
+    <table>
+        <thead>
+            <tr>
+                {% for column in data.columns %}
+                    {% if column not in extras.exclude_columns %}
+                        <th class="sticky nowrap">{{ column }}</th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="nowrap info">{{ total["Дата интенсива"] }}</td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["Количество сделок"]) }}</td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["Выручка"]) }} ₽</td>
+                <td class="nowrap info font-monospace text-right">{{ format_int(total["Выручка за сделку"]) }} ₽</td>
+            </tr>
+            {% for index, item in data.iterrows() %}
+                <tr>
+                    {% for column in data.columns %}
+                        {% if column not in extras.exclude_columns %}
+                            {% if column == "Дата интенсива" %}
+                                <td class="nowrap font-monospace">{{ format_date(item[column]) }}</td>
+                            {% elif column == "Выручка" %}
+                                <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                            {% else %}
+                                <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

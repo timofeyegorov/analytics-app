@@ -1,0 +1,11 @@
+table th,
+table td {
+    padding:10px;
+}
+table th {
+    line-height:1.25;
+    font-size:.6875rem;
+}
+table input {
+    width:80px;
+}

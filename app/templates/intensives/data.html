@@ -4,28 +4,36 @@
             <tr>
                 {% for column in data.columns %}
                     {% if column not in extras.exclude_columns %}
-                        <th class="sticky nowrap">{{ column }}</th>
+                        <th class="sticky">{{ column }}</th>
                     {% endif %}
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td class="nowrap info">{{ total["Дата интенсива"] }}</td>
-                <td class="nowrap info font-monospace text-right">{{ format_int(total["Количество сделок"]) }}</td>
-                <td class="nowrap info font-monospace text-right">{{ format_int(total["Выручка"]) }} ₽</td>
-                <td class="nowrap info font-monospace text-right">{{ format_int(total["Выручка за сделку"]) }} ₽</td>
-            </tr>
             {% for index, item in data.iterrows() %}
                 <tr>
                     {% for column in data.columns %}
                         {% if column not in extras.exclude_columns %}
-                            {% if column == "Дата интенсива" %}
-                                <td class="nowrap font-monospace">{{ format_date(item[column]) }}</td>
-                            {% elif column == "Выручка" %}
-                                <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
-                            {% else %}
+                            {% if column in ["Дата"] %}
+                                <td class="nowrap font-monospace date">{{ format_date(item[column]) }}</td>
+                            {% elif column in ["Количество сделок (с регистраций)", "Количество сделок (с предзаказов)"] %}
                                 <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }}</td>
+                            {% elif column in ["Выручка (с регистраций)", "Оборот на сделку (по файлу с регистрациями)", "Оборот на участника", "Оборот на регистрацию", "Выручка (с предзаказов)", "Оборот на сделку (по файлу с SO)"] %}
+                                <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                            {% elif column in ["Конверсия с регистрации в сделку", "Конверсия с участника в сделку", "Конверсия с SO в сделку"] %}
+                                <td class="nowrap font-monospace text-right">{% if item[column] %}{{ format_float1(item[column]) }}{% endif %}</td>
+                            {% elif column in ["Количество регистраций"] %}
+                                <td class="registrations"><input type="number" name="registrations" value="{{ item[column] }}"></td>
+                            {% elif column in ["Количество участников"] %}
+                                <td class="members"><input type="number" name="members" value="{{ item[column] }}"></td>
+                            {% elif column in ["Доходимость"] %}
+                                <td class="reachability"><input type="number" name="reachability" value="{{ item[column] }}"></td>
+                            {% elif column in ["Количество SO"] %}
+                                <td class="so"><input type="number" name="so" value="{{ item[column] }}"></td>
+                            {% elif column in ["Мероприятие"] %}
+                                <td class="nowrap course">{{ item[column] }}</td>
+                            {% else %}
+                                <td class="nowrap">{{ item[column] }}</td>
                             {% endif %}
                         {% endif %}
                     {% endfor %}
