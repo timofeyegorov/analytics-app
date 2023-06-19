@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
 from collections import OrderedDict
 from transliterate import slugify
-from urllib.parse import urlparse, parse_qsl, urlencode
+from urllib.parse import urlparse, parse_qsl, urlencode, unquote
 from pydantic import BaseModel, ConstrainedDate, conint
 from werkzeug.datastructures import ImmutableMultiDict
 from oauth2client.service_account import ServiceAccountCredentials
@@ -988,6 +988,7 @@ class StatisticsRoistatView(TemplateView):
             .reset_index(drop=True)
         )
 
+        leads["URL"] = leads["URL"].apply(lambda item: unquote(item))
         extra = extra_table(leads)
 
         stats_grouped = statistics[f"{self.filters.groupby}_title"].unique()
