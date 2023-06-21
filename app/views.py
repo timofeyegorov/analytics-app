@@ -5296,16 +5296,40 @@ class IntensivesView(FilteringBaseView):
         return item["deals_registrations"] / item["so"]
 
     def parse_ppd(self, item: pandas.Series) -> Any:
-        return 0
+        if (
+            pandas.isna(item["deals_registrations"])
+            or pandas.isna(item["deals_registrations"])
+            or item["deals_registrations"] == 0
+        ):
+            return ""
+        return item["profit_registrations"] / item["deals_registrations"]
 
     def parse_ppm(self, item: pandas.Series) -> Any:
-        return 0
+        if (
+            pandas.isna(item["members"])
+            or pandas.isna(item["members"])
+            or item["members"] == 0
+        ):
+            return ""
+        return item["profit_registrations"] / item["members"]
 
     def parse_ppr(self, item: pandas.Series) -> Any:
-        return 0
+        if (
+            pandas.isna(item["registrations"])
+            or pandas.isna(item["registrations"])
+            or item["registrations"] == 0
+        ):
+            return ""
+        return item["profit_registrations"] / item["registrations"]
 
     def parse_ppso(self, item: pandas.Series) -> Any:
-        return 0
+        if (
+            pandas.isna(item["deals_preorders"])
+            or pandas.isna(item["deals_preorders"])
+            or item["deals_preorders"] == 0
+        ):
+            return ""
+        return item["profit_preorders"] / item["deals_preorders"]
 
     def get(self, is_download=False):
         try:
@@ -5372,6 +5396,8 @@ class IntensivesView(FilteringBaseView):
                         "date": date,
                         "deals_registrations": len(course),
                         "deals_preorders": len(deals_preorders),
+                        "profit_registrations": course["profit"].sum(),
+                        "profit_preorders": deals_preorders["profit"].sum(),
                     }
                 )
             data = pandas.concat(

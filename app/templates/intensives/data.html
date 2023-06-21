@@ -19,9 +19,9 @@
                             {% elif column in ["Количество сделок (с регистраций)", "Количество сделок (с предзаказов)"] %}
                                 <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }}</td>
                             {% elif column in ["Выручка (с регистраций)", "Оборот на сделку (по файлу с регистрациями)", "Оборот на участника", "Оборот на регистрацию", "Выручка (с предзаказов)", "Оборот на сделку (по файлу с SO)"] %}
-                                <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                                <td class="nowrap font-monospace text-right">{% if item[column] %}{{ format_int(item[column]) }} ₽{% endif %}</td>
                             {% elif column in ["Конверсия с регистрации в сделку", "Конверсия с участника в сделку", "Конверсия с SO в сделку"] %}
-                                <td class="nowrap font-monospace text-right">{% if item[column] %}{{ format_float1(item[column]) }}{% endif %}</td>
+                                <td class="nowrap font-monospace text-right">{% if item[column] %}{{ format_float2(item[column]) }}{% endif %}</td>
                             {% elif column in ["Количество регистраций"] %}
                                 <td class="registrations"><input type="number" name="registrations" value="{{ item[column] }}"></td>
                             {% elif column in ["Количество участников"] %}
