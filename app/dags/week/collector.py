@@ -1098,7 +1098,29 @@ def get_managers_sales():
 
 @log_execution_time("get_intensives_emails")
 def get_intensives_emails():
-    data_columns = ["course", "date", "email"]
+    data_columns = ["course", "date", "email", "profit"]
+
+    def profit_read() -> pandas.DataFrame:
+        url = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE&exportFormat=xlsx"
+        print(f"   | Read source from url: {url}")
+        response = requests.get(url)
+        data: pandas.DataFrame = pandas.read_excel(
+            BytesIO(response.content), "Все оплаты"
+        )
+        data.rename(
+            columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
+            inplace=True,
+        )
+        data.rename(
+            columns={
+                "pochta": "email",
+                "data_oplaty": "date",
+                "summa_vyruchki": "profit",
+            },
+            inplace=True,
+        )
+        data["date"] = data["date"].apply(lambda item: item.date())
+        return data[["email", "date", "profit"]]
 
     def sources_read(url: str) -> pandas.ExcelFile:
         print(f"   | Read source from url: {url}")
@@ -1134,10 +1156,14 @@ def get_intensives_emails():
             dataframe = pandas.concat([dataframe, data], ignore_index=True)
         return dataframe
 
+    print("-> Read profit")
+    profit = profit_read()
+    print()
+
     print("-> Read summary")
     summary_file = sources_read(
         get_download_url(
-            "https://docs.google.com/spreadsheets/d/1KdI82fdMge4PQ3FqLfQkYdUj28ogMLhh/edit#gid=279427510"
+            "https://docs.google.com/spreadsheets/d/1KdI82fdMge4PQ3FqLfQkYdUj28ogMLhh/edit"
         )
     )
     print()
@@ -1162,29 +1188,33 @@ def get_intensives_emails():
         "intensives_preorders": pandas.DataFrame(columns=data_columns),
     }
     for _, summary_row in summary.iterrows():
-        print()
         print("-> Read sources")
+        intensives_registrations = read_excel(
+            summary_row["intensiv"],
+            sources_read(get_download_url(summary_row.intensives_registrations)),
+        )
+        for index, row in intensives_registrations.iterrows():
+            profit_row = profit[
+                (profit["email"] == row["email"]) & (profit["date"] >= row["date"])
+            ]
+            intensives_registrations.at[index, "profit"] = profit_row["profit"].sum()
         sources["intensives_registrations"] = pandas.concat(
-            [
-                sources["intensives_registrations"],
-                read_excel(
-                    summary_row["intensiv"],
-                    sources_read(
-                        get_download_url(summary_row.intensives_registrations)
-                    ),
-                ),
-            ],
+            [sources["intensives_registrations"], intensives_registrations],
             ignore_index=True,
         )
         print("   |")
+
+        intensives_preorders = read_excel(
+            summary_row["intensiv"],
+            sources_read(get_download_url(summary_row.intensives_preorders)),
+        )
+        for index, row in intensives_preorders.iterrows():
+            profit_row = profit[
+                (profit["email"] == row["email"]) & (profit["date"] >= row["date"])
+            ]
+            intensives_preorders.at[index, "profit"] = profit_row["profit"].sum()
         sources["intensives_preorders"] = pandas.concat(
-            [
-                sources["intensives_preorders"],
-                read_excel(
-                    summary_row["intensiv"],
-                    sources_read(get_download_url(summary_row.intensives_preorders)),
-                ),
-            ],
+            [sources["intensives_preorders"], intensives_preorders],
             ignore_index=True,
         )
         print()
