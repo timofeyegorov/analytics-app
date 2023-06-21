@@ -18,8 +18,8 @@
             let target = event.currentTarget,
                 field = $(target),
                 tr = field.closest("tr"),
-                course = tr.children("td.course").text(),
-                date = tr.children("td.date").text(),
+                course = tr.children("td.field-course").data("value"),
+                date = tr.children("td.field-date").data("value"),
                 data = {};
             $.map(tr.find("input"), (field) => {
                 data[field.name] = field.value;
@@ -31,6 +31,9 @@
                 }
                 changeAjax.abort();
             }
+            $.map(["deals_registrations", "profit_registrations"], (field_name) => {
+                data[field_name] = field.closest("tr").find(`td.field-${field_name}`).data("value");
+            });
             changeAjax = $.ajax({
                 url: `/api/intensives/${course}/${date}`,
                 type: "POST",
@@ -44,6 +47,9 @@
                         target.changeZoomTimeout = setTimeout(() => {
                             field.closest("td").removeClass("success");
                         }, 1000);
+                        $.map(data.fields, (value, field_name) => {
+                            field.closest("tr").find(`td.field-${field_name}`).text(value);
+                        });
                     }
                 },
                 error: () => {
@@ -55,7 +61,7 @@
                     }, 1000);
                 },
                 complete: () => {
-                    $(".controllable").attr("disabled", null);
+                    $("table input").attr("disabled", null);
                     changeAjax = undefined;
                 }
             });

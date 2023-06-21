@@ -29,6 +29,7 @@ from flask.views import MethodView
 
 from app import decorators
 from app.plugins.ads import vk
+from app.analytics import utils
 from app.analytics.pickle_load import PickleLoader
 from app.dags.vk import reader as vk_reader, data as vk_data
 from app.utils import detect_week
@@ -5188,10 +5189,63 @@ class IntensivesCourseDateAPIView(APIView):
         if indexes:
             values.drop(labels=indexes, axis=0, inplace=True)
             values.reset_index(drop=True, inplace=True)
-        row = {**dict(request.form), "course": course, "date": date}
+
+        deals_registrations = request.form.get("deals_registrations")
+        profit_registrations = request.form.get("profit_registrations")
+        registrations = request.form.get("registrations")
+        members = request.form.get("members")
+        reachability = request.form.get("reachability")
+        so = request.form.get("so")
+
+        deals_registrations = (
+            float(deals_registrations)
+            if str(deals_registrations) != ""
+            else deals_registrations
+        )
+        profit_registrations = (
+            float(profit_registrations)
+            if str(profit_registrations) != ""
+            else profit_registrations
+        )
+        registrations = (
+            float(registrations) if str(registrations) != "" else registrations
+        )
+        members = float(members) if str(members) != "" else members
+        reachability = float(reachability) if str(reachability) != "" else reachability
+        so = float(so) if str(so) != "" else so
+
+        row = {
+            "course": course,
+            "date": date,
+            "registrations": registrations,
+            "members": members,
+            "reachability": reachability,
+            "so": so,
+        }
         values = pandas.concat([values, pandas.DataFrame([row])], ignore_index=True)
         with open(values_path, "wb") as file_ref:
             pickle.dump(values, file_ref)
+
+        self.data = {
+            "fields": {
+                "conversion_registration_deal": ""
+                if str(deals_registrations) == "" or not registrations
+                else utils.format_float2(deals_registrations / registrations),
+                "ppr": ""
+                if str(profit_registrations) == "" or not registrations
+                else f"{utils.format_int(profit_registrations / registrations)} ₽",
+                "conversion_member_deal": ""
+                if str(deals_registrations) == "" or not members
+                else utils.format_float2(deals_registrations / members),
+                "ppm": ""
+                if str(profit_registrations) == "" or not members
+                else f"{utils.format_int(profit_registrations / members)} ₽",
+                "conversion_so_deal": ""
+                if str(deals_registrations) == "" or not so
+                else utils.format_float2(deals_registrations / so),
+            }
+        }
+
         return super().post(*args, **kwargs)
 
 
@@ -5213,6 +5267,26 @@ class IntensivesView(FilteringBaseView):
     extras: Dict[str, Any] = {}
     sources_registrations: pandas.DataFrame
     sources_preorders: pandas.DataFrame
+
+    columns = {
+        "course": "Мероприятие",
+        "date": "Дата",
+        "registrations": "Количество регистраций",
+        "members": "Количество участников",
+        "reachability": "Доходимость",
+        "so": "Количество SO",
+        "deals_registrations": "Количество сделок (с регистраций)",
+        "conversion_registration_deal": "Конверсия с регистрации в сделку",
+        "conversion_member_deal": "Конверсия с участника в сделку",
+        "conversion_so_deal": "Конверсия с SO в сделку",
+        "profit_registrations": "Выручка (с регистраций)",
+        "ppd": "Оборот на сделку (по файлу с регистрациями)",
+        "ppm": "Оборот на участника",
+        "ppr": "Оборот на регистрацию",
+        "deals_preorders": "Количество сделок (с предзаказов)",
+        "profit_preorders": "Выручка (с предзаказов)",
+        "ppso": "Оборот на сделку (по файлу с SO)",
+    }
 
     def get_filters(self):
         initial = self.filters_initial()
@@ -5266,6 +5340,7 @@ class IntensivesView(FilteringBaseView):
     def get_extras(self):
         self.extras = {
             "exclude_columns": [],
+            "columns": self.columns,
         }
 
     def parse_conversion_registration_deal(self, item: pandas.Series) -> Any:
@@ -5297,7 +5372,7 @@ class IntensivesView(FilteringBaseView):
 
     def parse_ppd(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["deals_registrations"])
+            pandas.isna(item["profit_registrations"])
             or pandas.isna(item["deals_registrations"])
             or item["deals_registrations"] == 0
         ):
@@ -5306,7 +5381,7 @@ class IntensivesView(FilteringBaseView):
 
     def parse_ppm(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["members"])
+            pandas.isna(item["profit_registrations"])
             or pandas.isna(item["members"])
             or item["members"] == 0
         ):
@@ -5315,7 +5390,7 @@ class IntensivesView(FilteringBaseView):
 
     def parse_ppr(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["registrations"])
+            pandas.isna(item["profit_registrations"])
             or pandas.isna(item["registrations"])
             or item["registrations"] == 0
         ):
@@ -5324,7 +5399,7 @@ class IntensivesView(FilteringBaseView):
 
     def parse_ppso(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["deals_preorders"])
+            pandas.isna(item["profit_preorders"])
             or pandas.isna(item["deals_preorders"])
             or item["deals_preorders"] == 0
         ):
@@ -5410,7 +5485,7 @@ class IntensivesView(FilteringBaseView):
                 ignore_index=True,
             )
 
-        data = pandas.merge(data, values, on=["course", "date"])
+        data = pandas.merge(data, values, on=["course", "date"], how="left")
         data = data[
             [
                 "course",
@@ -5452,28 +5527,7 @@ class IntensivesView(FilteringBaseView):
         data["profit_preorders"] = data["profit_preorders"].apply(parse_int)
         data["ppso"] = data.apply(self.parse_ppso, axis=1)
 
-        data.rename(
-            columns={
-                "course": "Мероприятие",
-                "date": "Дата",
-                "registrations": "Количество регистраций",
-                "members": "Количество участников",
-                "reachability": "Доходимость",
-                "so": "Количество SO",
-                "deals_registrations": "Количество сделок (с регистраций)",
-                "conversion_registration_deal": "Конверсия с регистрации в сделку",
-                "conversion_member_deal": "Конверсия с участника в сделку",
-                "conversion_so_deal": "Конверсия с SO в сделку",
-                "profit_registrations": "Выручка (с регистраций)",
-                "ppd": "Оборот на сделку (по файлу с регистрациями)",
-                "ppm": "Оборот на участника",
-                "ppr": "Оборот на регистрацию",
-                "deals_preorders": "Количество сделок (с предзаказов)",
-                "profit_preorders": "Выручка (с предзаказов)",
-                "ppso": "Оборот на сделку (по файлу с SO)",
-            },
-            inplace=True,
-        )
+        data.fillna("", inplace=True)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
