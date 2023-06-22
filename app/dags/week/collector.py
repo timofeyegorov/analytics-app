@@ -1181,7 +1181,7 @@ def get_funnel_channel():
     data = data[["date", "funnel", "account", "profit_date", "profit"]]
     data["account"].fillna("undefined", inplace=True)
 
-    expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
+    expenses = PickleLoader().roistat_leads[["account", "url", "expenses", "date"]]
     expenses = expenses[expenses["date"].apply(lambda item: isinstance(item, datetime))]
     expenses["date"] = expenses["date"].apply(lambda item: item.date())
     expenses["url"] = expenses["url"].apply(parse_url_path)
