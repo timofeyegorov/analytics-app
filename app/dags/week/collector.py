@@ -602,22 +602,25 @@ def get_stats():
             source_payments["lead_id"] = source_payments["amo"].apply(parse_lead_id)
             for index, item in source_payments.iterrows():
                 lead = detect_lead(item, tilda)
+                channel_unique = ""
                 channel = "Undefined"
                 country = ""
                 if lead is not None:
                     account_by_url = url_account[
                         url_account["url"] == lead["traffic_channel"]
-                    ]
-                    accounts = list(account_by_url["account_title"].unique())
-                    countries = list(account_by_url["qa1"].unique())
-                    if len(accounts):
-                        channel = accounts[0]
-                    if len(countries):
-                        country = countries[0]
+                    ].reset_index(drop=True)
+                    if not account_by_url.empty:
+                        channel_unique = account_by_url["account"]
+                        channel = account_by_url["account_title"]
+                        country = account_by_url["qa1"]
                 source_payments.loc[index, "channel"] = channel
+                source_payments.loc[index, "channel_unique"] = channel_unique
                 source_payments.loc[index, "country"] = country
             source_payments["channel"] = source_payments["channel"].apply(parse_str)
             source_payments["channel_id"] = source_payments["channel"].apply(parse_slug)
+            source_payments["channel_unique"] = source_payments["channel_unique"].apply(
+                parse_str
+            )
             source_payments["country"] = (
                 source_payments["country"].apply(parse_str).fillna("")
             )
