@@ -624,7 +624,6 @@ def get_stats():
             source_payments["country"] = (
                 source_payments["country"].apply(parse_str).fillna("")
             )
-            source_payments.drop(columns=["target_link"], inplace=True)
             source_payments.insert(
                 0, "manager_id", source_payments["manager"].apply(parse_slug)
             )
