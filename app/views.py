@@ -296,6 +296,14 @@ class IntensivesDealsFiltersData(BaseModel):
     date_to: Optional[ConstrainedDate]
 
 
+class IntensivesFunnelChannelFiltersData(BaseModel):
+    order_date_from: Optional[ConstrainedDate]
+    order_date_to: Optional[ConstrainedDate]
+    profit_date_from: Optional[ConstrainedDate]
+    profit_date_to: Optional[ConstrainedDate]
+    is_percent: bool = False
+
+
 class SearchLeadsFiltersData(BaseModel):
     id: str = ""
 
@@ -5650,3 +5658,146 @@ class IntensivesRegistrationView(IntensivesBaseView):
 class IntensivesPreorderView(IntensivesBaseView):
     title = "Сделки с предзаказов на интенсивах"
     source_type = "intensives_preorder"
+
+
+class IntensivesFunnelChannelView(FilteringBaseView):
+    title = "Оборот по воронке и каналу трафика"
+    template_name = "intensives/funnel-channel/index.html"
+
+    filters_class = IntensivesFunnelChannelFiltersData
+    filters: IntensivesFunnelChannelFiltersData
+
+    extras: Dict[str, Any] = {}
+    source: pandas.DataFrame
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        order_date_from = request.args.get("order_date_from")
+        if order_date_from is None:
+            order_date_from = initial.get("order_date_from")
+        if isinstance(order_date_from, str):
+            order_date_from = (
+                datetime.date.fromisoformat(order_date_from)
+                if str(order_date_from)
+                else None
+            )
+
+        order_date_to = request.args.get("order_date_to")
+        if order_date_to is None:
+            order_date_to = initial.get("order_date_to")
+        if isinstance(order_date_to, str):
+            order_date_to = (
+                datetime.date.fromisoformat(order_date_to)
+                if str(order_date_to)
+                else None
+            )
+
+        profit_date_from = request.args.get("profit_date_from")
+        if profit_date_from is None:
+            profit_date_from = initial.get("profit_date_from")
+        if isinstance(profit_date_from, str):
+            profit_date_from = (
+                datetime.date.fromisoformat(profit_date_from)
+                if str(profit_date_from)
+                else None
+            )
+
+        profit_date_to = request.args.get("profit_date_to")
+        if profit_date_to is None:
+            profit_date_to = initial.get("profit_date_to")
+        if isinstance(profit_date_to, str):
+            profit_date_to = (
+                datetime.date.fromisoformat(profit_date_to)
+                if str(profit_date_to)
+                else None
+            )
+
+        is_percent = request.args.get("is_percent")
+        if is_percent is None:
+            is_percent = initial.get("is_percent")
+
+        data = self.filters_preprocess(
+            order_date_from=order_date_from,
+            order_date_to=order_date_to,
+            profit_date_from=profit_date_from,
+            profit_date_to=profit_date_to,
+            is_percent=bool(is_percent),
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
+        if self.source is None:
+            return
+
+        # if self.filters.order_date_from:
+        #     self.source = self.source[self.source["date"] >= self.filters.order_date_from]
+        #
+        # if self.filters.date_to:
+        #     self.source = self.source[self.source["date"] <= self.filters.date_to]
+        #
+        # self.source.reset_index(drop=True, inplace=True)
+
+    def get_extras(self):
+        self.extras = {
+            "exclude_columns": [],
+        }
+
+    def get(self):
+        self.source = None
+        # try:
+        #     self.source = pickle_loader(self.source_type)
+        # except FileNotFoundError:
+        #     self.source = None
+
+        self.get_filters()
+        self.filtering_values()
+        self.get_extras()
+
+        # intensives = []
+        # if self.source is not None:
+        #     for group_name, group in self.source.groupby(by=["date"]):
+        #         intensives.append(
+        #             [group_name, group["deals"].sum(), group["profit"].sum(), 0]
+        #         )
+        #
+        # data = pandas.DataFrame(intensives, columns=["date", "deals", "profit", "ppd"])
+        # if len(data):
+        #     data["ppd"] = data.apply(
+        #         lambda item: round(item["profit"] / item["deals"])
+        #         if item["deals"]
+        #         else 0,
+        #         axis=1,
+        #     )
+        #
+        # columns = {
+        #     "date": "Дата интенсива",
+        #     "deals": "Количество сделок",
+        #     "profit": "Выручка",
+        #     "ppd": "Выручка за сделку",
+        # }
+        # total_deals = data["deals"].sum()
+        # total_profit = data["profit"].sum()
+        # total = pandas.Series(
+        #     {
+        #         columns.get("date"): "Итого",
+        #         columns.get("deals"): total_deals,
+        #         columns.get("profit"): total_profit,
+        #         columns.get("ppd"): round(total_profit / total_deals)
+        #         if total_deals
+        #         else 0,
+        #     }
+        # )
+        # data.rename(columns=columns, inplace=True)
+
+        data = pandas.DataFrame()
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
+        # self.context("total", total)
+
+        return super().get()

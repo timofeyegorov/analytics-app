@@ -1,0 +1,28 @@
+<form action="{{ request.path }}">
+    <div class="filter-block">
+        <div class="field">
+            <label for="field-order_date_from">Дата заявки с</label>
+            <input type="date" name="order_date_from" id="field-order_date_from" value="{% if filters.order_date_from %}{{ filters.order_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-order_date_to">Дата заявки по</label>
+            <input type="date" name="order_date_to" id="field-order_date_to" value="{% if filters.order_date_to %}{{ filters.order_date_to }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-profit_date_from">Дата оплаты с</label>
+            <input type="date" name="profit_date_from" id="field-profit_date_from" value="{% if filters.profit_date_from %}{{ filters.profit_date_from }}{% endif %}">
+        </div>
+        <div class="field">
+            <label for="field-profit_date_to">Дата оплаты по</label>
+            <input type="date" name="profit_date_to" id="field-profit_date_to" value="{% if filters.profit_date_to %}{{ filters.profit_date_to }}{% endif %}">
+        </div>
+        <div class="field field-checkbox">
+            <input type="checkbox" name="is_percent" id="is_percent"{% if filters.is_percent %} checked="checked"{% endif %}>
+            <label for="is_percent">Проценты</label>
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-primary">Обновить</button>
+        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
+    </div>
+</form>

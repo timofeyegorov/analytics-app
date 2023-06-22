@@ -893,6 +893,9 @@ def get_stats():
     with open(Path(DATA_PATH / "so_count.pkl"), "wb") as file_ref:
         pickle.dump(so_count, file_ref)
 
+    with open(Path(DATA_PATH / "source_payments.pkl"), "wb") as file_ref:
+        pickle.dump(source_payments, file_ref)
+
 
 @log_execution_time("update_so")
 def update_so():
