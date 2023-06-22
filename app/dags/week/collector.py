@@ -1101,6 +1101,132 @@ def get_managers_sales():
         pickle.dump(data, file_ref)
 
 
+@log_execution_time("get_funnel_channel")
+def get_funnel_channel():
+    rels = {
+        "Интенсив 3 дня": [
+            "https://neural-university.ru/lp",
+            "https://neural-university.ru/lp_pro",
+            "https://neural-university.ru/lp_direct",
+            "https://terrauniversity.site",
+            "https://neural-university.ru/lp_marketing",
+            "https://neural-university.ru/lp_trading",
+            "https://neural-university.ru/lp_medicine",
+            "https://neural-university.ru/lp_sysadministrator",
+            "https://neural-university.ru/lp_1c_programmer",
+            "https://neural-university.ru/lp_project_product_manager",
+            "https://neural-university.ru/lp_web_programmer",
+            "https://neural-university.ru/lp_e-commerce",
+            "https://neural-university.ru/lp_vk",
+            "https://neural-university.ru/lp1",
+            "https://neural-university.ru/lp2",
+            "https://neural-university.ru/lp3",
+            "https://neural-university.ru/lp4",
+            "https://neural-university.ru/lp_python",
+            "https://neural-university.ru/lp_java",
+            "https://terrauniversity.website",
+            "https://terra-university.website",
+            "https://neural-university.ru/lp_protech",
+            "https://neural-university.ru/lp_mka",
+            "https://neural-university.ru/lp_pro",
+            "https://neural-university.ru/lp_mask",
+            "https://neural-university.ru/lp_engineer",
+        ],
+        "Интенсив 2 дня": [
+            "https://neural-university.ru/lp_2day",
+            "https://neural-university.ru/web_16052023",
+            "https://ai-university.ru/lp_2day",
+            "https://ai-university.ru/",
+        ],
+        "ChatGPT": [
+            "https://neural-university.ru/lp_chatgpt_web",
+            "https://neural-university.ru/webinar_chatgpt",
+            "https://neural-university.ru/lp_chatgpt_course",
+            "https://neural-university.ru/chatgpt_freecourse",
+            "https://neural-university.ru/lp_chatgpt_neurostaff_web",
+        ],
+        "Курс 7 уроков": ["https://neural-university.ru/free_course"],
+    }
+
+    def parse_url_path(value: str):
+        url = urlparse(str(value))
+        if url.scheme and url.netloc and url.path:
+            return f"{url.scheme}://{url.netloc}{url.path}"
+        return pandas.NA
+
+    def parse_funnel(value: str):
+        items = list(dict(filter(lambda item: value in item[1], rels.items())).keys())
+        items.append(pandas.NA)
+        return items[0]
+
+    with open(DATA_PATH / "source_payments.pkl", "rb") as file_ref:
+        data: pandas.DataFrame = pandas.read_pickle(file_ref)
+    data = data[
+        ["order_date", "channel_unique", "profit_date", "profit", "target_link"]
+    ].rename(
+        columns={
+            "order_date": "date",
+            "channel_unique": "account",
+            "target_link": "url",
+        }
+    )
+    data["date"] = data["date"].apply(parse_date)
+    data = data[~data["date"].isna()]
+    data["profit_date"] = data["profit_date"].apply(parse_date)
+    data = data[~data["profit_date"].isna()]
+    data["url"] = data["url"].apply(parse_url_path)
+    data = data[~data["url"].isna()]
+    data["funnel"] = data["url"].apply(parse_funnel)
+    data = data[~data["funnel"].isna()]
+    data = data[["date", "funnel", "account", "profit_date", "profit"]]
+    data["account"].fillna("undefined", inplace=True)
+
+    expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
+    expenses = expenses[expenses["date"].apply(lambda item: isinstance(item, datetime))]
+    expenses["date"] = expenses["date"].apply(lambda item: item.date())
+    expenses["url"] = expenses["url"].apply(parse_url_path)
+    expenses = expenses[~expenses["url"].isna()]
+    expenses["funnel"] = expenses["url"].apply(parse_funnel)
+    expenses = expenses[~expenses["funnel"].isna()]
+    expenses["account"] = expenses["account"].apply(
+        lambda item: item if item else "undefined"
+    )
+    expenses = expenses[["date", "funnel", "account", "expenses"]]
+
+    rows_expenses = []
+    for (date, funnel, account), group in expenses.groupby(
+        by=["date", "funnel", "account"]
+    ):
+        rows_expenses.append(
+            {
+                "date": date,
+                "funnel": funnel,
+                "channel": account,
+                "expenses": group["expenses"].sum(),
+            }
+        )
+
+    rows_profit = []
+    for (date, funnel, account, profit_date), group in data.groupby(
+        by=["date", "funnel", "account", "profit_date"]
+    ):
+        rows_profit.append(
+            {
+                "date": date,
+                "funnel": funnel,
+                "channel": account,
+                "profit_date": profit_date,
+                "profit": group["profit"].sum(),
+            }
+        )
+
+    with open(Path(DATA_PATH / "funnel_channel_expenses.pkl"), "wb") as file_ref:
+        pickle.dump(pandas.DataFrame(data=rows_expenses), file_ref)
+
+    with open(Path(DATA_PATH / "funnel_channel_profit.pkl"), "wb") as file_ref:
+        pickle.dump(pandas.DataFrame(data=rows_profit), file_ref)
+
+
 @log_execution_time("get_intensives_emails")
 def get_intensives_emails():
     data_columns = ["course", "date", "email", "profit"]
@@ -1263,6 +1389,12 @@ get_intensives_emails_operator = PythonOperator(
     python_callable=get_intensives_emails,
     dag=dag,
 )
+get_funnel_channel_operator = PythonOperator(
+    task_id="get_funnel_channel",
+    python_callable=get_funnel_channel,
+    dag=dag,
+)
 
 get_managers_zooms_operator >> get_stats_operator
 get_stats_operator >> update_so_operator
+get_stats_operator >> get_funnel_channel_operator
