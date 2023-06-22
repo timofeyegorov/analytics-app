@@ -610,9 +610,9 @@ def get_stats():
                         url_account["url"] == lead["traffic_channel"]
                     ].reset_index(drop=True)
                     if not account_by_url.empty:
-                        channel_unique = account_by_url["account"]
-                        channel = account_by_url["account_title"]
-                        country = account_by_url["qa1"]
+                        channel_unique = account_by_url.loc[0, "account"]
+                        channel = account_by_url.loc[0, "account_title"]
+                        country = account_by_url.loc[0, "qa1"]
                 source_payments.loc[index, "channel"] = channel
                 source_payments.loc[index, "channel_unique"] = channel_unique
                 source_payments.loc[index, "country"] = country
