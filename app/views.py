@@ -5784,13 +5784,10 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         except FileNotFoundError:
             self.sources_profit = None
 
-        print(self.sources_profit)
         self.get_filters()
         self.filtering_values()
         self.get_extras()
 
-        print(self.sources_expenses)
-        print(self.sources_profit)
         rows = []
         for (
             channel_name,
