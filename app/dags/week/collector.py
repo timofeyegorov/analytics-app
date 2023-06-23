@@ -1190,7 +1190,8 @@ def get_funnel_channel():
     data["account_title"].fillna("Undefined", inplace=True)
 
     channels = (
-        pickle_loader.roistat_statistics[["account", "account_title"]]
+        PickleLoader()
+        .roistat_statistics[["account", "account_title"]]
         .drop_duplicates(subset=["account"], keep="last")
         .reset_index(drop=True)
     )
@@ -1198,7 +1199,7 @@ def get_funnel_channel():
         lambda item: "undefined" if item == "" else item
     )
     channels.loc[channels["account"] == "undefined", "account_title"] = "Undefined"
-    expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
+    expenses = PickleLoader().roistat_leads[["account", "url", "expenses", "date"]]
     expenses = expenses[expenses["date"].apply(lambda item: isinstance(item, datetime))]
     expenses["date"] = expenses["date"].apply(lambda item: item.date())
     expenses["url"] = expenses["url"].apply(parse_url_path)
