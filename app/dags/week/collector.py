@@ -1161,11 +1161,19 @@ def get_funnel_channel():
     with open(DATA_PATH / "source_payments.pkl", "rb") as file_ref:
         data: pandas.DataFrame = pandas.read_pickle(file_ref)
     data = data[
-        ["order_date", "channel_unique", "profit_date", "profit", "target_link"]
+        [
+            "order_date",
+            "channel_unique",
+            "channel",
+            "profit_date",
+            "profit",
+            "target_link",
+        ]
     ].rename(
         columns={
             "order_date": "date",
             "channel_unique": "account",
+            "channel": "account_title",
             "target_link": "url",
         }
     )
@@ -1177,10 +1185,20 @@ def get_funnel_channel():
     data = data[~data["url"].isna()]
     data["funnel"] = data["url"].apply(parse_funnel)
     data = data[~data["funnel"].isna()]
-    data = data[["date", "funnel", "account", "profit_date", "profit"]]
+    data = data[["date", "funnel", "account", "account_title", "profit_date", "profit"]]
     data["account"].fillna("undefined", inplace=True)
+    data["account_title"].fillna("Undefined", inplace=True)
 
-    expenses = PickleLoader().roistat_leads[["account", "url", "expenses", "date"]]
+    channels = (
+        pickle_loader.roistat_statistics[["account", "account_title"]]
+        .drop_duplicates(subset=["account"], keep="last")
+        .reset_index(drop=True)
+    )
+    channels["account"] = channels["account"].apply(
+        lambda item: "undefined" if item == "" else item
+    )
+    channels.loc[channels["account"] == "undefined", "account_title"] = "Undefined"
+    expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
     expenses = expenses[expenses["date"].apply(lambda item: isinstance(item, datetime))]
     expenses["date"] = expenses["date"].apply(lambda item: item.date())
     expenses["url"] = expenses["url"].apply(parse_url_path)
@@ -1191,29 +1209,32 @@ def get_funnel_channel():
         lambda item: item if item else "undefined"
     )
     expenses = expenses[["date", "funnel", "account", "expenses"]]
+    expenses = expenses.merge(channels, how="left", on="account")
 
     rows_expenses = []
-    for (date, funnel, account), group in expenses.groupby(
-        by=["date", "funnel", "account"]
+    for (date, funnel, account, account_title), group in expenses.groupby(
+        by=["date", "funnel", "account", "account_title"]
     ):
         rows_expenses.append(
             {
                 "date": date,
                 "funnel": funnel,
                 "channel": account,
+                "channel_title": account_title,
                 "expenses": group["expenses"].sum(),
             }
         )
 
     rows_profit = []
-    for (date, funnel, account, profit_date), group in data.groupby(
-        by=["date", "funnel", "account", "profit_date"]
+    for (date, funnel, account, account_title, profit_date), group in data.groupby(
+        by=["date", "funnel", "account", "account_title", "profit_date"]
     ):
         rows_profit.append(
             {
                 "date": date,
                 "funnel": funnel,
                 "channel": account,
+                "channel_title": account_title,
                 "profit_date": profit_date,
                 "profit": group["profit"].sum(),
             }

@@ -5789,12 +5789,17 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         self.filtering_values()
         self.get_extras()
 
+        print(self.sources_expenses)
+        print(self.sources_profit)
         rows = []
-        for channel_name, channel_group in self.sources_expenses.groupby(
-            by=["channel"]
+        for (
+            channel_name,
+            channel_title,
+        ), channel_group in self.sources_expenses.groupby(
+            by=["channel", "channel_title"]
         ):
             row = {
-                "Канал трафика": channel_name,
+                "Канал трафика": channel_title,
             }
             for funnel_name, expenses_group in channel_group.groupby(by=["funnel"]):
                 profit_group = self.sources_profit[
