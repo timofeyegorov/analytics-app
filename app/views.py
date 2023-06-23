@@ -5667,8 +5667,14 @@ class IntensivesFunnelChannelView(FilteringBaseView):
     filters_class = IntensivesFunnelChannelFiltersData
     filters: IntensivesFunnelChannelFiltersData
 
+    sources_expenses_path: Path = (
+        Path(DATA_FOLDER) / "week" / "funnel_channel_expenses.pkl"
+    )
+    sources_profit_path: Path = Path(DATA_FOLDER) / "week" / "funnel_channel_profit.pkl"
+
     extras: Dict[str, Any] = {}
-    source: pandas.DataFrame
+    sources_expenses: pandas.DataFrame
+    sources_profit: pandas.DataFrame
 
     def get_filters(self):
         initial = self.filters_initial()
@@ -5730,16 +5736,37 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
-        if self.source is None:
+        if self.sources_expenses is None or self.sources_profit is None:
             return
 
-        # if self.filters.order_date_from:
-        #     self.source = self.source[self.source["date"] >= self.filters.order_date_from]
-        #
-        # if self.filters.date_to:
-        #     self.source = self.source[self.source["date"] <= self.filters.date_to]
-        #
-        # self.source.reset_index(drop=True, inplace=True)
+        if self.filters.order_date_from:
+            self.sources_expenses = self.sources_expenses[
+                self.sources_expenses["date"] >= self.filters.order_date_from
+            ]
+            self.sources_profit = self.sources_profit[
+                self.sources_profit["date"] >= self.filters.order_date_from
+            ]
+
+        if self.filters.order_date_to:
+            self.sources_expenses = self.sources_expenses[
+                self.sources_expenses["date"] <= self.filters.order_date_to
+            ]
+            self.sources_profit = self.sources_profit[
+                self.sources_profit["date"] <= self.filters.order_date_to
+            ]
+
+        if self.filters.profit_date_from:
+            self.sources_profit = self.sources_profit[
+                self.sources_profit["profit_date"] >= self.filters.profit_date_from
+            ]
+
+        if self.filters.profit_date_to:
+            self.sources_profit = self.sources_profit[
+                self.sources_profit["profit_date"] <= self.filters.profit_date_to
+            ]
+
+        self.sources_expenses.reset_index(drop=True, inplace=True)
+        self.sources_profit.reset_index(drop=True, inplace=True)
 
     def get_extras(self):
         self.extras = {
@@ -5747,57 +5774,51 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         }
 
     def get(self):
-        self.source = None
-        # try:
-        #     self.source = pickle_loader(self.source_type)
-        # except FileNotFoundError:
-        #     self.source = None
+        try:
+            self.sources_expenses = pandas.read_pickle(self.sources_expenses_path)
+        except FileNotFoundError:
+            self.sources_expenses = None
 
+        try:
+            self.sources_profit = pandas.read_pickle(self.sources_profit_path)
+        except FileNotFoundError:
+            self.sources_profit = None
+
+        print(self.sources_profit)
         self.get_filters()
         self.filtering_values()
         self.get_extras()
 
-        # intensives = []
-        # if self.source is not None:
-        #     for group_name, group in self.source.groupby(by=["date"]):
-        #         intensives.append(
-        #             [group_name, group["deals"].sum(), group["profit"].sum(), 0]
-        #         )
-        #
-        # data = pandas.DataFrame(intensives, columns=["date", "deals", "profit", "ppd"])
-        # if len(data):
-        #     data["ppd"] = data.apply(
-        #         lambda item: round(item["profit"] / item["deals"])
-        #         if item["deals"]
-        #         else 0,
-        #         axis=1,
-        #     )
-        #
-        # columns = {
-        #     "date": "Дата интенсива",
-        #     "deals": "Количество сделок",
-        #     "profit": "Выручка",
-        #     "ppd": "Выручка за сделку",
-        # }
-        # total_deals = data["deals"].sum()
-        # total_profit = data["profit"].sum()
-        # total = pandas.Series(
-        #     {
-        #         columns.get("date"): "Итого",
-        #         columns.get("deals"): total_deals,
-        #         columns.get("profit"): total_profit,
-        #         columns.get("ppd"): round(total_profit / total_deals)
-        #         if total_deals
-        #         else 0,
-        #     }
-        # )
-        # data.rename(columns=columns, inplace=True)
+        rows = []
+        for channel_name, channel_group in self.sources_expenses.groupby(
+            by=["channel"]
+        ):
+            row = {
+                "Канал трафика": channel_name,
+            }
+            for funnel_name, expenses_group in channel_group.groupby(by=["funnel"]):
+                profit_group = self.sources_profit[
+                    (self.sources_profit["channel"] == channel_name)
+                    & (self.sources_profit["funnel"] == funnel_name)
+                ]
+                expenses_sum = float(expenses_group["expenses"].sum())
+                profit_sum = float(profit_group["profit"].sum())
+                profit_percent = (
+                    profit_sum / expenses_sum if expenses_sum > 0 else 0
+                ) * 100
+                row.update(
+                    {
+                        f"Расход {funnel_name}": expenses_sum,
+                        f"Оборот {funnel_name}": (profit_sum, profit_percent),
+                    }
+                )
+            rows.append(row)
 
-        data = pandas.DataFrame()
+        data = pandas.DataFrame(rows)
+        data.fillna(0, inplace=True)
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("data", data)
-        # self.context("total", total)
 
         return super().get()

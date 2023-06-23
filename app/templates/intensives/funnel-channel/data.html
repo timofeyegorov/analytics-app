@@ -14,12 +14,17 @@
                 <tr>
                     {% for column in data.columns %}
                         {% if column not in extras.exclude_columns %}
-                            {% if column == "Дата интенсива" %}
-                                <td class="nowrap font-monospace">{{ format_date(item[column]) }}</td>
-                            {% elif column == "Выручка" %}
+                            {% if column.startswith("Расход ") %}
                                 <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
+                            {% elif column.startswith("Оборот ") %}
+                                <td class="nowrap font-monospace text-right">
+                                    {% if is_tuple(item[column]) %}
+                                        {% if filters.is_percent %}{{ format_int(item[column].1) }}{% else %}{{ format_int(item[column].0) }}{% endif %}
+                                    {% else %}
+                                        0
+                                    {% endif %} {% if filters.is_percent %}%{% else %}₽{% endif %}</td>
                             {% else %}
-                                <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }}</td>
+                                <td class="nowrap">{{ item[column] }}</td>
                             {% endif %}
                         {% endif %}
                     {% endfor %}

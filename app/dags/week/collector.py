@@ -635,7 +635,6 @@ def get_stats():
                 )
             ].reset_index(drop=True)
             source_payments["profit"].fillna(0, inplace=True)
-            source_payments.drop(columns=["channel"], inplace=True)
 
         elif title == "SpecialOffers":
             source_so: pandas.DataFrame = processing_source(
