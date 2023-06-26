@@ -1349,7 +1349,9 @@ def get_intensives_emails():
             profit_row = profit[
                 (profit["email"] == row["email"]) & (profit["date"] >= row["date"])
             ]
-            intensives_registrations.at[index, "profit"] = profit_row["profit"].sum()
+            intensives_registrations.at[index, "profit"] = (
+                profit_row["profit"].apply(parse_float).sum()
+            )
         sources["intensives_registrations"] = pandas.concat(
             [sources["intensives_registrations"], intensives_registrations],
             ignore_index=True,
@@ -1364,7 +1366,9 @@ def get_intensives_emails():
             profit_row = profit[
                 (profit["email"] == row["email"]) & (profit["date"] >= row["date"])
             ]
-            intensives_preorders.at[index, "profit"] = profit_row["profit"].sum()
+            intensives_preorders.at[index, "profit"] = (
+                profit_row["profit"].apply(parse_float).sum()
+            )
         sources["intensives_preorders"] = pandas.concat(
             [sources["intensives_preorders"], intensives_preorders],
             ignore_index=True,
