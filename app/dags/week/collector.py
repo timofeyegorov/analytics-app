@@ -1045,6 +1045,7 @@ def get_managers_zooms():
         data = pandas.concat([data, data_month])
 
     data["manager_id"] = data["manager"].apply(parse_slug)
+    print(data[data["date"] == datetime.strptime("27.06.2023", "%d.%m.%Y").date()])
 
     with open(Path(DATA_PATH / "groups.pkl"), "rb") as file_ref:
         groups = pickle.load(file_ref)
@@ -1053,6 +1054,7 @@ def get_managers_zooms():
     data.rename(columns={"group": "group_id"}, inplace=True)
     data["group_id"].fillna("", inplace=True)
     data["group"] = data["group_id"].apply(lambda item: f'Группа "{item}"')
+    print(data[data["date"] == datetime.strptime("27.06.2023", "%d.%m.%Y").date()])
 
     payments = read_payments(service, "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE")
     data = data.merge(payments, how="left", on=["manager_id", "lead", "date"])
