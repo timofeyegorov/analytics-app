@@ -436,7 +436,10 @@ def read_zoom_month(spreadsheet_id: str, month: date) -> Optional[pandas.DataFra
         match_day = re.match(r"^[а-яА-Я]{2},?\s*(\d+)$", worksheet.title.strip())
         if not match_day:
             continue
-        current_date = month.replace(day=int(match_day.group(1)))
+        try:
+            current_date = month.replace(day=int(match_day.group(1)))
+        except ValueError:
+            continue
         values_day = read_zoom_day(worksheet, current_date)
         if values_day is None:
             continue
