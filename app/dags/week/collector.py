@@ -1154,10 +1154,7 @@ def get_managers_zooms():
 
 @log_execution_time("get_managers_sales")
 def get_managers_sales():
-    response = requests.get(
-        f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE&exportFormat=xlsx"
-    )
-    data: pandas.DataFrame = pandas.read_excel(BytesIO(response.content), "Все оплаты")
+    data = pandas.read_pickle(Path(DATA_PATH / "payments.pkl"))
     data.rename(
         columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
         inplace=True,
@@ -1171,16 +1168,6 @@ def get_managers_sales():
         "mesjats_doplata": "surcharge",
     }
     data = data[columns_rel.keys()].rename(columns=columns_rel)
-    data["payment_date"] = (
-        data["payment_date"]
-        .apply(parse_date)
-        .apply(lambda item: pandas.NA if pandas.isna(item) else item.date())
-    )
-    data["order_date"] = (
-        data["order_date"]
-        .apply(parse_date)
-        .apply(lambda item: pandas.NA if pandas.isna(item) else item.date())
-    )
     data["manager"] = data["manager"].apply(parse_str).fillna("undefined")
     data["course"] = data["course"].apply(parse_str).fillna("undefined")
     data["profit"] = data["profit"].fillna(0).apply(parse_float)
@@ -1492,6 +1479,7 @@ get_funnel_channel_operator = PythonOperator(
     dag=dag,
 )
 
+get_payments_operator >> get_managers_sales_operator
 get_managers_zooms_operator >> get_stats_operator
 get_stats_operator >> update_so_operator
 get_stats_operator >> get_funnel_channel_operator
