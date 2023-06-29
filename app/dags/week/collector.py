@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import json
 import pandas
 import pickle
 import requests
@@ -24,7 +25,10 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 
-sys.path.append(Variable.get("APP_FOLDER"))
+try:
+    sys.path.append(Variable.get("APP_FOLDER", None))
+except KeyError:
+    pass
 
 from config import DATA_FOLDER, CREDENTIALS_FILE
 from app.analytics.pickle_load import PickleLoader
@@ -55,7 +59,7 @@ def parse_str(value: str) -> str:
     if pandas.isna(value):
         return pandas.NA
     value = re.sub(r"\s+", " ", str(value).strip())
-    if value == "":
+    if value == "" or value == "-":
         value = pandas.NA
     return value
 
@@ -86,11 +90,11 @@ def parse_float(value: str) -> float:
 def parse_date(value: str) -> date:
     if pandas.isna(value):
         return pandas.NA
-    if isinstance(value, date):
-        return value
     if isinstance(value, datetime):
         return value.date()
-    match = re.search(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", str(value))
+    if isinstance(value, date):
+        return value
+    match = re.search(r"^(\d{1,2})\.(\d{1,2})\.(\d{4}).*$", str(value))
     if not match:
         return pandas.NA
     groups = list(match.groups())
@@ -101,13 +105,33 @@ def parse_date(value: str) -> date:
     return date.fromisoformat("-".join(list(reversed(groups))))
 
 
+def parse_url(value: str) -> str:
+    value = parse_str(value)
+    if pandas.isna(value):
+        return pandas.NA
+    url = urlparse(value)
+    if url.scheme and url.netloc and url.path:
+        return value
+    return pandas.NA
+
+
 def parse_lead_url(value: str) -> str:
+    value = parse_url(value)
     if pandas.isna(value):
         return pandas.NA
     url = urlparse(value)._replace(params=None, query=None, fragment=None).geturl()
     if isinstance(url, bytes):
         url = url.decode("utf-8")
     return url
+
+
+def parse_da_net(value: str) -> bool:
+    value = str(value).strip().lower()
+    if value == "да":
+        return True
+    if value == "нет":
+        return False
+    return pandas.NA
 
 
 def parse_cell_data(cell: Dict[str, Dict[str, Any]]) -> str:
@@ -517,6 +541,66 @@ def get_spreadsheets_month(service: GoogleAPIClientResource) -> pandas.DataFrame
     data = pandas.DataFrame(values[1:], columns=slugify_columns(values[0]))
     data = data.apply(parse_row, axis=1)
     return data[["hash", "month"]]
+
+
+PAYMENTS_COLUMNS = {
+    "ФИО Плательщика": parse_str,
+    "ФИО студента": parse_str,
+    "Почта": parse_str,
+    "Телефон": parse_str,
+    "Ссылка на amocrm": parse_lead_url,
+    "Менеджер": parse_str,
+    "ГР": parse_int,
+    "Сумма оплаченная клиентом": parse_float,
+    "Сумма выручки": parse_float,
+    "Номер заказа": parse_str,
+    "Источник оплаты": parse_str,
+    "Дата создания сделки": parse_date,
+    "Дата последней заявки (платной)": parse_date,
+    "Дата оплаты": parse_date,
+    "Воронка": parse_str,
+    "Месяц / Доплата": parse_str,
+    "Дата ZOOM": parse_date,
+    "Дата звонка": parse_date,
+    "Курс": parse_str,
+    "УИИ / УИИ Терра / Терра ЭйАй": parse_str,
+    "Стажировка": parse_da_net,
+    "Целевая ссылка": parse_url,
+}
+
+
+@log_execution_time("get_payments")
+def get_payments():
+    response = requests.get(
+        "https://docs.google.com/spreadsheets/d/1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE/export?format=xlsx&id=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    )
+    data: pandas.DataFrame = pandas.read_excel(
+        BytesIO(response.content),
+        sheet_name="Все оплаты",
+        dtype=str,
+        converters=dict(
+            map(
+                lambda item: (item, parse_date),
+                [
+                    "Дата создания сделки",
+                    "Дата последней заявки (платной)",
+                    "Дата оплаты",
+                    "Дата ZOOM",
+                    "Дата звонка",
+                ],
+            )
+        ),
+    )
+    data.rename(
+        columns=dict(map(lambda item: (item, parse_str(item)), data.columns)),
+        inplace=True,
+    )
+    data = data[PAYMENTS_COLUMNS.keys()]
+    for column, parser in PAYMENTS_COLUMNS.items():
+        data[column] = data[column].apply(parser)
+
+    with open(Path(DATA_PATH / "payments.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
 
 
 @log_execution_time("get_stats")
@@ -1253,42 +1337,32 @@ def get_funnel_channel():
 
 @log_execution_time("get_intensives_emails")
 def get_intensives_emails():
-    data_columns = ["course", "date", "email", "profit"]
+    data_columns = ["course", "date", "email"]
 
-    def profit_read() -> pandas.DataFrame:
-        url = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE&exportFormat=xlsx"
+    def sources_read(url: Optional[str] = None) -> Optional[pandas.ExcelFile]:
+        if url is None:
+            return
         print(f"   | Read source from url: {url}")
         response = requests.get(url)
-        data: pandas.DataFrame = pandas.read_excel(
-            BytesIO(response.content), "Все оплаты"
-        )
-        data.rename(
-            columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
-            inplace=True,
-        )
-        data.rename(
-            columns={
-                "pochta": "email",
-                "data_oplaty": "date",
-                "summa_vyruchki": "profit",
-            },
-            inplace=True,
-        )
-        data["date"] = data["date"].apply(lambda item: item.date())
-        return data[["email", "date", "profit"]]
+        try:
+            return pandas.ExcelFile(BytesIO(response.content))
+        except ValueError:
+            print(f"     | Incorrect type of source file")
 
-    def sources_read(url: str) -> pandas.ExcelFile:
-        print(f"   | Read source from url: {url}")
-        response = requests.get(url)
-        return pandas.ExcelFile(BytesIO(response.content))
-
-    def get_download_url(url: str) -> str:
+    def get_download_url(url: str) -> Optional[str]:
         print(f"   | Download file from url: {url}")
-        url = urlparse(url)
-        tails = list(filter(None, url.path.split("/")))
-        return f"https://docs.google.com/spreadsheets/d/{tails[2]}/export?format=xlsx&id={tails[2]}"
+        try:
+            url = urlparse(url)
+            tails = list(filter(None, url.path.split("/")))
+            return f"https://docs.google.com/spreadsheets/d/{tails[2]}/export?format=xlsx&id={tails[2]}"
+        except TypeError as error:
+            print(f"     | URL is undefined")
 
-    def read_excel(course_name: str, file: pandas.ExcelFile) -> pandas.DataFrame:
+    def read_excel(
+        course_name: str, file: Optional[pandas.ExcelFile]
+    ) -> Optional[pandas.DataFrame]:
+        if file is None:
+            return
         print(f"   | Read excel document: {file.sheet_names}")
         dataframe = pandas.DataFrame(columns=data_columns)
         for sheet_name in file.sheet_names:
@@ -1309,11 +1383,7 @@ def get_intensives_emails():
             data["date"] = date
             data["course"] = course_name
             dataframe = pandas.concat([dataframe, data], ignore_index=True)
-        return dataframe
-
-    print("-> Read profit")
-    profit = profit_read()
-    print()
+        return dataframe[data_columns]
 
     print("-> Read summary")
     summary_file = sources_read(
@@ -1322,6 +1392,9 @@ def get_intensives_emails():
         )
     )
     print()
+    if summary_file is None:
+        return
+
     summary: pandas.DataFrame = summary_file.parse()
     summary.rename(
         columns=dict(
@@ -1344,38 +1417,26 @@ def get_intensives_emails():
     }
     for _, summary_row in summary.iterrows():
         print("-> Read sources")
-        intensives_registrations = read_excel(
+        registrations_dataframe = read_excel(
             summary_row["intensiv"],
             sources_read(get_download_url(summary_row.intensives_registrations)),
         )
-        for index, row in intensives_registrations.iterrows():
-            profit_row = profit[
-                (profit["email"] == row["email"]) & (profit["date"] >= row["date"])
-            ]
-            intensives_registrations.at[index, "profit"] = (
-                profit_row["profit"].apply(parse_float).sum()
+        if registrations_dataframe is not None:
+            sources["intensives_registrations"] = pandas.concat(
+                [sources["intensives_registrations"], registrations_dataframe],
+                ignore_index=True,
             )
-        sources["intensives_registrations"] = pandas.concat(
-            [sources["intensives_registrations"], intensives_registrations],
-            ignore_index=True,
-        )
         print("   |")
 
-        intensives_preorders = read_excel(
+        preorders_dataframe = read_excel(
             summary_row["intensiv"],
             sources_read(get_download_url(summary_row.intensives_preorders)),
         )
-        for index, row in intensives_preorders.iterrows():
-            profit_row = profit[
-                (profit["email"] == row["email"]) & (profit["date"] >= row["date"])
-            ]
-            intensives_preorders.at[index, "profit"] = (
-                profit_row["profit"].apply(parse_float).sum()
+        if preorders_dataframe is not None:
+            sources["intensives_preorders"] = pandas.concat(
+                [sources["intensives_preorders"], preorders_dataframe],
+                ignore_index=True,
             )
-        sources["intensives_preorders"] = pandas.concat(
-            [sources["intensives_preorders"], intensives_preorders],
-            ignore_index=True,
-        )
         print()
 
     for source_name, source in sources.items():
@@ -1392,6 +1453,11 @@ dag = DAG(
 )
 
 
+get_payments_operator = PythonOperator(
+    task_id="get_payments",
+    python_callable=get_payments,
+    dag=dag,
+)
 get_stats_operator = PythonOperator(
     task_id="get_stats",
     python_callable=get_stats,

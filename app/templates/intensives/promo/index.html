@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div class="base-links">
+        {% include 'intensives/base_links.html' %}
+    </div>
+    {% include 'intensives/promo/filters.html' %}
+    {% include 'intensives/promo/data.html' %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/intensives/promo/index.js') }}"></script>
+{% endblock js %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='css/intensives/promo/index.css') }}" rel="stylesheet">
+{% endblock css %}

@@ -881,6 +881,10 @@ app.add_url_rule(
     view_func=views.IntensivesView.as_view("intensives"),
 )
 app.add_url_rule(
+    "/promo",
+    view_func=views.PromoView.as_view("promo"),
+)
+app.add_url_rule(
     "/intensives/registration",
     view_func=views.IntensivesRegistrationView.as_view("intensives_registration"),
 )

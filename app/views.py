@@ -291,6 +291,11 @@ class IntensivesFiltersData(BaseModel):
     date_to: Optional[ConstrainedDate]
 
 
+class PromoFiltersData(BaseModel):
+    date_from: Optional[ConstrainedDate]
+    date_to: Optional[ConstrainedDate]
+
+
 class IntensivesDealsFiltersData(BaseModel):
     date_from: Optional[ConstrainedDate]
     date_to: Optional[ConstrainedDate]
@@ -5271,10 +5276,12 @@ class IntensivesView(FilteringBaseView):
         Path(DATA_FOLDER) / "week" / "intensives_preorders.pkl"
     )
     sources_values_path: Path = Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
+    sources_payments_path: Path = Path(DATA_FOLDER) / "week" / "payments.pkl"
 
     extras: Dict[str, Any] = {}
     sources_registrations: pandas.DataFrame
     sources_preorders: pandas.DataFrame
+    sources_payments: pandas.DataFrame
 
     columns = {
         "course": "Мероприятие",
@@ -5428,6 +5435,20 @@ class IntensivesView(FilteringBaseView):
             self.sources_preorders = None
 
         try:
+            self.sources_payments = pandas.read_pickle(self.sources_payments_path)
+            self.sources_payments.rename(
+                columns=dict(
+                    map(
+                        lambda item: (item, parse_slug(item)),
+                        self.sources_payments.columns,
+                    )
+                ),
+                inplace=True,
+            )
+        except FileNotFoundError:
+            self.sources_payments = None
+
+        try:
             values = pandas.read_pickle(self.sources_values_path)
         except FileNotFoundError:
             values = pandas.DataFrame(
@@ -5464,34 +5485,75 @@ class IntensivesView(FilteringBaseView):
             ]
         )
 
-        registrations = []
+        registrations_list = []
         if self.sources_registrations is not None:
             for (course_name, date), course in self.sources_registrations.groupby(
                 by=["course", "date"]
             ):
-                deals_preorders = self.sources_preorders[
-                    (self.sources_preorders["course"] == course_name)
-                    & (self.sources_preorders["date"] == date)
+                payments = self.sources_payments[
+                    (self.sources_payments["pochta"].isin(course["email"].tolist()))
+                    & (self.sources_payments["data_oplaty"] >= date)
                 ]
-                registrations.append(
+                registrations_list.append(
                     {
                         "course": course_name,
                         "date": date,
-                        "deals_registrations": len(course),
-                        "deals_preorders": len(deals_preorders),
-                        "profit_registrations": course["profit"].sum(),
-                        "profit_preorders": deals_preorders["profit"].sum(),
+                        "deals_registrations": len(payments),
+                        "profit_registrations": payments["summa_vyruchki"].sum(),
                     }
                 )
-            data = pandas.concat(
-                [
-                    data,
-                    pandas.DataFrame(registrations).sort_values(
-                        by=["course", "date"], ascending=[True, False]
-                    ),
-                ],
-                ignore_index=True,
-            )
+        registrations = pandas.DataFrame(
+            registrations_list,
+            columns=[
+                "course",
+                "date",
+                "deals_registrations",
+                "profit_registrations",
+            ],
+        )
+
+        preorders_list = []
+        if self.sources_preorders is not None:
+            for (course_name, date), course in self.sources_preorders.groupby(
+                by=["course", "date"]
+            ):
+                payments = self.sources_payments[
+                    (self.sources_payments["pochta"].isin(course["email"].tolist()))
+                    & (self.sources_payments["data_oplaty"] >= date)
+                ]
+                preorders_list.append(
+                    {
+                        "course": course_name,
+                        "date": date,
+                        "deals_preorders": len(payments),
+                        "profit_preorders": payments["summa_vyruchki"].sum(),
+                    }
+                )
+        preorders = pandas.DataFrame(
+            preorders_list,
+            columns=[
+                "course",
+                "date",
+                "deals_preorders",
+                "profit_preorders",
+            ],
+        )
+
+        data = pandas.concat(
+            [
+                data,
+                pandas.merge(
+                    registrations, preorders, how="outer", on=["course", "date"]
+                )
+                .sort_values(by=["course", "date"], ascending=[True, False])
+                .reset_index(drop=True),
+            ],
+            ignore_index=True,
+        )
+        data["deals_registrations"].fillna(0, inplace=True)
+        data["deals_preorders"].fillna(0, inplace=True)
+        data["profit_registrations"].fillna(0, inplace=True)
+        data["profit_preorders"].fillna(0, inplace=True)
 
         data = pandas.merge(data, values, on=["course", "date"], how="left")
         data = data[
@@ -5542,6 +5604,14 @@ class IntensivesView(FilteringBaseView):
         self.context("data", data)
 
         return super().get()
+
+
+class PromoView(FilteringBaseView):
+    template_name = "intensives/promo/index.html"
+    title = "Выручки с акций"
+
+    filters_class = PromoFiltersData
+    filters: PromoFiltersData
 
 
 class IntensivesBaseView(FilteringBaseView):
