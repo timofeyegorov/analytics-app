@@ -16,14 +16,14 @@
                         {% if column not in extras.exclude_columns %}
                             {% if column in ["date"] %}
                                 <td class="nowrap font-monospace field-{{ column }}" data-value="{{ item[column] }}">{{ format_date(item[column]) }}</td>
-                            {% elif column in ["deals_registrations", "deals_preorders"] %}
+                            {% elif column in ["so"] %}
                                 <td class="nowrap font-monospace text-right field-{{ column }}" data-value="{{ item[column] }}">{{ format_int(item[column]) }}</td>
                             {% elif column in ["profit_registrations", "ppd", "ppm", "ppr", "profit_preorders", "ppso"] %}
                                 <td class="nowrap font-monospace text-right field-{{ column }}" data-value="{{ item[column] }}">{% if item[column] %}{{ format_int(item[column]) }} ₽{% endif %}</td>
                             {% elif column in ["conversion_registration_deal", "conversion_member_deal", "conversion_so_deal"] %}
                                 <td class="nowrap font-monospace text-right field-{{ column }}" data-value="{{ item[column] }}">{% if item[column] %}{{ format_float2(item[column]) }}{% endif %}</td>
-                            {% elif column in ["registrations", "members", "reachability", "so"] %}
-                                <td class="field-{{ column }}"><input type="number" name="{{ column }}" value="{{ item[column] }}"></td>
+                            {% elif column in ["name"] %}
+                                <td class="field-{{ column }}"><input type="text" name="{{ column }}" value="{{ item[column] }}"></td>
                             {% else %}
                                 <td class="nowrap field-{{ column }}" data-value="{{ item[column] }}">{{ item[column] }}</td>
                             {% endif %}

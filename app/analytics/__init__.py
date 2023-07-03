@@ -897,6 +897,10 @@ app.add_url_rule(
     view_func=views.IntensivesFunnelChannelView.as_view("intensives_funnel_channel"),
 )
 app.add_url_rule(
+    "/api/intensives/so/<date>",
+    view_func=views.IntensivesSODateAPIView.as_view("api_intensives_so_date"),
+)
+app.add_url_rule(
     "/api/intensives/<course>/<date>",
     view_func=views.IntensivesCourseDateAPIView.as_view("api_intensives_course_date"),
 )

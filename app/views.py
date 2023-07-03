@@ -5178,6 +5178,28 @@ class ChangeZoomView(APIView):
         return super().post()
 
 
+class IntensivesSODateAPIView(APIView):
+    def post(self, date: str, *args, **kwargs):
+        values_path = Path(DATA_FOLDER) / "week" / "intensives_so_values.pkl"
+        date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        try:
+            with open(values_path, "rb") as file_ref:
+                values: pandas.DataFrame = pickle.load(file_ref)
+        except FileNotFoundError:
+            values = pandas.DataFrame(columns=["name", "date"])
+        indexes = list(values[values["date"] == date].index)
+        if indexes:
+            values.drop(labels=indexes, axis=0, inplace=True)
+            values.reset_index(drop=True, inplace=True)
+
+        row = {"name": request.form.get("name"), "date": date}
+        values = pandas.concat([values, pandas.DataFrame([row])], ignore_index=True)
+        with open(values_path, "wb") as file_ref:
+            pickle.dump(values, file_ref)
+
+        return super().post(*args, **kwargs)
+
+
 class IntensivesCourseDateAPIView(APIView):
     def post(self, course: str, date: str, *args, **kwargs):
         values_path = Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
@@ -5613,97 +5635,108 @@ class PromoView(FilteringBaseView):
     filters_class = PromoFiltersData
     filters: PromoFiltersData
 
+    sources_so_path: Path = Path(DATA_FOLDER) / "week" / "intensives_so.pkl"
+    sources_values_path: Path = Path(DATA_FOLDER) / "week" / "intensives_so_values.pkl"
+
+    extras: Dict[str, Any] = {}
+    sources_so: pandas.DataFrame
+
+    columns = {
+        "date": "Дата",
+        "name": "Имя акции",
+        "so": "Количество SO",
+        "deals": "Количество сделок",
+        "conversion_so_deal": "Конверсия из SO в сделку",
+        "profit": "Выручка",
+        "ppso": "Оборот на SO",
+        "ppd": "Оборот на сделку",
+    }
+
+    def get_filters(self):
+        initial = self.filters_initial()
+
+        date_from = request.args.get("date_from")
+        if date_from is None:
+            date_from = initial.get("date_from")
+        if isinstance(date_from, str):
+            date_from = (
+                datetime.date.fromisoformat(date_from) if str(date_from) else None
+            )
+
+        date_to = request.args.get("date_to")
+        if date_to is None:
+            date_to = initial.get("date_to")
+        if isinstance(date_to, str):
+            date_to = datetime.date.fromisoformat(date_to) if str(date_to) else None
+
+        data = self.filters_preprocess(
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        filters_class = self.get_filters_class()
+
+        self.filters = filters_class(**data)
+
+    def filtering_values(self):
+        if self.sources_so is None:
+            return
+
+        if self.filters.date_from:
+            self.sources_so = self.sources_so[
+                self.sources_so["date"] >= self.filters.date_from
+            ]
+
+        if self.filters.date_to:
+            self.sources_so = self.sources_so[
+                self.sources_so["date"] <= self.filters.date_to
+            ]
+
+        self.sources_so.reset_index(drop=True, inplace=True)
+
+    def get_extras(self):
+        self.extras = {
+            "exclude_columns": [],
+            "columns": self.columns,
+        }
+
     def get(self):
-        # try:
-        #     self.sources_registrations = pandas.read_pickle(
-        #         self.sources_registrations_path
-        #     )
-        # except FileNotFoundError:
-        #     self.sources_registrations = None
-        #
-        # try:
-        #     self.sources_preorders = pandas.read_pickle(self.sources_preorders_path)
-        # except FileNotFoundError:
-        #     self.sources_preorders = None
-        #
-        # try:
-        #     self.sources_payments = pandas.read_pickle(self.sources_payments_path)
-        #     self.sources_payments.rename(
-        #         columns=dict(
-        #             map(
-        #                 lambda item: (item, parse_slug(item)),
-        #                 self.sources_payments.columns,
-        #             )
-        #         ),
-        #         inplace=True,
-        #     )
-        # except FileNotFoundError:
-        #     self.sources_payments = None
-        #
-        # try:
-        #     values = pandas.read_pickle(self.sources_values_path)
-        # except FileNotFoundError:
-        #     values = pandas.DataFrame(
-        #         columns=[
-        #             "course",
-        #             "date",
-        #             "registrations",
-        #             "members",
-        #             "reachability",
-        #             "so",
-        #         ]
-        #     )
-        # values.fillna("", inplace=True)
-        #
-        # self.get_filters()
-        # self.filtering_values()
-        # self.get_extras()
-        #
-        # data = pandas.DataFrame(
-        #     columns=[
-        #         "course",
-        #         "date",
-        #         "deals_registrations",
-        #         "conversion_registration_deal",
-        #         "conversion_member_deal",
-        #         "conversion_so_deal",
-        #         "profit_registrations",
-        #         "ppd",
-        #         "ppm",
-        #         "ppr",
-        #         "deals_preorders",
-        #         "profit_preorders",
-        #         "ppso",
-        #     ]
-        # )
-        #
-        # registrations_list = []
-        # if self.sources_registrations is not None:
-        #     for (course_name, date), course in self.sources_registrations.groupby(
-        #         by=["course", "date"]
-        #     ):
-        #         payments = self.sources_payments[
-        #             (self.sources_payments["pochta"].isin(course["email"].tolist()))
-        #             & (self.sources_payments["data_oplaty"] >= date)
-        #         ]
-        #         registrations_list.append(
-        #             {
-        #                 "course": course_name,
-        #                 "date": date,
-        #                 "deals_registrations": len(payments),
-        #                 "profit_registrations": payments["summa_vyruchki"].sum(),
-        #             }
-        #         )
-        # registrations = pandas.DataFrame(
-        #     registrations_list,
-        #     columns=[
-        #         "course",
-        #         "date",
-        #         "deals_registrations",
-        #         "profit_registrations",
-        #     ],
-        # )
-        #
+        try:
+            self.sources_so = pandas.read_pickle(self.sources_so_path)
+        except FileNotFoundError:
+            self.sources_so = None
+
+        try:
+            values = pandas.read_pickle(self.sources_values_path)
+        except FileNotFoundError:
+            values = pandas.DataFrame(columns=["name", "date"])
+        values.fillna("", inplace=True)
+
+        self.get_filters()
+        self.filtering_values()
+        self.get_extras()
+
+        data = pandas.DataFrame(columns=self.columns.keys())
+
+        data_list = []
+        if self.sources_so is not None:
+            for date, emails in self.sources_so.groupby(by=["date"]):
+                data_list.append(
+                    {
+                        "date": date,
+                        "so": len(emails),
+                    }
+                )
+        data = pandas.concat(
+            [
+                data,
+                pandas.DataFrame(
+                    data_list,
+                    columns=["date", "so"],
+                ),
+            ]
+        ).sort_values(by=["date"], ascending=[False])
+
         # preorders_list = []
         # if self.sources_preorders is not None:
         #     for (course_name, date), course in self.sources_preorders.groupby(
@@ -5746,29 +5779,12 @@ class PromoView(FilteringBaseView):
         # data["deals_preorders"].fillna(0, inplace=True)
         # data["profit_registrations"].fillna(0, inplace=True)
         # data["profit_preorders"].fillna(0, inplace=True)
-        #
-        # data = pandas.merge(data, values, on=["course", "date"], how="left")
-        # data = data[
-        #     [
-        #         "course",
-        #         "date",
-        #         "registrations",
-        #         "members",
-        #         "reachability",
-        #         "so",
-        #         "deals_registrations",
-        #         "conversion_registration_deal",
-        #         "conversion_member_deal",
-        #         "conversion_so_deal",
-        #         "profit_registrations",
-        #         "ppd",
-        #         "ppm",
-        #         "ppr",
-        #         "deals_preorders",
-        #         "profit_preorders",
-        #         "ppso",
-        #     ]
-        # ]
+
+        data = pandas.merge(
+            data, values, on=["date"], how="left", suffixes=("_value", "")
+        ).drop(columns=["name_value"])
+        data = data[self.columns.keys()]
+
         # data["registrations"] = data["registrations"].apply(parse_int)
         # data["members"] = data["members"].apply(parse_int)
         # data["reachability"] = data["reachability"].apply(parse_int)
@@ -5788,12 +5804,12 @@ class PromoView(FilteringBaseView):
         # data["deals_preorders"] = data["deals_preorders"].apply(parse_int)
         # data["profit_preorders"] = data["profit_preorders"].apply(parse_int)
         # data["ppso"] = data.apply(self.parse_ppso, axis=1)
-        #
-        # data.fillna("", inplace=True)
 
-        # self.context("filters", self.filters)
-        # self.context("extras", self.extras)
-        # self.context("data", data)
+        data.fillna("", inplace=True)
+
+        self.context("filters", self.filters)
+        self.context("extras", self.extras)
+        self.context("data", data)
 
         return super().get()
 

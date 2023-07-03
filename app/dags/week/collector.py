@@ -1465,6 +1465,60 @@ def get_intensives_so():
         pickle.dump(data, file_ref)
 
 
+@log_execution_time("get_source_so")
+def get_source_so():
+    response = requests.get(
+        "https://docs.google.com/spreadsheets/d/1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE/export?format=xlsx&id=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    )
+    data_file = pandas.ExcelFile(BytesIO(response.content))
+    data: pandas.DataFrame = data_file.parse("SpecialOffers")
+    data.rename(
+        columns=dict(zip(data.columns, slugify_columns(list(data.columns)))),
+        inplace=True,
+    )
+    data_list = []
+    for index, row in data.iterrows():
+        row_data = {
+            "manager": row["menedzher"],
+            "group": row["gruppa"],
+            "lead": row["sdelka"],
+            "client": row["fio_klienta"],
+            "email": row["email"],
+            "phone": row["telefon"],
+            "date": row["data_so"],
+        }
+        is_payment = False
+        for column in data.columns:
+            if not str(column).startswith("data_oplaty_"):
+                continue
+            if not pandas.isna(row[column]):
+                is_payment = True
+                data_list.append(
+                    {
+                        **row_data,
+                        "payment_date": row[column],
+                        "payment": row[f"summa_oplaty_{column[12:]}"],
+                    }
+                )
+        if not is_payment:
+            data_list.append(row_data)
+
+    data = pandas.DataFrame(data_list)
+    data["manager"] = data["manager"].apply(parse_str)
+    data["group"] = data["group"].apply(parse_str)
+    data["lead"] = data["lead"].apply(parse_lead_url)
+    data["lead_id"] = data["lead"].apply(parse_lead_id)
+    data["client"] = data["client"].apply(parse_str)
+    data["email"] = data["email"].apply(parse_str)
+    data["phone"] = data["phone"].apply(parse_str)
+    data["date"] = data["date"].apply(parse_date)
+    data["payment_date"] = data["payment_date"].apply(parse_date)
+    data["payment"] = data["payment"].apply(parse_float)
+
+    with open(Path(DATA_PATH / f"source_so.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -1477,6 +1531,11 @@ dag = DAG(
 get_payments_operator = PythonOperator(
     task_id="get_payments",
     python_callable=get_payments,
+    dag=dag,
+)
+get_source_so_operator = PythonOperator(
+    task_id="get_source_so",
+    python_callable=get_source_so,
     dag=dag,
 )
 get_stats_operator = PythonOperator(
