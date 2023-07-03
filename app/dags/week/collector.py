@@ -1434,6 +1434,37 @@ def get_intensives_emails():
             pickle.dump(source, file_ref)
 
 
+@log_execution_time("get_intensives_so")
+def get_intensives_so():
+    data_columns = ["date", "email"]
+    response = requests.get(
+        "https://docs.google.com/spreadsheets/d/11sZcWN74isA-4zC73HDteuwR_ZDXMiNKkR2fsyLdi74/export?format=xlsx&id=11sZcWN74isA-4zC73HDteuwR_ZDXMiNKkR2fsyLdi74"
+    )
+    data_file = pandas.ExcelFile(BytesIO(response.content))
+    dataframe = pandas.DataFrame(columns=data_columns)
+    for sheet_name in data_file.sheet_names:
+        try:
+            date = datetime.strptime(sheet_name, "%d.%m.%Y").date()
+        except ValueError:
+            continue
+        data: pandas.DataFrame = data_file.parse(sheet_name)
+        if data.empty:
+            data = pandas.DataFrame(columns=data_columns)
+        data.rename(
+            columns=dict(zip(data.columns, slugify_columns(list(data.columns)))),
+            inplace=True,
+        )
+        data.rename(columns={"e_mail": "email"}, inplace=True)
+        data.drop_duplicates(inplace=True, ignore_index=True)
+        data["email"] = data["email"].apply(parse_str)
+        data["date"] = date
+        dataframe = pandas.concat([dataframe, data], ignore_index=True)
+    data = dataframe[data_columns]
+
+    with open(Path(DATA_PATH / f"intensives_so.pkl"), "wb") as file_ref:
+        pickle.dump(data, file_ref)
+
+
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
@@ -1471,6 +1502,11 @@ get_managers_sales_operator = PythonOperator(
 get_intensives_emails_operator = PythonOperator(
     task_id="get_intensives_emails",
     python_callable=get_intensives_emails,
+    dag=dag,
+)
+get_intensives_so_operator = PythonOperator(
+    task_id="get_intensives_so",
+    python_callable=get_intensives_so,
     dag=dag,
 )
 get_funnel_channel_operator = PythonOperator(

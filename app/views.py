@@ -5613,6 +5613,190 @@ class PromoView(FilteringBaseView):
     filters_class = PromoFiltersData
     filters: PromoFiltersData
 
+    def get(self):
+        # try:
+        #     self.sources_registrations = pandas.read_pickle(
+        #         self.sources_registrations_path
+        #     )
+        # except FileNotFoundError:
+        #     self.sources_registrations = None
+        #
+        # try:
+        #     self.sources_preorders = pandas.read_pickle(self.sources_preorders_path)
+        # except FileNotFoundError:
+        #     self.sources_preorders = None
+        #
+        # try:
+        #     self.sources_payments = pandas.read_pickle(self.sources_payments_path)
+        #     self.sources_payments.rename(
+        #         columns=dict(
+        #             map(
+        #                 lambda item: (item, parse_slug(item)),
+        #                 self.sources_payments.columns,
+        #             )
+        #         ),
+        #         inplace=True,
+        #     )
+        # except FileNotFoundError:
+        #     self.sources_payments = None
+        #
+        # try:
+        #     values = pandas.read_pickle(self.sources_values_path)
+        # except FileNotFoundError:
+        #     values = pandas.DataFrame(
+        #         columns=[
+        #             "course",
+        #             "date",
+        #             "registrations",
+        #             "members",
+        #             "reachability",
+        #             "so",
+        #         ]
+        #     )
+        # values.fillna("", inplace=True)
+        #
+        # self.get_filters()
+        # self.filtering_values()
+        # self.get_extras()
+        #
+        # data = pandas.DataFrame(
+        #     columns=[
+        #         "course",
+        #         "date",
+        #         "deals_registrations",
+        #         "conversion_registration_deal",
+        #         "conversion_member_deal",
+        #         "conversion_so_deal",
+        #         "profit_registrations",
+        #         "ppd",
+        #         "ppm",
+        #         "ppr",
+        #         "deals_preorders",
+        #         "profit_preorders",
+        #         "ppso",
+        #     ]
+        # )
+        #
+        # registrations_list = []
+        # if self.sources_registrations is not None:
+        #     for (course_name, date), course in self.sources_registrations.groupby(
+        #         by=["course", "date"]
+        #     ):
+        #         payments = self.sources_payments[
+        #             (self.sources_payments["pochta"].isin(course["email"].tolist()))
+        #             & (self.sources_payments["data_oplaty"] >= date)
+        #         ]
+        #         registrations_list.append(
+        #             {
+        #                 "course": course_name,
+        #                 "date": date,
+        #                 "deals_registrations": len(payments),
+        #                 "profit_registrations": payments["summa_vyruchki"].sum(),
+        #             }
+        #         )
+        # registrations = pandas.DataFrame(
+        #     registrations_list,
+        #     columns=[
+        #         "course",
+        #         "date",
+        #         "deals_registrations",
+        #         "profit_registrations",
+        #     ],
+        # )
+        #
+        # preorders_list = []
+        # if self.sources_preorders is not None:
+        #     for (course_name, date), course in self.sources_preorders.groupby(
+        #         by=["course", "date"]
+        #     ):
+        #         payments = self.sources_payments[
+        #             (self.sources_payments["pochta"].isin(course["email"].tolist()))
+        #             & (self.sources_payments["data_oplaty"] >= date)
+        #         ]
+        #         preorders_list.append(
+        #             {
+        #                 "course": course_name,
+        #                 "date": date,
+        #                 "deals_preorders": len(payments),
+        #                 "profit_preorders": payments["summa_vyruchki"].sum(),
+        #             }
+        #         )
+        # preorders = pandas.DataFrame(
+        #     preorders_list,
+        #     columns=[
+        #         "course",
+        #         "date",
+        #         "deals_preorders",
+        #         "profit_preorders",
+        #     ],
+        # )
+        #
+        # data = pandas.concat(
+        #     [
+        #         data,
+        #         pandas.merge(
+        #             registrations, preorders, how="outer", on=["course", "date"]
+        #         )
+        #         .sort_values(by=["course", "date"], ascending=[True, False])
+        #         .reset_index(drop=True),
+        #     ],
+        #     ignore_index=True,
+        # )
+        # data["deals_registrations"].fillna(0, inplace=True)
+        # data["deals_preorders"].fillna(0, inplace=True)
+        # data["profit_registrations"].fillna(0, inplace=True)
+        # data["profit_preorders"].fillna(0, inplace=True)
+        #
+        # data = pandas.merge(data, values, on=["course", "date"], how="left")
+        # data = data[
+        #     [
+        #         "course",
+        #         "date",
+        #         "registrations",
+        #         "members",
+        #         "reachability",
+        #         "so",
+        #         "deals_registrations",
+        #         "conversion_registration_deal",
+        #         "conversion_member_deal",
+        #         "conversion_so_deal",
+        #         "profit_registrations",
+        #         "ppd",
+        #         "ppm",
+        #         "ppr",
+        #         "deals_preorders",
+        #         "profit_preorders",
+        #         "ppso",
+        #     ]
+        # ]
+        # data["registrations"] = data["registrations"].apply(parse_int)
+        # data["members"] = data["members"].apply(parse_int)
+        # data["reachability"] = data["reachability"].apply(parse_int)
+        # data["so"] = data["so"].apply(parse_int)
+        # data["deals_registrations"] = data["deals_registrations"].apply(parse_int)
+        # data["conversion_registration_deal"] = data.apply(
+        #     self.parse_conversion_registration_deal, axis=1
+        # )
+        # data["conversion_member_deal"] = data.apply(
+        #     self.parse_conversion_member_deal, axis=1
+        # )
+        # data["conversion_so_deal"] = data.apply(self.parse_conversion_so_deal, axis=1)
+        # data["profit_registrations"] = data["profit_registrations"].apply(parse_int)
+        # data["ppd"] = data.apply(self.parse_ppd, axis=1)
+        # data["ppm"] = data.apply(self.parse_ppm, axis=1)
+        # data["ppr"] = data.apply(self.parse_ppr, axis=1)
+        # data["deals_preorders"] = data["deals_preorders"].apply(parse_int)
+        # data["profit_preorders"] = data["profit_preorders"].apply(parse_int)
+        # data["ppso"] = data.apply(self.parse_ppso, axis=1)
+        #
+        # data.fillna("", inplace=True)
+
+        # self.context("filters", self.filters)
+        # self.context("extras", self.extras)
+        # self.context("data", data)
+
+        return super().get()
+
 
 class IntensivesBaseView(FilteringBaseView):
     template_name = "intensives/deals/index.html"
@@ -5854,6 +6038,8 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         except FileNotFoundError:
             self.sources_profit = None
 
+        print(self.sources_expenses)
+        print(self.sources_profit)
         self.get_filters()
         self.filtering_values()
         self.get_extras()
