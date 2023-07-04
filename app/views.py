@@ -5635,10 +5635,12 @@ class PromoView(FilteringBaseView):
     filters_class = PromoFiltersData
     filters: PromoFiltersData
 
-    sources_so_path: Path = Path(DATA_FOLDER) / "week" / "intensives_so.pkl"
+    sources_intensives_path: Path = Path(DATA_FOLDER) / "week" / "intensives_so.pkl"
+    sources_so_path: Path = Path(DATA_FOLDER) / "week" / "source_so.pkl"
     sources_values_path: Path = Path(DATA_FOLDER) / "week" / "intensives_so_values.pkl"
 
     extras: Dict[str, Any] = {}
+    sources_intensives: pandas.DataFrame
     sources_so: pandas.DataFrame
 
     columns = {
@@ -5679,19 +5681,26 @@ class PromoView(FilteringBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
-        if self.sources_so is None:
+        if self.sources_intensives is None:
             return
 
         if self.filters.date_from:
+            self.sources_intensives = self.sources_intensives[
+                self.sources_intensives["date"] >= self.filters.date_from
+            ]
             self.sources_so = self.sources_so[
                 self.sources_so["date"] >= self.filters.date_from
             ]
 
         if self.filters.date_to:
+            self.sources_intensives = self.sources_intensives[
+                self.sources_intensives["date"] <= self.filters.date_to
+            ]
             self.sources_so = self.sources_so[
                 self.sources_so["date"] <= self.filters.date_to
             ]
 
+        self.sources_intensives.reset_index(drop=True, inplace=True)
         self.sources_so.reset_index(drop=True, inplace=True)
 
     def get_extras(self):
@@ -5701,6 +5710,11 @@ class PromoView(FilteringBaseView):
         }
 
     def get(self):
+        try:
+            self.sources_intensives = pandas.read_pickle(self.sources_intensives_path)
+        except FileNotFoundError:
+            self.sources_intensives = None
+
         try:
             self.sources_so = pandas.read_pickle(self.sources_so_path)
         except FileNotFoundError:
@@ -5719,91 +5733,67 @@ class PromoView(FilteringBaseView):
         data = pandas.DataFrame(columns=self.columns.keys())
 
         data_list = []
-        if self.sources_so is not None:
-            for date, emails in self.sources_so.groupby(by=["date"]):
+        if self.sources_intensives is not None:
+            for date, emails in self.sources_intensives.groupby(by=["date"]):
+                source_so_group = self.sources_so[
+                    (self.sources_so["date"] == date)
+                    & (self.sources_so["email"].isin(emails["email"].unique().tolist()))
+                    & (self.sources_so["payment_date"] >= self.sources_so["date"])
+                ]
+                leads = source_so_group.drop_duplicates(subset=["date", "lead_id"])
+                so_value = len(emails)
+                deals_value = len(leads)
+                profit_value = source_so_group["payment"].sum()
                 data_list.append(
                     {
                         "date": date,
-                        "so": len(emails),
+                        "so": so_value,
+                        "deals": deals_value,
+                        "conversion_so_deal": so_value / deals_value
+                        if deals_value
+                        else 0,
+                        "profit": profit_value,
+                        "ppso": profit_value / so_value if so_value else 0,
+                        "ppd": profit_value / deals_value if deals_value else 0,
                     }
                 )
+
         data = pandas.concat(
             [
                 data,
                 pandas.DataFrame(
                     data_list,
-                    columns=["date", "so"],
+                    columns=[
+                        "date",
+                        "so",
+                        "deals",
+                        "conversion_so_deal",
+                        "profit",
+                        "ppso",
+                        "ppd",
+                    ],
                 ),
             ]
         ).sort_values(by=["date"], ascending=[False])
 
-        # preorders_list = []
-        # if self.sources_preorders is not None:
-        #     for (course_name, date), course in self.sources_preorders.groupby(
-        #         by=["course", "date"]
-        #     ):
-        #         payments = self.sources_payments[
-        #             (self.sources_payments["pochta"].isin(course["email"].tolist()))
-        #             & (self.sources_payments["data_oplaty"] >= date)
-        #         ]
-        #         preorders_list.append(
-        #             {
-        #                 "course": course_name,
-        #                 "date": date,
-        #                 "deals_preorders": len(payments),
-        #                 "profit_preorders": payments["summa_vyruchki"].sum(),
-        #             }
-        #         )
-        # preorders = pandas.DataFrame(
-        #     preorders_list,
-        #     columns=[
-        #         "course",
-        #         "date",
-        #         "deals_preorders",
-        #         "profit_preorders",
-        #     ],
-        # )
-        #
-        # data = pandas.concat(
-        #     [
-        #         data,
-        #         pandas.merge(
-        #             registrations, preorders, how="outer", on=["course", "date"]
-        #         )
-        #         .sort_values(by=["course", "date"], ascending=[True, False])
-        #         .reset_index(drop=True),
-        #     ],
-        #     ignore_index=True,
-        # )
-        # data["deals_registrations"].fillna(0, inplace=True)
-        # data["deals_preorders"].fillna(0, inplace=True)
-        # data["profit_registrations"].fillna(0, inplace=True)
-        # data["profit_preorders"].fillna(0, inplace=True)
+        data["so"].fillna(0, inplace=True)
+        data["deals"].fillna(0, inplace=True)
+        data["conversion_so_deal"].fillna(0, inplace=True)
+        data["profit"].fillna(0, inplace=True)
+        data["ppso"].fillna(0, inplace=True)
+        data["ppd"].fillna(0, inplace=True)
 
         data = pandas.merge(
             data, values, on=["date"], how="left", suffixes=("_value", "")
         ).drop(columns=["name_value"])
         data = data[self.columns.keys()]
 
-        # data["registrations"] = data["registrations"].apply(parse_int)
-        # data["members"] = data["members"].apply(parse_int)
-        # data["reachability"] = data["reachability"].apply(parse_int)
-        # data["so"] = data["so"].apply(parse_int)
-        # data["deals_registrations"] = data["deals_registrations"].apply(parse_int)
-        # data["conversion_registration_deal"] = data.apply(
-        #     self.parse_conversion_registration_deal, axis=1
-        # )
-        # data["conversion_member_deal"] = data.apply(
-        #     self.parse_conversion_member_deal, axis=1
-        # )
-        # data["conversion_so_deal"] = data.apply(self.parse_conversion_so_deal, axis=1)
-        # data["profit_registrations"] = data["profit_registrations"].apply(parse_int)
-        # data["ppd"] = data.apply(self.parse_ppd, axis=1)
-        # data["ppm"] = data.apply(self.parse_ppm, axis=1)
-        # data["ppr"] = data.apply(self.parse_ppr, axis=1)
-        # data["deals_preorders"] = data["deals_preorders"].apply(parse_int)
-        # data["profit_preorders"] = data["profit_preorders"].apply(parse_int)
-        # data["ppso"] = data.apply(self.parse_ppso, axis=1)
+        data["so"] = data["so"].apply(parse_int)
+        data["deals"] = data["deals"].apply(parse_int)
+        data["conversion_so_deal"] = data["conversion_so_deal"].apply(parse_float)
+        data["profit"] = data["profit"].apply(parse_int)
+        data["ppso"] = data["ppso"].apply(parse_float)
+        data["ppd"] = data["ppd"].apply(parse_float)
 
         data.fillna("", inplace=True)
 
