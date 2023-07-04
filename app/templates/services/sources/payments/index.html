@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div class="base-links">
+        {% include 'services/base_links.html' %}
+    </div>
+    {% include 'services/sources/payments/filters.html' %}
+    {% include 'services/data.html' %}
+{% endblock %}
