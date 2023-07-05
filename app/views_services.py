@@ -87,7 +87,13 @@ class FilteringBaseView(TemplateView):
         return super().get()
 
 
-class ServicesSourcesPaymentsView(FilteringBaseView):
-    template_name = "services/sources/payments/index.html"
+class ServicesSourcesWeekPaymentsView(FilteringBaseView):
+    template_name = "services/sources/week/payments/index.html"
     title = "Аналитика по оплатам [Все оплаты]"
     data_path = WEEK_FOLDER / "source_payments.pkl"
+
+
+class ServicesSourcesWeekExpensesView(FilteringBaseView):
+    template_name = "services/sources/week/expenses/index.html"
+    title = "Расходы"
+    data_path = WEEK_FOLDER / "expenses_count.pkl"

@@ -3866,7 +3866,6 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
         self.values = self.values.merge(channels, how="left", on=["channel_id"])
 
         self.filtering_values()
-
         self.get_extras()
 
         date_from = self.filters.date
@@ -6044,8 +6043,6 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         except FileNotFoundError:
             self.sources_profit = None
 
-        print(self.sources_expenses)
-        print(self.sources_profit)
         self.get_filters()
         self.filtering_values()
         self.get_extras()

@@ -925,9 +925,15 @@ app.add_url_rule(
     view_func=views.ManagersSalesDatesView.as_view("managers_sales_dates"),
 )
 app.add_url_rule(
-    "/services/sources/payments",
-    view_func=views_services.ServicesSourcesPaymentsView.as_view(
-        "services_sources_payments"
+    "/services/sources/week/payments",
+    view_func=views_services.ServicesSourcesWeekPaymentsView.as_view(
+        "services_sources_week_payments"
+    ),
+)
+app.add_url_rule(
+    "/services/sources/week/expenses",
+    view_func=views_services.ServicesSourcesWeekExpensesView.as_view(
+        "services_sources_week_expenses"
     ),
 )
 
