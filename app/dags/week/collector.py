@@ -1154,6 +1154,23 @@ def get_managers_zooms():
 
 @log_execution_time("get_managers_sales")
 def get_managers_sales():
+    response = requests.get(
+        "https://docs.google.com/spreadsheets/d/1ZOsLTSWLGIFwZfWusioUcyngGXE_sGSSbqs5-ELsg_w/export?format=xlsx&id=1ZOsLTSWLGIFwZfWusioUcyngGXE_sGSSbqs5-ELsg_w"
+    )
+    groups: pandas.DataFrame = pandas.read_excel(
+        BytesIO(response.content), sheet_name="Продукты УИИ", dtype=str
+    )
+    groups.rename(
+        columns=dict(zip(list(groups.columns), slugify_columns(list(groups.columns)))),
+        inplace=True,
+    )
+    groups["nazvanie_produkta"] = groups["nazvanie_produkta"].apply(parse_str)
+    groups["gruppa_produktov"] = groups["gruppa_produktov"].apply(parse_str)
+    groups.rename(
+        columns={"nazvanie_produkta": "course", "gruppa_produktov": "group"},
+        inplace=True,
+    )
+    groups = groups[groups["group"] != "не считаем"].reset_index(drop=True)
     data = pandas.read_pickle(Path(DATA_PATH / "payments.pkl"))
     data.rename(
         columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
@@ -1168,10 +1185,15 @@ def get_managers_sales():
         "mesjats_doplata": "surcharge",
     }
     data = data[columns_rel.keys()].rename(columns=columns_rel)
+
     data["manager"] = data["manager"].apply(parse_str).fillna("undefined")
     data["course"] = data["course"].apply(parse_str).fillna("undefined")
     data["profit"] = data["profit"].fillna(0).apply(parse_float)
-    data["surcharge"] = data["surcharge"].apply(lambda item: item == "доплата")
+    data["surcharge"] = (
+        data["surcharge"].apply(lambda item: item == "доплата").fillna(False)
+    )
+    data = data.merge(groups, how="left", on="course")
+    data["group"] = data["group"].fillna("Undefined")
 
     with open(Path(DATA_PATH / "managers_sales.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)

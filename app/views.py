@@ -268,8 +268,10 @@ class ZoomsFiltersData(BaseModel):
 
 
 class ManagersSalesCoursesFiltersData(BaseModel):
-    payment_date_from: Optional[ConstrainedDate]
-    payment_date_to: Optional[ConstrainedDate]
+    order_date_from: Optional[ConstrainedDate]
+    order_date_to: Optional[ConstrainedDate]
+    percent_owner: Optional[bool]
+    percent: Optional[bool]
 
 
 class ManagersSalesDatesFiltersData(BaseModel):
@@ -4439,21 +4441,31 @@ class ManagersSalesCoursesView(FilteringBaseView):
     def get_filters(self):
         initial = self.filters_initial()
 
-        payment_date_from = request.args.get("payment_date_from") or None
-        if payment_date_from is None:
-            payment_date_from = initial.get("payment_date_from")
-        if isinstance(payment_date_from, str):
-            payment_date_from = datetime.date.fromisoformat(payment_date_from)
+        order_date_from = request.args.get("order_date_from") or None
+        if order_date_from is None:
+            order_date_from = initial.get("order_date_from")
+        if isinstance(order_date_from, str):
+            order_date_from = datetime.date.fromisoformat(order_date_from)
 
-        payment_date_to = request.args.get("payment_date_to") or None
-        if payment_date_to is None:
-            payment_date_to = initial.get("payment_date_to")
-        if isinstance(payment_date_to, str):
-            payment_date_to = datetime.date.fromisoformat(payment_date_to)
+        order_date_to = request.args.get("order_date_to") or None
+        if order_date_to is None:
+            order_date_to = initial.get("order_date_to")
+        if isinstance(order_date_to, str):
+            order_date_to = datetime.date.fromisoformat(order_date_to)
+
+        percent_owner = request.args.get("percent_owner")
+        if percent_owner is None:
+            percent_owner = initial.get("percent_owner", False)
+
+        percent = request.args.get("percent")
+        if percent is None:
+            percent = initial.get("percent", False)
 
         data = self.filters_preprocess(
-            payment_date_from=payment_date_from,
-            payment_date_to=payment_date_to,
+            order_date_from=order_date_from,
+            order_date_to=order_date_to,
+            percent_owner=percent_owner,
+            percent=percent,
         )
 
         filters_class = self.get_filters_class()
@@ -4461,19 +4473,17 @@ class ManagersSalesCoursesView(FilteringBaseView):
         self.filters = filters_class(**data)
 
     def filtering_values(self):
-        if self.filters.payment_date_from:
+        if self.filters.order_date_from:
             self.sales = self.sales[
-                self.sales["payment_date"] >= self.filters.payment_date_from
+                self.sales["order_date"] >= self.filters.order_date_from
             ].reset_index(drop=True)
-        if self.filters.payment_date_to:
+        if self.filters.order_date_to:
             self.sales = self.sales[
-                self.sales["payment_date"] <= self.filters.payment_date_to
+                self.sales["order_date"] <= self.filters.order_date_to
             ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
-        self.extras = {
-            "exclude_columns": ["is_manager"],
-        }
+        self.extras = {"exclude_columns":["profit_total"],}
 
     def get(self):
         self.get_filters()
@@ -4484,6 +4494,7 @@ class ManagersSalesCoursesView(FilteringBaseView):
         self.filtering_values()
         self.get_extras()
 
+        self.sales["surcharge"].fillna(False, inplace=True)
         sales = self.sales[~self.sales["surcharge"]]
         source = []
         profit_total = self.sales["profit"].sum()
@@ -4495,40 +4506,48 @@ class ManagersSalesCoursesView(FilteringBaseView):
             surcharge_manager = self.sales[
                 self.sales["surcharge"] & (self.sales["manager"] == manager_name)
             ]
+            group_data = {}
+            for group_name, group in manager.groupby(by=["group"]):
+                # surcharge_group = surcharge_manager[
+                #     surcharge_manager["group"] == group_name
+                # ]
+                group_data[group_name] = group["profit"].sum()
+                # source.append(
+                #     {
+                #         "name": group_name,
+                #         "profit": profit_group,
+                #         "profit_percent": profit_group / profit_manager_total * 100,
+                #         "profit_percent_total": profit_group / profit_total * 100,
+                #         "surcharge": surcharge_group["profit"].sum(),
+                #     }
+                # )
             source.append(
                 {
-                    "is_manager": True,
                     "name": manager_name,
                     "profit": profit_manager,
+                    "profit_total": profit_total,
                     "profit_percent": profit_manager / profit_manager_total * 100,
                     "profit_percent_total": profit_manager / profit_total * 100,
                     "surcharge": surcharge_manager["profit"].sum(),
+                    **group_data,
                 }
             )
-            for course_name, course in manager.groupby(by=["course"]):
-                profit_course = course["profit"].sum()
-                surcharge_course = surcharge_manager[
-                    surcharge_manager["course"] == course_name
-                ]
-                source.append(
-                    {
-                        "is_manager": False,
-                        "name": course_name,
-                        "profit": profit_course,
-                        "profit_percent": profit_course / profit_manager_total * 100,
-                        "profit_percent_total": profit_course / profit_total * 100,
-                        "surcharge": surcharge_course["profit"].sum(),
-                    }
-                )
 
-        data = pandas.DataFrame(source).rename(
+        data = pandas.DataFrame(source)
+        columns_first = ["name", "profit"]
+        columns_last = ["profit_percent", "profit_percent_total", "surcharge"]
+        columns_middle = list(set(data.columns) - set(columns_first + columns_last))
+        data = data[columns_first + sorted(columns_middle) + columns_last]
+        data[columns_middle] = data[columns_middle].fillna(0)
+        data.rename(
             columns={
-                "name": "",
-                "profit": "Оборот",
+                "name": "Менеджер",
+                "profit": "Сумма продаж",
                 "profit_percent": "% от менеджера с учетом доплат",
                 "profit_percent_total": "% от компании с учетом доплат",
                 "surcharge": "Доплаты",
-            }
+            },
+            inplace=True,
         )
 
         self.context("filters", self.filters)

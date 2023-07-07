@@ -1,12 +1,20 @@
 <form action="{{ url_for('managers_sales_courses') }}">
     <div class="filter-block">
         <div class="field">
-            <label for="field-payment_date_from">Оплата с даты</label>
-            <input type="date" name="payment_date_from" id="field-payment_date_from" value="{% if filters.payment_date_from %}{{ filters.payment_date_from }}{% endif %}">
+            <label for="field-order_date_from">С даты заявки</label>
+            <input type="date" name="order_date_from" id="field-order_date_from" value="{% if filters.order_date_from %}{{ filters.order_date_from }}{% endif %}">
         </div>
         <div class="field">
-            <label for="field-payment_date_to">Оплата по дату</label>
-            <input type="date" name="payment_date_to" id="field-payment_date_to" value="{% if filters.payment_date_to %}{{ filters.payment_date_to }}{% endif %}">
+            <label for="field-order_date_to">По дату заявки</label>
+            <input type="date" name="order_date_to" id="field-order_date_to" value="{% if filters.order_date_to %}{{ filters.order_date_to }}{% endif %}">
+        </div>
+        <div class="field field-checkbox">
+            <input type="checkbox" id="field-percent_owner" name="percent_owner"{% if filters.percent_owner %} checked="checked"{% endif %}>
+            <label for="field-percent_owner">Процент от личного</label>
+        </div>
+        <div class="field field-checkbox">
+            <input type="checkbox" id="field-percent" name="percent"{% if filters.percent %} checked="checked"{% endif %}>
+            <label for="field-percent">Процент от общего</label>
         </div>
     </div>
     <div class="filter-actions">
