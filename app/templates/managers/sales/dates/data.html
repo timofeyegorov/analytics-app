@@ -17,12 +17,10 @@
                         <th class="font-monospace text-right">{{ loop.index }}</th>
                         {% for column in data.columns %}
                             {% if column not in extras.exclude_columns %}
-                                {% if column in ["Оборот"] %}
-                                    <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
-                                {% elif column in ["% от менеджера", "% от компании"] %}
-                                    <td class="nowrap font-monospace text-right">{{ format_float2(item[column]) }} %</td>
+                                {% if column in ["Менеджер"] %}
+                                    <td class="nowrap">{{ item[column] }}</td>
                                 {% else %}
-                                    <td>{{ item[column] }}</td>
+                                    <td class="nowrap font-monospace text-right recalc" data-value="{{ item[column] }}" data-owner="{{ item["Сумма продаж"] }}" data-full="{{ item["profit_total"] }}"></td>
                                 {% endif %}
                             {% endif %}
                         {% endfor %}

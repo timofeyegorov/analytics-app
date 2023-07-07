@@ -19,6 +19,14 @@
                 {% endif %}
             </select>
         </div>
+        <div class="field field-checkbox">
+            <input type="checkbox" id="field-percent_owner" name="percent_owner"{% if filters.percent_owner %} checked="checked"{% endif %}>
+            <label for="field-percent_owner">Процент от личного</label>
+        </div>
+        <div class="field field-checkbox">
+            <input type="checkbox" id="field-percent" name="percent"{% if filters.percent %} checked="checked"{% endif %}>
+            <label for="field-percent">Процент от общего</label>
+        </div>
     </div>
     <div class="filter-actions">
         <button class="btn btn-primary">Обновить</button>

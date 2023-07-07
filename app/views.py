@@ -278,6 +278,8 @@ class ManagersSalesDatesFiltersData(BaseModel):
     payment_date_from: Optional[ConstrainedDate]
     payment_date_to: Optional[ConstrainedDate]
     course: Optional[str]
+    percent_owner: Optional[bool]
+    percent: Optional[bool]
 
     def __getitem__(self, item):
         if item == "course":
@@ -4483,7 +4485,9 @@ class ManagersSalesCoursesView(FilteringBaseView):
             ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
-        self.extras = {"exclude_columns":["profit_total"],}
+        self.extras = {
+            "exclude_columns": ["profit_total"],
+        }
 
     def get(self):
         self.get_filters()
@@ -4589,10 +4593,20 @@ class ManagersSalesDatesView(FilteringBaseView):
         if course == "__all__":
             course = None
 
+        percent_owner = request.args.get("percent_owner")
+        if percent_owner is None:
+            percent_owner = initial.get("percent_owner", False)
+
+        percent = request.args.get("percent")
+        if percent is None:
+            percent = initial.get("percent", False)
+
         data = self.filters_preprocess(
             payment_date_from=payment_date_from,
             payment_date_to=payment_date_to,
             course=course,
+            percent_owner=percent_owner,
+            percent=percent,
         )
 
         filters_class = self.get_filters_class()
@@ -4628,7 +4642,7 @@ class ManagersSalesDatesView(FilteringBaseView):
     def get_extras(self) -> Dict[str, Any]:
         self.extras = {
             "courses": self.get_extras_group("course"),
-            "exclude_columns": ["is_date"],
+            "exclude_columns": ["profit_total"],
         }
 
     def get(self):
@@ -4644,6 +4658,68 @@ class ManagersSalesDatesView(FilteringBaseView):
         profit_total = self.sales["profit"].sum()
         self.get_extras()
 
+        current_year = datetime.datetime.now().year
+        self.sales["order_date_name"] = self.sales["order_date"].apply(
+            lambda item: "Undefined"
+            if pandas.isna(item)
+            else (
+                "%d, %02d" % (int(item.year), int(item.month))
+                if item.year == current_year
+                else f"{item.year}"
+            )
+        )
+
+        source = []
+        for manager_name, manager in self.sales.groupby(by=["manager"]):
+            dates = {}
+            for order_date_name, order_date in manager.groupby(
+                by=["order_date_name"], sort=False
+            ):
+                dates[order_date_name] = order_date["profit"].sum()
+            source.append(
+                {
+                    "name": manager_name,
+                    "profit": manager["profit"].sum(),
+                    "profit_total": profit_total,
+                    **dates,
+                    # "profit_percent": profit_order_date / profit_order_date_total * 100,
+                    # "profit_percent_total": profit_order_date / profit_total * 100,
+                }
+            )
+        # for order_date_name, order_date in self.sales.groupby(
+        #     by=["order_date_name"], sort=False
+        # ):
+        #     profit_order_date = order_date["profit"].sum()
+        #     profit_order_date_total = self.sales[
+        #         self.sales["order_date_name"] == order_date_name
+        #     ]["profit"].sum()
+        #     source.append(
+        #         {
+        #             "name": order_date_name,
+        #             "profit": profit_order_date,
+        #             "profit_percent": profit_order_date / profit_order_date_total * 100,
+        #             "profit_percent_total": profit_order_date / profit_total * 100,
+        #         }
+        #     )
+        #     for manager_name, manager in order_date.groupby(by=["manager"]):
+        #         profit_manager = manager["profit"].sum()
+        #         source.append(
+        #             {
+        #                 "name": manager_name,
+        #                 "profit": profit_manager,
+        #                 "profit_percent": profit_manager
+        #                 / profit_order_date_total
+        #                 * 100,
+        #                 "profit_percent_total": profit_manager / profit_total * 100,
+        #             }
+        #         )
+
+        data = pandas.DataFrame(source)
+        columns_first = ["name", "profit"]
+        columns_last = list(set(data.columns) - set(columns_first))
+        data = data[columns_first + sorted(columns_last, reverse=True)]
+        data[columns_last] = data[columns_last].fillna(0)
+
         months = [
             "январь",
             "февраль",
@@ -4658,55 +4734,23 @@ class ManagersSalesDatesView(FilteringBaseView):
             "ноябрь",
             "декабрь",
         ]
-        current_year = datetime.datetime.now().year
-        self.sales["order_date_name"] = self.sales["order_date"].apply(
-            lambda item: "undefined"
-            if pandas.isna(item)
-            else (
-                f"{item.year}, {months[item.month-1]}"
-                if item.year == current_year
-                else f"{item.year}"
-            )
-        )
+        month_rename = {}
+        for column in data.columns:
+            match_month = re.match(r"^(\d{4}),\s(\d{2})$", column)
+            if match_month:
+                month_rename[
+                    column
+                ] = f"{match_month.group(1)}, {months[int(match_month.group(2))-1]}"
+        data.rename(columns=month_rename, inplace=True)
 
-        source = []
-        for order_date_name, order_date in self.sales.groupby(
-            by=["order_date_name"], sort=False
-        ):
-            profit_order_date = order_date["profit"].sum()
-            profit_order_date_total = self.sales[
-                self.sales["order_date_name"] == order_date_name
-            ]["profit"].sum()
-            source.append(
-                {
-                    "is_date": True,
-                    "name": order_date_name,
-                    "profit": profit_order_date,
-                    "profit_percent": profit_order_date / profit_order_date_total * 100,
-                    "profit_percent_total": profit_order_date / profit_total * 100,
-                }
-            )
-            for manager_name, manager in order_date.groupby(by=["manager"]):
-                profit_manager = manager["profit"].sum()
-                source.append(
-                    {
-                        "is_date": False,
-                        "name": manager_name,
-                        "profit": profit_manager,
-                        "profit_percent": profit_manager
-                        / profit_order_date_total
-                        * 100,
-                        "profit_percent_total": profit_manager / profit_total * 100,
-                    }
-                )
-
-        data = pandas.DataFrame(source).rename(
+        data.rename(
             columns={
-                "name": "",
-                "profit": "Оборот",
+                "name": "Менеджер",
+                "profit": "Сумма продаж",
                 "profit_percent": "% от менеджера",
                 "profit_percent_total": "% от компании",
-            }
+            },
+            inplace=True,
         )
 
         self.context("filters", self.filters)
