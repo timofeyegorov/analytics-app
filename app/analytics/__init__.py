@@ -46,7 +46,7 @@ import pickle as pkl
 import json
 import html
 
-from app import views, views_amocrm, views_services
+from app import views, views_amocrm, views_services, views_api_v1
 
 from .pickle_load import PickleLoader
 from . import utils
@@ -935,6 +935,10 @@ app.add_url_rule(
     view_func=views_services.ServicesSourcesWeekExpensesView.as_view(
         "services_sources_week_expenses"
     ),
+)
+app.add_url_rule(
+    "/api/v1/test",
+    view_func=views_api_v1.TestView.as_view("api_v1_test"),
 )
 
 
