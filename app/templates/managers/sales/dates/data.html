@@ -12,8 +12,20 @@
                 </tr>
             </thead>
             <tbody>
+                <tr class="date">
+                    <th class="font-monospace text-right"></th>
+                    {% for column in data.columns %}
+                        {% if column not in extras.exclude_columns %}
+                            {% if column in ["Менеджер"] %}
+                                <td class="nowrap">{{ total[column] }}</td>
+                            {% else %}
+                                <td class="nowrap font-monospace text-right recalc" data-value="{{ total[column] }}" data-owner="{{ total["Сумма продаж"] }}" data-full="{{ total["profit_total"] }}"></td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </tr>
                 {% for index, item in data.iterrows() %}
-                    <tr{% if item.is_date %} class="date"{% endif %}>
+                    <tr>
                         <th class="font-monospace text-right">{{ loop.index }}</th>
                         {% for column in data.columns %}
                             {% if column not in extras.exclude_columns %}

@@ -4504,34 +4504,17 @@ class ManagersSalesCoursesView(FilteringBaseView):
         profit_total = self.sales["profit"].sum()
         for manager_name, manager in sales.groupby(by=["manager"], sort=False):
             profit_manager = manager["profit"].sum()
-            profit_manager_total = self.sales[self.sales["manager"] == manager_name][
-                "profit"
-            ].sum()
             surcharge_manager = self.sales[
                 self.sales["surcharge"] & (self.sales["manager"] == manager_name)
             ]
             group_data = {}
             for group_name, group in manager.groupby(by=["group"]):
-                # surcharge_group = surcharge_manager[
-                #     surcharge_manager["group"] == group_name
-                # ]
                 group_data[group_name] = group["profit"].sum()
-                # source.append(
-                #     {
-                #         "name": group_name,
-                #         "profit": profit_group,
-                #         "profit_percent": profit_group / profit_manager_total * 100,
-                #         "profit_percent_total": profit_group / profit_total * 100,
-                #         "surcharge": surcharge_group["profit"].sum(),
-                #     }
-                # )
             source.append(
                 {
                     "name": manager_name,
                     "profit": profit_manager,
                     "profit_total": profit_total,
-                    "profit_percent": profit_manager / profit_manager_total * 100,
-                    "profit_percent_total": profit_manager / profit_total * 100,
                     "surcharge": surcharge_manager["profit"].sum(),
                     **group_data,
                 }
@@ -4539,7 +4522,7 @@ class ManagersSalesCoursesView(FilteringBaseView):
 
         data = pandas.DataFrame(source)
         columns_first = ["name", "profit"]
-        columns_last = ["profit_percent", "profit_percent_total", "surcharge"]
+        columns_last = ["surcharge"]
         columns_middle = list(set(data.columns) - set(columns_first + columns_last))
         data = data[columns_first + sorted(columns_middle) + columns_last]
         data[columns_middle] = data[columns_middle].fillna(0)
@@ -4547,15 +4530,24 @@ class ManagersSalesCoursesView(FilteringBaseView):
             columns={
                 "name": "Менеджер",
                 "profit": "Сумма продаж",
-                "profit_percent": "% от менеджера с учетом доплат",
-                "profit_percent_total": "% от компании с учетом доплат",
                 "surcharge": "Доплаты",
             },
             inplace=True,
         )
 
+        total = pandas.Series(
+            {
+                **data[columns_middle].sum().to_dict(),
+                "Менеджер": "Итого",
+                "Сумма продаж": data["Сумма продаж"].sum(),
+                "Доплаты": data["Доплаты"].sum(),
+                "profit_total": profit_total,
+            }
+        )
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
+        self.context("total", total)
         self.context("data", data)
 
         return super().get()
@@ -4682,37 +4674,8 @@ class ManagersSalesDatesView(FilteringBaseView):
                     "profit": manager["profit"].sum(),
                     "profit_total": profit_total,
                     **dates,
-                    # "profit_percent": profit_order_date / profit_order_date_total * 100,
-                    # "profit_percent_total": profit_order_date / profit_total * 100,
                 }
             )
-        # for order_date_name, order_date in self.sales.groupby(
-        #     by=["order_date_name"], sort=False
-        # ):
-        #     profit_order_date = order_date["profit"].sum()
-        #     profit_order_date_total = self.sales[
-        #         self.sales["order_date_name"] == order_date_name
-        #     ]["profit"].sum()
-        #     source.append(
-        #         {
-        #             "name": order_date_name,
-        #             "profit": profit_order_date,
-        #             "profit_percent": profit_order_date / profit_order_date_total * 100,
-        #             "profit_percent_total": profit_order_date / profit_total * 100,
-        #         }
-        #     )
-        #     for manager_name, manager in order_date.groupby(by=["manager"]):
-        #         profit_manager = manager["profit"].sum()
-        #         source.append(
-        #             {
-        #                 "name": manager_name,
-        #                 "profit": profit_manager,
-        #                 "profit_percent": profit_manager
-        #                 / profit_order_date_total
-        #                 * 100,
-        #                 "profit_percent_total": profit_manager / profit_total * 100,
-        #             }
-        #         )
 
         data = pandas.DataFrame(source)
         columns_first = ["name", "profit"]
@@ -4747,14 +4710,28 @@ class ManagersSalesDatesView(FilteringBaseView):
             columns={
                 "name": "Менеджер",
                 "profit": "Сумма продаж",
-                "profit_percent": "% от менеджера",
-                "profit_percent_total": "% от компании",
             },
             inplace=True,
         )
 
+        total = pandas.Series(
+            {
+                **data[
+                    list(
+                        set(data.columns) - {"Менеджер", "Сумма продаж", "profit_total"}
+                    )
+                ]
+                .sum()
+                .to_dict(),
+                "Менеджер": "Итого",
+                "Сумма продаж": data["Сумма продаж"].sum(),
+                "profit_total": profit_total,
+            }
+        )
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
+        self.context("total", total)
         self.context("data", data)
 
         return super().get()
