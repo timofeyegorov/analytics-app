@@ -1,0 +1,4 @@
+table tr.total > td {
+    font-weight:bold;
+    background:#d4edff !important;
+}

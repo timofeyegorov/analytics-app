@@ -6088,6 +6088,7 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         self.get_extras()
 
         rows = []
+        total = {}
         for (
             channel_name,
             channel_title,
@@ -6095,7 +6096,7 @@ class IntensivesFunnelChannelView(FilteringBaseView):
             by=["channel", "channel_title"]
         ):
             row = {
-                "Канал трафика": channel_title,
+                "": channel_title,
             }
             for funnel_name, expenses_group in channel_group.groupby(by=["funnel"]):
                 profit_group = self.sources_profit[
@@ -6107,19 +6108,50 @@ class IntensivesFunnelChannelView(FilteringBaseView):
                 profit_percent = (
                     profit_sum / expenses_sum if expenses_sum > 0 else 0
                 ) * 100
+                expenses_name = f"Расход {funnel_name}"
+                profit_name = f"Оборот {funnel_name}"
                 row.update(
                     {
-                        f"Расход {funnel_name}": expenses_sum,
-                        f"Оборот {funnel_name}": (profit_sum, profit_percent),
+                        expenses_name: expenses_sum,
+                        profit_name: (profit_sum, profit_percent),
                     }
                 )
-            rows.append(row)
+                if expenses_name not in total.keys():
+                    total[expenses_name] = 0
+                if profit_name not in total.keys():
+                    total[profit_name] = (0, 0)
+                total[expenses_name] += expenses_sum
+                total[profit_name] = (total[profit_name][0] + profit_sum, 0)
+            is_none = []
+            for name, item in row.items():
+                if re.match(r"^Расход\s.+$", name):
+                    is_none.append(item == 0)
+                if re.match(r"^Оборот\s.+$", name):
+                    is_none.append(
+                        item[1] == 0 if self.filters.is_percent else item[0] == 0
+                    )
+            if (
+                len(is_none) > 0
+                and len(list(filter(lambda item: item is False, is_none))) > 0
+            ):
+                rows.append(row)
 
         data = pandas.DataFrame(rows)
         data.fillna(0, inplace=True)
 
+        for name, item in total.items():
+            match_name = re.match(r"^Оборот\s(.+)$", name)
+            if match_name is None:
+                continue
+            total_expenses = total.get(f"Расход {match_name.group(1)}", 0)
+            total[name] = (
+                total[name][0],
+                (total[name][0] / total_expenses if total_expenses > 0 else 0) * 100,
+            )
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
+        self.context("total", pandas.Series({"": "Итого", **total}))
         self.context("data", data)
 
         return super().get()

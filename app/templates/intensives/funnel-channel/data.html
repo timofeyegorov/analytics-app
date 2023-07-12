@@ -10,6 +10,24 @@
             </tr>
         </thead>
         <tbody>
+            <tr class="total">
+                {% for column in data.columns %}
+                    {% if column not in extras.exclude_columns %}
+                        {% if column.startswith("Расход ") %}
+                            <td class="nowrap font-monospace text-right">{{ format_int(total[column]) }} ₽</td>
+                        {% elif column.startswith("Оборот ") %}
+                            <td class="nowrap font-monospace text-right">
+                                {% if is_tuple(total[column]) %}
+                                    {% if filters.is_percent %}{{ format_int(total[column].1) }}{% else %}{{ format_int(total[column].0) }}{% endif %}
+                                {% else %}
+                                    0
+                                {% endif %} {% if filters.is_percent %}%{% else %}₽{% endif %}</td>
+                        {% else %}
+                            <td class="nowrap">{{ total[column] }}</td>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </tr>
             {% for index, item in data.iterrows() %}
                 <tr>
                     {% for column in data.columns %}
