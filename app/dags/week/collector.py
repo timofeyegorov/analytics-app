@@ -383,7 +383,7 @@ def get_spreadsheet_url(name: str) -> str:
 
 def read_zoom_day(
     worksheet: Worksheet, current_date: date
-) -> Optional[pandas.DataFrame]:
+) -> Tuple[Optional[pandas.DataFrame], Optional[pandas.DataFrame]]:
     print(f'    - Reading day {current_date.strftime("%d.%m.%Y")}')
     values = []
     for row in worksheet.rows:
@@ -399,7 +399,17 @@ def read_zoom_day(
     columns[0] = "manager"
     values_data = pandas.DataFrame(values[1:], columns=columns)
     prepare_data = []
+    managers = []
+    group = ""
     for index, row in values_data.iterrows():
+        manager = parse_str(row["manager"])
+        if pandas.isna(manager):
+            continue
+        group_match = re.match(r"Группа\s(\S+)", manager)
+        if group_match:
+            group = group_match.group(1)
+            continue
+        managers.append({"manager": manager, "group": group, "date": current_date})
         for column, value in row.items():
             if not isinstance(column, time):
                 continue
@@ -408,28 +418,31 @@ def read_zoom_day(
                 continue
             prepare_data.append(
                 {
-                    "manager": row["manager"],
+                    "manager": manager,
                     "date": current_date,
                     "time": column,
                     "lead": value,
                 }
             )
 
-    return pandas.DataFrame(prepare_data)
+    return pandas.DataFrame(managers), pandas.DataFrame(prepare_data)
 
 
-def read_zoom_month(spreadsheet_id: str, month: date) -> Optional[pandas.DataFrame]:
+def read_zoom_month(
+    spreadsheet_id: str, month: date
+) -> Tuple[pandas.DataFrame, Optional[pandas.DataFrame]]:
     print(
         f'  - Reading month {month.strftime("%m.%Y")} from url {get_spreadsheet_url(spreadsheet_id)}'
     )
     values = None
+    managers = pandas.DataFrame(columns=["manager", "group"])
     response = requests.get(
         f"https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key={spreadsheet_id}&exportFormat=xlsx"
     )
     try:
         xlsx = load_workbook(filename=BytesIO(response.content))
     except Exception:
-        return values
+        return managers, values
     for worksheet in xlsx.worksheets:
         if worksheet.sheet_state.lower() == "hidden":
             continue
@@ -440,13 +453,15 @@ def read_zoom_month(spreadsheet_id: str, month: date) -> Optional[pandas.DataFra
             current_date = month.replace(day=int(match_day.group(1)))
         except ValueError:
             continue
-        values_day = read_zoom_day(worksheet, current_date)
+        managers_day, values_day = read_zoom_day(worksheet, current_date)
+        if managers_day is not None:
+            managers = pandas.concat([managers, managers_day]).reset_index(drop=True)
         if values_day is None:
             continue
         if values is None:
             values = pandas.DataFrame()
         values = pandas.concat([values, values_day]).reset_index(drop=True)
-    return values
+    return managers, values
 
 
 def read_payments(
@@ -1123,23 +1138,43 @@ def get_managers_zooms():
     spreadsheet = get_spreadsheets_month(service)
 
     data = None
+    managers = pandas.DataFrame(columns=["manager", "group", "date"])
     for _, row in spreadsheet.iterrows():
-        data_month = read_zoom_month(
+        managers_month, data_month = read_zoom_month(
             spreadsheet_id=row["hash"],
             month=datetime.strptime(row["month"], "%Y%m").date(),
         )
+        if managers_month is not None:
+            managers = pandas.concat([managers, managers_month]).reset_index(drop=True)
         if data_month is None:
             continue
         if data is None:
             data = pandas.DataFrame()
         data = pandas.concat([data, data_month])
+    unique_managers = []
+    for manager_name, manager in managers[["manager", "group"]].groupby(by=["manager"]):
+        groups_count = manager.groupby(by=["group"]).count().to_dict().get("manager")
+        groups_keys, groups_values = list(groups_count.keys()), list(
+            groups_count.values()
+        )
+        if not groups_values:
+            group = ""
+        else:
+            group = groups_keys[
+                groups_values.index(sorted(groups_values, reverse=True)[0])
+            ]
+        unique_managers.append({"manager": manager_name, "group": group})
+    unique_managers = pandas.DataFrame(unique_managers)
+    unique_managers["manager_id"] = unique_managers["manager"].apply(parse_slug)
+    managers = managers[["manager", "date"]].merge(
+        unique_managers, how="left", on="manager"
+    )
 
     data["manager_id"] = data["manager"].apply(parse_slug)
 
-    with open(Path(DATA_PATH / "groups.pkl"), "rb") as file_ref:
-        groups = pickle.load(file_ref)
-
-    data = data.merge(groups[["manager_id", "group"]], how="left", on="manager_id")
+    data = data.merge(
+        unique_managers[["manager_id", "group"]], how="left", on="manager_id"
+    )
     data.rename(columns={"group": "group_id"}, inplace=True)
     data["group_id"].fillna("", inplace=True)
     data["group"] = data["group_id"].apply(lambda item: f'Группа "{item}"')
@@ -1150,6 +1185,8 @@ def get_managers_zooms():
 
     with open(Path(DATA_PATH / "managers_zooms.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
+    with open(Path(DATA_PATH / "managers_groups.pkl"), "wb") as file_ref:
+        pickle.dump(managers, file_ref)
 
 
 @log_execution_time("get_managers_sales")
