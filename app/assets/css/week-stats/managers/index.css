@@ -1,0 +1,13 @@
+table > thead > tr > th {
+    line-height:1.25;
+    font-size:.75rem;
+    padding:16px;
+}
+table > tbody > tr.total > td {
+    font-weight:bold;
+    background:#fff7dd;
+}
+table > tbody > tr.group > td {
+    font-weight:bold;
+    background:#d4edff;
+}

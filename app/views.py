@@ -14,7 +14,7 @@ from enum import Enum
 from math import ceil
 from uuid import uuid4
 from pathlib import Path
-from typing import Tuple, List, Dict, Any, Optional
+from typing import Tuple, List, Dict, Any, Optional, Callable
 from collections import OrderedDict
 from transliterate import slugify
 from urllib.parse import urlparse, parse_qsl, urlencode, unquote
@@ -3959,11 +3959,36 @@ class WeekStatsManagersView(FilteringBaseView):
     values_so: pandas.DataFrame
     counts_so: pandas.DataFrame
 
-    managers_path: Path = Path(DATA_FOLDER) / "week" / "groups.pkl"
+    managers_path: Path = Path(DATA_FOLDER) / "week" / "managers_groups.pkl"
     values_zoom_path: Path = Path(DATA_FOLDER) / "week" / "zoom.pkl"
     counts_zoom_path: Path = Path(DATA_FOLDER) / "week" / "zoom_count.pkl"
     values_so_path: Path = Path(DATA_FOLDER) / "week" / "so.pkl"
     counts_so_path: Path = Path(DATA_FOLDER) / "week" / "so_count.pkl"
+
+    columns: Dict[str, str] = {
+        "manager": "Менеджер/Группа",
+        "manager_id": "Идентификатор менеджера",
+        "count_zoom": "Количество Zoom",
+        "profit_from_zoom": "Оборот от Zoom",
+        "profit_on_zoom": "Оборот на Zoom",
+        "payment_count_zoom": "Оплаты Zoom",
+        "conversion_zoom": "Конверсия Zoom",
+        "average_payment_zoom": "Средний чек Zoom",
+        "count_so": "Количество SO",
+        "profit_from_so": "Оборот от SO",
+        "profit_on_so": "Оборот на SO",
+        "payment_count_so": "Оплаты SO",
+        "conversion_so": "Конверсия SO",
+        "average_payment_so": "Средний чек SO",
+    }
+    parser: Dict[str, Callable] = {
+        "count": parse_int,
+        "profit_from": parse_int,
+        "profit_on": parse_int,
+        "payment_count": parse_int,
+        "conversion": parse_float,
+        "average_payment": parse_int,
+    }
 
     def filters_initial(self) -> Dict[str, Any]:
         date_from_default = datetime.datetime.now().date() - datetime.timedelta(weeks=4)
@@ -4017,6 +4042,9 @@ class WeekStatsManagersView(FilteringBaseView):
 
     def filtering_values(self):
         if self.filters.value_date_from:
+            self.managers = self.managers[
+                self.managers["date"] >= self.filters.value_date_from
+            ].reset_index(drop=True)
             self.values_zoom = self.values_zoom[
                 self.values_zoom["date"] >= self.filters.value_date_from
             ].reset_index(drop=True)
@@ -4031,6 +4059,9 @@ class WeekStatsManagersView(FilteringBaseView):
             ].reset_index(drop=True)
 
         if self.filters.value_date_to:
+            self.managers = self.managers[
+                self.managers["date"] <= self.filters.value_date_to
+            ].reset_index(drop=True)
             self.values_zoom = self.values_zoom[
                 self.values_zoom["date"] <= self.filters.value_date_to
             ].reset_index(drop=True)
@@ -4084,9 +4115,41 @@ class WeekStatsManagersView(FilteringBaseView):
             )
         )
         self.extras = {
-            "exclude_columns": ["is_group", "is_total", "inactive", "manager_id"],
+            "exclude_columns": ["manager_id"],
             "month": month,
+            "columns": self.columns,
         }
+
+    def process_row(
+        self,
+        name: str,
+        data_count: int,
+        data_profit_from: float,
+        data_payment_count: int,
+    ) -> Dict[str, Any]:
+        data_profit_on = data_profit_from / data_count if data_count > 0 else 0
+        data_conversion = data_payment_count / data_count if data_count > 0 else 0
+        data_average_payment = (
+            data_profit_from / data_payment_count if data_payment_count > 0 else 0
+        )
+        return {
+            f"count_{name}": data_count,
+            f"profit_from_{name}": data_profit_from,
+            f"profit_on_{name}": data_profit_on,
+            f"payment_count_{name}": data_payment_count,
+            f"conversion_{name}": data_conversion * 100,
+            f"average_payment_{name}": data_average_payment,
+        }
+
+    def parse_series(self, data: pandas.Series):
+        for name, parser in self.parser.items():
+            data[f"{name}_zoom"] = parser(data[f"{name}_zoom"])
+            data[f"{name}_so"] = parser(data[f"{name}_so"])
+
+    def parse_dataframe(self, data: pandas.DataFrame):
+        for name, parser in self.parser.items():
+            data[f"{name}_zoom"] = data[f"{name}_zoom"].apply(parser)
+            data[f"{name}_so"] = data[f"{name}_so"].apply(parser)
 
     def get(self):
         self.get_filters()
@@ -4097,18 +4160,6 @@ class WeekStatsManagersView(FilteringBaseView):
         self.values_so = self.load_dataframe(self.values_so_path)
         self.counts_so = self.load_dataframe(self.counts_so_path)
 
-        two_weeks = datetime.datetime.now().date() - datetime.timedelta(weeks=2)
-        active_managers = []
-        for manager_id, rows in self.counts_zoom[
-            self.counts_zoom["date"] >= two_weeks
-        ].groupby(by=["manager_id"]):
-            if rows["count"].sum() > 0:
-                active_managers.append(manager_id)
-        inactive_mangers = self.managers[
-            ~self.managers["manager_id"].isin(active_managers)
-        ][["manager_id"]]
-        inactive_mangers["inactive"] = True
-
         self.values_zoom = self.values_zoom[
             self.values_zoom["profit_date"] >= self.values_zoom["date"]
         ]
@@ -4117,314 +4168,100 @@ class WeekStatsManagersView(FilteringBaseView):
         ]
 
         self.filtering_values()
-
         self.get_extras()
 
-        data_zoom = pandas.DataFrame(
-            list(
-                map(
-                    lambda item: [item[0], item[1]["profit"].sum()],
-                    self.values_zoom.groupby(by=["manager_id"]),
-                )
-            ),
-            columns=["manager_id", "profit_from_zoom"],
-        )
-        data_zoom_count = pandas.DataFrame(
-            list(
-                map(
-                    lambda item: [item[0], item[1]["count"].sum()],
-                    self.counts_zoom.groupby(by=["manager_id"]),
-                )
-            ),
-            columns=["manager_id", "count_zoom"],
-        )
-        data_zoom: pandas.DataFrame = data_zoom.merge(
-            data_zoom_count, how="outer", on=["manager_id"]
-        ).reset_index(drop=True)
-        data_zoom["profit_from_zoom"] = (
-            data_zoom["profit_from_zoom"].fillna(0).apply(parse_int)
-        )
-        data_zoom["count_zoom"] = data_zoom["count_zoom"].fillna(0).apply(parse_int)
-        if len(data_zoom):
-            data_zoom["profit_on_zoom"] = data_zoom.apply(
-                lambda item: item["profit_from_zoom"] / item["count_zoom"]
-                if item["count_zoom"]
-                else 0,
-                axis=1,
-            ).apply(parse_int)
-        data_zoom = data_zoom.merge(
-            pandas.DataFrame(
-                self.values_zoom.groupby(by=["manager_id"])["manager_id"].count(),
-                columns=["manager_id"],
-            ).rename(columns={"manager_id": "payment_count_zoom"}),
-            how="left",
-            left_on="manager_id",
-            right_index=True,
-        )
-        data_zoom["payment_count_zoom"] = (
-            data_zoom["payment_count_zoom"].fillna(0).apply(parse_int)
-        )
-        if len(data_zoom):
-            data_zoom["conversion_zoom"] = data_zoom.apply(
-                lambda item: item["payment_count_zoom"] / item["count_zoom"]
-                if item["count_zoom"]
-                else 0,
-                axis=1,
-            )
-            data_zoom["average_payment_zoom"] = data_zoom.apply(
-                lambda item: item["profit_from_zoom"] / item["payment_count_zoom"]
-                if item["payment_count_zoom"]
-                else 0,
-                axis=1,
-            )
-
-        data_so = pandas.DataFrame(
-            list(
-                map(
-                    lambda item: [item[0], item[1]["profit"].sum()],
-                    self.values_so.groupby(by=["manager_id"]),
-                )
-            ),
-            columns=["manager_id", "profit_from_so"],
-        )
-        data_so_count = pandas.DataFrame(
-            list(
-                map(
-                    lambda item: [item[0], item[1]["count"].sum()],
-                    self.counts_so.groupby(by=["manager_id"]),
-                )
-            ),
-            columns=["manager_id", "count_so"],
-        )
-        data_so: pandas.DataFrame = data_so.merge(
-            data_so_count, how="outer", on=["manager_id"]
-        ).reset_index(drop=True)
-        data_so["profit_from_so"] = data_so["profit_from_so"].fillna(0).apply(parse_int)
-        data_so["count_so"] = data_so["count_so"].fillna(0).apply(parse_int)
-        if len(data_so):
-            data_so["profit_on_so"] = data_so.apply(
-                lambda item: item["profit_from_so"] / item["count_so"]
-                if item["count_so"]
-                else 0,
-                axis=1,
-            ).apply(parse_int)
-        data_so = data_so.merge(
-            pandas.DataFrame(
-                self.values_so.groupby(by=["manager_id"])["manager_id"].count(),
-                columns=["manager_id"],
-            ).rename(columns={"manager_id": "payment_count_so"}),
-            how="left",
-            left_on="manager_id",
-            right_index=True,
-        )
-        data_so["payment_count_so"] = (
-            data_so["payment_count_so"].fillna(0).apply(parse_int)
-        )
-        if len(data_so):
-            data_so["conversion_so"] = data_so.apply(
-                lambda item: item["payment_count_so"] / item["count_so"]
-                if item["count_so"]
-                else 0,
-                axis=1,
-            )
-            data_so["average_payment_so"] = data_so.apply(
-                lambda item: item["profit_from_so"] / item["payment_count_so"]
-                if item["payment_count_so"]
-                else 0,
-                axis=1,
-            )
-
-        data_merged: pandas.DataFrame = pandas.merge(
-            data_zoom, data_so, how="outer", on=["manager_id"]
-        ).reset_index(drop=True)
-
-        with open(Path(DATA_FOLDER) / "week" / "groups.pkl", "rb") as file_ref:
-            groups: pandas.DataFrame = pickle.load(file_ref)
-
-        data_merged = (
-            data_merged.merge(groups, how="left", on=["manager_id"])
-            .rename(columns={"group": "group_id"})
-            .sort_values(by=["group_id", "manager"])
-            .reset_index(drop=True)
-        )
-        data_merged.insert(0, "is_total", False)
-        data_merged.insert(1, "is_group", False)
-
-        total_count_zoom = data_merged["count_zoom"].sum()
-        total_profit_from_zoom = data_merged["profit_from_zoom"].sum()
-        total_profit_on_zoom = (
-            round(total_profit_from_zoom / total_count_zoom) if total_count_zoom else 0
-        )
-        total_payment_count_zoom = data_merged["payment_count_zoom"].sum()
-        total_conversion_zoom = (
-            total_payment_count_zoom / total_count_zoom if total_count_zoom else 0
-        )
-        total_average_payment_zoom = (
-            total_profit_from_zoom / total_payment_count_zoom
-            if total_payment_count_zoom
-            else 0
-        )
-        total_count_so = data_merged["count_so"].sum()
-        total_profit_from_so = data_merged["profit_from_so"].sum()
-        total_profit_on_so = (
-            round(total_profit_from_so / total_count_so) if total_count_so else 0
-        )
-        total_payment_count_so = data_merged["payment_count_so"].sum()
-        total_conversion_so = (
-            total_payment_count_so / total_count_so if total_count_so else 0
-        )
-        total_average_payment_so = (
-            total_profit_from_so / total_payment_count_so
-            if total_payment_count_so
-            else 0
+        managers = (
+            self.managers[["manager", "manager_id", "group"]]
+            .drop_duplicates()
+            .sort_values(by=["group", "manager"])
         )
 
-        data_merged = data_merged.merge(inactive_mangers, how="left", on="manager_id")
-        data_merged["inactive"].fillna(False, inplace=True)
-
-        data = [
-            pandas.DataFrame(
-                [
-                    {
-                        "is_total": True,
-                        "is_group": True,
-                        "inactive": False,
-                        "manager": "Всего",
-                        "manager_id": "Всего",
-                        "count_zoom": total_count_zoom,
-                        "profit_from_zoom": total_profit_from_zoom,
-                        "profit_on_zoom": total_profit_on_zoom,
-                        "count_so": total_count_so,
-                        "profit_from_so": total_profit_from_so,
-                        "profit_on_so": total_profit_on_so,
-                        "payment_count_zoom": total_payment_count_zoom,
-                        "conversion_zoom": total_conversion_zoom,
-                        "average_payment_zoom": total_average_payment_zoom,
-                        "payment_count_so": total_payment_count_so,
-                        "conversion_so": total_conversion_so,
-                        "average_payment_so": total_average_payment_so,
-                    }
+        groups = []
+        for group_name, group_data in managers.groupby(by=["group"]):
+            rows = []
+            for _, row_data in group_data.iterrows():
+                manager_id = row_data["manager_id"]
+                zooms_counts = self.counts_zoom[
+                    self.counts_zoom["manager_id"] == manager_id
                 ]
+                zooms_analytics = self.values_zoom[
+                    self.values_zoom["manager_id"] == manager_id
+                ]
+                so_counts = self.counts_so[self.counts_so["manager_id"] == manager_id]
+                so_analytics = self.values_so[
+                    self.values_so["manager_id"] == manager_id
+                ]
+                row = {
+                    **dict.fromkeys(self.columns.keys(), pandas.NA),
+                    "manager": row_data["manager"],
+                    "manager_id": row_data["manager_id"],
+                    **self.process_row(
+                        "zoom",
+                        zooms_counts["count"].sum(),
+                        zooms_analytics["profit"].sum(),
+                        len(zooms_analytics),
+                    ),
+                    **self.process_row(
+                        "so",
+                        so_counts["count"].sum(),
+                        so_analytics["profit"].sum(),
+                        len(so_analytics),
+                    ),
+                }
+                rows.append(row)
+            rows = pandas.DataFrame(rows)
+            group_info = pandas.Series(
+                {
+                    **dict.fromkeys(self.columns.keys(), pandas.NA),
+                    "manager": f"Группа {group_name}",
+                    **self.process_row(
+                        "zoom",
+                        rows["count_zoom"].sum(),
+                        rows["profit_from_zoom"].sum(),
+                        rows["payment_count_zoom"].sum(),
+                    ),
+                    **self.process_row(
+                        "so",
+                        rows["count_so"].sum(),
+                        rows["profit_from_so"].sum(),
+                        rows["payment_count_so"].sum(),
+                    ),
+                }
             )
-        ]
-        for group_id, rows in data_merged.groupby(by=["group_id"]):
-            group_count_zoom = rows["count_zoom"].sum()
-            group_profit_from_zoom = rows["profit_from_zoom"].sum()
-            group_profit_on_zoom = (
-                round(group_profit_from_zoom / group_count_zoom)
-                if group_count_zoom
-                else 0
-            )
-            group_payment_count_zoom = rows["payment_count_zoom"].sum()
-            group_conversion_zoom = (
-                group_payment_count_zoom / group_count_zoom if group_count_zoom else 0
-            )
-            group_average_payment_zoom = (
-                group_profit_from_zoom / group_payment_count_zoom
-                if group_payment_count_zoom
-                else 0
-            )
-            group_count_so = rows["count_so"].sum()
-            group_profit_from_so = rows["profit_from_so"].sum()
-            group_profit_on_so = (
-                round(group_profit_from_so / group_count_so) if group_count_so else 0
-            )
-            group_payment_count_so = rows["payment_count_so"].sum()
-            group_conversion_so = (
-                group_payment_count_so / group_count_so if group_count_so else 0
-            )
-            group_average_payment_so = (
-                group_profit_from_so / group_payment_count_so
-                if group_payment_count_so
-                else 0
-            )
-            data += [
-                pandas.DataFrame(
-                    [
-                        {
-                            "is_total": False,
-                            "is_group": True,
-                            "inactive": len(rows[~rows["inactive"]]) == 0,
-                            "manager": f'Группа "{group_id}"',
-                            "manager_id": group_id,
-                            "count_zoom": group_count_zoom,
-                            "profit_from_zoom": group_profit_from_zoom,
-                            "profit_on_zoom": group_profit_on_zoom,
-                            "count_so": group_count_so,
-                            "profit_from_so": group_profit_from_so,
-                            "profit_on_so": group_profit_on_so,
-                            "payment_count_zoom": group_payment_count_zoom,
-                            "conversion_zoom": group_conversion_zoom,
-                            "average_payment_zoom": group_average_payment_zoom,
-                            "payment_count_so": group_payment_count_so,
-                            "conversion_so": group_conversion_so,
-                            "average_payment_so": group_average_payment_so,
-                        }
-                    ]
+            groups.append({"info": group_info, "rows": rows})
+
+        total_data = pandas.DataFrame(list(map(lambda item: item.get("info"), groups)))
+        total = pandas.Series(
+            {
+                **dict.fromkeys(self.columns.keys(), pandas.NA),
+                "manager": "Итого",
+                **self.process_row(
+                    "zoom",
+                    total_data["count_zoom"].sum(),
+                    total_data["profit_from_zoom"].sum(),
+                    total_data["payment_count_zoom"].sum(),
                 ),
-                rows,
-            ]
-        data = pandas.concat(data, ignore_index=True)[
-            [
-                "is_total",
-                "is_group",
-                "inactive",
-                "manager",
-                "manager_id",
-                "count_zoom",
-                "profit_from_zoom",
-                "profit_on_zoom",
-                "payment_count_zoom",
-                "conversion_zoom",
-                "average_payment_zoom",
-                "count_so",
-                "profit_from_so",
-                "profit_on_so",
-                "payment_count_so",
-                "conversion_so",
-                "average_payment_so",
-            ]
-        ]
-        data["count_zoom"] = data["count_zoom"].fillna(0).apply(parse_int)
-        data["profit_from_zoom"] = data["profit_from_zoom"].fillna(0).apply(parse_int)
-        data["profit_on_zoom"] = data["profit_on_zoom"].fillna(0).apply(parse_int)
-        data["payment_count_zoom"] = (
-            data["payment_count_zoom"].fillna(0).apply(parse_int)
+                **self.process_row(
+                    "so",
+                    total_data["count_so"].sum(),
+                    total_data["profit_from_so"].sum(),
+                    total_data["payment_count_so"].sum(),
+                ),
+            }
         )
-        data["conversion_zoom"] = data["conversion_zoom"].fillna(0).apply(parse_percent)
-        data["average_payment_zoom"] = (
-            data["average_payment_zoom"].fillna(0).apply(parse_int)
-        )
-        data["count_so"] = data["count_so"].fillna(0).apply(parse_int)
-        data["profit_from_so"] = data["profit_from_so"].fillna(0).apply(parse_int)
-        data["profit_on_so"] = data["profit_on_so"].fillna(0).apply(parse_int)
-        data["payment_count_so"] = data["payment_count_so"].fillna(0).apply(parse_int)
-        data["conversion_so"] = data["conversion_so"].fillna(0).apply(parse_percent)
-        data["average_payment_so"] = (
-            data["average_payment_so"].fillna(0).apply(parse_int)
-        )
-        data.rename(
-            columns={
-                "manager": "Менеджер/Группа",
-                "count_zoom": "Количество Zoom",
-                "profit_from_zoom": "Оборот от Zoom",
-                "profit_on_zoom": "Оборот на Zoom",
-                "payment_count_zoom": "Оплаты Zoom",
-                "conversion_zoom": "Конверсия Zoom",
-                "average_payment_zoom": "Средний чек Zoom",
-                "count_so": "Количество SO",
-                "profit_from_so": "Оборот от SO",
-                "profit_on_so": "Оборот на SO",
-                "payment_count_so": "Оплаты SO",
-                "conversion_so": "Конверсия SO",
-                "average_payment_so": "Средний чек SO",
-            },
-            inplace=True,
-        )
+        self.parse_series(total)
+        for index, item in enumerate(groups):
+            info = item.get("info")
+            self.parse_series(info)
+            groups[index]["info"] = info
+            rows = item.get("rows")
+            self.parse_dataframe(rows)
+            groups[index]["rows"] = rows
 
         self.context("filters", self.filters)
         self.context("extras", self.extras)
-        self.context("data", data)
+        self.context("total", total)
+        self.context("groups", groups)
 
         return super().get()
 

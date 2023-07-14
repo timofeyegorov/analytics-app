@@ -2,26 +2,62 @@
     <table>
         <thead>
             <tr>
-                {% for column in data.columns %}
+                {% for column, title in extras.columns.items() %}
                     {% if column not in extras.exclude_columns %}
-                        <th class="sticky nowrap">{{ column }}</th>
+                        <th class="sticky">{{ title }}</th>
                     {% endif %}
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
-            {% for index, item in data.iterrows() %}
-                <tr class="{% if item.inactive %}inactive{% endif %}{% if filters.hide_inactive_managers %} hidden{% endif %}">
-                    {% for column in data.columns %}
+            <tr class="total">
+                {% for column in extras.columns.keys() %}
+                    {% if column not in extras.exclude_columns %}
+                        {% if column in ["count_zoom", "payment_count_zoom", "count_so", "payment_count_so"] %}
+                            <td class="nowrap font-monospace text-right">{{ format_int(total[column]) }}</td>
+                        {% elif column in ["profit_from_zoom", "profit_on_zoom", "average_payment_zoom", "profit_from_so", "profit_on_so", "average_payment_so"] %}
+                            <td class="nowrap font-monospace text-right">{{ format_int(total[column]) }} ₽</td>
+                        {% elif column in ["conversion_zoom", "conversion_so"] %}
+                            <td class="nowrap font-monospace text-right">{{ format_float2(total[column]) }} %</td>
+                        {% else %}
+                            <td class="nowrap">{{ total[column] }}</td>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% for group in groups %}
+                <tr class="group">
+                    {% for column in extras.columns.keys() %}
                         {% if column not in extras.exclude_columns %}
-                            {% if column == "Менеджер/Группа" %}
-                                <td class="nowrap{% if item.is_group %} info{% endif %}{% if item.is_total %} warning{% endif %}">{{ item[column] }}</td>
+                            {% if column in ["count_zoom", "payment_count_zoom", "count_so", "payment_count_so"] %}
+                                <td class="nowrap font-monospace text-right">{{ format_int(group.info[column]) }}</td>
+                            {% elif column in ["profit_from_zoom", "profit_on_zoom", "average_payment_zoom", "profit_from_so", "profit_on_so", "average_payment_so"] %}
+                                <td class="nowrap font-monospace text-right">{{ format_int(group.info[column]) }} ₽</td>
+                            {% elif column in ["conversion_zoom", "conversion_so"] %}
+                                <td class="nowrap font-monospace text-right">{{ format_float2(group.info[column]) }} %</td>
                             {% else %}
-                                <td class="nowrap font-monospace{% if item.is_group %} info{% endif %}{% if item.is_total %} warning{% endif %} text-right">{% if column in ["Конверсия Zoom", "Конверсия SO"] %}{{ format_float1(item[column]) }}{% elif column in ["Количество Zoom"] and not item.is_group and not item.is_total and item[column] > 0 %}<a href="{{ url_for('zooms') }}?manager={{ item["manager_id"] }}&date_from={% if filters.value_date_from is not none %}{{ format_date(filters.value_date_from) }}{% endif %}&date_to={% if filters.value_date_to is not none %}{{ format_date(filters.value_date_to) }}{% endif %}" target="_blank">{{ format_int(item[column]) }}</a>{% else %}{{ format_int(item[column]) }}{% endif %}{% if column in ["Оборот от Zoom", "Оборот на Zoom", "Средний чек Zoom", "Оборот от SO", "Оборот на SO", "Средний чек SO"] %} ₽{% endif %}{% if column in ["Конверсия Zoom", "Конверсия SO"] %} %{% endif %}</td>
+                                <td class="nowrap">{{ group.info[column] }}</td>
                             {% endif %}
                         {% endif %}
                     {% endfor %}
                 </tr>
+                {% for index, row in group.rows.iterrows() %}
+                    <tr>
+                        {% for column in extras.columns.keys() %}
+                            {% if column not in extras.exclude_columns %}
+                                {% if column in ["count_zoom", "payment_count_zoom", "count_so", "payment_count_so"] %}
+                                    <td class="nowrap font-monospace text-right">{% if column == "count_zoom" and row[column] > 0 %}<a href="{{ url_for('zooms') }}?manager={{ row["manager_id"] }}&date_from={% if filters.value_date_from is not none %}{{ format_date(filters.value_date_from) }}{% endif %}&date_to={% if filters.value_date_to is not none %}{{ format_date(filters.value_date_to) }}{% endif %}" target="_blank">{{ format_int(row[column]) }}</a>{% else %}{{ format_int(row[column]) }}{% endif %}</td>
+                                {% elif column in ["profit_from_zoom", "profit_on_zoom", "average_payment_zoom", "profit_from_so", "profit_on_so", "average_payment_so"] %}
+                                    <td class="nowrap font-monospace text-right">{{ format_int(row[column]) }} ₽</td>
+                                {% elif column in ["conversion_zoom", "conversion_so"] %}
+                                    <td class="nowrap font-monospace text-right">{{ format_float2(row[column]) }} %</td>
+                                {% else %}
+                                    <td class="nowrap">{{ row[column] }}</td>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
             {% endfor %}
         </tbody>
     </table>
