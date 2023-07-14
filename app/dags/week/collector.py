@@ -1514,6 +1514,8 @@ def get_intensives_so():
             inplace=True,
         )
         data.rename(columns={"e_mail": "email"}, inplace=True)
+        if "email" not in list(data.columns):
+            continue
         data.drop_duplicates(inplace=True, ignore_index=True)
         data["email"] = data["email"].apply(parse_str)
         data["date"] = date
