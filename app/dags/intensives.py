@@ -215,7 +215,9 @@ def get_intensives_registration_stats():
     source = get_intensives_emails("1kNVxlBWFwiK6jGktyPQAlqVqzKB5mM_NLmwriaYfv1Q")
     if source is not None:
         dataframe = processing_intensives_stats(source)
-        with open(Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb") as file_ref:
+        with open(
+            Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb"
+        ) as file_ref:
             pickle.dump(dataframe, file_ref)
 
 
@@ -231,7 +233,7 @@ def get_intensives_preorder_stats():
 dag = DAG(
     "intensives",
     description="Collect intensives profit",
-    schedule_interval="30 * * * *",
+    schedule_interval="30 9-22 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )

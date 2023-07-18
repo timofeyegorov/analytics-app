@@ -1583,7 +1583,7 @@ def get_source_so():
 dag = DAG(
     "week_stats",
     description="Collect week statistics",
-    schedule_interval="0 * * * *",
+    schedule_interval="0 9-22 * * *",
     start_date=datetime(2017, 3, 20),
     catchup=False,
 )
