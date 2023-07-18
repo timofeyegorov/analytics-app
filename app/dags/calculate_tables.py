@@ -737,7 +737,7 @@ def roistat_update_levels():
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
-    schedule_interval="0 23 * * *",
+    schedule_interval="0 20 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )

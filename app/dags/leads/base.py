@@ -57,7 +57,7 @@ def update():
 dag = DAG(
     "leads",
     description="Update leads",
-    schedule_interval="*/10 9-22 * * *",
+    schedule_interval="*/10 6-19 * * *",
     start_date=datetime(2017, 3, 20),
     catchup=False,
 )

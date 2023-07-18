@@ -234,7 +234,7 @@ def get_intensives_preorder_stats():
 dag = DAG(
     "intensives",
     description="Collect intensives profit",
-    schedule_interval="30 9-22 * * *",
+    schedule_interval="30 6-19 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )
