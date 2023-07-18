@@ -160,21 +160,22 @@ def get_intensives_emails(spreadsheet_id: str) -> Optional[pandas.DataFrame]:
             if not len(list(filter(None, row))):
                 continue
             values.append(row)
-        columns = slugify_columns(["Дата интенсива"] + values[0])
-        indexes = [i for i, e in enumerate(columns) if not pandas.isna(e)]
-        columns = [columns[i] for i in indexes]
-        values = list(map(lambda item: [date] + item, values[1:]))
-        for index, value in enumerate(values):
-            values[index] = [value[i] for i in indexes]
-        dataframe = pandas.concat(
-            [
-                dataframe,
-                pandas.DataFrame(values, columns=columns)[columns].drop_duplicates(
-                    keep="last"
-                ),
-            ],
-            ignore_index=True,
-        )
+        if values:
+            columns = slugify_columns(["Дата интенсива"] + values[0])
+            indexes = [i for i, e in enumerate(columns) if not pandas.isna(e)]
+            columns = [columns[i] for i in indexes]
+            values = list(map(lambda item: [date] + item, values[1:]))
+            for index, value in enumerate(values):
+                values[index] = [value[i] for i in indexes]
+            dataframe = pandas.concat(
+                [
+                    dataframe,
+                    pandas.DataFrame(values, columns=columns)[columns].drop_duplicates(
+                        keep="last"
+                    ),
+                ],
+                ignore_index=True,
+            )
     if dataframe.empty:
         return
     return dataframe.sort_values(by=["data_intensiva"], ignore_index=True)
