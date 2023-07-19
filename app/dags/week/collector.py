@@ -811,6 +811,7 @@ def get_stats():
         .reset_index(drop=True)
     )
     channels["channel_id"] = channels["channel"].apply(parse_slug)
+    channels.drop_duplicates(subset=["channel_id"], inplace=True)
     # --------------------------------------------------------------------------
 
     # --- Собираем количество лидов по каналам ---------------------------------

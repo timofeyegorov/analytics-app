@@ -3860,6 +3860,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
         self.values["group"] = self.values["group_id"].apply(
             lambda item: f'Группа "{item}"'
         )
+
         if "manager_id" in self.counts.columns:
             self.counts = self.counts.merge(
                 groups, how="left", on=["manager_id"]
@@ -3867,6 +3868,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
 
         with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
+        channels.drop_duplicates(subset=["channel_id"], inplace=True)
         self.values = self.values.merge(channels, how="left", on=["channel_id"])
 
         self.filtering_values()
