@@ -93,7 +93,7 @@ def getPlotCSV():
             headers={"Content-disposition": f"attachment; filename={report}.csv"},
         )
 
-
+# тест ветки
 def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     # table.created_at = pd.to_datetime(table.created_at).dt.normalize()
     table.created_at = table.created_at + timedelta(seconds=3600 * 3)
