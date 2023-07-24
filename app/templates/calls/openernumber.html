@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>По опенерам номерам</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+
+        /* Добавляем стили для разных цветов фона */
+        td.red {
+            background-color: #fa8072;
+        }
+
+        td.yellow {
+            background-color: #ffa500;
+        }
+
+        td.green {
+            background-color: #98fb98;
+        }
+        td.white {
+            background-color: #fffaf0;
+        }
+            button.btn-info {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+            /* Стилизация контейнера кнопки */
+    .button-container {
+        text-align: center; /* Центрирование содержимого по горизонтали */
+    }
+
+
+
+    </style>
+</head>
+<body>
+<h1 align="center">Опенер-номер (% дозвонов)</h1>
+
+<form action="/openernumber" method="post">
+
+    <div class="button-container">
+        <a href="/" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a><!-- Дополнительный контейнер для кнопки -->
+        <button type="submit" class="btn btn-info" id="choice" name="choice" value="choice1">Переключиться на количество
+            звонков
+        </button>
+    </div>
+
+</form>
+<!-- Вставляем таблицу с помощью переменной table -->
+{{ table | safe }}
+
+<script>
+        // JavaScript код для изменения цвета фона ячеек с процентами и звонками и преобразования в процентный формат
+        // Ваш шаблон должен иметь класс 'table' у элемента <table>
+        document.addEventListener('DOMContentLoaded', function() {
+            var table = document.querySelector('.table');
+            var rows = table.querySelectorAll('tbody tr');
+
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].querySelectorAll('td');
+
+                for (var j = 0; j < cells.length; j++) {
+                    var cellValue = parseFloat(cells[j].innerText);
+
+                    if (!isNaN(cellValue)) {
+                        var percentValue = (cellValue * 100).toFixed(0); // Округляем до 0 десятичных знаков
+                        cells[j].innerText = percentValue + '%';
+
+                        if (cellValue >=0.01 && cellValue < 0.32 ) {
+                            cells[j].classList.add('red'); // Добавляем класс 'red' для красного фона
+                            cells[j].classList.remove('yellow', 'green'); // Удаляем классы для других цветов
+                        } else if (cellValue >= 0.32 && cellValue <= 0.36) {
+                            cells[j].classList.add('yellow'); // Добавляем класс 'yellow' для желтого фона
+                            cells[j].classList.remove('red', 'green'); // Удаляем классы для других цветов
+                        } else if (cellValue >= 0.37 && cellValue <= 1) {
+                            cells[j].classList.add('green'); // Добавляем класс 'yellow' для желтого фона
+                            cells[j].classList.remove('red', 'yellow'); // Удаляем классы для других цветов
+                        } else {
+                            cells[j].classList.add('white'); // Добавляем класс 'green' для зеленого фона
+                            cells[j].classList.remove('red', 'yellow','green'); // Удаляем классы для других цветов
+                        }
+                    }
+                }
+            }
+        });
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
