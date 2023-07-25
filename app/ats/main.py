@@ -6,8 +6,6 @@ from tools import table_number, table_opener, table_time_day, table_opener_numbe
 from preparData import filter_numbers, filter_openers, filter_delete
 from flask.views import MethodView
 
-app = Flask(__name__)
-
 
 class CallsMain(MethodView):
     def get(self):
@@ -99,5 +97,3 @@ app.add_url_rule('/callshours', view_func=callsHours.as_view('calls_hours'))
 app.add_url_rule('/callsopenernumber', view_func=callsOpenerNumber.as_view('calls_openernumber'))
 app.add_url_rule('/callsopenerhours', view_func=callsOpenerNumber.as_view('calls_openerhour'))
 
-if __name__ == '__main__':
-    app.run(debug=True)
