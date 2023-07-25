@@ -41,7 +41,7 @@
 </head>
 <body>
 <h1 align="center">По номерам телефона</h1>
-<a href="/" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
+<a href="{{ url_for('calls_main') }}" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
 <!-- Вставляем таблицу с помощью переменной table -->
 {{ table | safe }}
 

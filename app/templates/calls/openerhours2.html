@@ -19,9 +19,9 @@
 <body>
 <h1 align="center">Опенер-часы (количество звонков)</h1>
 
-<form action="/openerhours" method="post">
+<form action="{{ url_for('calls_openerhour') }}" method="post">
     <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
-        <a href="/" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
+        <a href="{{ url_for('calls_main') }}" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
         <button type="submit" class="btn btn-info" id="choice" name="choice" value="choice2">Переключиться на процент
             дозвонов
         </button>

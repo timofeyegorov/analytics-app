@@ -52,23 +52,24 @@
 
 
 
+
 </style>
 <body>
 <br>
 <h1 align="center">Аналитика звонков</h1>
 {% if message %}
 <div class="alert alert-success alert-dismissible fade show" role="alert">
-  <p align="center">{{ message }}</p>
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
+    <p align="center">{{ message }}</p>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
 </div>
 {%endif%}
 <hr>
 <div class="form-container">
     <div class="form-data">
         <p><strong>Выберите диапазон данных:</strong></p>
-        <form action="/" method="post">
+        <form action="{{ url_for('calls_main') }}" method="post">
             <label for="start_date">Дата начала:</label>
             <input type="date" class="form-control" id="start_date" name="start_date" required>
             <label for="end_date">Дата конца:</label>
@@ -81,7 +82,7 @@
     </div>
     <div class="form-openers">
         <p><strong>Выберите опенеров:</strong></p>
-        <form action="/" method="post">
+        <form action="{{ url_for('calls_main') }}" method="post">
             <select id="dataList" name="options" multiple>
                 {% for item in data_list %}
                 <option value="{{ item }}">{{ item }}</option>
@@ -95,7 +96,7 @@
     </div>
     <div class="form-numbers">
         <p><strong>Выберите номера телефонов:</strong></p>
-        <form action="/" method="post">
+        <form action="{{ url_for('calls_main') }}" method="post">
             <select id="dataNumbers" name="options" multiple>
                 {% for item in numbers_list %}
                 <option value="{{ item }}">{{ item }}</option>
@@ -117,12 +118,16 @@
 <hr>
 <h3 align="center">Отчеты</h3>
 <div align="center">
-    <a href="/numbers" class="btn btn-outline-success" role="button" aria-pressed="true">По номерам</a>
-    <a href="/openers" class="btn btn-outline-success" role="button" aria-pressed="true">По опенерам</a>
-    <a href="/hours" class="btn btn-outline-success" role="button" aria-pressed="true">По часам</a>
-    <a href="/openernumber" class="btn btn-outline-success" role="button" aria-pressed="true">По
+    <a href="{{ url_for('calls_numbers') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        номерам</a>
+    <a href="{{ url_for('calls_openers') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        опенерам</a>
+    <a href="{{ url_for('calls_hours') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        часам</a>
+    <a href="{{ url_for('calls_openernumber') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
         опенерам-номерам</a>
-    <a href="/openerhours" class="btn btn-outline-success" role="button" aria-pressed="true">По опенерам-часам</a>
+    <a href="{{ url_for('calls_openerhour') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        опенерам-часам</a>
 
 </div>
 
