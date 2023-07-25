@@ -3,7 +3,7 @@ import datetime
 
 from typing import Dict, Any
 from pathlib import Path
-from flask.views import MethodView
+from flask.views import MethodView, ResponseReturnValue
 from flask.wrappers import Response
 
 from app.analytics.pickle_load import PickleLoader
