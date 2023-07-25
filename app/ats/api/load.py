@@ -10,13 +10,13 @@ async def get_data(data):
     try:
         response = requests.post(api_url, data=data)
         if response.status_code == 200:
-            with open(f"api/data.csv", 'wb') as file:
+            with open(f"app/ats/api/data.csv", 'wb') as file:
                 file.write(response.content)
         else:
-            with open('api/api.log', 'a', encoding='utf-8') as file:
+            with open('app/ats/api/api.log', 'a', encoding='utf-8') as file:
                 file.write(f'{datetime.now()} {response.status_code}\n')
     except Exception as e:
-        with open('api/api.log', 'a', encoding='utf-8') as file:
+        with open('app/ats/api/api.log', 'a', encoding='utf-8') as file:
             file.write(f'{datetime.now()} {str(e)}\n')
 
 
