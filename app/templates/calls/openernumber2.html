@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>По опенерам номерам</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <style>
+            button.btn-info {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+            /* Стилизация контейнера кнопки */
+    .button-container {
+        text-align: center; /* Центрирование содержимого по горизонтали */
+    }
+
+
+    </style>
+</head>
+<body>
+<h1 align="center">Опенер-номер (количество звонков)</h1>
+
+<form action="{{ url_for('calls_openernumber') }}" method="post">
+
+    <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+        <a href="{{ url_for('calls_main') }}" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
+        <button type="submit" class="btn btn-info" id="choice" name="choice" value="choice2">Переключиться на процент
+            дозвонов
+        </button>
+    </div>
+
+</form>
+<!-- Вставляем таблицу с помощью переменной table -->
+{{ table | safe }}
+
+<script>
+
+
+</script>
+</body>
+</html>

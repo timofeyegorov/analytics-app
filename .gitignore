@@ -1,5 +1,5 @@
 *__pycache__*
-config.py
+/config.py
 logs/
 *standalone*
 webserver_config.py
