@@ -8,7 +8,7 @@ from preparData import filter_numbers, filter_openers, filter_delete
 app = Flask(__name__)
 
 
-
+# основная страница
 @app.route("/", methods=["GET", "POST"])
 def index():
     # Получаем данные из формы
