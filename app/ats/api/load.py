@@ -1,6 +1,6 @@
 from datetime import datetime
 import requests
-from api.config import create_config
+from app.ats.api.config import create_config
 import asyncio
 
 

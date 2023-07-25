@@ -1,7 +1,7 @@
 from typing import Union
 import pandas as pd
 import numpy as np
-from preparData import prep_data
+from app.ats.preparData import prep_data
 
 
 # Функция для форматирования числа в процентный формат
