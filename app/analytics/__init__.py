@@ -1298,4 +1298,4 @@ app.add_url_rule('/callsnumbers', view_func=callsNumbers.as_view('calls_numbers'
 app.add_url_rule('/callsopeners', view_func=callsOpeners.as_view('calls_openers'))
 app.add_url_rule('/callshours', view_func=callsHours.as_view('calls_hours'))
 app.add_url_rule('/callsopenernumber', view_func=callsOpenerNumber.as_view('calls_openernumber'))
-app.add_url_rule('/callsopenerhours', view_func=callsOpenerNumber.as_view('calls_openerhour'))
+app.add_url_rule('/callsopenerhours', view_func=callsHours.as_view('calls_openerhour'))
