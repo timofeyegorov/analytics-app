@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Главная</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+</head>
+<style>
+
+    input.form-control {
+        max-width: 400px;
+        padding: 8px;
+    }
+    button.btn-info {
+        margin-top: 10px;
+    }
+        /* Стилизация контейнера формы */
+    .form-container {
+        max-width: 50%; /* Максимальная ширина контейнера (примерное значение, можно изменить) */
+        display: flex;
+        margin: 0 auto;
+        padding: 20px; /* Добавление внутренних отступов для внешнего вида */
+        border: 1px solid #ccc; /* Параметры границы для контейнера (необязательно) */
+
+    }
+        /* Стилизация контейнера кнопки */
+    .button-container {
+        text-align: center; /* Центрирование содержимого по горизонтали */
+    }
+    .form-data{
+    order: 1;
+    margin-left: 0px;
+
+
+    }
+    .form-openers{
+    order:2;
+    margin-left: 40px;
+
+    }
+    .form-numbers{
+    order:3;
+    margin-left: 40px;
+
+    }
+     select {
+            height: 200px; /* Установите желаемую высоту */
+            font-size: 16px; /* Установите желаемый размер шрифта для опций */
+     }
+
+
+
+
+
+</style>
+<body>
+<br>
+<h1 align="center">Аналитика звонков</h1>
+{% if message %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <p align="center">{{ message }}</p>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{%endif%}
+<hr>
+<div class="form-container">
+    <div class="form-data">
+        <p><strong>Выберите диапазон данных:</strong></p>
+        <form action="{{ url_for('calls_main') }}" method="post">
+            <label for="start_date">Дата начала:</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+            <label for="end_date">Дата конца:</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="change_data" class="btn btn-info">Обновить данные</button>
+            </div>
+
+        </form>
+    </div>
+    <div class="form-openers">
+        <p><strong>Выберите опенеров:</strong></p>
+        <form action="{{ url_for('calls_main') }}" method="post">
+            <select id="dataList" name="options" multiple>
+                {% for item in data_list %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="change_openers" class="btn btn-info">Применить фильтр</button>
+            </div>
+
+        </form>
+    </div>
+    <div class="form-numbers">
+        <p><strong>Выберите номера телефонов:</strong></p>
+        <form action="{{ url_for('calls_main') }}" method="post">
+            <select id="dataNumbers" name="options" multiple>
+                {% for item in numbers_list %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="change_numbers" class="btn btn-info">Применить фильтр</button>
+            </div>
+            <br>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="dell_filters" class="btn btn-warning">Сбросить фильтры</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+
+<hr>
+<h3 align="center">Отчеты</h3>
+<div align="center">
+    <a href="{{ url_for('calls_numbers') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        номерам</a>
+    <a href="{{ url_for('calls_openers') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        опенерам</a>
+    <a href="{{ url_for('calls_hours') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        часам</a>
+    <a href="{{ url_for('calls_openernumber') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        опенерам-номерам</a>
+    <a href="{{ url_for('calls_openerhour') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+        опенерам-часам</a>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+</body>
+</html>

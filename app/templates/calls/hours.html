@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>По часам</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+
+        /* Добавляем стили для разных цветов фона */
+        td.red {
+            background-color: red;
+        }
+
+        td.orange {
+            background-color: orange;
+        }
+
+        td.green {
+            background-color: green;
+        }
+        td.light-gray {
+            background-color: lightgray;
+        }
+
+
+
+    </style>
+</head>
+<body>
+<h1 align="center">По часам</h1>
+<a href="{{ url_for('calls_main') }}" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
+<!-- Вставляем таблицу с помощью переменной table -->
+{{ table | safe }}
+
+<script>
+    // JavaScript код для изменения цвета фона ячеек с процентами
+    // Ваш шаблон должен иметь класс 'table' у элемента <table>
+    document.addEventListener('DOMContentLoaded', function() {
+        var table = document.querySelector('.table');
+        var rows = table.querySelectorAll('tbody tr');
+
+        for (var i = 0; i < rows.length; i++) {
+            var cells = rows[i].querySelectorAll('td');
+            var percentCell = cells[cells.length - 1]; // Ячейка с процентами (последняя ячейка)
+            var percentValue = parseFloat(percentCell.innerText);
+            var callsCell = cells[cells.length - 2]; // Ячейка с звонками (последняя ячейка)
+            var callsValue = parseInt(callsCell.innerText);
+
+            if (percentValue < 32) {
+                percentCell.style.backgroundColor = '#fa8072';
+            } else if (percentValue >= 32 && percentValue <= 36) {
+                percentCell.style.backgroundColor = '#f4a460';
+            } else {
+                percentCell.style.backgroundColor = '#b8f5b5';
+            }
+            if (callsValue <= 40) {
+                    callsCell.style.backgroundColor = 'lightgray'; // Изменяем цвет фона для столбца "Звонок"
+            }
+        }
+    });
+
+
+
+
+</script>
+</body>
+</html>
