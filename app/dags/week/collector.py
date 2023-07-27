@@ -1246,7 +1246,6 @@ def get_managers_sales():
     data = data.merge(groups, how="left", on="course")
     data["group"] = data["group"].fillna("Undefined")
     data.drop(columns=["surcharge", "lead"], inplace=True)
-    print(data)
 
     with open(Path(DATA_PATH / "managers_sales.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
