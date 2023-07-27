@@ -13,13 +13,25 @@
             return "0";
         };
 
+        let render_percent = (value, decimal) => {
+            let value_parse = parseFloat(value);
+            decimal = decimal === undefined ? 0 : parseInt(decimal);
+            let decimal_div = Math.pow(10, decimal);
+            if (isNaN(value_parse) || `${value_parse}` !== `${value}`) value = 0;
+            let values = `${Math.round(value_parse * decimal_div) / decimal_div}`.split(".");
+            values[0] = Math.round(values[0]).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            if (values[1] === undefined) values[1] = '';
+            if (decimal > 0) values[1] = `${values[1]}${'0'.repeat(decimal - values[1].length)}`;
+            return decimal > 0 ? values.join(".") : values[0];
+        };
+
         let parse_value = (state, value, owner, full) => {
             if (state === "absolute") {
                 return `${render_int(value)} ₽`;
             } else if (state === "percent_owner") {
-                return `${render_int(owner === 0 ? 0 : value / owner * 100)} %`;
+                return `${render_percent(owner === 0 ? 0 : value / owner * 100, 2)} %`;
             } else if (state === "percent") {
-                return `${render_int(full === 0 ? 0 : value / full * 100)} %`;
+                return `${render_percent(full === 0 ? 0 : value / full * 100, 2)} %`;
             }
             return "";
         };
