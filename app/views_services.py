@@ -1,14 +1,18 @@
+import os
+
 import pandas
 
+from tempfile import TemporaryDirectory
 from typing import Dict, Any
 from pathlib import Path
 from pydantic import BaseModel
 
-from flask import render_template
+from flask import render_template, request, Response
 from flask.views import MethodView
 from flask.typing import ResponseReturnValue
 
 from config import DATA_FOLDER
+from app.plugins.s3 import Client
 
 
 WEEK_FOLDER = Path(DATA_FOLDER) / "week"
@@ -38,6 +42,19 @@ class TemplateView(MethodView):
         return render_template(self.get_template_name(), **self.context.data)
 
     def get(self, *args, **kwargs):
+        return self.render()
+
+
+class APIView(MethodView):
+    data: Dict[str, Any] = {}
+
+    def render(self):
+        return Response(self.data, content_type="application/json")
+
+    def get(self, *args, **kwargs):
+        return self.render()
+
+    def post(self, *args, **kwargs):
         return self.render()
 
 
@@ -97,3 +114,24 @@ class ServicesSourcesWeekExpensesView(FilteringBaseView):
     template_name = "services/sources/week/expenses/index.html"
     title = "Расходы"
     data_path = WEEK_FOLDER / "expenses_count.pkl"
+
+
+class S3UploadView(TemplateView):
+    template_name = "s3-upload.html"
+    title = "S3 upload"
+
+
+class ApiS3UploadView(APIView):
+    def post(self):
+        with TemporaryDirectory() as tmpdir:
+            directories = request.values.to_dict()
+            manager = directories.pop("manager")
+            manager_dir = f"{tmpdir}/{manager}"
+            for field, file in request.files.to_dict().items():
+                file_dir = f'{manager_dir}/{directories.get(f"directory{field[4:]}")}'
+                os.makedirs(file_dir, exist_ok=True)
+                file.save(f"{file_dir}/{file.name}")
+            s3_client = Client()
+            s3_client.put(manager_dir)
+        self.data = {}
+        return super().post()
