@@ -1242,10 +1242,13 @@ def get_managers_sales():
                 data.loc[surcharge.index, "payment_date"] = not_surcharge.reset_index(
                     drop=True
                 ).iloc[0]["payment_date"]
+        if not_surcharge.empty:
+            data.drop(index=payments.index, inplace=True)
 
     data = data.merge(groups, how="left", on="course")
     data["group"] = data["group"].fillna("Undefined")
     data.drop(columns=["surcharge", "lead"], inplace=True)
+    data.reset_index(drop=True, inplace=True)
 
     with open(Path(DATA_PATH / "managers_sales.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
