@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>По опенерам часам</title>
+    <title>Среднее время</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <style>
         .table-container {
         overflow-y: auto;
         max-height: 800px; /* Укажите максимальную высоту контейнера, чтобы при прокрутке появлялась полоса прокрутки */
+        max-width: 700px; /* Задаем максимальную ширину контейнера */
+        margin: 0 auto; /* Центрируем контейнер по горизонтали */
+        overflow-x: auto;
         }
 
         table {
         width: 100%; /* Обязательно укажите ширину таблицы, чтобы она занимала всю доступную ширину контейнера */
         border-collapse: collapse;
+        table-layout: fixed;
         }
 
         thead {
@@ -23,9 +27,12 @@
         }
 
         th, td {
+<!--        white-space: nowrap; /* Запрещаем перенос текста */-->
         padding: 8px;
+        font-size: 14px; /* Пример уменьшения размера текста */
         text-align: left;
         border-bottom: 1px solid #ddd;
+
         }
 
         tr:hover {
@@ -34,20 +41,19 @@
 
         /* Добавляем стили для разных цветов фона */
         td.red {
-        background-color: #fa8072;
+        background-color: red;
         }
 
-        td.yellow {
-        background-color: #ffa500;
+        td.orange {
+        background-color: orange;
         }
 
         td.green {
-        background-color: #98fb98;
+        background-color: green;
         }
-        td.white {
-        background-color: #fffaf0;
+        td.light-gray {
+        background-color: lightgray;
         }
-
         input.form-control {
         max-width: 400px;
         padding: 8px;
@@ -55,13 +61,6 @@
         button.btn-info {
         margin-top: 10px;
         }
-        button.btn-outline-info {
-        margin-top: 10px;
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-        }
-
         button.btn-warning {
         margin-top: 10px;
         }
@@ -71,7 +70,7 @@
         }
         /* Стилизация контейнера формы */
         .form-container {
-        max-width: 560px; /* Максимальная ширина контейнера (примерное значение, можно изменить) */
+        max-width: 550px; /* Максимальная ширина контейнера (примерное значение, можно изменить) */
         display: flex;
         margin: 0 auto;
         padding: 20px; /* Добавление внутренних отступов для внешнего вида */
@@ -100,18 +99,19 @@
         }
         select {
         height: 200px; /* Установите желаемую высоту */
-        width: 240px;
+        width: 220px;
         font-size: 16px; /* Установите желаемый размер шрифта для опций */
         }
+
 
     </style>
 </head>
 <body>
-<h1 align="center">Опенер-часы (% дозвонов)</h1>
+<h1 align="center">Среднее время</h1>
 <div class="form-container">
     <div class="form-openers">
         <p><strong>Выберите опенеров:</strong></p>
-        <form action="{{ url_for('calls_openerhour') }}" method="post">
+        <form action="{{ url_for('calls_medtime') }}" method="post">
             <select id="dataList" name="options" multiple>
                 {% for item in data_list %}
                 <option value="{{ item }}">{{ item }}</option>
@@ -127,7 +127,7 @@
     </div>
     <div class="form-numbers">
         <p><strong>Выберите номера:</strong></p>
-        <form action="{{ url_for('calls_openerhour') }}" method="post">
+        <form action="{{ url_for('calls_medtime') }}" method="post">
             <select id="dataNumbers" name="options" multiple>
                 {% for item in numbers_list %}
                 <option value="{{ item }}">{{ item }}</option>
@@ -143,14 +143,7 @@
         </form>
     </div>
 </div>
-<form action="{{ url_for('calls_openerhour') }}" method="post">
-    <button type="submit" class="btn btn-outline-info" id="choice" name="choice" value="choice1">Переключиться
-        на
-        количество
-        звонков
-    </button>
-    <br>
-</form>
+<br>
 <!-- Вставляем таблицу с помощью переменной table -->
 <div class="table-container">
     <table>
@@ -158,42 +151,5 @@
         {{ table | safe }}
     </table>
 </div>
-<script>
-    // JavaScript код для изменения цвета фона ячеек с процентами и звонками и преобразования в процентный формат
-    // Ваш шаблон должен иметь класс 'table' у элемента <table>
-    document.addEventListener('DOMContentLoaded', function() {
-        var table = document.querySelector('.table');
-        var rows = table.querySelectorAll('tbody tr');
-
-        for (var i = 0; i < rows.length; i++) {
-            var cells = rows[i].querySelectorAll('td');
-
-            for (var j = 0; j < cells.length; j++) {
-                var cellValue = parseFloat(cells[j].innerText);
-
-                if (!isNaN(cellValue)) {
-                    var percentValue = (cellValue * 100).toFixed(0); // Округляем до 0 десятичных знаков
-                    cells[j].innerText = percentValue + '%';
-
-                    if (cellValue >=0.01 && cellValue < 0.32 ) {
-                        cells[j].classList.add('red'); // Добавляем класс 'red' для красного фона
-                        cells[j].classList.remove('yellow', 'green'); // Удаляем классы для других цветов
-                    } else if (cellValue >= 0.32 && cellValue <= 0.36) {
-                        cells[j].classList.add('yellow'); // Добавляем класс 'yellow' для желтого фона
-                        cells[j].classList.remove('red', 'green'); // Удаляем классы для других цветов
-                    } else if (cellValue >= 0.37 && cellValue <= 1) {
-                        cells[j].classList.add('green'); // Добавляем класс 'yellow' для желтого фона
-                        cells[j].classList.remove('red', 'yellow'); // Удаляем классы для других цветов
-                    } else {
-                        cells[j].classList.add('white'); // Добавляем класс 'green' для зеленого фона
-                        cells[j].classList.remove('red', 'yellow','green'); // Удаляем классы для других цветов
-                    }
-                }
-            }
-        }
-    });
-
-
-</script>
 </body>
 </html>

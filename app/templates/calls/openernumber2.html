@@ -5,36 +5,132 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <style>
-            button.btn-info {
+        .table-container {
+        overflow-y: auto;
+        max-height: 800px; /* Укажите максимальную высоту контейнера, чтобы при прокрутке появлялась полоса прокрутки */
+        }
+
+        table {
+        width: 100%; /* Обязательно укажите ширину таблицы, чтобы она занимала всю доступную ширину контейнера */
+        border-collapse: collapse;
+        }
+
+        thead {
+        position: sticky;
+        top: 0;
+        background-color: #f1f1f1; /* Цвет фона для заголовка */
+        /* Другие стили для заголовка, например, шрифт, цвет текста и т. д. */
+        }
+        input.form-control {
+        max-width: 400px;
+        padding: 8px;
+        }
+        button.btn-info {
         margin-top: 10px;
-        margin-bottom: 10px;
-    }
-            /* Стилизация контейнера кнопки */
-    .button-container {
+        }
+        button.btn-outline-info {
+        margin-top: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        }
+
+        button.btn-warning {
+        margin-top: 10px;
+        }
+        button.btn-outline-success {
+        margin-top: 35px;
+
+        }
+        /* Стилизация контейнера формы */
+        .form-container {
+        max-width: 560px; /* Максимальная ширина контейнера (примерное значение, можно изменить) */
+        display: flex;
+        margin: 0 auto;
+        padding: 20px; /* Добавление внутренних отступов для внешнего вида */
+        border: 1px solid #ccc; /* Параметры границы для контейнера (необязательно) */
+
+        }
+        /* Стилизация контейнера кнопки */
+        .button-container {
         text-align: center; /* Центрирование содержимого по горизонтали */
-    }
+        }
+        .button-settings{
+        text-align: right; /* Центрирование содержимого по горизонтали */
+        padding: 20px;
+        }
 
+        }
+        .form-openers{
+        order:1;
+        margin-left: 40px;
 
+        }
+        .form-numbers{
+        order:2;
+        margin-left: 40px;
+
+        }
+        select {
+            height: 200px; /* Установите желаемую высоту */
+            width: 240px;
+            font-size: 16px; /* Установите желаемый размер шрифта для опций */
+        }
     </style>
 </head>
 <body>
 <h1 align="center">Опенер-номер (количество звонков)</h1>
-
-<form action="{{ url_for('calls_openernumber') }}" method="post">
-
-    <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
-        <a href="{{ url_for('calls_main') }}" class="btn btn-outline-success" role="button" aria-pressed="true">На главную</a>
-        <button type="submit" class="btn btn-info" id="choice" name="choice" value="choice2">Переключиться на процент
-            дозвонов
-        </button>
+<div class="form-container">
+    <div class="form-openers">
+        <p><strong>Выберите опенеров:</strong></p>
+        <form action="{{ url_for('calls_openernumber') }}" method="post">
+            <select id="dataList" name="options" multiple>
+                {% for item in data_list %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="change_openers" class="btn btn-info">Применить фильтр</button>
+            </div>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="go_main" class="btn btn-outline-success">На главную</button>
+            </div>
+        </form>
     </div>
-
+    <div class="form-numbers">
+        <p><strong>Выберите номера:</strong></p>
+        <form action="{{ url_for('calls_openernumber') }}" method="post">
+            <select id="dataNumbers" name="options" multiple>
+                {% for item in numbers_list %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="change_numbers" class="btn btn-info">Применить фильтр</button>
+            </div>
+            <br>
+            <div class="button-container"> <!-- Дополнительный контейнер для кнопки -->
+                <button type="submit" name="dell_filters" class="btn btn-warning">Сбросить фильтры</button>
+            </div>
+        </form>
+    </div>
+</div>
+<form action="{{ url_for('calls_openernumber') }}" method="post">
+    <button type="submit" class="btn btn-outline-info" id="choice" name="choice" value="choice2">Переключиться
+        на
+        процент дозвонов
+    </button>
+    <br>
 </form>
 <!-- Вставляем таблицу с помощью переменной table -->
-{{ table | safe }}
+<div class="table-container">
+    <table>
+        <!-- Здесь должны быть данные, которые передаются в переменной `table` -->
+        {{ table | safe }}
+    </table>
+</div>
 
 <script>
-
 
 </script>
 </body>
