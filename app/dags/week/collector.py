@@ -589,26 +589,24 @@ PAYMENTS_COLUMNS = {
 
 @log_execution_time("get_payments")
 def get_payments():
-    response = requests.get(
-        "https://docs.google.com/spreadsheets/d/1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE/export?format=xlsx&id=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
+    service = get_google_service()
+    values = (
+        service.spreadsheets()
+        .values()
+        .get(
+            spreadsheetId="1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE",
+            range="Все оплаты",
+            majorDimension="ROWS",
+        )
+        .execute()
+    ).get("values")
+    columns_quantity = max(*[len(item) for item in values[1:]])
+    data = pandas.DataFrame(
+        values[1:],
+        columns=values[0]
+        + [f"Undefined {item}" for item in range(columns_quantity - len(values[0]))],
     )
-    data: pandas.DataFrame = pandas.read_excel(
-        BytesIO(response.content),
-        sheet_name="Все оплаты",
-        dtype=str,
-        converters=dict(
-            map(
-                lambda item: (item, parse_date),
-                [
-                    "Дата создания сделки",
-                    "Дата последней заявки (платной)",
-                    "Дата оплаты",
-                    "Дата ZOOM",
-                    "Дата звонка",
-                ],
-            )
-        ),
-    )
+
     data.rename(
         columns=dict(map(lambda item: (item, parse_str(item)), data.columns)),
         inplace=True,
