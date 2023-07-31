@@ -30,23 +30,35 @@ def table_number():
     data = prep_data()
     # делаем сводную таблицу
     table = data.pivot_table(index=['ИсходящаяЛиния', 'Откуда'], values=['Дозвон', 'Звонок'],
-                             aggfunc=[np.sum], margins=True, margins_name='Всего')
+                             aggfunc=[np.sum], margins=True, margins_name='Итого')
     # добавляем в нее вычисляемое поле
     table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
     # Применяем форматирование процентного значения к столбцу '%'
     table['Дозвон%'] = table['Дозвон%'].apply(format_percent)
+    # Извлекаем строку с итогами
+    total_row = table.iloc[-1].copy()
+    # Удаляем строку с итогами из исходной таблицы
+    table.drop(index='Итого', level='ИсходящаяЛиния', inplace=True)
+    # Вставляем строку с итогами в начало таблицы
+    table = pd.concat([total_row.to_frame().T, table], axis=0)
     return table
 
 
 # По номерам опенерам
 def table_opener():
     data = prep_data()
-    table = data.pivot_table(index=['Откуда', 'ИсходящаяЛиния'], values=['Звонок', 'Дозвон'],
-                             aggfunc=[np.sum], margins=True, margins_name='Всего')
+    table = data.pivot_table(index=['Откуда', 'ИсходящаяЛиния'], values=['Звонок', 'Дозвон'], aggfunc=[np.sum],
+                             margins=True, margins_name='Итого')
     # добавляем в нее вычисляемое поле
     table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
     # Применяем форматирование процентного значения к столбцу '%'
     table['Дозвон%'] = table['Дозвон%'].apply(format_percent)
+    # Извлекаем строку с итогами
+    total_row = table.iloc[-1].copy()
+    # Удаляем строку с итогами из исходной таблицы
+    table.drop(index='Итого', level='Откуда', inplace=True)
+    # Вставляем строку с итогами в начало таблицы
+    table = pd.concat([total_row.to_frame().T, table], axis=0)
     return table
 
 
@@ -59,11 +71,12 @@ def table_time_day():
     data['Часы'] = data['Время'].dt.hour
     # Делаем сводную таблицу
     table = data.pivot_table(index='Часы', values=['Звонок', 'Дозвон'], aggfunc=[np.sum], margins=True,
-                             margins_name='Всего')
+                             margins_name='Итого')
     table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
     table = table.drop(columns=('sum', 'Дозвон'))
     # Применяем форматирование процентного значения к столбцу '%'
     table['Дозвон%'] = table['Дозвон%'].apply(format_percent)
+    table = table.reindex(index=['Итого'] + table.index[:-1].tolist())
     return table
 
 
@@ -114,3 +127,19 @@ def table_opener_time(options: Union[int, str]):
         # сводная от сводной, чтобы имея проценты разбить по номерам в столбцах
         result_table = table.pivot_table(index='Откуда', columns='Часы', fill_value=0)
         return result_table
+
+
+# Среднее время дозвонов
+def table_timecall():
+    data = prep_data()
+    table = data.pivot_table(index='Откуда', values=['Длительность звонка', 'Время ответа'], aggfunc=[np.mean],
+                             margins=True, margins_name='Итого',fill_value=0)
+    # Округляем значения до одного знака после запятой
+    # for col in ['Длительность звонка', 'Время ответа']:
+    #     table[('mean', col)] = table[('mean', col)].apply(lambda x: round(x, 1))
+    #     или
+    for col in ['Длительность звонка', 'Время ответа']:
+        table[('mean', col)] = table[('mean', col)].round(1)
+    # Перемещаем итоговую строку вверх
+    table = table.reindex(index=['Итого'] + table.index[:-1].tolist())
+    return table
