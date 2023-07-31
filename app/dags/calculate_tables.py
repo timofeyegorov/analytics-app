@@ -815,7 +815,7 @@ def roistat_to_db():
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
-    schedule_interval="0 20 * * *",
+    schedule_interval="0 19 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )
