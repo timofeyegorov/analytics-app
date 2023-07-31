@@ -68,9 +68,29 @@
             </select>
         </div>
     </div>
-    <div class="filter-actions">
+    <div class="filter-actions" >
         <button class="btn btn-primary">Обновить</button>
         <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
         <button type="button" class="btn btn-warning excel-download">Скачать Excel</button>
+        <span id="app" style="padding-left: 33px;" v-cloak>
+            <input 
+                type="text"
+                size="50" 
+                v-model="managerUser" 
+                :placeholder="placeholder" 
+                />                
+                <span id="app" style="padding-left: 13px;">
+                <button
+                    type="button" 
+                    class="btn btn-info" 
+                    :class="managerUser.length === 0 ? 'disabled' : '' "
+                    @click="upload_zoom">
+                    Загрузить Zoom</button>
+                </span>
+                <small style="padding-left: 3px;">
+                    [[ managerUser.length !== 0 ? 'Менеджер: ' : '' ]]
+                    [[ managerUser.toUpperCase() ]]
+                </small>
+        </span>    
     </div>
 </form>
