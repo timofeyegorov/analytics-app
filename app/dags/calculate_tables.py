@@ -66,6 +66,9 @@ from app.analytics import pickle_loader
 from app.plugins.ads import roistat
 from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
 
+from app import db
+from app.database import models
+
 
 roistat_analytics_columns = [
     "package",
@@ -734,6 +737,81 @@ def roistat_update_levels():
         pkl.dump(source, file_ref)
 
 
+@log_execution_time("roistat_to_db")
+def roistat_to_db():
+    tz = pytz.timezone("Europe/Moscow")
+    datetime_now = datetime.datetime.now(tz=tz).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    for days in range(7):
+        current_date = datetime_now - datetime.timedelta(days=days)
+        print("Collect analytic:", current_date)
+        time_now = datetime.datetime.now(tz=tz)
+        response = roistat(
+            "analytics",
+            dimensions=[
+                "marker_level_1",
+                "marker_level_2",
+                "marker_level_3",
+                "marker_level_4",
+                "marker_level_5",
+                "marker_level_6",
+                "marker_level_7",
+            ],
+            period={
+                "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
+                "to": current_date.strftime("%Y-%m-%dT23:59:59.9999+0300"),
+            },
+            metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
+            interval="1d",
+        )
+        for item_data in response.get("data"):
+            date = tz.localize(
+                datetime.datetime.strptime(
+                    item_data.get("dateFrom"),
+                    "%Y-%m-%dT%H:%M:%S+0000",
+                )
+                + datetime.timedelta(seconds=3600 * 3)
+            ).date()
+            models.Roistat.query.filter_by(date=date).delete()
+            db.session.commit()
+            analytics_date = []
+            for item in item_data.get("items"):
+                levels = roistat_get_levels(item.get("dimensions"))
+                metrics = roistat_get_metrics(item.get("metrics"), ["visitsCost"])
+                package = levels.pop("package")
+                package_instance = models.RoistatPackages.get_or_create(
+                    package, StatisticsRoistatPackageEnum[package].value
+                )
+                levels_instances = {}
+                for level in range(1, 8):
+                    levels_instances[level] = models.RoistatLevels.get_or_create(
+                        levels.get(f"marker_level_{level}") or "undefined",
+                        levels.get(f"marker_level_{level}_title"),
+                        level,
+                    )
+                analytics_date.append(
+                    models.Roistat(
+                        **{
+                            "visits_cost": metrics.get("visitsCost", 0),
+                            "date": date,
+                            "package_id": package_instance.id,
+                            **dict(
+                                [
+                                    (f"level_{index}_id", item.id)
+                                    for index, item in levels_instances.items()
+                                ]
+                            ),
+                        }
+                    )
+                )
+            db.session.add_all(analytics_date)
+            db.session.commit()
+            print("---", datetime.datetime.now(tz=tz) - time_now)
+            sleep(1)
+
+
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
@@ -835,6 +913,9 @@ roistat_leads_operator = PythonOperator(
 )
 roistat_update_levels_operator = PythonOperator(
     task_id="roistat_update_levels", python_callable=roistat_update_levels, dag=dag
+)
+roistat_to_db_operator = PythonOperator(
+    task_id="roistat_to_db", python_callable=roistat_to_db, dag=dag
 )
 
 crops_operator >> clean_data_operator

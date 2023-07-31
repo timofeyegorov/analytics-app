@@ -2,6 +2,7 @@ import plotly.express as px
 from plotly.io import to_json
 import pandas as pd
 from flask import Flask, request, render_template
+from flask_sqlalchemy import SQLAlchemy
 from .database.auth import check_token
 from .database import get_leads_data, get_target_audience
 import json
@@ -42,6 +43,8 @@ redis_db = redis.StrictRedis(
 )
 
 app.jinja_env.globals["redis_db"] = redis_db
+
+db = SQLAlchemy(app)
 
 
 celery_client = Celery(
