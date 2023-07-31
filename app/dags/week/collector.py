@@ -1209,20 +1209,23 @@ def get_managers_sales():
         inplace=True,
     )
     groups = groups[groups["group"] != "не считаем"].reset_index(drop=True)
-    data = pandas.read_pickle(Path(DATA_PATH / "payments.pkl"))
+    data: pandas.DataFrame = pandas.read_pickle(Path(DATA_PATH / "payments.pkl"))
     data.rename(
         columns=dict(zip(list(data.columns), slugify_columns(list(data.columns)))),
         inplace=True,
     )
+    data["lead_id"] = data["ssylka_na_amocrm"].apply(parse_lead_id)
     columns_rel = {
         "data_oplaty": "payment_date",
         "data_poslednej_zajavki_platnoj": "order_date",
         "menedzher": "manager",
+        "lead_id": "lead",
         "kurs": "course",
         "summa_vyruchki": "profit",
         "mesjats_doplata": "surcharge",
     }
     data = data[columns_rel.keys()].rename(columns=columns_rel)
+    data = data[~data["lead"].isnull()]
 
     data["manager"] = data["manager"].apply(parse_str).fillna("undefined")
     data["course"] = data["course"].apply(parse_str).fillna("undefined")
@@ -1230,8 +1233,22 @@ def get_managers_sales():
     data["surcharge"] = (
         data["surcharge"].apply(lambda item: item == "доплата").fillna(False)
     )
+
+    for _, payments in data.groupby(by=["lead", "course"]):
+        surcharge = payments[payments["surcharge"]]
+        not_surcharge = payments[~payments["surcharge"]]
+        if not surcharge.empty:
+            if not not_surcharge.empty:
+                data.loc[surcharge.index, "payment_date"] = not_surcharge.reset_index(
+                    drop=True
+                ).iloc[0]["payment_date"]
+        if not_surcharge.empty:
+            data.drop(index=payments.index, inplace=True)
+
     data = data.merge(groups, how="left", on="course")
     data["group"] = data["group"].fillna("Undefined")
+    data.drop(columns=["surcharge", "lead"], inplace=True)
+    data.reset_index(drop=True, inplace=True)
 
     with open(Path(DATA_PATH / "managers_sales.pkl"), "wb") as file_ref:
         pickle.dump(data, file_ref)
