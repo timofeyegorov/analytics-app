@@ -11,9 +11,6 @@ async def get_data(data):
     try:
         response = requests.post(api_url, data=data)
         if response.status_code == 200:
-            if not os.path.exists('app/ats/api/data.csv'):
-                # Создаем пустой файл, если его нет
-                open('app/ats/api/data.csv', 'w').close()
             with open(f"app/ats/api/data.csv", 'wb') as file:
                 file.write(response.content)
                 return response.status_code
