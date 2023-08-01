@@ -18,7 +18,10 @@ from pandas import DataFrame
 from pathlib import Path
 from urllib.parse import urlparse, parse_qsl, ParseResult
 
-sys.path.append(Variable.get("APP_FOLDER"))
+try:
+    sys.path.append(Variable.get("APP_FOLDER", None))
+except KeyError:
+    pass
 
 from app.database import get_leads_data
 from app.database.get_crops import get_crops
@@ -66,8 +69,7 @@ from app.analytics import pickle_loader
 from app.plugins.ads import roistat
 from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
 
-from app import db
-from app.database import models
+from . import commands as dags_commands
 
 
 roistat_analytics_columns = [
@@ -211,80 +213,6 @@ class MatchIDs:
                                     return int(match_id[0])
                             except Exception:
                                 return
-
-
-def roistat_detect_package(value) -> Optional[str]:
-    if re.match(r"^vk.+$", value):
-        return StatisticsRoistatPackageEnum.vk.name
-    if (
-        re.match(r"^direct\d+.*$", value)
-        or re.match(r"^:openstat:direct\.yandex\.ru$", value)
-        or re.match(r"^direct$", value)
-    ):
-        return StatisticsRoistatPackageEnum.yandex_direct.name
-    if re.match(r"^ya\.master$", value) or re.match(r"^yulyayamaster$", value):
-        return StatisticsRoistatPackageEnum.yandex_master.name
-    if re.match(r"^facebook\d+.*$", value):
-        return StatisticsRoistatPackageEnum.facebook.name
-    if re.match(r"^mytarget\d+$", value):
-        return StatisticsRoistatPackageEnum.mytarget.name
-    if re.match(r"^google\d+$", value) or re.match(r"^g-adwords\d+$", value):
-        return StatisticsRoistatPackageEnum.google.name
-    if re.match(r"^site$", value):
-        return StatisticsRoistatPackageEnum.site.name
-    if re.match(r"^seo$", value):
-        return StatisticsRoistatPackageEnum.seo.name
-    if re.match(r"^:utm:.+$", value):
-        return StatisticsRoistatPackageEnum.utm.name
-    if value:
-        print("Undefined package:", value)
-    return StatisticsRoistatPackageEnum.undefined.name
-
-
-def roistat_get_levels(
-    dimensions: Dict[str, Dict[str, str]],
-) -> Dict[str, Optional[str]]:
-    output = {
-        "package": StatisticsRoistatPackageEnum.undefined.name,
-        "marker_level_1": "",
-        "marker_level_2": "",
-        "marker_level_3": "",
-        "marker_level_4": "",
-        "marker_level_5": "",
-        "marker_level_6": "",
-        "marker_level_7": "",
-        "marker_level_1_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_2_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_3_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_4_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_5_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_6_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_7_title": StatisticsRoistatPackageEnum.undefined.value,
-    }
-    levels = dict(sorted(dimensions.items()))
-    for name, level in levels.items():
-        level_value = level.get("value", "")
-        level_title = level.get("title", "")
-        if not level_value:
-            level_title = StatisticsRoistatPackageEnum.undefined.value
-        output.update({name: level_value, f"{name}_title": level_title})
-    output.update({"package": roistat_detect_package(output.get("marker_level_1"))})
-    return output
-
-
-def roistat_get_metrics(
-    metrics: List[Dict[str, Any]], available_metrics: List[str]
-) -> Dict[str, str]:
-    return dict(
-        map(
-            lambda item: (item.get("metric_name"), item.get("value")),
-            list(
-                filter(
-                    lambda value: value.get("metric_name") in available_metrics, metrics
-                )
-            ),
-        )
-    )
 
 
 @log_execution_time("load_crops")
@@ -589,8 +517,10 @@ def roistat_analytics():
             analytics.drop(analytics[analytics.date == date].index, inplace=True)
             analytics_date = []
             for item in item_data.get("items"):
-                levels = roistat_get_levels(item.get("dimensions"))
-                metrics = roistat_get_metrics(item.get("metrics"), ["visitsCost"])
+                levels = dags_commands.utils.roistat_get_levels(item.get("dimensions"))
+                metrics = dags_commands.utils.roistat_get_metrics(
+                    item.get("metrics"), ["visitsCost"]
+                )
                 analytics_date.append({**levels, **metrics, "date": date})
             analytics = analytics.append(analytics_date, ignore_index=True)
         print("---", datetime.datetime.now(tz=tz) - time_now)
@@ -739,77 +669,10 @@ def roistat_update_levels():
 
 @log_execution_time("roistat_to_db")
 def roistat_to_db():
-    tz = pytz.timezone("Europe/Moscow")
-    datetime_now = datetime.datetime.now(tz=tz).replace(
-        hour=0, minute=0, second=0, microsecond=0
+    date_now = datetime.date.today()
+    dags_commands.calculate_tables(
+        "roistat_to_db", date_now - datetime.timedelta(days=0), date_now
     )
-
-    for days in range(7):
-        current_date = datetime_now - datetime.timedelta(days=days)
-        print("Collect analytic:", current_date)
-        time_now = datetime.datetime.now(tz=tz)
-        response = roistat(
-            "analytics",
-            dimensions=[
-                "marker_level_1",
-                "marker_level_2",
-                "marker_level_3",
-                "marker_level_4",
-                "marker_level_5",
-                "marker_level_6",
-                "marker_level_7",
-            ],
-            period={
-                "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
-                "to": current_date.strftime("%Y-%m-%dT23:59:59.9999+0300"),
-            },
-            metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
-            interval="1d",
-        )
-        for item_data in response.get("data"):
-            date = tz.localize(
-                datetime.datetime.strptime(
-                    item_data.get("dateFrom"),
-                    "%Y-%m-%dT%H:%M:%S+0000",
-                )
-                + datetime.timedelta(seconds=3600 * 3)
-            ).date()
-            models.Roistat.query.filter_by(date=date).delete()
-            db.session.commit()
-            analytics_date = []
-            for item in item_data.get("items"):
-                levels = roistat_get_levels(item.get("dimensions"))
-                metrics = roistat_get_metrics(item.get("metrics"), ["visitsCost"])
-                package = levels.pop("package")
-                package_instance = models.RoistatPackages.get_or_create(
-                    package, StatisticsRoistatPackageEnum[package].value
-                )
-                levels_instances = {}
-                for level in range(1, 8):
-                    levels_instances[level] = models.RoistatLevels.get_or_create(
-                        levels.get(f"marker_level_{level}") or "undefined",
-                        levels.get(f"marker_level_{level}_title"),
-                        level,
-                    )
-                analytics_date.append(
-                    models.Roistat(
-                        **{
-                            "visits_cost": metrics.get("visitsCost", 0),
-                            "date": date,
-                            "package_id": package_instance.id,
-                            **dict(
-                                [
-                                    (f"level_{index}_id", item.id)
-                                    for index, item in levels_instances.items()
-                                ]
-                            ),
-                        }
-                    )
-                )
-            db.session.add_all(analytics_date)
-            db.session.commit()
-            print("---", datetime.datetime.now(tz=tz) - time_now)
-            sleep(1)
 
 
 dag = DAG(
