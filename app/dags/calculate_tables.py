@@ -23,7 +23,7 @@ try:
 except KeyError:
     pass
 
-from app.database import get_leads_data
+from app.database import get_leads_data, models
 from app.database.get_crops import get_crops
 from app.database.get_target_audience import get_target_audience
 from app.database.get_trafficologists import get_trafficologists
@@ -542,27 +542,75 @@ def roistat_analytics():
 
 @log_execution_time("roistat_statistics")
 def roistat_statistics():
+    def analytics_row_to_dict(
+        rel,
+        row,
+        package: models.RoistatPackages,
+        levels: Dict[int, models.RoistatLevels],
+    ):
+        value = row.__dict__
+        output = {}
+        for field, target in rel.items():
+            value_field = value.get(field)
+            if field.startswith("package_"):
+                output[target] = package.name
+            elif field.startswith("level_"):
+                output[target] = levels.get(value_field).name
+                output[f"{target}_title"] = levels.get(value_field).title
+            else:
+                output[target] = value_field
+        return output
+
+    tz = pytz.timezone("Europe/Moscow")
     try:
-        analytics = pickle_loader.roistat_analytics
+        statistics = pickle_loader.roistat_statistics
     except Exception:
-        analytics = pandas.DataFrame(columns=roistat_analytics_columns)
-    groups = [pandas.DataFrame(columns=roistat_statistics_columns)]
-    for package in StatisticsRoistatPackageEnum:
-        data_package = analytics[analytics.package == package.name]
-        rel = PACKAGES_COMPARE.get(package)
+        statistics = pandas.DataFrame(columns=roistat_statistics_columns)
+    if "db" not in list(statistics.columns):
+        statistics["db"] = pandas.NA
+    analytics_ids = [
+        row[0] for row in models.Roistat.query.with_entities(models.Roistat.id).all()
+    ]
+    statistics.drop(
+        statistics[~statistics["db"].isin(analytics_ids)].index, inplace=True
+    )
+    exclude_ids = list(statistics["db"])
+    query = models.Roistat.query
+    if exclude_ids:
+        query = query.filter(models.Roistat.id.notin_(exclude_ids))
+    levels = dict([(row.id, row) for row in models.RoistatLevels.query.all()])
+    for package in models.RoistatPackages.query.all():
+        rel = PACKAGES_COMPARE.get(package.name)
         if not rel:
             continue
-        data_package = data_package[rel[0]].rename(columns=rel[1])
-        groups.append(data_package)
-    data = pandas.concat(groups).reset_index(drop=True)
-    data[["account", "campaign", "group", "ad"]] = data[
-        ["account", "campaign", "group", "ad"]
-    ].replace({numpy.nan: ""})
-    data[["account_title", "campaign_title", "group_title", "ad_title"]] = data[
-        ["account_title", "campaign_title", "group_title", "ad_title"]
-    ].replace({numpy.nan: StatisticsRoistatPackageEnum.undefined.value})
+        data_package = pandas.concat(
+            [
+                pandas.DataFrame(columns=roistat_statistics_columns),
+                pandas.DataFrame.from_dict(
+                    [
+                        analytics_row_to_dict(rel, row, package, levels)
+                        for row in query.filter_by(package_id=package.id).all()
+                    ]
+                ),
+            ]
+        )
+        data_package["account"].fillna("", inplace=True)
+        data_package["campaign"].fillna("", inplace=True)
+        data_package["group"].fillna("", inplace=True)
+        data_package["ad"].fillna("", inplace=True)
+        data_package["account_title"].fillna("Undefined", inplace=True)
+        data_package["campaign_title"].fillna("Undefined", inplace=True)
+        data_package["group_title"].fillna("Undefined", inplace=True)
+        data_package["ad_title"].fillna("Undefined", inplace=True)
+        data_package["date"] = data_package["date"].apply(
+            lambda item: tz.localize(
+                datetime.datetime.combine(item, datetime.datetime.min.time())
+            )
+        )
+        statistics = pandas.concat([statistics, data_package])
+    statistics.reset_index(drop=True, inplace=True)
     with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as f:
-        pkl.dump(data, f)
+        pkl.dump(statistics, f)
 
 
 @log_execution_time("roistat_leads")
@@ -821,6 +869,7 @@ clean_data_operator >> traffic_sources_operator
 # channel_expense_operator >> traffic_sources
 
 clean_data_operator >> roistat_analytics_operator
+roistat_to_db_operator >> roistat_statistics_operator
 roistat_analytics_operator >> roistat_statistics_operator
 roistat_statistics_operator >> roistat_leads_operator
 roistat_leads_operator >> roistat_update_levels_operator
