@@ -1216,8 +1216,7 @@ from flask.views import MethodView
 
 class CallsMain(MethodView):
     def get(self):
-        return render_template("calls/index.html", data_list=show_openers_list(), numbers_list=show_numbers_list(),
-                               datarange=show_datarange())
+        return render_template("calls/index.html")
 
     def post(self):
         if 'change_data' in request.form:
