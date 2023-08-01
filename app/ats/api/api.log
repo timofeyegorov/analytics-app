@@ -1,8 +1,0 @@
-
-2023-07-19 15:06:04.505657 404
-2023-07-21 12:20:17.202417 HTTPSConnectionPool(host='sipuni.com', port=443): Max retries exceeded with url: /api/statistic/export (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000002D1936F6D30>: Failed to resolve 'sipuni.com' ([Errno 11001] getaddrinfo failed)"))
-2023-07-21 14:09:30.183984 HTTPSConnectionPool(host='sipuni.com', port=443): Max retries exceeded with url: /api/statistic/export (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000220571969D0>: Failed to resolve 'sipuni.com' ([Errno 11001] getaddrinfo failed)"))
-2023-07-21 14:09:37.207654 HTTPSConnectionPool(host='sipuni.com', port=443): Max retries exceeded with url: /api/statistic/export (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000220571C1070>: Failed to resolve 'sipuni.com' ([Errno 11001] getaddrinfo failed)"))
-2023-07-21 14:09:52.320599 HTTPSConnectionPool(host='sipuni.com', port=443): Max retries exceeded with url: /api/statistic/export (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000220571FA190>: Failed to resolve 'sipuni.com' ([Errno 11001] getaddrinfo failed)"))
-2023-07-21 14:10:01.976152 HTTPSConnectionPool(host='sipuni.com', port=443): Max retries exceeded with url: /api/statistic/export (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000220576CB100>: Failed to resolve 'sipuni.com' ([Errno 11001] getaddrinfo failed)"))
-2023-07-24 15:16:34.851943 [Errno 13] Permission denied: 'api/data.csv'
