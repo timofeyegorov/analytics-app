@@ -868,7 +868,7 @@ clean_data_operator >> traffic_sources_operator
 # channel_expense_operator >> leads_ta_stats
 # channel_expense_operator >> traffic_sources
 
-# clean_data_operator >> roistat_analytics_operator
+clean_data_operator >> roistat_to_db_operator
 roistat_to_db_operator >> roistat_statistics_operator
 # roistat_analytics_operator >> roistat_statistics_operator
 roistat_statistics_operator >> roistat_leads_operator
