@@ -71,25 +71,25 @@ from app.plugins.ads import roistat
 from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
 
 
-roistat_analytics_columns = [
-    "package",
-    "marker_level_1",
-    "marker_level_2",
-    "marker_level_3",
-    "marker_level_4",
-    "marker_level_5",
-    "marker_level_6",
-    "marker_level_7",
-    "marker_level_1_title",
-    "marker_level_2_title",
-    "marker_level_3_title",
-    "marker_level_4_title",
-    "marker_level_5_title",
-    "marker_level_6_title",
-    "marker_level_7_title",
-    "visitsCost",
-    "date",
-]
+# roistat_analytics_columns = [
+#     "package",
+#     "marker_level_1",
+#     "marker_level_2",
+#     "marker_level_3",
+#     "marker_level_4",
+#     "marker_level_5",
+#     "marker_level_6",
+#     "marker_level_7",
+#     "marker_level_1_title",
+#     "marker_level_2_title",
+#     "marker_level_3_title",
+#     "marker_level_4_title",
+#     "marker_level_5_title",
+#     "marker_level_6_title",
+#     "marker_level_7_title",
+#     "visitsCost",
+#     "date",
+# ]
 roistat_statistics_columns = [
     "date",
     "package",
@@ -471,73 +471,73 @@ def leads_ta_stats():
         pkl.dump(leads_ta_stats, f)
 
 
-@log_execution_time("roistat_analytics")
-def roistat_analytics():
-    tz = pytz.timezone("Europe/Moscow")
-    try:
-        analytics = pickle_loader.roistat_analytics
-    except Exception:
-        analytics = pandas.DataFrame(columns=roistat_analytics_columns)
-
-    datetime_now = datetime.datetime.now(tz=tz).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-
-    for days in range(31):
-        current_date = datetime_now - datetime.timedelta(days=days)
-        print("Collect analytic:", current_date)
-        time_now = datetime.datetime.now(tz=tz)
-        response = roistat(
-            "analytics",
-            dimensions=[
-                "marker_level_1",
-                "marker_level_2",
-                "marker_level_3",
-                "marker_level_4",
-                "marker_level_5",
-                "marker_level_6",
-                "marker_level_7",
-            ],
-            period={
-                "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
-                "to": current_date.strftime("%Y-%m-%dT23:59:59.9999+0300"),
-            },
-            metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
-            interval="1d",
-        )
-        for item_data in response.get("data"):
-            date = tz.localize(
-                datetime.datetime.strptime(
-                    item_data.get("dateFrom"),
-                    "%Y-%m-%dT%H:%M:%S+0000",
-                )
-                + datetime.timedelta(seconds=3600 * 3)
-            )
-            analytics.drop(analytics[analytics.date == date].index, inplace=True)
-            analytics_date = []
-            for item in item_data.get("items"):
-                levels = dags_commands.utils.roistat_get_levels(item.get("dimensions"))
-                metrics = dags_commands.utils.roistat_get_metrics(
-                    item.get("metrics"), ["visitsCost"]
-                )
-                analytics_date.append({**levels, **metrics, "date": date})
-            analytics = analytics.append(analytics_date, ignore_index=True)
-        print("---", datetime.datetime.now(tz=tz) - time_now)
-        sleep(1)
-    analytics = analytics.sort_values(
-        by=[
-            "date",
-            "marker_level_1",
-            "marker_level_2",
-            "marker_level_3",
-            "marker_level_4",
-            "marker_level_5",
-            "marker_level_6",
-            "marker_level_7",
-        ]
-    ).reset_index(drop=True)
-    with open(os.path.join(RESULTS_FOLDER, "roistat_analytics.pkl"), "wb") as f:
-        pkl.dump(analytics, f)
+# @log_execution_time("roistat_analytics")
+# def roistat_analytics():
+#     tz = pytz.timezone("Europe/Moscow")
+#     try:
+#         analytics = pickle_loader.roistat_analytics
+#     except Exception:
+#         analytics = pandas.DataFrame(columns=roistat_analytics_columns)
+#
+#     datetime_now = datetime.datetime.now(tz=tz).replace(
+#         hour=0, minute=0, second=0, microsecond=0
+#     )
+#
+#     for days in range(31):
+#         current_date = datetime_now - datetime.timedelta(days=days)
+#         print("Collect analytic:", current_date)
+#         time_now = datetime.datetime.now(tz=tz)
+#         response = roistat(
+#             "analytics",
+#             dimensions=[
+#                 "marker_level_1",
+#                 "marker_level_2",
+#                 "marker_level_3",
+#                 "marker_level_4",
+#                 "marker_level_5",
+#                 "marker_level_6",
+#                 "marker_level_7",
+#             ],
+#             period={
+#                 "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
+#                 "to": current_date.strftime("%Y-%m-%dT23:59:59.9999+0300"),
+#             },
+#             metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
+#             interval="1d",
+#         )
+#         for item_data in response.get("data"):
+#             date = tz.localize(
+#                 datetime.datetime.strptime(
+#                     item_data.get("dateFrom"),
+#                     "%Y-%m-%dT%H:%M:%S+0000",
+#                 )
+#                 + datetime.timedelta(seconds=3600 * 3)
+#             )
+#             analytics.drop(analytics[analytics.date == date].index, inplace=True)
+#             analytics_date = []
+#             for item in item_data.get("items"):
+#                 levels = dags_commands.utils.roistat_get_levels(item.get("dimensions"))
+#                 metrics = dags_commands.utils.roistat_get_metrics(
+#                     item.get("metrics"), ["visitsCost"]
+#                 )
+#                 analytics_date.append({**levels, **metrics, "date": date})
+#             analytics = analytics.append(analytics_date, ignore_index=True)
+#         print("---", datetime.datetime.now(tz=tz) - time_now)
+#         sleep(1)
+#     analytics = analytics.sort_values(
+#         by=[
+#             "date",
+#             "marker_level_1",
+#             "marker_level_2",
+#             "marker_level_3",
+#             "marker_level_4",
+#             "marker_level_5",
+#             "marker_level_6",
+#             "marker_level_7",
+#         ]
+#     ).reset_index(drop=True)
+#     with open(os.path.join(RESULTS_FOLDER, "roistat_analytics.pkl"), "wb") as f:
+#         pkl.dump(analytics, f)
 
 
 @log_execution_time("roistat_statistics")
@@ -812,9 +812,9 @@ leads_ta_stats_operator = PythonOperator(
 traffic_sources_operator = PythonOperator(
     task_id="traffic_sources", python_callable=traffic_sources, dag=dag
 )
-roistat_analytics_operator = PythonOperator(
-    task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
-)
+# roistat_analytics_operator = PythonOperator(
+#     task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
+# )
 roistat_statistics_operator = PythonOperator(
     task_id="roistat_statistics", python_callable=roistat_statistics, dag=dag
 )
@@ -868,8 +868,8 @@ clean_data_operator >> traffic_sources_operator
 # channel_expense_operator >> leads_ta_stats
 # channel_expense_operator >> traffic_sources
 
-clean_data_operator >> roistat_analytics_operator
+# clean_data_operator >> roistat_analytics_operator
 roistat_to_db_operator >> roistat_statistics_operator
-roistat_analytics_operator >> roistat_statistics_operator
+# roistat_analytics_operator >> roistat_statistics_operator
 roistat_statistics_operator >> roistat_leads_operator
 roistat_leads_operator >> roistat_update_levels_operator
