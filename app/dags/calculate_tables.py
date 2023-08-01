@@ -63,13 +63,12 @@ from app.tables import calculate_audience_type_result
 from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
+from app.dags import commands as dags_commands
 from app.dags.decorators import log_execution_time
 from app.dags.utils import RoistatDetectLevels
 from app.analytics import pickle_loader
 from app.plugins.ads import roistat
 from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
-
-from . import commands as dags_commands
 
 
 roistat_analytics_columns = [
