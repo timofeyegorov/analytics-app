@@ -1216,9 +1216,6 @@ from flask.views import MethodView
 
 class CallsMain(MethodView):
     def get(self):
-        if not os.path.exists('app/ats/api/api.log'):
-            # Создаем пустой файл, если его нет
-            open('app/ats/api/api.log', 'w').close()
         return render_template("calls/index.html", data_list=show_openers_list(), numbers_list=show_numbers_list(),
                                datarange=show_datarange())
 
