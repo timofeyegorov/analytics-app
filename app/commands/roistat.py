@@ -36,3 +36,11 @@ def leads_processing():
     Processing Roistat leads
     """
     dags_commands.calculate_tables("roistat_leads")
+
+
+@bp.cli.command("update-levels")
+def update_levels():
+    """
+    Update Roistat levels
+    """
+    dags_commands.calculate_tables("roistat_update_levels")

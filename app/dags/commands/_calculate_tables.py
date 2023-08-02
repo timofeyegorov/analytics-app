@@ -12,7 +12,7 @@ from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
 from app.analytics import pickle_loader
 from app.database import models
 from app.plugins.ads import roistat
-from app.dags.data import roistat_statistics_columns
+from app.dags.data import roistat_statistics_columns, roistat_leads_columns
 from app.dags.utils import RoistatDetectLevels
 
 from config import RESULTS_FOLDER
@@ -155,7 +155,7 @@ def roistat_statistics():
     statistics["db"] = statistics["db"].apply(int)
     statistics.reset_index(drop=True, inplace=True)
     print("--- Execution time:", datetime.datetime.now() - time_now)
-    with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as file_ref:
+    with open(Path(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as file_ref:
         pickle.dump(statistics, file_ref)
 
 
@@ -226,5 +226,33 @@ def roistat_leads():
         .drop_duplicates(keep="last", ignore_index=True)
         .reset_index(drop=True)
     )
-    with open(os.path.join(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
+    with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
         pickle.dump(leads, file_ref)
+
+
+def roistat_update_levels():
+    statistics = pickle_loader.roistat_statistics
+    columns = ["account", "campaign", "group", "ad"]
+    date_to = datetime.datetime.now()
+    date_from = date_to - datetime.timedelta(weeks=1)
+    leads = pickle_loader.roistat_leads
+    leads["d"] = leads["date"].apply(lambda item: item.date())
+    leads = leads[(leads["d"] >= date_from.date()) & (leads["d"] <= date_to.date())]
+    leads = leads.loc[:, leads.columns != "d"]
+    leads.rename(columns={"url": "traffic_channel"}, inplace=True)
+
+    for index, lead in leads.iterrows():
+        stats = statistics[statistics.date == lead.date]
+        levels = RoistatDetectLevels(lead, stats)
+        leads.loc[index, columns] = [
+            levels.account,
+            levels.campaign,
+            levels.group,
+            levels.ad,
+        ]
+    leads.rename(columns={"traffic_channel": "url"}, inplace=True)
+
+    source = pickle_loader.roistat_leads
+    source.loc[leads.index, columns] = leads[columns].values
+    with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
+        pickle.dump(source, file_ref)

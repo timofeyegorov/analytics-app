@@ -60,9 +60,7 @@ from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
 from app.dags import commands as dags_commands
-from app.dags.data import roistat_statistics_columns, roistat_leads_columns
 from app.dags.decorators import log_execution_time
-from app.dags.utils import RoistatDetectLevels
 from app.analytics import pickle_loader
 
 
@@ -428,31 +426,7 @@ def roistat_leads():
 
 @log_execution_time("roistat_update_levels")
 def roistat_update_levels():
-    statistics = pickle_loader.roistat_statistics
-    columns = ["account", "campaign", "group", "ad"]
-    date_to = datetime.datetime.now()
-    date_from = date_to - datetime.timedelta(weeks=1)
-    leads = pickle_loader.roistat_leads
-    leads["d"] = leads["date"].apply(lambda item: item.date())
-    leads = leads[(leads["d"] >= date_from.date()) & (leads["d"] <= date_to.date())]
-    leads = leads.loc[:, leads.columns != "d"]
-    leads.rename(columns={"url": "traffic_channel"}, inplace=True)
-
-    for index, lead in leads.iterrows():
-        stats = statistics[statistics.date == lead.date]
-        levels = RoistatDetectLevels(lead, stats)
-        leads.loc[index, columns] = [
-            levels.account,
-            levels.campaign,
-            levels.group,
-            levels.ad,
-        ]
-    leads.rename(columns={"traffic_channel": "url"}, inplace=True)
-
-    source = pickle_loader.roistat_leads
-    source.loc[leads.index, columns] = leads[columns].values
-    with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
-        pkl.dump(source, file_ref)
+    dags_commands.calculate_tables("roistat_update_levels")
 
 
 dag = DAG(
