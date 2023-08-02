@@ -423,74 +423,7 @@ def roistat_statistics():
 
 @log_execution_time("roistat_leads")
 def roistat_leads():
-    columns = ["account", "campaign", "group", "ad"]
-    try:
-        statistics = pickle_loader.roistat_statistics
-    except Exception:
-        statistics = pandas.DataFrame(columns=roistat_statistics_columns)
-    try:
-        leads = pickle_loader.leads_np
-        os.remove(f"{RESULTS_FOLDER}/leads_np.pkl")
-    except FileNotFoundError:
-        return
-    for column in columns:
-        leads[column] = ""
-    for index, lead in leads.iterrows():
-        stats = statistics[statistics.date == lead.date]
-        levels = RoistatDetectLevels(lead, stats)
-        leads.loc[index, columns] = [
-            levels.account,
-            levels.campaign,
-            levels.group,
-            levels.ad,
-        ]
-
-    leads = leads[
-        [
-            "traffic_channel",
-            "quiz_answers1",
-            "quiz_answers2",
-            "quiz_answers3",
-            "quiz_answers4",
-            "quiz_answers5",
-            "quiz_answers6",
-            "turnover_on_lead",
-            "target_class",
-            "email",
-            "phone",
-            "date",
-            "channel_expense",
-            "utm_source",
-            "utm_medium",
-            "utm_campaign",
-            "utm_content",
-            "utm_term",
-        ]
-        + columns
-    ].rename(
-        columns={
-            "traffic_channel": "url",
-            "quiz_answers1": "qa1",
-            "quiz_answers2": "qa2",
-            "quiz_answers3": "qa3",
-            "quiz_answers4": "qa4",
-            "quiz_answers5": "qa5",
-            "quiz_answers6": "qa6",
-            "turnover_on_lead": "ipl",
-            "channel_expense": "expenses",
-        }
-    )
-    try:
-        data = pickle_loader.roistat_leads
-    except Exception:
-        data = pandas.DataFrame(columns=roistat_leads_columns)
-    leads = (
-        pandas.concat([data, leads])
-        .drop_duplicates(keep="last", ignore_index=True)
-        .reset_index(drop=True)
-    )
-    with open(os.path.join(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as f:
-        pkl.dump(leads, f)
+    dags_commands.calculate_tables("roistat_leads")
 
 
 @log_execution_time("roistat_update_levels")

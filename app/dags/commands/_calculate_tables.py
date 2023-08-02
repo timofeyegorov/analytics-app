@@ -13,6 +13,7 @@ from app.analytics import pickle_loader
 from app.database import models
 from app.plugins.ads import roistat
 from app.dags.data import roistat_statistics_columns
+from app.dags.utils import RoistatDetectLevels
 
 from config import RESULTS_FOLDER
 
@@ -85,7 +86,7 @@ def roistat_to_db(date_from: datetime.date, date_to: datetime.date):
         date_from = date_from + datetime.timedelta(days=1)
 
 
-def statistics_processing():
+def roistat_statistics():
     def analytics_row_to_dict(
         rel,
         row,
@@ -127,7 +128,7 @@ def statistics_processing():
         rel = PACKAGES_COMPARE.get(package.name)
         if not rel:
             continue
-        rows = query.filter_by(package_id=package.id).limit(500000).all()
+        rows = query.filter_by(package_id=package.id).limit(200000).all()
         print(f"--- Update {package.name}: {len(rows)}")
         data_package = pandas.concat(
             [
@@ -156,3 +157,74 @@ def statistics_processing():
     print("--- Execution time:", datetime.datetime.now() - time_now)
     with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as file_ref:
         pickle.dump(statistics, file_ref)
+
+
+def roistat_leads():
+    columns = ["account", "campaign", "group", "ad"]
+    try:
+        statistics = pickle_loader.roistat_statistics
+    except Exception:
+        statistics = pandas.DataFrame(columns=roistat_statistics_columns)
+    try:
+        leads = pickle_loader.leads_np
+        os.remove(f"{RESULTS_FOLDER}/leads_np.pkl")
+    except FileNotFoundError:
+        return
+    for column in columns:
+        leads[column] = ""
+    for index, lead in leads.iterrows():
+        stats = statistics[statistics.date == lead.date]
+        levels = RoistatDetectLevels(lead, stats)
+        leads.loc[index, columns] = [
+            levels.account,
+            levels.campaign,
+            levels.group,
+            levels.ad,
+        ]
+
+    leads = leads[
+        [
+            "traffic_channel",
+            "quiz_answers1",
+            "quiz_answers2",
+            "quiz_answers3",
+            "quiz_answers4",
+            "quiz_answers5",
+            "quiz_answers6",
+            "turnover_on_lead",
+            "target_class",
+            "email",
+            "phone",
+            "date",
+            "channel_expense",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
+        ]
+        + columns
+    ].rename(
+        columns={
+            "traffic_channel": "url",
+            "quiz_answers1": "qa1",
+            "quiz_answers2": "qa2",
+            "quiz_answers3": "qa3",
+            "quiz_answers4": "qa4",
+            "quiz_answers5": "qa5",
+            "quiz_answers6": "qa6",
+            "turnover_on_lead": "ipl",
+            "channel_expense": "expenses",
+        }
+    )
+    try:
+        data = pickle_loader.roistat_leads
+    except Exception:
+        data = pandas.DataFrame(columns=roistat_leads_columns)
+    leads = (
+        pandas.concat([data, leads])
+        .drop_duplicates(keep="last", ignore_index=True)
+        .reset_index(drop=True)
+    )
+    with open(os.path.join(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
+        pickle.dump(leads, file_ref)

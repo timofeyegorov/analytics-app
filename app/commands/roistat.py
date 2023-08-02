@@ -27,4 +27,12 @@ def statistics_processing():
     """
     Processing Roistat statistics
     """
-    dags_commands.calculate_tables("statistics_processing")
+    dags_commands.calculate_tables("roistat_statistics")
+
+
+@bp.cli.command("leads-processing")
+def leads_processing():
+    """
+    Processing Roistat leads
+    """
+    dags_commands.calculate_tables("roistat_leads")
