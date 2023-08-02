@@ -150,6 +150,7 @@ def statistics_processing():
             )
         )
         statistics = pandas.concat([statistics, data_package])
+    statistics["db"] = statistics["db"].apply(int)
     statistics.reset_index(drop=True, inplace=True)
     with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as file_ref:
         pickle.dump(statistics, file_ref)
