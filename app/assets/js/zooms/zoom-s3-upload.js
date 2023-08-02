@@ -2,12 +2,20 @@ const App = {
     delimiters: ['[[', ']]'],
     data() {
         return {
+            zoomOn: true,
             placeholder: 'Фамилия и Имя менеджера',
             managerUser: '',
-            files: [],      
+            files: [],
+            isLoading: false,      
         }
     },
+    mounted() {
+        this.managerUser = this.$refs.inputManager.value
+    },
     methods: {
+        getManager(event) {
+            this.managerUser = event.target.value
+        },
         async read_directory(directory_handle, path_prefix) {
             for await(let handle of directory_handle.values()) {
                 // console.log(handle)
@@ -31,6 +39,8 @@ const App = {
         async upload_zoom() { 
             if (this.managerUser) {
                 // console.log('upload_zoom')
+                this.isLoading = true;
+
                 const directory_handle = await showDirectoryPicker();
                 await this.read_directory(directory_handle);
                 // console.log(this.files)
@@ -40,13 +50,16 @@ const App = {
                     form.append(file.directory, file.file)
                 });
                 form.append('manager', this.managerUser)
+
                 const response = await fetch('/api/v1/zoom-upload',{
                     method: 'POST',
                     // headers: {'Content-Type': 'application/json'},
                     body: form,
                 })
+
                 this.managerUser = ''
-                console.log(response.status)
+                this.isLoading = false;
+                
             } else {
                 alert('Вам необходимо заполнить поле <менеджер>')
             }           

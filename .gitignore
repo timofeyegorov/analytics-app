@@ -11,3 +11,4 @@ celerybeat-schedule
 /amocrm-*
 /.env
 /.env.s3
+managers.xlsx

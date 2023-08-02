@@ -72,25 +72,31 @@
         <button class="btn btn-primary">Обновить</button>
         <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
         <button type="button" class="btn btn-warning excel-download">Скачать Excel</button>
-        <span id="app" style="padding-left: 33px;" v-cloak>
+        <span id="app" style="padding-left: 3px;" v-cloak>
+            <span v-if="zoomOn">
             <input 
+                hidden
                 type="text"
-                size="50" 
-                v-model="managerUser" 
+                size="50"
+                ref="inputManager" 
+                value="{{ request.user.username }}"
+                @input="getManager" 
                 :placeholder="placeholder" 
                 />                
-                <span id="app" style="padding-left: 13px;">
+                <span id="app" style="padding-left: 0px;">
+                <button v-if="isLoading" class="btn btn-info" type="button" disabled>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="sr-only"> Загрузка...</span>
+                </button>
                 <button
+                    v-else
                     type="button" 
                     class="btn btn-info" 
                     :class="managerUser.length === 0 ? 'disabled' : '' "
                     @click="upload_zoom">
-                    Загрузить Zoom</button>
+                    Загрузить Zoom</button>                    
                 </span>
-                <small style="padding-left: 3px;">
-                    [[ managerUser.length !== 0 ? 'Менеджер: ' : '' ]]
-                    [[ managerUser.toUpperCase() ]]
-                </small>
+            </span>
         </span>    
     </div>
 </form>

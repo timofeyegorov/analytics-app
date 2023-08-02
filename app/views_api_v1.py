@@ -87,8 +87,11 @@ class ApiZoomS3UploadView(APIView):
                         os.makedirs(tmp_file_dir, exist_ok=True)
                         file.save(os.path.join(tmp_file_dir, file.filename))
                         print(file_path)
-
-            s3_client.put(os.path.join(tmpdir, manager))
+            try:
+                s3_client.put(os.path.join(tmpdir, manager))
+            except FileNotFoundError as err:
+                self.data = {'status_upload': 'failed'}
+                print(f'{manager}: {self.data} | {err}')
 
         self.data = {'status_upload': 'ok'}
         return super().post()

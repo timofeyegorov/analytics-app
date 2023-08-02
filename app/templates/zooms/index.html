@@ -3,6 +3,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
+    <span>Вы зашли под пользователем:  <b>{{ request.user.username }}</b></span>
     <h1>{{ title }}</h1>
     <div class="base-links">
         {% include 'zooms/base_links.html' %}
