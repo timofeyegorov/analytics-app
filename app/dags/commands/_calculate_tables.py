@@ -127,7 +127,7 @@ def statistics_processing():
         rel = PACKAGES_COMPARE.get(package.name)
         if not rel:
             continue
-        rows = query.filter_by(package_id=package.id).limit(100000).all()
+        rows = query.filter_by(package_id=package.id).limit(500000).all()
         print(f"--- Update {package.name}: {len(rows)}")
         data_package = pandas.concat(
             [
