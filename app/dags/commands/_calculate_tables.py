@@ -122,6 +122,7 @@ def statistics_processing():
     if exclude_ids:
         query = query.filter(models.Roistat.id.notin_(exclude_ids))
     levels = dict([(row.id, row) for row in models.RoistatLevels.query.all()])
+    time_now = datetime.datetime.now()
     for package in models.RoistatPackages.query.all():
         rel = PACKAGES_COMPARE.get(package.name)
         if not rel:
@@ -152,5 +153,6 @@ def statistics_processing():
         statistics = pandas.concat([statistics, data_package])
     statistics["db"] = statistics["db"].apply(int)
     statistics.reset_index(drop=True, inplace=True)
+    print("--- Execution time:", datetime.datetime.now() - time_now)
     with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as file_ref:
         pickle.dump(statistics, file_ref)
