@@ -20,3 +20,11 @@ def update_db(date_from: datetime.date, date_to: datetime.date):
     """
     assert date_from <= date_to, "`--date-from` must be less or equivalent `--date-to`"
     dags_commands.calculate_tables("roistat_to_db", date_from, date_to)
+
+
+@bp.cli.command("statistics-processing")
+def statistics_processing():
+    """
+    Processing Roistat statistics
+    """
+    dags_commands.calculate_tables("statistics_processing")
