@@ -6,6 +6,7 @@ import datetime
 
 from time import sleep
 from typing import Dict
+from pathlib import Path
 
 from app import db
 from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
@@ -128,7 +129,7 @@ def roistat_statistics():
         rel = PACKAGES_COMPARE.get(package.name)
         if not rel:
             continue
-        rows = query.filter_by(package_id=package.id).limit(200000).all()
+        rows = query.filter_by(package_id=package.id).limit(500000).all()
         print(f"--- Update {package.name}: {len(rows)}")
         data_package = pandas.concat(
             [
