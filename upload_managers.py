@@ -1,5 +1,7 @@
 import pandas as pd
 
+from typing import List, Tuple
+
 from app import database as db
 from app.database.auth import User
 
@@ -18,7 +20,7 @@ class ManagerDB:
         return data
 
     @staticmethod
-    def __read_xls(path: str) -> list[tuple[str, str, str]]:
+    def __read_xls(path: str) -> List[Tuple[str, str, str]]:
         df = pd.read_excel(path)
         return [tuple(v) for v in df.values]
 

@@ -158,7 +158,7 @@ class Client:
         except FileNotFoundError as err:
             print(err)
 
-    def walk(self, path: str) -> list[str]:
+    def walk(self, path: str) -> List[str]:
         """
         Метод рекурсивного получение имен файлов в указанном каталоге
 
