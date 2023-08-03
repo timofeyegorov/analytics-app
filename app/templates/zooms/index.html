@@ -3,6 +3,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
+    <span>Вы зашли под пользователем:  <b>{{ request.user.username }}</b></span>
     <h1>{{ title }}</h1>
     <div class="base-links">
         {% include 'zooms/base_links.html' %}
@@ -12,5 +13,7 @@
 {% endblock %}
 
 {% block js %}
+<script src="https://unpkg.com/vue@next"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/zooms/index.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/zooms/zoom-s3-upload.js') }}"></script>    
 {% endblock js %}

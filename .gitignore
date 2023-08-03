@@ -9,8 +9,8 @@ celerybeat-schedule
 /app/dags/data/
 /service-*.py
 /amocrm-*
-/s3
 /.env
+/.env.s3
+managers.xlsx
 /app/ats/api/data.csv
 /app/ats/api/api.log
-

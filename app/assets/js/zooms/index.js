@@ -5,7 +5,6 @@
 
 
     $(() => {
-
         let changeZoomAjax;
 
         $("form").bind("submit", (event) => {
