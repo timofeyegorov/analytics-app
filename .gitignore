@@ -11,6 +11,6 @@ celerybeat-schedule
 /amocrm-*
 /.env
 /.env.s3
-managers.xlsx
+/managers.xlsx
 /app/ats/api/data.csv
 /app/ats/api/api.log
