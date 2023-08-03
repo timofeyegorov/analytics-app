@@ -10,6 +10,7 @@ from . import connect
 class User(pydantic.BaseModel):
     id: int
     login: str
+    username: str
 
 
 def get_user_by_id(id_: Optional[int] = None) -> Optional[User]:

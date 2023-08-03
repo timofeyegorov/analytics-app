@@ -8,6 +8,11 @@
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
     {% block css %}{% endblock css %}
+    <style>
+        [v-cloak] {
+          display: none;
+        }
+      </style>
 </head>
 
 <body>
