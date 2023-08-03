@@ -78,3 +78,7 @@ class Roistat(db.Model):
     level_5_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
     level_6_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
     level_7_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
+    account_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
+    campaign_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
+    group_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
+    ad_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
