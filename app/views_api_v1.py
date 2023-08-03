@@ -33,43 +33,6 @@ class APIView(MethodView):
         return self.render()
 
 
-class TestView(APIView):
-    def get(self, *args, **kwargs):
-        tz = pytz.timezone("Europe/Moscow")
-        data = PickleLoader().roistat_analytics
-        data["date"] = data["date"].apply(lambda item: item.date())
-        date = datetime.datetime.now(tz=tz).date() - datetime.timedelta(days=1)
-        data = data[data["date"] >= date]
-        data.rename(
-            columns={
-                **dict(
-                    map(
-                        lambda item: (f"marker_level_{item}_title", f"level{item}"),
-                        range(8),
-                    )
-                ),
-                "visitsCost": "expenses",
-            },
-            inplace=True,
-        )
-
-        self.data = data[
-            [
-                "date",
-                "expenses",
-                "level1",
-                "level2",
-                "level3",
-                "level4",
-                "level5",
-                "level6",
-                "level7",
-            ]
-        ].to_json(orient="records", date_format="iso", double_precision=0)
-
-        return super().get(*args, **kwargs)
-
-
 class ApiZoomS3UploadView(APIView):
     def post(self):
         manager = request.values.to_dict().pop("manager")
@@ -95,3 +58,40 @@ class ApiZoomS3UploadView(APIView):
 
         self.data = {'status_upload': 'ok'}
         return super().post()
+
+
+# class TestView(APIView):
+#     def get(self, *args, **kwargs):
+#         tz = pytz.timezone("Europe/Moscow")
+#         data = PickleLoader().roistat_analytics
+#         data["date"] = data["date"].apply(lambda item: item.date())
+#         date = datetime.datetime.now(tz=tz).date() - datetime.timedelta(days=1)
+#         data = data[data["date"] >= date]
+#         data.rename(
+#             columns={
+#                 **dict(
+#                     map(
+#                         lambda item: (f"marker_level_{item}_title", f"level{item}"),
+#                         range(8),
+#                     )
+#                 ),
+#                 "visitsCost": "expenses",
+#             },
+#             inplace=True,
+#         )
+#
+#         self.data = data[
+#             [
+#                 "date",
+#                 "expenses",
+#                 "level1",
+#                 "level2",
+#                 "level3",
+#                 "level4",
+#                 "level5",
+#                 "level6",
+#                 "level7",
+#             ]
+#         ].to_json(orient="records", date_format="iso", double_precision=0)
+#
+#         return super().get(*args, **kwargs)

@@ -12,3 +12,5 @@ celerybeat-schedule
 /.env
 /.env.s3
 managers.xlsx
+/app/ats/api/data.csv
+/app/ats/api/api.log

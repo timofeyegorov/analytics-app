@@ -1,20 +1,24 @@
+import os
+import json
+import redis
+import click
 import plotly.express as px
-from plotly.io import to_json
 import pandas as pd
+import pickle as pkl
+
+from plotly.io import to_json
 from flask import Flask, request, render_template
+from flask.cli import with_appcontext
+from flask_sqlalchemy import SQLAlchemy
 from .database.auth import check_token
 from .database import get_leads_data, get_target_audience
-import json
 from config import config
-import redis
 from config import RESULTS_FOLDER
-import os
-import pickle as pkl
 from celery import Celery
 from celery.schedules import crontab
 from datetime import datetime, timedelta
 from app.plugins.tg_report import TGReportChannelsSummary
-from app import decorators
+from app import decorators, commands
 
 
 # def fig_leads_dynamics():
@@ -32,6 +36,9 @@ from app import decorators
 app = Flask(__name__, static_url_path="/assets", static_folder="assets")
 app.config.from_object("config")
 
+for bp in commands.bps:
+    app.register_blueprint(bp)
+
 
 redis_config = config["redis"]
 redis_db = redis.StrictRedis(
@@ -42,6 +49,8 @@ redis_db = redis.StrictRedis(
 )
 
 app.jinja_env.globals["redis_db"] = redis_db
+
+db = SQLAlchemy(app)
 
 
 celery_client = Celery(

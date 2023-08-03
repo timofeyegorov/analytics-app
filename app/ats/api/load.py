@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 import requests
 from app.ats.api.config import create_config

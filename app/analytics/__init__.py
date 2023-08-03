@@ -51,7 +51,6 @@ from app import views, views_amocrm, views_services, views_api_v1
 from .pickle_load import PickleLoader
 from . import utils
 
-
 pickle_loader = PickleLoader()
 
 
@@ -92,6 +91,7 @@ def getPlotCSV():
             mimetype="text/csv",
             headers={"Content-disposition": f"attachment; filename={report}.csv"},
         )
+
 
 def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     # table.created_at = pd.to_datetime(table.created_at).dt.normalize()
@@ -937,13 +937,13 @@ app.add_url_rule(
 )
 # api v1
 app.add_url_rule(
-    "/api/v1/test",
-    view_func=views_api_v1.TestView.as_view("api_v1_test"),
-)
-app.add_url_rule(
     "/api/v1/zoom-upload",
     view_func=views_api_v1.ApiZoomS3UploadView.as_view("api_zoom_upload"),
 )
+# app.add_url_rule(
+#     "/api/v1/test",
+#     view_func=views_api_v1.TestView.as_view("api_v1_test"),
+# )
 
 
 @app.route("/login/hh", endpoint="login_hh")
@@ -1205,209 +1205,400 @@ def parse_vacancies():
 
     return df.to_html()
 
+
 # Аналитика звонков
 
 from datetime import datetime
 from app.ats.api.load import start_import
-from flask import Flask, render_template, request,redirect,url_for
-from app.ats.tools import table_number, table_opener, table_time_day, table_opener_number, table_opener_time, show_openers_list, \
-    show_numbers_list,table_timecall
-from app.ats.preparData import filter_numbers, filter_openers, filter_delete,settings_openers,settings_delete,set_datarange,show_datarange
+from flask import Flask, render_template, request, redirect, url_for, session
+from app.ats.tools import (
+    table_number,
+    table_opener,
+    table_time_day,
+    table_opener_number,
+    table_opener_time,
+    show_openers_list,
+    show_numbers_list,
+    table_timecall,
+)
+from app.ats.preparData import (
+    filter_numbers,
+    filter_openers,
+    filter_delete,
+    settings_openers,
+    settings_delete,
+    set_datarange,
+    show_datarange,
+)
 from flask.views import MethodView
+
 
 class CallsMain(MethodView):
     def get(self):
-        return render_template("calls/index.html", data_list=show_openers_list(), numbers_list=show_numbers_list(),
-                               datarange=show_datarange())
+        return render_template(
+            "calls/index.html",
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            datarange=show_datarange(),
+        )
 
     def post(self):
-        if 'change_data' in request.form:
-            start_date = (datetime.strptime(request.form["start_date"], '%Y-%m-%d').date()).strftime('%d-%m-%Y')
-            end_date = (datetime.strptime(request.form["end_date"], '%Y-%m-%d').date()).strftime('%d-%m-%Y')
-            data_range = f'Текущий диапазон данных: с {start_date} по {end_date}'
+        if "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
             set_datarange(data_range)
             # Вызываем функцию для получения данных с api
             if start_import(start_date, end_date) == 200:
-                message = f'Получены данные звонков с {start_date} по {end_date}'
+                message = f"Получены данные звонков с {start_date} по {end_date}"
             else:
-                message = f'Ошибка получения данных на стороне Sipuni'
-            return render_template("calls/index.html", data_list=show_openers_list(), numbers_list=show_numbers_list(),
-                                   message=message, datarange=show_datarange())
-        elif 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_main'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_main'))
-        elif 'dell_filters' in request.form:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return render_template(
+                "calls/index.html",
+                data_list=show_openers_list(),
+                numbers_list=show_numbers_list(),
+                message=message,
+                datarange=show_datarange(),
+            )
+        elif "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_main"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_main"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsNumbers(MethodView):
     def get(self):
-        pivot_table = table_number()
-        table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-        return render_template('calls/numbers.html', table=table_html, data_list=show_openers_list(),
-                               numbers_list=show_numbers_list())
+        message = request.args.get("message", "")
+        type_table = session.get("type_table")
+        pivot_table = table_number(type_table)
+        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        return render_template(
+            "calls/numbers.html",
+            table=table_html,
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            message=message,
+            datarange=show_datarange(),
+        )
 
     def post(self):
-        if 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_numbers'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_numbers'))
-        elif 'dell_filters' in request.form:
+        if "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            set_datarange(data_range)
+            if start_import(start_date, end_date) == 200:
+                message = f"Получены данные звонков с {start_date} по {end_date}"
+            else:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return redirect(url_for("calls_numbers", message=message))
+        elif "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_numbers"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_numbers"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_numbers'))
+            return redirect(url_for("calls_numbers"))
+        elif "changetype" in request.form:
+            type_table = session.get("type_table")
+            if type_table is None:
+                type_table = 1
+            else:
+                type_table = None
+            session["type_table"] = type_table
+            return redirect(url_for("calls_numbers"))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsOpeners(MethodView):
     def get(self):
-        pivot_table = table_opener()
-        table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-        return render_template('calls/openers.html', table=table_html, data_list=show_openers_list(),
-                               numbers_list=show_numbers_list())
+        message = request.args.get("message", "")
+        type_table = session.get("type_table")
+        pivot_table = table_opener(type_table)
+        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        return render_template(
+            "calls/openers.html",
+            table=table_html,
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            message=message,
+            datarange=show_datarange(),
+        )
 
     def post(self):
-        if 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_openers'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_openers'))
-        elif 'dell_filters' in request.form:
+        if "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            set_datarange(data_range)
+            if start_import(start_date, end_date) == 200:
+                message = f"Получены данные звонков с {start_date} по {end_date}"
+            else:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return redirect(url_for("calls_openers", message=message))
+        elif "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_openers"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_openers"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_openers'))
+            return redirect(url_for("calls_openers"))
+        elif "changetype" in request.form:
+            type_table = session.get("type_table")
+            if type_table is None:
+                type_table = 1
+            else:
+                type_table = None
+            session["type_table"] = type_table
+            return redirect(url_for("calls_openers"))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsHours(MethodView):
     def get(self):
+        message = request.args.get("message", "")
         pivot_table = table_time_day()
-        table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-        return render_template('calls/hours.html', table=table_html, data_list=show_openers_list(),
-                               numbers_list=show_numbers_list())
+        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        return render_template(
+            "calls/hours.html",
+            table=table_html,
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            datarange=show_datarange(),
+            message=message,
+        )
 
     def post(self):
-        if 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_hours'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_hours'))
-        elif 'dell_filters' in request.form:
+        if "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            set_datarange(data_range)
+            if start_import(start_date, end_date) == 200:
+                message = f"Получены данные звонков с {start_date} по {end_date}"
+            else:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return redirect(url_for("calls_hours", message=message))
+        elif "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_hours"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_hours"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_hours'))
+            return redirect(url_for("calls_hours"))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsOpenerNumber(MethodView):
     def get(self):
+        message = request.args.get("message", "")
         pivot_table = table_opener_number(2)
-        table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-        return render_template('calls/openernumber.html', table=table_html, data_list=show_openers_list(),
-                               numbers_list=show_numbers_list())
+        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        return render_template(
+            "calls/openernumber.html",
+            table=table_html,
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            message=message,
+            datarange=show_datarange(),
+        )
 
     def post(self):
-        value = request.form.get('choice')
-        if value == 'choice1':
+        value = request.form.get("choice")
+        if value == "choice1":
             pivot_table = table_opener_number(1)
-            table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-            return render_template('calls/openernumber2.html', table=table_html, data_list=show_openers_list(),
-                                   numbers_list=show_numbers_list())
-        if value == 'choice2':
-            return redirect(url_for('calls_openernumber'))
-        if 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_openernumber'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_openernumber'))
-        elif 'dell_filters' in request.form:
+            table_html = pivot_table.to_html(
+                classes="table table-striped table-bordered"
+            )
+            return render_template(
+                "calls/openernumber2.html",
+                table=table_html,
+                data_list=show_openers_list(),
+                numbers_list=show_numbers_list(),
+                datarange=show_datarange(),
+            )
+        if value == "choice2":
+            return redirect(url_for("calls_openernumber"))
+        if "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_openernumber"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_openernumber"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_openernumber'))
+            return redirect(url_for("calls_openernumber"))
+        elif "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            set_datarange(data_range)
+            if start_import(start_date, end_date) == 200:
+                message = f"Получены данные звонков с {start_date} по {end_date}"
+            else:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return redirect(url_for("calls_openernumber", message=message))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsOpenerHour(MethodView):
     def get(self):
+        message = request.args.get("message", "")
         pivot_table = table_opener_time(2)
-        table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-        return render_template('calls/openerhours.html', table=table_html, data_list=show_openers_list(),
-                               numbers_list=show_numbers_list())
+        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        return render_template(
+            "calls/openerhours.html",
+            table=table_html,
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            message=message,
+            datarange=show_datarange(),
+        )
 
     def post(self):
-        value = request.form.get('choice')
-        if value == 'choice1':
+        value = request.form.get("choice")
+        if value == "choice1":
             pivot_table = table_opener_time(1)
-            table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-            return render_template('calls/openerhours2.html', table=table_html, data_list=show_openers_list(),
-                                   numbers_list=show_numbers_list())
-        if value == 'choice2':
-            return redirect(url_for('calls_openerhour'))
-        if 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_openerhour'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_openerhour'))
-        elif 'dell_filters' in request.form:
+            table_html = pivot_table.to_html(
+                classes="table table-striped table-bordered"
+            )
+            return render_template(
+                "calls/openerhours2.html",
+                table=table_html,
+                data_list=show_openers_list(),
+                numbers_list=show_numbers_list(),
+                datarange=show_datarange(),
+            )
+        if value == "choice2":
+            return redirect(url_for("calls_openerhour"))
+        if "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_openerhour"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_openerhour"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_openerhour'))
+            return redirect(url_for("calls_openerhour"))
+        elif "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            set_datarange(data_range)
+            if start_import(start_date, end_date) == 200:
+                message = f"Получены данные звонков с {start_date} по {end_date}"
+            else:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return redirect(url_for("calls_openerhour", message=message))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsMedTime(MethodView):
     def get(self):
+        message = request.args.get("message", "")
         pivot_table = table_timecall()
-        table_html = pivot_table.to_html(classes='table table-striped table-bordered')
-        return render_template('calls/medtime.html', table=table_html, data_list=show_openers_list(),
-                               numbers_list=show_numbers_list())
+        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        return render_template(
+            "calls/medtime.html",
+            table=table_html,
+            data_list=show_openers_list(),
+            numbers_list=show_numbers_list(),
+            message=message,
+            datarange=show_datarange(),
+        )
 
     def post(self):
-        if 'change_openers' in request.form:
-            filter_openers(request.form.getlist('options'))
-            return redirect(url_for('calls_medtime'))
-        elif 'change_numbers' in request.form:
-            filter_numbers(request.form.getlist('options'))
-            return redirect(url_for('calls_medtime'))
-        elif 'dell_filters' in request.form:
+        if "change_data" in request.form:
+            start_date = (
+                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            end_date = (
+                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%d-%m-%Y")
+            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            set_datarange(data_range)
+            if start_import(start_date, end_date) == 200:
+                message = f"Получены данные звонков с {start_date} по {end_date}"
+            else:
+                message = f"Ошибка получения данных на стороне Sipuni"
+            return redirect(url_for("calls_medtime", message=message))
+        elif "change_openers" in request.form:
+            filter_openers(request.form.getlist("options"))
+            return redirect(url_for("calls_medtime"))
+        elif "change_numbers" in request.form:
+            filter_numbers(request.form.getlist("options"))
+            return redirect(url_for("calls_medtime"))
+        elif "dell_filters" in request.form:
             filter_delete()
-            return redirect(url_for('calls_medtime'))
+            return redirect(url_for("calls_medtime"))
         else:
-            return redirect(url_for('calls_main'))
+            return redirect(url_for("calls_main"))
 
 
 class callsSettings(MethodView):
     def get(self):
-        return render_template('calls/settings.html', openers=show_openers_list())
+        return render_template("calls/settings.html", openers=show_openers_list())
 
     def post(self):
-        if 'change_settings' in request.form:
-            settings_openers(request.form.getlist('options'))
+        if "change_settings" in request.form:
+            settings_openers(request.form.getlist("options"))
             return render_template("calls/settings.html", openers=show_openers_list())
-        elif 'dell_settings' in request.form:
+        elif "dell_settings" in request.form:
             settings_delete()
             return render_template("calls/settings.html", openers=settings_delete())
         else:
             return render_template("calls/settings.html", openers=settings_delete())
 
 
-app.add_url_rule('/calls', view_func=CallsMain.as_view('calls_main'))
-app.add_url_rule('/numbers', view_func=callsNumbers.as_view('calls_numbers'))
-app.add_url_rule('/openers', view_func=callsOpeners.as_view('calls_openers'))
-app.add_url_rule('/hours', view_func=callsHours.as_view('calls_hours'))
-app.add_url_rule('/openernumber', view_func=callsOpenerNumber.as_view('calls_openernumber'))
-app.add_url_rule('/openerhours', view_func=callsOpenerHour.as_view('calls_openerhour'))
-app.add_url_rule('/medtime', view_func=callsMedTime.as_view('calls_medtime'))
-app.add_url_rule('/settings', view_func=callsSettings.as_view('calls_settings'))
+app.add_url_rule("/calls", view_func=CallsMain.as_view("calls_main"))
+app.add_url_rule("/numbers", view_func=callsNumbers.as_view("calls_numbers"))
+app.add_url_rule("/openers", view_func=callsOpeners.as_view("calls_openers"))
+app.add_url_rule("/hours", view_func=callsHours.as_view("calls_hours"))
+app.add_url_rule(
+    "/openernumber", view_func=callsOpenerNumber.as_view("calls_openernumber")
+)
+app.add_url_rule("/openerhours", view_func=callsOpenerHour.as_view("calls_openerhour"))
+app.add_url_rule("/medtime", view_func=callsMedTime.as_view("calls_medtime"))
+app.add_url_rule("/settings", view_func=callsSettings.as_view("calls_settings"))

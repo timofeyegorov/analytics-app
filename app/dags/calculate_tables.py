@@ -1,24 +1,23 @@
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 import pickle as pkl
 import json
 import os
 import re
 import sys
 import pytz
-import numpy
 import pandas
 import datetime
 
-from enum import Enum
-from time import sleep
-from typing import List, Dict, Optional, Any
-from pandas import DataFrame
+from typing import List, Dict
 from pathlib import Path
-from urllib.parse import urlparse, parse_qsl, ParseResult
+from urllib.parse import urlparse, parse_qsl
 
-sys.path.append(Variable.get("APP_FOLDER"))
+try:
+    sys.path.append(Variable.get("APP_FOLDER", None))
+except KeyError:
+    pass
 
 from app.database import get_leads_data
 from app.database.get_crops import get_crops
@@ -60,76 +59,16 @@ from app.tables import calculate_audience_type_result
 from app.tables import calculate_audience_type_percent_result
 from config import RESULTS_FOLDER
 
+from app.dags import commands as dags_commands
 from app.dags.decorators import log_execution_time
-from app.dags.utils import RoistatDetectLevels
 from app.analytics import pickle_loader
-from app.plugins.ads import roistat
-from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
-
-
-roistat_analytics_columns = [
-    "package",
-    "marker_level_1",
-    "marker_level_2",
-    "marker_level_3",
-    "marker_level_4",
-    "marker_level_5",
-    "marker_level_6",
-    "marker_level_7",
-    "marker_level_1_title",
-    "marker_level_2_title",
-    "marker_level_3_title",
-    "marker_level_4_title",
-    "marker_level_5_title",
-    "marker_level_6_title",
-    "marker_level_7_title",
-    "visitsCost",
-    "date",
-]
-roistat_statistics_columns = [
-    "date",
-    "package",
-    "account",
-    "campaign",
-    "group",
-    "ad",
-    "account_title",
-    "campaign_title",
-    "group_title",
-    "ad_title",
-    "expenses",
-]
-roistat_leads_columns = [
-    "url",
-    "qa1",
-    "qa2",
-    "qa3",
-    "qa4",
-    "qa5",
-    "qa6",
-    "ipl",
-    "target_class",
-    "email",
-    "phone",
-    "date",
-    "expense",
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_content",
-    "utm_term",
-    "account",
-    "campaign",
-    "group",
-    "ad",
-]
 
 
 class MatchIDs:
     _campaign_ids: List[str]
     _ad_ids: List[str]
 
-    def __init__(self, leads: DataFrame):
+    def __init__(self, leads: pandas.DataFrame):
         self._campaign_ids = []
         self._ad_ids = []
 
@@ -208,80 +147,6 @@ class MatchIDs:
                                     return int(match_id[0])
                             except Exception:
                                 return
-
-
-def roistat_detect_package(value) -> Optional[str]:
-    if re.match(r"^vk.+$", value):
-        return StatisticsRoistatPackageEnum.vk.name
-    if (
-        re.match(r"^direct\d+.*$", value)
-        or re.match(r"^:openstat:direct\.yandex\.ru$", value)
-        or re.match(r"^direct$", value)
-    ):
-        return StatisticsRoistatPackageEnum.yandex_direct.name
-    if re.match(r"^ya\.master$", value) or re.match(r"^yulyayamaster$", value):
-        return StatisticsRoistatPackageEnum.yandex_master.name
-    if re.match(r"^facebook\d+.*$", value):
-        return StatisticsRoistatPackageEnum.facebook.name
-    if re.match(r"^mytarget\d+$", value):
-        return StatisticsRoistatPackageEnum.mytarget.name
-    if re.match(r"^google\d+$", value) or re.match(r"^g-adwords\d+$", value):
-        return StatisticsRoistatPackageEnum.google.name
-    if re.match(r"^site$", value):
-        return StatisticsRoistatPackageEnum.site.name
-    if re.match(r"^seo$", value):
-        return StatisticsRoistatPackageEnum.seo.name
-    if re.match(r"^:utm:.+$", value):
-        return StatisticsRoistatPackageEnum.utm.name
-    if value:
-        print("Undefined package:", value)
-    return StatisticsRoistatPackageEnum.undefined.name
-
-
-def roistat_get_levels(
-    dimensions: Dict[str, Dict[str, str]],
-) -> Dict[str, Optional[str]]:
-    output = {
-        "package": StatisticsRoistatPackageEnum.undefined.name,
-        "marker_level_1": "",
-        "marker_level_2": "",
-        "marker_level_3": "",
-        "marker_level_4": "",
-        "marker_level_5": "",
-        "marker_level_6": "",
-        "marker_level_7": "",
-        "marker_level_1_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_2_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_3_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_4_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_5_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_6_title": StatisticsRoistatPackageEnum.undefined.value,
-        "marker_level_7_title": StatisticsRoistatPackageEnum.undefined.value,
-    }
-    levels = dict(sorted(dimensions.items()))
-    for name, level in levels.items():
-        level_value = level.get("value", "")
-        level_title = level.get("title", "")
-        if not level_value:
-            level_title = StatisticsRoistatPackageEnum.undefined.value
-        output.update({name: level_value, f"{name}_title": level_title})
-    output.update({"package": roistat_detect_package(output.get("marker_level_1"))})
-    return output
-
-
-def roistat_get_metrics(
-    metrics: List[Dict[str, Any]], available_metrics: List[str]
-) -> Dict[str, str]:
-    return dict(
-        map(
-            lambda item: (item.get("metric_name"), item.get("value")),
-            list(
-                filter(
-                    lambda value: value.get("metric_name") in available_metrics, metrics
-                )
-            ),
-        )
-    )
 
 
 @log_execution_time("load_crops")
@@ -541,203 +406,33 @@ def leads_ta_stats():
         pkl.dump(leads_ta_stats, f)
 
 
-@log_execution_time("roistat_analytics")
-def roistat_analytics():
-    tz = pytz.timezone("Europe/Moscow")
-    try:
-        analytics = pickle_loader.roistat_analytics
-    except Exception:
-        analytics = pandas.DataFrame(columns=roistat_analytics_columns)
-
-    datetime_now = datetime.datetime.now(tz=tz).replace(
-        hour=0, minute=0, second=0, microsecond=0
+@log_execution_time("roistat_to_db")
+def roistat_to_db():
+    date_now = datetime.date.today()
+    dags_commands.calculate_tables(
+        "roistat_to_db", date_now - datetime.timedelta(days=0), date_now
     )
-
-    for days in range(31):
-        current_date = datetime_now - datetime.timedelta(days=days)
-        print("Collect analytic:", current_date)
-        time_now = datetime.datetime.now(tz=tz)
-        response = roistat(
-            "analytics",
-            dimensions=[
-                "marker_level_1",
-                "marker_level_2",
-                "marker_level_3",
-                "marker_level_4",
-                "marker_level_5",
-                "marker_level_6",
-                "marker_level_7",
-            ],
-            period={
-                "from": current_date.strftime("%Y-%m-%dT00:00:00+0300"),
-                "to": current_date.strftime("%Y-%m-%dT23:59:59.9999+0300"),
-            },
-            metrics=["visitsCost", "leadCount", "visitCount", "impressions"],
-            interval="1d",
-        )
-        for item_data in response.get("data"):
-            date = tz.localize(
-                datetime.datetime.strptime(
-                    item_data.get("dateFrom"),
-                    "%Y-%m-%dT%H:%M:%S+0000",
-                )
-                + datetime.timedelta(seconds=3600 * 3)
-            )
-            analytics.drop(analytics[analytics.date == date].index, inplace=True)
-            analytics_date = []
-            for item in item_data.get("items"):
-                levels = roistat_get_levels(item.get("dimensions"))
-                metrics = roistat_get_metrics(item.get("metrics"), ["visitsCost"])
-                analytics_date.append({**levels, **metrics, "date": date})
-            analytics = analytics.append(analytics_date, ignore_index=True)
-        print("---", datetime.datetime.now(tz=tz) - time_now)
-        sleep(1)
-    analytics = analytics.sort_values(
-        by=[
-            "date",
-            "marker_level_1",
-            "marker_level_2",
-            "marker_level_3",
-            "marker_level_4",
-            "marker_level_5",
-            "marker_level_6",
-            "marker_level_7",
-        ]
-    ).reset_index(drop=True)
-    with open(os.path.join(RESULTS_FOLDER, "roistat_analytics.pkl"), "wb") as f:
-        pkl.dump(analytics, f)
 
 
 @log_execution_time("roistat_statistics")
 def roistat_statistics():
-    try:
-        analytics = pickle_loader.roistat_analytics
-    except Exception:
-        analytics = pandas.DataFrame(columns=roistat_analytics_columns)
-    groups = [pandas.DataFrame(columns=roistat_statistics_columns)]
-    for package in StatisticsRoistatPackageEnum:
-        data_package = analytics[analytics.package == package.name]
-        rel = PACKAGES_COMPARE.get(package)
-        if not rel:
-            continue
-        data_package = data_package[rel[0]].rename(columns=rel[1])
-        groups.append(data_package)
-    data = pandas.concat(groups).reset_index(drop=True)
-    data[["account", "campaign", "group", "ad"]] = data[
-        ["account", "campaign", "group", "ad"]
-    ].replace({numpy.nan: ""})
-    data[["account_title", "campaign_title", "group_title", "ad_title"]] = data[
-        ["account_title", "campaign_title", "group_title", "ad_title"]
-    ].replace({numpy.nan: StatisticsRoistatPackageEnum.undefined.value})
-    with open(os.path.join(RESULTS_FOLDER, "roistat_statistics.pkl"), "wb") as f:
-        pkl.dump(data, f)
+    dags_commands.calculate_tables("roistat_statistics")
 
 
 @log_execution_time("roistat_leads")
 def roistat_leads():
-    columns = ["account", "campaign", "group", "ad"]
-    try:
-        statistics = pickle_loader.roistat_statistics
-    except Exception:
-        statistics = pandas.DataFrame(columns=roistat_statistics_columns)
-    try:
-        leads = pickle_loader.leads_np
-        os.remove(f"{RESULTS_FOLDER}/leads_np.pkl")
-    except FileNotFoundError:
-        return
-    for column in columns:
-        leads[column] = ""
-    for index, lead in leads.iterrows():
-        stats = statistics[statistics.date == lead.date]
-        levels = RoistatDetectLevels(lead, stats)
-        leads.loc[index, columns] = [
-            levels.account,
-            levels.campaign,
-            levels.group,
-            levels.ad,
-        ]
-
-    leads = leads[
-        [
-            "traffic_channel",
-            "quiz_answers1",
-            "quiz_answers2",
-            "quiz_answers3",
-            "quiz_answers4",
-            "quiz_answers5",
-            "quiz_answers6",
-            "turnover_on_lead",
-            "target_class",
-            "email",
-            "phone",
-            "date",
-            "channel_expense",
-            "utm_source",
-            "utm_medium",
-            "utm_campaign",
-            "utm_content",
-            "utm_term",
-        ]
-        + columns
-    ].rename(
-        columns={
-            "traffic_channel": "url",
-            "quiz_answers1": "qa1",
-            "quiz_answers2": "qa2",
-            "quiz_answers3": "qa3",
-            "quiz_answers4": "qa4",
-            "quiz_answers5": "qa5",
-            "quiz_answers6": "qa6",
-            "turnover_on_lead": "ipl",
-            "channel_expense": "expenses",
-        }
-    )
-    try:
-        data = pickle_loader.roistat_leads
-    except Exception:
-        data = pandas.DataFrame(columns=roistat_leads_columns)
-    leads = (
-        pandas.concat([data, leads])
-        .drop_duplicates(keep="last", ignore_index=True)
-        .reset_index(drop=True)
-    )
-    with open(os.path.join(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as f:
-        pkl.dump(leads, f)
+    dags_commands.calculate_tables("roistat_leads")
 
 
 @log_execution_time("roistat_update_levels")
 def roistat_update_levels():
-    statistics = pickle_loader.roistat_statistics
-    columns = ["account", "campaign", "group", "ad"]
-    date_to = datetime.datetime.now()
-    date_from = date_to - datetime.timedelta(weeks=1)
-    leads = pickle_loader.roistat_leads
-    leads["d"] = leads["date"].apply(lambda item: item.date())
-    leads = leads[(leads["d"] >= date_from.date()) & (leads["d"] <= date_to.date())]
-    leads = leads.loc[:, leads.columns != "d"]
-    leads.rename(columns={"url": "traffic_channel"}, inplace=True)
-
-    for index, lead in leads.iterrows():
-        stats = statistics[statistics.date == lead.date]
-        levels = RoistatDetectLevels(lead, stats)
-        leads.loc[index, columns] = [
-            levels.account,
-            levels.campaign,
-            levels.group,
-            levels.ad,
-        ]
-    leads.rename(columns={"traffic_channel": "url"}, inplace=True)
-
-    source = pickle_loader.roistat_leads
-    source.loc[leads.index, columns] = leads[columns].values
-    with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
-        pkl.dump(source, file_ref)
+    dags_commands.calculate_tables("roistat_update_levels")
 
 
 dag = DAG(
     "calculate_cache",
     description="Calculates tables",
-    schedule_interval="0 20 * * *",
+    schedule_interval="0 19 * * *",
     start_date=datetime.datetime(2017, 3, 20),
     catchup=False,
 )
@@ -824,9 +519,9 @@ leads_ta_stats_operator = PythonOperator(
 traffic_sources_operator = PythonOperator(
     task_id="traffic_sources", python_callable=traffic_sources, dag=dag
 )
-roistat_analytics_operator = PythonOperator(
-    task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
-)
+# roistat_analytics_operator = PythonOperator(
+#     task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
+# )
 roistat_statistics_operator = PythonOperator(
     task_id="roistat_statistics", python_callable=roistat_statistics, dag=dag
 )
@@ -835,6 +530,9 @@ roistat_leads_operator = PythonOperator(
 )
 roistat_update_levels_operator = PythonOperator(
     task_id="roistat_update_levels", python_callable=roistat_update_levels, dag=dag
+)
+roistat_to_db_operator = PythonOperator(
+    task_id="roistat_to_db", python_callable=roistat_to_db, dag=dag
 )
 
 crops_operator >> clean_data_operator
@@ -877,7 +575,7 @@ clean_data_operator >> traffic_sources_operator
 # channel_expense_operator >> leads_ta_stats
 # channel_expense_operator >> traffic_sources
 
-clean_data_operator >> roistat_analytics_operator
-roistat_analytics_operator >> roistat_statistics_operator
+clean_data_operator >> roistat_to_db_operator
+roistat_to_db_operator >> roistat_statistics_operator
 roistat_statistics_operator >> roistat_leads_operator
 roistat_leads_operator >> roistat_update_levels_operator
