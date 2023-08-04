@@ -4695,19 +4695,22 @@ class WeekStatsChannelsView(FilteringBaseView):
         }
 
     def get_accounts_as_channel(self) -> pandas.DataFrame:
-        channels = (
-            PickleLoader()
-            .roistat_statistics[["account", "account_title"]]
-            .drop_duplicates()
+        roistat_levels = pickle_loader.roistat_levels
+        channels = pickle_loader.roistat_db
+        channels.drop(columns=["date"], inplace=True)
+        channels = channels.drop_duplicates(subset=["account"])
+        channels["channel"] = channels["account"].apply(
+            lambda account_id: roistat_levels.loc[account_id]["title"]
         )
-        channels.loc[channels["account"] == "", "account"] = "prjamye_vizity"
-        channels.loc[channels["account_title"] == "Undefined", "account"] = ""
-        channels = (
-            channels.drop_duplicates(subset=["account"])
-            .rename(columns={"account_title": "channel"})
-            .reset_index(drop=True)
+        channels["account"] = channels["account"].apply(
+            lambda account_id: roistat_levels.loc[account_id]["name"]
         )
         channels["channel_id"] = channels["channel"].apply(parse_slug)
+        channels = (
+            channels[["channel", "channel_id", "account"]]
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
         return channels
 
     def get(self):

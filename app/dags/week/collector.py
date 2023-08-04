@@ -31,7 +31,7 @@ except KeyError:
     pass
 
 from config import DATA_FOLDER, CREDENTIALS_FILE
-from app.analytics.pickle_load import PickleLoader
+from app.analytics import pickle_loader
 from app.dags.decorators import log_execution_time
 
 
@@ -648,7 +648,7 @@ def get_stats():
 
         return source
 
-    tilda = PickleLoader().leads
+    tilda = pickle_loader.leads
     tilda["amo_current"] = tilda["current_lead_amo"].apply(parse_lead_url)
     tilda["amo_main"] = tilda["main_lead_amo"].apply(parse_lead_url)
     tilda["target_short"] = tilda["traffic_channel"].apply(
@@ -657,15 +657,22 @@ def get_stats():
         .geturl()
     )
 
-    leads = PickleLoader().roistat_statistics
-    url_account = PickleLoader().roistat_leads[["url", "account", "qa1"]]
-    url_account = url_account.merge(
-        leads[["account", "account_title"]].drop_duplicates(
-            subset=["account"], keep="last", ignore_index=True
-        ),
-        how="left",
-        on="account",
-    ).drop_duplicates(subset=["url", "account", "account_title"], ignore_index=True)
+    roistat_levels = pickle_loader.roistat_levels
+    leads = pickle_loader.roistat_db
+    channels = leads[["account"]].drop_duplicates(subset=["account"])
+    channels["account_title"] = channels["account"].apply(
+        lambda account_id: roistat_levels.loc[account_id]["title"]
+    )
+    channels["account"] = channels["account"].apply(
+        lambda account_id: roistat_levels.loc[account_id]["name"]
+    )
+    channels.sort_values(by=["account"], inplace=True)
+    channels.reset_index(drop=True, inplace=True)
+
+    url_account = pickle_loader.roistat_leads[["url", "account", "qa1"]]
+    url_account = url_account.merge(channels, how="left", on="account").drop_duplicates(
+        subset=["url", "account", "account_title"], ignore_index=True
+    )
 
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         CREDENTIALS_FILE,
@@ -799,33 +806,12 @@ def get_stats():
     source_so.drop(columns=["group", "manager"], inplace=True)
     # --------------------------------------------------------------------------
 
-    # --- Собираем каналы ------------------------------------------------------
-    channels_list = list(leads["account_title"]) + ["Undefined"]
-    channels: pandas.DataFrame = (
-        pandas.DataFrame(channels_list, columns=["channel"])
-        .rename(columns={"account_title": "channel"})
-        .drop_duplicates(subset=["channel"])
-        .sort_values(by=["channel"])
-        .reset_index(drop=True)
-    )
-    channels["channel_id"] = channels["channel"].apply(parse_slug)
-    channels.drop_duplicates(subset=["channel_id"], inplace=True)
-    # --------------------------------------------------------------------------
-
     # --- Собираем количество лидов по каналам ---------------------------------
-    channels_leads = PickleLoader().roistat_leads.rename(columns={"date": "datetime"})
+    channels_leads = pickle_loader.roistat_leads.rename(columns={"date": "datetime"})
     channels_leads.insert(
         0, "date", channels_leads["datetime"].apply(lambda item: item.date())
     )
-    channels_rel = leads.copy()[["account", "account_title"]].drop_duplicates()
-    channels_rel.loc[channels_rel["account"] == "", "account"] = "prjamye_vizity"
-    channels_rel.loc[channels_rel["account_title"] == "Undefined", "account"] = ""
-    channels_rel.drop_duplicates(subset=["account"], inplace=True)
-    channels_leads = channels_leads.merge(
-        channels_rel,
-        how="left",
-        on="account",
-    )
+    channels_leads = channels_leads.merge(channels, how="left", on="account")
     channels_leads["channel_id"] = channels_leads["account_title"].apply(parse_slug)
 
     channels_count_list: List[pandas.DataFrame] = []
@@ -854,11 +840,14 @@ def get_stats():
     # --------------------------------------------------------------------------
 
     # --- Собираем расходы -----------------------------------------------------
-    roistat: pandas.DataFrame = leads.copy().rename(columns={"date": "datetime"})
-    roistat.insert(0, "date", roistat["datetime"].apply(lambda item: item.date()))
-    roistat = roistat[["date", "account_title", "expenses"]].rename(
-        columns={"account_title": "channel", "expenses": "count"}
+    roistat: pandas.DataFrame = leads.copy()
+    roistat["date"] = roistat["date"].apply(lambda item: item.date())
+    roistat = roistat[["date", "account", "expenses"]]
+    roistat["account"] = roistat["account"].apply(
+        lambda item: roistat_levels.loc[item]["name"]
     )
+    roistat = roistat.merge(channels, how="left", on=["account"])
+    roistat = roistat.rename(columns={"account_title": "channel", "expenses": "count"})
     roistat["count"] = roistat["count"].apply(parse_float)
     roistat = roistat[roistat["count"] > 0].reset_index(drop=True)
     roistat["channel_id"] = roistat["channel"].apply(parse_slug)
@@ -1341,26 +1330,22 @@ def get_funnel_channel():
     data["account"].fillna("undefined", inplace=True)
     data["account_title"].fillna("Undefined", inplace=True)
 
-    channels = (
-        PickleLoader()
-        .roistat_statistics[["account", "account_title"]]
-        .drop_duplicates(subset=["account"], keep="last")
-        .reset_index(drop=True)
+    roistat_levels = pickle_loader.roistat_levels
+    channels = pickle_loader.roistat_db[["account"]].drop_duplicates(subset=["account"])
+    channels["account_title"] = channels["account"].apply(
+        lambda account_id: roistat_levels.loc[account_id]["title"]
     )
     channels["account"] = channels["account"].apply(
-        lambda item: "undefined" if item == "" else item
+        lambda account_id: roistat_levels.loc[account_id]["name"]
     )
-    channels.loc[channels["account"] == "undefined", "account_title"] = "Undefined"
-    expenses = PickleLoader().roistat_leads[["account", "url", "expenses", "date"]]
+    channels.reset_index(drop=True, inplace=True)
+    expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
     expenses = expenses[expenses["date"].apply(lambda item: isinstance(item, datetime))]
     expenses["date"] = expenses["date"].apply(lambda item: item.date())
     expenses["url"] = expenses["url"].apply(parse_url_path)
     expenses = expenses[~expenses["url"].isna()]
     expenses["funnel"] = expenses["url"].apply(parse_funnel)
     expenses = expenses[~expenses["funnel"].isna()]
-    expenses["account"] = expenses["account"].apply(
-        lambda item: item if item else "undefined"
-    )
     expenses = expenses[["date", "funnel", "account", "expenses"]]
     expenses = expenses.merge(channels, how="left", on="account")
 
