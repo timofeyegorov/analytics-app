@@ -940,6 +940,10 @@ app.add_url_rule(
     "/api/v1/zoom-upload",
     view_func=views_api_v1.ApiZoomS3UploadView.as_view("api_zoom_upload"),
 )
+app.add_url_rule(
+    "/api/v1/get-user-files",
+    view_func=views_api_v1.ApiZoomS3GetUserFilesView.as_view("api_get_user_files"),
+)
 # app.add_url_rule(
 #     "/api/v1/test",
 #     view_func=views_api_v1.TestView.as_view("api_v1_test"),
