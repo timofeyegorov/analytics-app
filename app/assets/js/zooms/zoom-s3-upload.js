@@ -43,6 +43,8 @@ const App = {
                 try {
                     const directory_handle = await showDirectoryPicker();
                     const user_files =  await this.get_user_files()
+                    const x = new Date();
+                    const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
 
                     await this.read_directory(directory_handle);                    
 
@@ -52,6 +54,7 @@ const App = {
                     });
                     form.append('manager', this.managerUser)
                     form.append('s3_files', user_files[this.managerUser])
+                    form.append('currentTimeZoneOffsetInHours', currentTimeZoneOffsetInHours)
 
                     const response = await fetch('/api/v1/zoom-upload',{
                         method: 'POST',

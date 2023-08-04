@@ -101,9 +101,11 @@ class ApiZoomS3UploadView(APIView):
         date_format = "%Y-%m-%d %H.%M.%S"
         save_date_format = "%Y%m%d-%H%M"
         self.data = json.dumps({'status_upload': 'failed'})
+        tz_msk = 3
 
         manager = request.values.to_dict().pop("manager")
         s3_files = request.values.to_dict().pop("s3_files").split(',')
+        currentTimeZoneOffsetInHours = request.values.to_dict().pop("currentTimeZoneOffsetInHours")
         managers_zooms = self.get_managers_zooms(user=manager)
 
         print(f'***** User <{manager}> uploading next files: *****')
@@ -125,6 +127,8 @@ class ApiZoomS3UploadView(APIView):
                 data_in_path = path[:19]
                 if self.check_date_format(data_in_path, date_format):
                     datetime64_obj = np.datetime64(data_in_path.replace('.', ':'))
+                    # привожу к utc и +3 мск
+                    datetime64_obj = datetime64_obj + np.timedelta64(int(currentTimeZoneOffsetInHours) + tz_msk, 'h')
                     for zt_base, zt_start, zt_end in zoom_timeframes:
                         if self.check_date_include(datetime64_obj, zt_start, zt_end):
                             for file in list_files:
