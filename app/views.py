@@ -967,11 +967,16 @@ class StatisticsRoistatView(TemplateView):
             self.statistics.merge(
                 self.roistat_levels[["name", "title"]],
                 how="left",
-                left_on="account",
+                left_on=self.filters.groupby,
                 right_index=True,
             )
-            .drop(columns=["account"])
-            .rename(columns={"name": "account", "title": "account_title"})
+            .drop(columns=[self.filters.groupby])
+            .rename(
+                columns={
+                    "name": self.filters.groupby,
+                    "title": f"{self.filters.groupby}_title",
+                }
+            )
         )
         leads = self.leads[self.leads[self.filters.groupby] == name]
         statistics = statistics[statistics[self.filters.groupby] == name]
