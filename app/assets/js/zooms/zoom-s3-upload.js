@@ -4,18 +4,11 @@ const App = {
         return {
             zoomOn: true,
             placeholder: 'Фамилия и Имя менеджера',
-            managerUser: '',
             files: [],
             isLoading: false,      
         }
     },
-    mounted() {
-        this.managerUser = this.$refs.inputManager.value
-    },
-    methods: {
-        getManager(event) {
-            this.managerUser = event.target.value
-        },
+    methods: {        
         async read_directory(directory_handle, path_prefix) {
             for await(let handle of directory_handle.values()) {
                 // console.log(handle)
@@ -37,48 +30,43 @@ const App = {
             }
         },
         async upload_zoom() { 
-            if (this.managerUser) {
-                // console.log('upload_zoom')
-                this.isLoading = true;
-                try {
-                    const directory_handle = await showDirectoryPicker();
-                    const user_files =  await this.get_user_files()
-                    const x = new Date();
-                    const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
+            
+            this.isLoading = true;
+            try {
+                const directory_handle = await showDirectoryPicker();
+                const user_files =  await this.get_user_files()
+                const x = new Date();
+                const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
 
-                    await this.read_directory(directory_handle);                    
+                await this.read_directory(directory_handle);                    
 
-                    let form = new FormData();
-                    this.files.forEach((file, index) => {
-                        form.append(file.directory, file.file)
-                    });
-                    form.append('manager', this.managerUser)
-                    form.append('s3_files', user_files[this.managerUser])
-                    form.append('currentTimeZoneOffsetInHours', currentTimeZoneOffsetInHours)
+                let form = new FormData();
+                this.files.forEach((file, index) => {
+                    form.append(file.directory, file.file)
+                });                    
+                form.append('s3_files', user_files['cloudfiles'])
+                form.append('currentTimeZoneOffsetInHours', currentTimeZoneOffsetInHours)
 
-                    const response = await fetch('/api/v1/zoom-upload',{
-                        method: 'POST',
-                        // headers: {'Content-Type': 'application/json'},
-                        body: form,
-                    })
-                    
-                    this.isLoading = false;
-
-                } catch (error) {
-                    console.warn(error)
-                    this.isLoading = false;
-                }
+                const response = await fetch('/api/v1/zoom-upload',{
+                    method: 'POST',
+                    // headers: {'Content-Type': 'application/json'},
+                    body: form,
+                })
                 
-            } else {
-                alert('Вам необходимо заполнить поле <менеджер>')
-            }           
+                this.isLoading = false;
+                
+                res = await response.json()
+                console.log(res)
+                return {'status': 'ok'}
+                
+            } catch (error) {
+                console.warn(error)
+                this.isLoading = false;
+            }              
         },
         async get_user_files() {
-            let form = new FormData();
-            form.append('manager', this.managerUser)
-            const response = await fetch('/api/v1/get-user-files',{
+                const response = await fetch('/api/v1/get-user-files',{
                 method: 'POST',
-                body: form,
             })
             return await response.json()
         }

@@ -3,6 +3,7 @@ import pydantic
 from uuid import uuid4 as uuid
 from typing import Dict, Any, Optional
 from pymysql.err import OperationalError
+from datetime import datetime
 
 from . import connect
 
@@ -11,6 +12,7 @@ class User(pydantic.BaseModel):
     id: int
     login: str
     username: str
+    last_update_zoom: Optional[datetime]
 
 
 def get_user_by_id(id_: Optional[int] = None) -> Optional[User]:
@@ -25,6 +27,20 @@ def get_user_by_id(id_: Optional[int] = None) -> Optional[User]:
         user = None
 
     return user
+
+
+def update_last_update_zoom(user_id: int):
+    try:
+        sql = """
+            UPDATE users
+            SET last_update_zoom = CONVERT_TZ(NOW(), '+00:00', '+03:00')
+            WHERE id = %s;
+        """
+        conn, cursor = connect()
+        cursor.execute(sql, (user_id, ))
+        conn.commit()
+    except Exception as err:
+        pass
 
 
 def auth_user(login, password) -> Optional[User]:

@@ -3,6 +3,7 @@ import os
 import pickle
 from tempfile import TemporaryDirectory
 from typing import List, Tuple
+from flask import session
 
 import pytz
 from datetime import datetime
@@ -16,7 +17,7 @@ from flask import request
 from flask.views import MethodView, ResponseReturnValue
 from flask.wrappers import Response
 
-from app.analytics.pickle_load import PickleLoader
+from .database.auth import get_user_by_id, update_last_update_zoom
 from app.plugins.s3 import Client
 
 from config import DATA_FOLDER
@@ -100,15 +101,15 @@ class ApiZoomS3UploadView(APIView):
     def post(self):
         date_format = "%Y-%m-%d %H.%M.%S"
         save_date_format = "%Y%m%d-%H%M"
-        self.data = json.dumps({'status_upload': 'failed'})
         tz_msk = 3
+        uploaded_files = []
 
-        manager = request.values.to_dict().pop("manager")
+        manager_id = session.get('uid')
+        manager = get_user_by_id(manager_id).username
         s3_files = request.values.to_dict().pop("s3_files").split(',')
         currentTimeZoneOffsetInHours = request.values.to_dict().pop("currentTimeZoneOffsetInHours")
         managers_zooms = self.get_managers_zooms(user=manager)
 
-        print(f'***** User <{manager}> uploading next files: *****')
         # for dir, file_list in request.files.lists():
         # for file in file_list:
         #     print(f'{manager}/{dir}/{file.filename}')
@@ -152,23 +153,24 @@ class ApiZoomS3UploadView(APIView):
 
                                     os.makedirs(tmp_file_dir, exist_ok=True)
                                     file.save(os.path.join(tmp_file_dir, file.filename))
-                                    print(file_path)
+                                    uploaded_files.append(f'{manager}-..-{file.filename}')
             try:
                 s3_client.put(os.path.join(tmpdir, manager))
-                self.data = json.dumps({'status_upload': 'ok'})
+                update_last_update_zoom(manager_id)
+                self.data = json.dumps({'status_upload': 'ok', 'cloudfiles': uploaded_files})
             except FileNotFoundError as err:
                 self.data = json.dumps({'status_upload': 'failed', 'message': 'FileNotFoundError'})
 
-        print(f'User: <{manager}>: {self.data}')
         return super().post()
 
 
 class ApiZoomS3GetUserFilesView(APIView):
     def post(self):
-        manager = request.values.to_dict().pop("manager")
+        manager_id = session.get('uid')
+        manager_name = get_user_by_id(manager_id).username
         s3_client = Client()
-        user_files = s3_client.walk(manager)
-        self.data = json.dumps({manager: user_files}, indent=4)
+        user_files = s3_client.walk(manager_name)
+        self.data = json.dumps({'cloudfiles': user_files}, indent=2, ensure_ascii=False).encode('utf-8')
         return super().post()
 
 # class TestView(APIView):
