@@ -963,8 +963,18 @@ class StatisticsRoistatView(TemplateView):
 
         if name == "undefined":
             name = ""
+        statistics = (
+            self.statistics.merge(
+                self.roistat_levels[["name", "title"]],
+                how="left",
+                left_on="account",
+                right_index=True,
+            )
+            .drop(columns=["account"])
+            .rename(columns={"name": "account", "title": "account_title"})
+        )
         leads = self.leads[self.leads[self.filters.groupby] == name]
-        statistics = self.statistics[self.statistics[self.filters.groupby] == name]
+        statistics = statistics[statistics[self.filters.groupby] == name]
 
         leads = (
             leads[
