@@ -3880,6 +3880,8 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
 
         with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
+        channels["channel_id"] = channels["account_title"].apply(parse_slug)
+        channels.rename(columns={"account_title": "channel"}, inplace=True)
         channels.drop_duplicates(subset=["channel_id"], inplace=True)
         self.values = self.values.merge(channels, how="left", on=["channel_id"])
 
@@ -4852,6 +4854,9 @@ class WeekStatsChannelsView(FilteringBaseView):
 
         with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
+        channels["channel_id"] = channels["account_title"].apply(parse_slug)
+        channels.rename(columns={"account_title": "channel"}, inplace=True)
+        channels.drop(columns=["account"], inplace=True)
         data_expenses = data_expenses.merge(
             channels, how="left", on=["channel_id"]
         ).drop(columns=["channel_id"])
