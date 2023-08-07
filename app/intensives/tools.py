@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import gspread
+import re
 from datetime import datetime
 
 document_list = ['[Интенсив 3 дня] Участники', '[Интенсив 2 дня] Участники ', '[Интенсив chatGPT] Участники ',
@@ -29,7 +30,10 @@ def get_payment(date_from, date_to) -> int:
     df = df.rename(columns=dict(zip(df.columns, new_column_name)))
     # Преобразуем данные в datatime
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
-    # Готовим колонку price для расчетов
+    # Заменить все неразрывные пробелы '\xa0' на обычные пробелы
+    df['price'] = df['price'].str.replace('\xa0', ' ')
+    # Удалить все символы, кроме цифр и пробелов
+    df['price'] = df['price'].str.replace(r'[^\d\s]', '', regex=True)
     df['price'] = df['price'].str.replace(' ', '')
     df['price'] = df['price'].astype(int)
     df['email'] = df['email'].str.lower()
