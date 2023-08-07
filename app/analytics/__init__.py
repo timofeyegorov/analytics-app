@@ -876,8 +876,8 @@ app.add_url_rule(
     view_func=views.ZoomsView.as_view("zooms"),
 )
 app.add_url_rule(
-    "/intensives",
-    view_func=views.IntensivesView.as_view("intensives"),
+    "/intensives_old",
+    view_func=views.IntensivesView.as_view("intensives_old"),
 )
 app.add_url_rule(
     "/promo",
@@ -1595,6 +1595,10 @@ class callsSettings(MethodView):
         else:
             return render_template("calls/settings.html", openers=settings_delete())
 
+
+
+
+app.add_url_rule("/intensives", view_func=views.Intensives.as_view('intensives'))
 
 app.add_url_rule("/calls", view_func=CallsMain.as_view("calls_main"))
 app.add_url_rule("/numbers", view_func=callsNumbers.as_view("calls_numbers"))
