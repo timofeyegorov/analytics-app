@@ -4,18 +4,11 @@ const App = {
         return {
             zoomOn: true,
             placeholder: 'Фамилия и Имя менеджера',
-            managerUser: '',
             files: [],
             isLoading: false,      
         }
     },
-    mounted() {
-        this.managerUser = this.$refs.inputManager.value
-    },
-    methods: {
-        getManager(event) {
-            this.managerUser = event.target.value
-        },
+    methods: {        
         async read_directory(directory_handle, path_prefix) {
             for await(let handle of directory_handle.values()) {
                 // console.log(handle)
@@ -37,33 +30,46 @@ const App = {
             }
         },
         async upload_zoom() { 
-            if (this.managerUser) {
-                // console.log('upload_zoom')
-                this.isLoading = true;
-
+            
+            this.isLoading = true;
+            try {
                 const directory_handle = await showDirectoryPicker();
-                await this.read_directory(directory_handle);
-                // console.log(this.files)
+                const user_files =  await this.get_user_files()
+                const x = new Date();
+                const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
+
+                await this.read_directory(directory_handle);                    
 
                 let form = new FormData();
                 this.files.forEach((file, index) => {
                     form.append(file.directory, file.file)
-                });
-                form.append('manager', this.managerUser)
+                });                    
+                form.append('s3_files', user_files['cloudfiles'])
+                form.append('currentTimeZoneOffsetInHours', currentTimeZoneOffsetInHours)
 
                 const response = await fetch('/api/v1/zoom-upload',{
                     method: 'POST',
                     // headers: {'Content-Type': 'application/json'},
                     body: form,
                 })
-
-                this.managerUser = ''
+                
                 this.isLoading = false;
                 
-            } else {
-                alert('Вам необходимо заполнить поле <менеджер>')
-            }           
+                res = await response.json()
+                console.log(res)
+                return {'status': 'ok'}
+                
+            } catch (error) {
+                console.warn(error)
+                this.isLoading = false;
+            }              
         },
+        async get_user_files() {
+                const response = await fetch('/api/v1/get-user-files',{
+                method: 'POST',
+            })
+            return await response.json()
+        }
     }
 }
 

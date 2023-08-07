@@ -73,16 +73,7 @@
         <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
         <button type="button" class="btn btn-warning excel-download">Скачать Excel</button>
         <span id="app" style="padding-left: 3px;" v-cloak>
-            <span v-if="zoomOn">
-            <input 
-                hidden
-                type="text"
-                size="50"
-                ref="inputManager" 
-                value="{{ request.user.username }}"
-                @input="getManager" 
-                :placeholder="placeholder" 
-                />                
+            <span v-if="zoomOn">               
                 <span id="app" style="padding-left: 0px;">
                 <button v-if="isLoading" class="btn btn-info" type="button" disabled>
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -92,9 +83,9 @@
                     v-else
                     type="button" 
                     class="btn btn-info" 
-                    :class="managerUser.length === 0 ? 'disabled' : '' "
                     @click="upload_zoom">
-                    Загрузить Zoom</button>                    
+                    Загрузить Zoom</button>
+                    {% if request.user.last_update_zoom %}<span style="padding-left: 15px;">Последняя дата загрузки: {{ request.user.last_update_zoom.strftime('%d.%m.%Y %H:%M') }} мск.</span> {% endif %}                
                 </span>
             </span>
         </span>    
