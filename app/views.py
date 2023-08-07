@@ -26,7 +26,7 @@ from flask_sqlalchemy import BaseQuery
 
 from xlsxwriter import Workbook
 
-from flask import request, render_template, send_file, abort, send_file, session,url_for, redirect
+from flask import request, render_template, send_file, abort, send_file
 from flask.views import MethodView
 
 from app import decorators
@@ -164,7 +164,6 @@ class TemplateView(MethodView):
 
     def get(self):
         return self.render()
-
 
 
 class APIView(MethodView):
@@ -6008,38 +6007,3 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         self.context("data", data)
 
         return super().get()
-
-# Новый отчет интенсивов
-from datetime import datetime
-from app.intensives.tools import get_payment, get_funnel_payment
-class Intensives(TemplateView):
-    def get(self):
-        return render_template('intensives/intensives.html', result_payment=session.get('result_payment', 0),
-                               result_events=session.get('result_events', 0))
-
-    def post(self):
-        if 'change_data_payment' in request.form:
-            start_date = (datetime.strptime(request.form["start_date_pay"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
-            end_date = (datetime.strptime(request.form["end_date_pay"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
-            try:
-                result_payment = get_payment(start_date, end_date)
-                session['result_payment'] = int(result_payment)
-            except Exception as e:
-                result_payment = 0
-                session['result_payment'] = int(result_payment)
-                with open('app/intensives/intensives.log', 'a', encoding='utf-8') as file:
-                    file.write(f'{datetime.now()} {e}\n')
-
-            return redirect(url_for('intensives'))
-        if 'change_data_events' in request.form:
-            start_date = (datetime.strptime(request.form["start_date"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
-            end_date = (datetime.strptime(request.form["end_date"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
-            try:
-                result_events = get_funnel_payment(start_date, end_date)
-                session['result_events'] = int(result_events)
-            except Exception as e:
-                result_payment = 0
-                session['result_payment'] = int(result_payment)
-                with open('app/intensives/intensives.log', 'a', encoding='utf-8') as file:
-                    file.write(f'{datetime.now()} {e}\n')
-            return redirect(url_for('intensives'))
