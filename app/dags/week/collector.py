@@ -1341,8 +1341,7 @@ def get_funnel_channel():
     )
     channels.reset_index(drop=True, inplace=True)
     expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
-    expenses = expenses[expenses["date"].apply(lambda item: isinstance(item, datetime))]
-    expenses["date"] = expenses["date"].apply(lambda item: item.date())
+    expenses["date"] = expenses["date"].apply(parse_date)
     expenses["url"] = expenses["url"].apply(parse_url_path)
     expenses = expenses[~expenses["url"].isna()]
     expenses["funnel"] = expenses["url"].apply(parse_funnel)
