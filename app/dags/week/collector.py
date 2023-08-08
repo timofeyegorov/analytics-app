@@ -840,14 +840,15 @@ def get_stats():
     # --------------------------------------------------------------------------
 
     # --- Собираем расходы -----------------------------------------------------
+
     roistat: pandas.DataFrame = leads.copy()
-    roistat["date"] = roistat["date"].apply(lambda item: item.date())
-    roistat = roistat[["date", "account", "expenses"]]
-    roistat["account"] = roistat["account"].apply(
-        lambda item: roistat_levels.loc[item]["name"]
+    roistat["date"] = roistat["date"].apply(parse_date)
+    roistat = roistat.merge(
+        roistat_levels, how="left", left_on="account", right_index=True
     )
-    roistat = roistat.merge(channels, how="left", on=["account"])
-    roistat = roistat.rename(columns={"account_title": "channel", "expenses": "count"})
+    roistat = roistat[["date", "title", "expenses"]].rename(
+        columns={"title": "channel", "expenses": "count"}
+    )
     roistat["count"] = roistat["count"].apply(parse_float)
     roistat = roistat[roistat["count"] > 0].reset_index(drop=True)
     roistat["channel_id"] = roistat["channel"].apply(parse_slug)
