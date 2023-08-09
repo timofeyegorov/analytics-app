@@ -149,7 +149,7 @@ def channels_summary():
         utm_2_value = request.args.get("channel")[2:]
         # Загружаем текущую разбивку по лидам для повторного отображения
         with open(
-            os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "rb"
+                os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "rb"
         ) as f:
             tables = pkl.load(f)
         # Загружаем отфильтрованную ранее базу лидов для расчета
@@ -165,12 +165,12 @@ def channels_summary():
                 unique_sources = unique_sources[
                     unique_sources.created_at
                     >= datetime.strptime(date_start, "%Y-%m-%d")
-                ]
+                    ]
             if date_end:
                 unique_sources = unique_sources[
                     unique_sources.created_at
                     < (datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
-                ]
+                    ]
             unique_sources = unique_sources["trafficologist"].unique().tolist()
 
         # Загружаем значения фильтров
@@ -252,7 +252,7 @@ def channels_summary():
             table = table[
                 table.created_at
                 < (datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
-            ]
+                ]
         unique_sources = table["trafficologist"].unique()
 
         if utm_source:
@@ -313,7 +313,7 @@ def channels_summary():
         with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "wb") as f:
             pkl.dump(table, f)
         with open(
-            os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
+                os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
         ) as f:
             pkl.dump(tables, f)
 
@@ -545,19 +545,19 @@ def turnover():
         if date_request_start:
             table = table[
                 table.created_at >= datetime.strptime(date_request_start, "%Y-%m-%d")
-            ]
+                ]
         if date_request_end:
             table = table[
                 table.created_at <= datetime.strptime(date_request_end, "%Y-%m-%d")
-            ]
+                ]
         if date_payment_start:
             table = table[
                 table.date_payment >= datetime.strptime(date_payment_start, "%Y-%m-%d")
-            ]
+                ]
         if date_payment_end:
             table = table[
                 table.date_payment <= datetime.strptime(date_payment_end, "%Y-%m-%d")
-            ]
+                ]
         if len(table) == 0:
             return render_template(
                 "turnover.html", error="Нет данных для заданного периода"
@@ -944,10 +944,18 @@ app.add_url_rule(
     "/api/v1/get-user-files",
     view_func=views_api_v1.ApiZoomS3GetUserFilesView.as_view("api_get_user_files"),
 )
-# app.add_url_rule(
-#     "/api/v1/test",
-#     view_func=views_api_v1.TestView.as_view("api_v1_test"),
-# )
+app.add_url_rule(
+    "/api/v1/user-zoom-timeframes",
+    view_func=views_api_v1.ApiUserZoomTimeframes.as_view("api_user_zoom_timeframes"),
+)
+app.add_url_rule(
+    "/api/v1/get-user-name",
+    view_func=views_api_v1.ApiUserName.as_view("api_get_user_name"),
+)
+app.add_url_rule(
+    "/api/v1/update-upload-date",
+    view_func=views_api_v1.ApiUpdateZoomUploadDate.as_view("api_update_upload_date"),
+)
 
 
 @app.route("/login/hh", endpoint="login_hh")
