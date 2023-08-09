@@ -16,7 +16,8 @@ from typing import Dict, Any
 from pathlib import Path
 
 from flask import request
-from flask.views import MethodView, ResponseReturnValue
+from flask.views import MethodView
+from flask.typing import ResponseReturnValue
 from flask.wrappers import Response
 
 from .database.auth import get_user_by_id, update_last_update_zoom
@@ -136,9 +137,12 @@ class ApiUserZoomTimeframes(APIView):
 
     def get_managers_zooms(self, user) -> pd.Series:
         managers_zooms = self.load_dataframe(self.managers_zooms_path)
-        managers_zooms['datetime'] = pd.to_datetime(managers_zooms.date) + pd.to_timedelta(
-            managers_zooms.time.astype(str))
-        managers_zooms = managers_zooms[(managers_zooms.manager == user)].loc[:, 'datetime']
+        managers_zooms["datetime"] = pd.to_datetime(
+            managers_zooms.date
+        ) + pd.to_timedelta(managers_zooms.time.astype(str))
+        managers_zooms = managers_zooms[(managers_zooms.manager == user)].loc[
+            :, "datetime"
+        ]
         return managers_zooms
 
     @staticmethod
@@ -146,15 +150,19 @@ class ApiUserZoomTimeframes(APIView):
         zoom_timeframes: List[Tuple] = []
         zoom_time = managers_zooms.to_numpy()
         for i in range(len(zoom_time)):  # np.datetime64 2023-07-28T10:00:00.000000000
-            cur_zt = zoom_time[i] - np.timedelta64(5, 'm')
+            cur_zt = zoom_time[i] - np.timedelta64(5, "m")
             next_zt = zoom_time[i + 1] if i < len(zoom_time) - 1 else zoom_time[i]
-            next_zt = next_zt - np.timedelta64(5, 'm')
+            next_zt = next_zt - np.timedelta64(5, "m")
 
             # если между текущим временем и следующем меньше дня
-            time_duration = np.timedelta64(23, 'h') + np.timedelta64(59, 'm') + np.timedelta64(59, 's')
+            time_duration = (
+                np.timedelta64(23, "h")
+                + np.timedelta64(59, "m")
+                + np.timedelta64(59, "s")
+            )
             if (
-                    np.datetime64(next_zt, 'D') - np.datetime64(cur_zt, 'D')
-            ) / np.timedelta64(1, 'D') == 0:
+                np.datetime64(next_zt, "D") - np.datetime64(cur_zt, "D")
+            ) / np.timedelta64(1, "D") == 0:
                 if cur_zt != next_zt:
                     zoom_timeframes.append(
                         (
@@ -210,6 +218,7 @@ class ApiUserName(APIView):
         manager = get_user_by_id(manager_id).username
         self.data = json.dumps({'username': manager}).encode('utf-8')
         return super(ApiUserName, self).post()
+
 
 # class TestView(APIView):
 #     def get(self, *args, **kwargs):

@@ -20,7 +20,7 @@ install:
 	pip install --no-input --requirement ./requirements.txt
 
 uninstall:
-	pip uninstall -y -r <(pip freeze)
+	pip freeze | xargs pip uninstall -y
 
 reinstall: uninstall install
 

@@ -410,23 +410,21 @@ def leads_ta_stats():
 def roistat_to_db():
     date_now = datetime.date.today()
     dags_commands.calculate_tables(
-        "roistat_to_db", date_now - datetime.timedelta(days=0), date_now
+        "roistat_to_db", date_now - datetime.timedelta(days=6), date_now
     )
-
-
-@log_execution_time("roistat_statistics")
-def roistat_statistics():
-    dags_commands.calculate_tables("roistat_statistics")
 
 
 @log_execution_time("roistat_leads")
 def roistat_leads():
-    dags_commands.calculate_tables("roistat_leads")
+    date_now = datetime.date.today()
+    dags_commands.calculate_tables(
+        "roistat_leads", date_now - datetime.timedelta(days=6), date_now
+    )
 
 
-@log_execution_time("roistat_update_levels")
-def roistat_update_levels():
-    dags_commands.calculate_tables("roistat_update_levels")
+# @log_execution_time("roistat_update_levels")
+# def roistat_update_levels():
+#     dags_commands.calculate_tables("roistat_update_levels")
 
 
 dag = DAG(
@@ -519,21 +517,15 @@ leads_ta_stats_operator = PythonOperator(
 traffic_sources_operator = PythonOperator(
     task_id="traffic_sources", python_callable=traffic_sources, dag=dag
 )
-# roistat_analytics_operator = PythonOperator(
-#     task_id="roistat_analytics", python_callable=roistat_analytics, dag=dag
-# )
-roistat_statistics_operator = PythonOperator(
-    task_id="roistat_statistics", python_callable=roistat_statistics, dag=dag
+roistat_to_db_operator = PythonOperator(
+    task_id="roistat_to_db", python_callable=roistat_to_db, dag=dag
 )
 roistat_leads_operator = PythonOperator(
     task_id="roistat_leads", python_callable=roistat_leads, dag=dag
 )
-roistat_update_levels_operator = PythonOperator(
-    task_id="roistat_update_levels", python_callable=roistat_update_levels, dag=dag
-)
-roistat_to_db_operator = PythonOperator(
-    task_id="roistat_to_db", python_callable=roistat_to_db, dag=dag
-)
+# roistat_update_levels_operator = PythonOperator(
+#     task_id="roistat_update_levels", python_callable=roistat_update_levels, dag=dag
+# )
 
 crops_operator >> clean_data_operator
 trafficologists_operator >> clean_data_operator
@@ -576,6 +568,5 @@ clean_data_operator >> traffic_sources_operator
 # channel_expense_operator >> traffic_sources
 
 clean_data_operator >> roistat_to_db_operator
-roistat_to_db_operator >> roistat_statistics_operator
-roistat_statistics_operator >> roistat_leads_operator
-roistat_leads_operator >> roistat_update_levels_operator
+roistat_to_db_operator >> roistat_leads_operator
+# roistat_leads_operator >> roistat_update_levels_operator
