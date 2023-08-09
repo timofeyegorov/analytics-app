@@ -5,7 +5,7 @@ const App = {
             zoomOn: true,
             placeholder: 'Фамилия и Имя менеджера',
             files: [],
-            isLoading: false,      
+            isLoading: false,                       
         }
     },
     methods: {        
@@ -32,44 +32,158 @@ const App = {
         async upload_zoom() { 
             
             this.isLoading = true;
-            try {
-                const directory_handle = await showDirectoryPicker();
-                const user_files =  await this.get_user_files()
-                const x = new Date();
-                const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
-
-                await this.read_directory(directory_handle);                    
-
-                let form = new FormData();
-                this.files.forEach((file, index) => {
-                    form.append(file.directory, file.file)
-                });                    
-                form.append('s3_files', user_files['cloudfiles'])
-                form.append('currentTimeZoneOffsetInHours', currentTimeZoneOffsetInHours)
-
-                const response = await fetch('/api/v1/zoom-upload',{
-                    method: 'POST',
-                    // headers: {'Content-Type': 'application/json'},
-                    body: form,
-                })
-                
-                this.isLoading = false;
-                
-                res = await response.json()
-                console.log(res)
-                return {'status': 'ok'}
-                
-            } catch (error) {
-                console.warn(error)
-                this.isLoading = false;
-            }              
+            const user = await this.get_user_name()
+            if (user) {
+                try {
+                    const directory_handle = await showDirectoryPicker();                
+                    await this.read_directory(directory_handle);                              
+                    const cloudfiles =  await this.get_cloudfiles() 
+                    const datetime_checked_files = await this.get_datetime_checked_files()
+                    const zoom_timeframes = await this.get_zoom_timeframes()
+                    const x = new Date();
+                    const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
+                    const credential = await this.get_credential()
+                    updated = false
+                    
+                    if (datetime_checked_files) {
+                        for (const data of datetime_checked_files) {                            
+                            date_in_path = data.directory.substring(0, 19)
+                            date_in_path = date_in_path.replace(' ', 'T').replace('.', ':').replace('.', ':')
+                            
+                            for (const zt of zoom_timeframes['zoom_timeframes']) {
+                                const zt_base = zt[0]
+                                const zt_start = zt[1]
+                                const zt_end = zt[2] 
+                                
+                                if (this.check_date_include(
+                                    date_in_path, zt_start, zt_end, currentTimeZoneOffsetInHours
+                                    )) {
+                                        files_to_upload = `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${data.file.name}`;                                
+                                        if (!cloudfiles.cloudfiles.includes(files_to_upload)) {
+                                            const filename = '${filename}'                                                                                                          
+                                            await this.upload_file(
+                                                `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${filename}`,
+                                                credential.forms3.xAmzCredential,
+                                                credential.forms3.xAmzAlgorithm,
+                                                credential.forms3.xAmzDate,
+                                                credential.forms3.policy,
+                                                credential.forms3.XAmzSignature,
+                                                data.file,
+                                                files_to_upload                                        
+                                            )
+                                            updated = true
+                                        } else {
+                                            console.log('CurrentFilesUploaded')
+                                        }                                                                
+                                    }                       
+                            }
+                            if (updated) {
+                                await this.update_upload_date()
+                            }
+                        }
+                    } else {
+                        console.log('FileToUploadNotFound')
+                    }               
+                    
+                    this.isLoading = false;   
+                    
+                } catch (error) {
+                    console.warn(error)
+                    this.isLoading = false;
+                } 
+            } else {
+                console.warn('invalid credentials (failure)')
+                this.isLoading = false; 
+            }                        
         },
-        async get_user_files() {
+        async update_upload_date() {
+            const response = await fetch('/api/v1/update-upload-date',{
+                method: 'POST',
+            })
+        },
+
+        async get_credential() {
+            const response = await fetch('/api/v1/zoom-upload',{
+                method: 'POST',
+                // headers: {'Content-Type': 'application/json'},
+            })
+            return await response.json()
+        },
+
+        async get_cloudfiles() {
                 const response = await fetch('/api/v1/get-user-files',{
                 method: 'POST',
             })
             return await response.json()
-        }
+        },
+
+        async get_zoom_timeframes() {
+            const response = await fetch('/api/v1/user-zoom-timeframes',{
+                method: 'POST',
+            })
+            return await response.json()
+        },
+
+        async get_user_name() {
+            const response = await fetch('/api/v1/get-user-name',{
+                method: 'POST',
+            })
+            return await response.json()
+        },
+
+        async check_date_format(date_string) {
+            const regex = /^\d{4}-\d{2}-\d{2} \d{2}\.\d{2}\.\d{2}$/;
+            return regex.test(date_string)            
+        },
+
+        async get_datetime_checked_files() { 
+            let files_to_upload = [];      
+            for (let i = 0; i < this.files.length; i++) {
+                const data_in_path = this.files[i].directory.substring(0, 19);
+                if (await this.check_date_format(data_in_path)) {
+                    files_to_upload.push(this.files[i])
+                }              
+            }
+            return files_to_upload
+        },
+
+        get_zoom_datetime(datetime_string) {
+            const dateObj = new Date(datetime_string);
+            const year = dateObj.getFullYear();
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            const hours = dateObj.getHours().toString().padStart(2, '0');
+            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+
+            const formattedDate = `${year}${month}${day}-${hours}${minutes}`;
+            return formattedDate
+        },
+        check_date_include(zt, zt_start, zt_end, tz_offset) {
+            tz_msk = 3
+            base = new Date(zt)
+            base.setHours(base.getHours() + tz_offset + tz_msk);
+            start = new Date(zt_start)
+            end = new Date(zt_end)
+            return (start < base) && (base < end)
+        },        
+              
+        async upload_file(key, xAmzCredential, xAmzAlgorithm, xAmzDate, policy, XAmzSignature, file, uploaded_file) {
+            const formS3 = new FormData();
+            formS3.append('key', key)
+            formS3.append('X-Amz-Credential', xAmzCredential)
+            formS3.append('X-Amz-Algorithm', xAmzAlgorithm)
+            formS3.append('X-Amz-Date', xAmzDate)
+            formS3.append('Policy', policy)
+            formS3.append('X-Amz-Signature', XAmzSignature)
+            formS3.append('file', file)            
+
+            const response = await fetch('https://anu-zoom-01.s3.storage.selcloud.ru/',{
+                method: 'POST',
+                mode: "no-cors",
+                body: formS3,
+            })
+            console.log('uploaded: ', uploaded_file)            
+        },
     }
 }
 
