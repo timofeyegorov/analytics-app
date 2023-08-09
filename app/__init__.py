@@ -2,11 +2,9 @@ import os
 import json
 import redis
 import click
-import plotly.express as px
 import pandas as pd
 import pickle as pkl
 
-from plotly.io import to_json
 from flask import Flask, request, render_template
 from flask.cli import with_appcontext
 from flask_sqlalchemy import SQLAlchemy

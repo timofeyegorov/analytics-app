@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import pytz
 import pandas
@@ -21,13 +22,24 @@ from urllib.parse import urlparse, parse_qsl, urlencode, unquote
 from pydantic import BaseModel, ConstrainedDate, conint
 from werkzeug.datastructures import ImmutableMultiDict
 from oauth2client.service_account import ServiceAccountCredentials
+from flask_sqlalchemy import BaseQuery
 
 from xlsxwriter import Workbook
 
-from flask import request, render_template, send_file, abort, send_file
+from flask import (
+    request,
+    render_template,
+    send_file,
+    abort,
+    send_file,
+    session,
+    url_for,
+    redirect,
+)
 from flask.views import MethodView
 
 from app import decorators
+from app.database import models
 from app.plugins.ads import vk
 from app.analytics import utils
 from app.analytics.pickle_load import PickleLoader
@@ -593,6 +605,7 @@ class Calculate:
         leads_30d: pandas.DataFrame,
         statistics_30d: pandas.DataFrame,
         filters: StatisticsRoistatFiltersData,
+        roistat_levels: pandas.DataFrame,
     ):
         self._leads = leads
         self._statistics = statistics
@@ -602,13 +615,13 @@ class Calculate:
 
         stats = dict(
             map(
-                lambda item: (str(item[0]), item[1]),
+                lambda item: (item[0], item[1]),
                 self._statistics.groupby(by=self._filters.groupby, dropna=False),
             )
         )
         stats_30d = dict(
             map(
-                lambda item: (str(item[0]), item[1]),
+                lambda item: (item[0], item[1]),
                 self._statistics_30d.groupby(by=self._filters.groupby, dropna=False),
             )
         )
@@ -622,9 +635,11 @@ class Calculate:
             if not leads:
                 continue
 
-            stats_group = stats.get(str(name))
+            name_id = roistat_levels[roistat_levels["name"] == str(name)].index[0]
+            title = roistat_levels[roistat_levels["name"] == str(name)].iloc[0].title
+            stats_group = stats.get(name_id)
             stats_group_30d = stats_30d.get(
-                str(name), pandas.DataFrame(columns=self.columns.keys())
+                name_id, pandas.DataFrame(columns=self.columns.keys())
             )
 
             expenses = (
@@ -641,16 +656,6 @@ class Calculate:
             if not expenses_month and name != ":utm:email":
                 expenses_month = leads_30d * 400
 
-            name = (
-                stats_group[self._filters.groupby].unique()[0]
-                if stats_group is not None
-                else "undefined"
-            )
-            title = (
-                stats_group[f"{self._filters.groupby}_title"].unique()[0]
-                if stats_group is not None
-                else "Undefined"
-            )
             income = int(group.ipl.sum())
             income_month = int(group_30d.ipl.sum())
             ipl = int(round(income / leads)) if leads else 0
@@ -803,10 +808,11 @@ class StatisticsRoistatView(TemplateView):
     title: str = "Статистика Roistat"
 
     leads_full: pandas.DataFrame = None
-    statistics_full: pandas.DataFrame = None
+    statistics_full: BaseQuery = None
 
     order: List[Dict[str, str]]
     filters: StatisticsRoistatFiltersData = None
+    roistat_levels: pandas.DataFrame = None
     leads: pandas.DataFrame = None
     statistics: pandas.DataFrame = None
     leads_30d: pandas.DataFrame = None
@@ -879,19 +885,13 @@ class StatisticsRoistatView(TemplateView):
 
         if date[0]:
             date_from = tz.localize(
-                datetime.datetime(
-                    year=date[0].year, month=date[0].month, day=date[0].day
-                )
+                datetime.datetime.combine(date[0], datetime.time.min)
             )
             leads = leads[leads.date >= date_from]
             statistics = statistics[statistics.date >= date_from]
 
         if date[1]:
-            date_to = tz.localize(
-                datetime.datetime(
-                    year=date[1].year, month=date[1].month, day=date[1].day
-                )
-            )
+            date_to = tz.localize(datetime.datetime.combine(date[1], datetime.time.min))
             leads = leads[leads.date <= date_to]
             statistics = statistics[statistics.date <= date_to]
 
@@ -908,20 +908,16 @@ class StatisticsRoistatView(TemplateView):
         date = list(self.filters.date)
 
         if not date[1]:
-            date[1] = tz.localize(datetime.datetime.now())
+            date[1] = datetime.datetime.now().date()
+
+        date[1] = tz.localize(datetime.datetime.combine(date[1], datetime.time.min))
         date[0] = date[1] - datetime.timedelta(days=30)
 
-        date_from = tz.localize(
-            datetime.datetime(year=date[0].year, month=date[0].month, day=date[0].day)
-        )
-        leads = leads[leads.date >= date_from]
-        statistics = statistics[statistics.date >= date_from]
+        leads = leads[leads.date >= date[0]]
+        statistics = statistics[statistics.date >= date[0]]
 
-        date_to = tz.localize(
-            datetime.datetime(year=date[1].year, month=date[1].month, day=date[1].day)
-        )
-        leads = leads[leads.date <= date_to]
-        statistics = statistics[statistics.date <= date_to]
+        leads = leads[leads.date <= date[1]]
+        statistics = statistics[statistics.date <= date[1]]
 
         if self.filters.only_ru:
             leads = leads[leads.qa1 == "Россия"]
@@ -930,18 +926,24 @@ class StatisticsRoistatView(TemplateView):
 
     def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
         stats_groups = []
-        for name, item in self.statistics.groupby(group):
-            stats_groups.append((name, item[f"{group}_title"].unique()[0]))
-        leads_groups = []
-        for name, item in self.leads.groupby(group):
-            leads_groups.append(name)
+        level_ids = {}
+        for row in self.statistics[group].unique():
+            try:
+                level = tuple(self.roistat_levels.loc[row].tolist()[:2])
+                level_ids[level[0]] = row
+            except KeyError:
+                level = ("undefined", "Undefined")
+                level_ids["undefined"] = 0
+            if level not in stats_groups:
+                stats_groups.append(level)
+        leads_groups = list(self.leads[group].unique())
         output = list(filter(lambda item: item[0] in leads_groups, stats_groups))
         if self.filters[group] not in list(map(lambda item: item[0], output)):
             self.filters[group] = None
         if self.filters[group] is not None:
             self.leads = self.leads[self.leads[group] == self.filters[group]]
             self.statistics = self.statistics[
-                self.statistics[group] == self.filters[group]
+                self.statistics[group] == level_ids.get(self.filters[group], 0)
             ]
         return output
 
@@ -970,8 +972,23 @@ class StatisticsRoistatView(TemplateView):
 
         if name == "undefined":
             name = ""
+        statistics = (
+            self.statistics.merge(
+                self.roistat_levels[["name", "title"]],
+                how="left",
+                left_on=self.filters.groupby,
+                right_index=True,
+            )
+            .drop(columns=[self.filters.groupby])
+            .rename(
+                columns={
+                    "name": self.filters.groupby,
+                    "title": f"{self.filters.groupby}_title",
+                }
+            )
+        )
         leads = self.leads[self.leads[self.filters.groupby] == name]
-        statistics = self.statistics[self.statistics[self.filters.groupby] == name]
+        statistics = statistics[statistics[self.filters.groupby] == name]
 
         leads = (
             leads[
@@ -1105,9 +1122,12 @@ class StatisticsRoistatView(TemplateView):
         worksheet.autofilter("A1:H1")
 
     def get(self):
-        self.leads_full = pickle_loader.roistat_leads
-        self.statistics_full = pickle_loader.roistat_statistics
         self.filters = self.get_filters(request.args)
+
+        self.roistat_levels = pickle_loader.roistat_levels
+        self.leads_full = pickle_loader.roistat_leads
+        self.statistics_full = pickle_loader.roistat_db
+
         self.leads, self.statistics = self.get_statistics()
         self.leads_30d, self.statistics_30d = self.get_statistics_30d()
         self.extras = self.get_extras()
@@ -1121,6 +1141,7 @@ class StatisticsRoistatView(TemplateView):
             self.leads_30d,
             self.statistics_30d,
             self.filters,
+            self.roistat_levels,
         )
 
         total_data = dict(zip(calc.columns.keys(), [None] * len(calc.columns.keys())))
@@ -3868,6 +3889,8 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
 
         with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
+        channels["channel_id"] = channels["account_title"].apply(parse_slug)
+        channels.rename(columns={"account_title": "channel"}, inplace=True)
         channels.drop_duplicates(subset=["channel_id"], inplace=True)
         self.values = self.values.merge(channels, how="left", on=["channel_id"])
 
@@ -4581,7 +4604,7 @@ class WeekStatsChannelsView(FilteringBaseView):
     values_expenses: pandas.DataFrame
     counts_expenses: pandas.DataFrame
 
-    channels_count_path: Path = Path(DATA_FOLDER) / "week" / "channels_count_russia.pkl"
+    channels_count_path: Path = Path(DATA_FOLDER) / "week" / "channels_count.pkl"
     values_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses.pkl"
     counts_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
 
@@ -4698,19 +4721,22 @@ class WeekStatsChannelsView(FilteringBaseView):
         }
 
     def get_accounts_as_channel(self) -> pandas.DataFrame:
-        channels = (
-            PickleLoader()
-            .roistat_statistics[["account", "account_title"]]
-            .drop_duplicates()
+        roistat_levels = pickle_loader.roistat_levels
+        channels = pickle_loader.roistat_db
+        channels.drop(columns=["date"], inplace=True)
+        channels = channels.drop_duplicates(subset=["account"])
+        channels["channel"] = channels["account"].apply(
+            lambda account_id: roistat_levels.loc[account_id]["title"]
         )
-        channels.loc[channels["account"] == "", "account"] = "prjamye_vizity"
-        channels.loc[channels["account_title"] == "Undefined", "account"] = ""
-        channels = (
-            channels.drop_duplicates(subset=["account"])
-            .rename(columns={"account_title": "channel"})
-            .reset_index(drop=True)
+        channels["account"] = channels["account"].apply(
+            lambda account_id: roistat_levels.loc[account_id]["name"]
         )
         channels["channel_id"] = channels["channel"].apply(parse_slug)
+        channels = (
+            channels[["channel", "channel_id", "account"]]
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
         return channels
 
     def get(self):
@@ -4837,6 +4863,11 @@ class WeekStatsChannelsView(FilteringBaseView):
 
         with open(Path(DATA_FOLDER) / "week" / "channels.pkl", "rb") as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
+        channels["channel_id"] = channels["account_title"].apply(parse_slug)
+        channels.rename(columns={"account_title": "channel"}, inplace=True)
+        channels.drop(columns=["account"], inplace=True)
+        channels.drop_duplicates(subset=["channel_id"], inplace=True)
+        channels.reset_index(drop=True, inplace=True)
         data_expenses = data_expenses.merge(
             channels, how="left", on=["channel_id"]
         ).drop(columns=["channel_id"])
@@ -5987,3 +6018,62 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         self.context("data", data)
 
         return super().get()
+
+
+# Новый отчет интенсивов
+
+from app.intensives.tools import get_payment, get_funnel_payment
+
+
+class Intensives(TemplateView):
+    def get(self):
+        return render_template(
+            "intensives/intensives.html",
+            result_payment=session.get("result_payment", 0),
+            result_events=session.get("result_events", 0),
+        )
+
+    def post(self):
+        if "change_data_payment" in request.form:
+            start_date = (
+                datetime.datetime.strptime(
+                    request.form["start_date_pay"], "%Y-%m-%d"
+                ).date()
+            ).strftime("%Y-%m-%d")
+            end_date = (
+                datetime.datetime.strptime(
+                    request.form["end_date_pay"], "%Y-%m-%d"
+                ).date()
+            ).strftime("%Y-%m-%d")
+            try:
+                result_payment = get_payment(start_date, end_date)
+                session["result_payment"] = int(result_payment)
+            except Exception as e:
+                result_payment = 0
+                session["result_payment"] = int(result_payment)
+                with open(
+                    "app/intensives/intensives.log", "a", encoding="utf-8"
+                ) as file:
+                    file.write(f"{datetime.datetime.now()} {e}\n")
+
+            return redirect(url_for("intensives"))
+        if "change_data_events" in request.form:
+            start_date = (
+                datetime.datetime.strptime(
+                    request.form["start_date"], "%Y-%m-%d"
+                ).date()
+            ).strftime("%Y-%m-%d")
+            end_date = (
+                datetime.datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+            ).strftime("%Y-%m-%d")
+            try:
+                result_events = get_funnel_payment(start_date, end_date)
+                session["result_events"] = int(result_events)
+            except Exception as e:
+                result_payment = 0
+                session["result_payment"] = int(result_payment)
+                with open(
+                    "app/intensives/intensives.log", "a", encoding="utf-8"
+                ) as file:
+                    file.write(f"{datetime.datetime.now()} {e}\n")
+            return redirect(url_for("intensives"))

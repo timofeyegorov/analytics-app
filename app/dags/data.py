@@ -1,16 +1,3 @@
-roistat_statistics_columns = [
-    "date",
-    "package",
-    "account",
-    "campaign",
-    "group",
-    "ad",
-    "account_title",
-    "campaign_title",
-    "group_title",
-    "ad_title",
-    "expenses",
-]
 roistat_leads_columns = [
     "url",
     "qa1",

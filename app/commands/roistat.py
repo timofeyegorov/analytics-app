@@ -22,25 +22,20 @@ def update_db(date_from: datetime.date, date_to: datetime.date):
     dags_commands.calculate_tables("roistat_to_db", date_from, date_to)
 
 
-@bp.cli.command("statistics-processing")
-def statistics_processing():
-    """
-    Processing Roistat statistics
-    """
-    dags_commands.calculate_tables("roistat_statistics")
-
-
 @bp.cli.command("leads-processing")
-def leads_processing():
+@click.option("--date-from", "-df", required=True, type=types.date)
+@click.option("--date-to", "-dt", required=True, type=types.date)
+def leads_processing(date_from: datetime.date, date_to: datetime.date):
     """
     Processing Roistat leads
     """
-    dags_commands.calculate_tables("roistat_leads")
+    assert date_from <= date_to, "`--date-from` must be less or equivalent `--date-to`"
+    dags_commands.calculate_tables("roistat_leads", date_from, date_to)
 
 
-@bp.cli.command("update-levels")
-def update_levels():
-    """
-    Update Roistat levels
-    """
-    dags_commands.calculate_tables("roistat_update_levels")
+# @bp.cli.command("update-levels")
+# def update_levels():
+#     """
+#     Update Roistat levels
+#     """
+#     dags_commands.calculate_tables("roistat_update_levels")

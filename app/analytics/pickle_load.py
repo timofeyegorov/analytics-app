@@ -65,13 +65,23 @@ class PickleLoader:
         return data
 
     @property
-    def roistat_statistics(self) -> pandas.DataFrame:
-        data = self._load(self.pickle_files_path / "roistat_statistics.pkl")
+    def roistat_leads(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "roistat_leads.pkl")
         return data
 
     @property
-    def roistat_leads(self) -> pandas.DataFrame:
-        data = self._load(self.pickle_files_path / "roistat_leads.pkl")
+    def roistat_db(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "roistat_db.pkl")
+        return data
+
+    @property
+    def roistat_levels(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "roistat_levels.pkl")
+        return data
+
+    @property
+    def roistat_packages(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "roistat_packages.pkl")
         return data
 
     @property
