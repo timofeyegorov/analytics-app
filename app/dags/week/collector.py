@@ -660,12 +660,9 @@ def get_stats():
     roistat_levels = pickle_loader.roistat_levels
     leads = pickle_loader.roistat_db
     channels = leads[["account"]].drop_duplicates(subset=["account"])
-    channels["account_title"] = channels["account"].apply(
-        lambda account_id: roistat_levels.loc[account_id]["title"]
-    )
-    channels["account"] = channels["account"].apply(
-        lambda account_id: roistat_levels.loc[account_id]["name"]
-    )
+    channels = channels.merge(
+        roistat_levels, how="left", left_on=["account"], right_index=True
+    )[["name", "title"]].rename(columns={"name": "account", "title": "account_title"})
     channels.sort_values(by=["account"], inplace=True)
     channels.reset_index(drop=True, inplace=True)
 
@@ -807,36 +804,23 @@ def get_stats():
     # --------------------------------------------------------------------------
 
     # --- Собираем количество лидов по каналам ---------------------------------
-    channels_leads = pickle_loader.roistat_leads.rename(columns={"date": "datetime"})
-    channels_leads.insert(
-        0, "date", channels_leads["datetime"].apply(lambda item: item.date())
-    )
+    channels_leads = pickle_loader.roistat_leads
+    channels_leads["date"] = channels_leads["date"].apply(parse_date)
     channels_leads = channels_leads.merge(channels, how="left", on="account")
     channels_leads["channel_id"] = channels_leads["account_title"].apply(parse_slug)
 
-    channels_count_list: List[pandas.DataFrame] = []
-    for (channel_id, date), items in channels_leads.groupby(by=["channel_id", "date"]):
-        channels_count_list.append(
-            {
-                "channel_id": channel_id,
-                "date": date,
-                "count": len(items),
-            }
-        )
-    channels_count = pandas.DataFrame(channels_count_list)
+    channels_count = (
+        channels_leads.groupby(by=["channel_id", "date"])
+        .size()
+        .reset_index(name="count")
+    )
 
-    channels_count_list_russia: List[pandas.DataFrame] = []
-    for (channel_id, date), items in channels_leads[
-        channels_leads["qa1"].str.contains("Россия", case=False)
-    ].groupby(by=["channel_id", "date"]):
-        channels_count_list_russia.append(
-            {
-                "channel_id": channel_id,
-                "date": date,
-                "count": len(items),
-            }
-        )
-    channels_count_russia = pandas.DataFrame(channels_count_list_russia)
+    channels_count_russia = (
+        channels_leads[channels_leads["qa1"].str.contains("Россия", case=False)]
+        .groupby(by=["channel_id", "date"])
+        .size()
+        .reset_index(name="count")
+    )
     # --------------------------------------------------------------------------
 
     # --- Собираем расходы -----------------------------------------------------
