@@ -44,42 +44,53 @@ const App = {
                     const currentTimeZoneOffsetInHours = x.getTimezoneOffset() / 60;
                     const credential = await this.get_credential()
                     updated = false
+                    const unique_date_set = []
+                    // console.log(zoom_timeframes)                     
                     
                     if (datetime_checked_files) {
-                        for (const data of datetime_checked_files) {                            
-                            date_in_path = data.directory.substring(0, 19)
-                            date_in_path = date_in_path.replace(' ', 'T').replace('.', ':').replace('.', ':')
+                        for (const data of datetime_checked_files) {
+                            if (!unique_date_set.includes(data.directory)) {
+                                unique_date_set.push(data.directory)
+                            }
+                        }
+                        unique_date_set.sort(this.date_compare).slice(0, 20)                                           
+                        
+                        for (const data of datetime_checked_files) {
+                            if (unique_date_set.includes(data.directory)) {
+                                date_in_path = data.directory.substring(0, 19)
+                                date_in_path = date_in_path.replace(' ', 'T').replace('.', ':').replace('.', ':')
                             
-                            for (const zt of zoom_timeframes['zoom_timeframes']) {
-                                const zt_base = zt[0]
-                                const zt_start = zt[1]
-                                const zt_end = zt[2] 
-                                
-                                if (this.check_date_include(
-                                    date_in_path, zt_start, zt_end, currentTimeZoneOffsetInHours
-                                    )) {
-                                        files_to_upload = `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${data.file.name}`;                                
-                                        if (!cloudfiles.cloudfiles.includes(files_to_upload)) {
-                                            const filename = '${filename}'                                                                                                          
-                                            await this.upload_file(
-                                                `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${filename}`,
-                                                credential.forms3.xAmzCredential,
-                                                credential.forms3.xAmzAlgorithm,
-                                                credential.forms3.xAmzDate,
-                                                credential.forms3.policy,
-                                                credential.forms3.XAmzSignature,
-                                                data.file,
-                                                files_to_upload                                        
-                                            )
-                                            updated = true
-                                        } else {
-                                            console.log('CurrentFilesUploaded')
-                                        }                                                                
-                                    }                       
-                            }
-                            if (updated) {
-                                await this.update_upload_date()
-                            }
+                                for (const zt of zoom_timeframes['zoom_timeframes']) {
+                                    const zt_base = zt[0]
+                                    const zt_start = zt[1]
+                                    const zt_end = zt[2] 
+                                    
+                                    if (this.check_date_include(
+                                        date_in_path, zt_start, zt_end, currentTimeZoneOffsetInHours
+                                        )) {
+                                            files_to_upload = `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${data.file.name}`;                                
+                                            if (!cloudfiles.cloudfiles.includes(files_to_upload)) {
+                                                const filename = '${filename}'                                                                                                          
+                                                await this.upload_file(
+                                                    `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${filename}`,
+                                                    credential.forms3.xAmzCredential,
+                                                    credential.forms3.xAmzAlgorithm,
+                                                    credential.forms3.xAmzDate,
+                                                    credential.forms3.policy,
+                                                    credential.forms3.XAmzSignature,
+                                                    data.file,
+                                                    files_to_upload                                        
+                                                )
+                                                updated = true
+                                            } else {
+                                                console.log('CurrentFilesUploaded')
+                                            }                                                                
+                                        }                       
+                                }
+                                if (updated) {
+                                    await this.update_upload_date()
+                                }
+                            }                          
                         }
                     } else {
                         console.log('FileToUploadNotFound')
@@ -96,6 +107,20 @@ const App = {
                 this.isLoading = false; 
             }                        
         },
+        date_compare(a, b){
+            a = a.substring(0, 19).replace(' ', 'T').replace('.', ':').replace('.', ':')
+            b = b.substring(0, 19).replace(' ', 'T').replace('.', ':').replace('.', ':')
+            zt_a = new Date(a)
+            zt_b = new Date(b)
+            if (zt_a < zt_b) {
+                return 1;
+              }
+              if (zt_a > zt_b) {
+                return -1;
+              }              
+              return 0;
+        },
+        
         async update_upload_date() {
             const response = await fetch('/api/v1/update-upload-date',{
                 method: 'POST',
