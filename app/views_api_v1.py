@@ -1,12 +1,14 @@
+import base64
+import hashlib
+import hmac
 import json
 import os
 import pickle
-from tempfile import TemporaryDirectory
 from typing import List, Tuple
 from flask import session
 
-import pytz
-from datetime import datetime
+from dotenv import load_dotenv
+import datetime
 import pandas as pd
 import numpy as np
 
@@ -27,7 +29,7 @@ WEEK_FOLDER = Path(DATA_FOLDER) / "week"
 
 
 class APIView(MethodView):
-    data: Dict[str, Any] = {}
+    data: bytes = json.dumps({})
 
     def render(self):
         return Response(self.data, content_type="application/json")
@@ -40,17 +42,95 @@ class APIView(MethodView):
 
 
 class ApiZoomS3UploadView(APIView):
+
+    @staticmethod
+    def sign(key, msg):
+        return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
+
+    def get_signature_key(self, key, date_stamp, region_name, service_name):
+        k_date = self.sign(("AWS4" + key).encode('utf-8'), date_stamp)
+        k_region = self.sign(k_date, region_name)
+        k_service = self.sign(k_region, service_name)
+        k_signing = self.sign(k_service, "aws4_request")
+        return k_signing
+
+    @staticmethod
+    def get_forms3(xAmzCredential: str, xAmzAlgorithm: str, xAmzDate: str, policy: str, XAmzSignature: str) -> dict:
+        return {
+            'xAmzCredential': xAmzCredential,
+            'xAmzAlgorithm': xAmzAlgorithm,
+            'xAmzDate': xAmzDate,
+            'policy': policy,
+            'XAmzSignature': XAmzSignature
+        }
+
+    def post(self):
+        manager_id = session.get('uid')
+        if not manager_id:
+            self.data = json.dumps({'status': "failed"}).encode('utf-8')
+            return super().post()
+        else:
+            load_dotenv('.env.s3')
+            date_now = datetime.datetime.now().date()
+            date_stamp = date_now.strftime('%Y%m%d')
+            xAmzDate = date_now.strftime('%Y%m%dT000000Z')
+            region_name = 'ru-1'
+            service_name = 's3'
+            expiration = (datetime.datetime.now() + datetime.timedelta(hours=12)).isoformat()[:-6] + '000Z'
+            xAmzCredential = f"184282_anu_zoom_01/{date_stamp}/{region_name}/{service_name}/aws4_request"
+            xAmzAlgorithm = "AWS4-HMAC-SHA256"
+            secret_key = os.environ.get('S3_PASSWORD')
+
+            policy_dict = {"expiration": expiration,
+                           "conditions": [
+                               {"bucket": "anu-zoom-01"},
+                               ["starts-with", "$key", ""],
+                               {"x-amz-credential": xAmzCredential},
+                               {"x-amz-algorithm": xAmzAlgorithm},
+                               {"x-amz-date": xAmzDate}
+                           ]
+                           }
+            policy = base64.b64encode(
+                json.dumps(policy_dict).encode('utf-8')
+            ).decode('utf-8')
+
+            signing_key = self.get_signature_key(secret_key, date_stamp, region_name, service_name)
+            signature = self.sign(signing_key, policy).hex()
+
+            self.data = json.dumps({'forms3': self.get_forms3(
+                xAmzCredential=xAmzCredential,
+                xAmzAlgorithm=xAmzAlgorithm,
+                xAmzDate=xAmzDate,
+                policy=policy,
+                XAmzSignature=signature
+            )}).encode('utf-8')
+
+            return super().post()
+
+
+class ApiZoomS3GetUserFilesView(APIView):
+
+    def post(self):
+        manager_id = session.get('uid')
+        manager_name = get_user_by_id(manager_id).username
+        s3_client = Client()
+        user_files = s3_client.walk(manager_name)
+        self.data = json.dumps({'cloudfiles': user_files}, indent=2, ensure_ascii=False).encode('utf-8')
+        return super().post()
+
+
+class ApiUpdateZoomUploadDate(APIView):
+    def post(self):
+        manager_id = session.get('uid')
+        update_last_update_zoom(manager_id)
+        return super().post()
+
+
+class ApiUserZoomTimeframes(APIView):
     managers_zooms_path: Path = Path(DATA_FOLDER) / "week" / "managers_zooms.pkl"
 
     @staticmethod
-    def check_date_format(date_string, date_format):
-        try:
-            datetime.strptime(date_string, date_format)
-            return True
-        except ValueError:
-            return False
-
-    def load_dataframe(self, path: Path) -> pd.DataFrame:
+    def load_dataframe(path: Path) -> pd.DataFrame:
         with open(path, "rb") as file_ref:
             dataframe: pd.DataFrame = pickle.load(file_ref)
         return dataframe
@@ -84,114 +164,60 @@ class ApiZoomS3UploadView(APIView):
                 np.datetime64(next_zt, "D") - np.datetime64(cur_zt, "D")
             ) / np.timedelta64(1, "D") == 0:
                 if cur_zt != next_zt:
-                    zoom_timeframes.append((zoom_time[i], cur_zt, next_zt))
+                    zoom_timeframes.append(
+                        (
+                            np.datetime_as_string(zoom_time[i]),
+                            np.datetime_as_string(cur_zt),
+                            np.datetime_as_string(next_zt)
+                        )
+                    )
                 else:
-                    next_zt = np.datetime64(cur_zt, "D") + time_duration
-                    zoom_timeframes.append((zoom_time[i], cur_zt, next_zt))
+                    next_zt = np.datetime64(cur_zt, 'D') + time_duration
+                    zoom_timeframes.append(
+                        (
+                            np.datetime_as_string(zoom_time[i]),
+                            np.datetime_as_string(cur_zt),
+                            np.datetime_as_string(next_zt)
+                        )
+                    )
             else:
                 # делаю след время до 23:59:59 и добавляю в zoom_timeframes
-                next_zt = np.datetime64(cur_zt, "D") + time_duration
-                zoom_timeframes.append((zoom_time[i], cur_zt, next_zt))
+                next_zt = np.datetime64(cur_zt, 'D') + time_duration
+                zoom_timeframes.append(
+                    (
+                        np.datetime_as_string(zoom_time[i]),
+                        np.datetime_as_string(cur_zt),
+                        np.datetime_as_string(next_zt)
+                    )
+                )
         return zoom_timeframes
 
-    @staticmethod
-    def check_date_include(
-        zt: np.datetime64, zt_start: np.datetime64, zt_end: np.datetime64
-    ):
-        return zt_start < zt < zt_end
-
-    def post(self):
-        date_format = "%Y-%m-%d %H.%M.%S"
-        save_date_format = "%Y%m%d-%H%M"
-        tz_msk = 3
-        uploaded_files = []
-
-        manager_id = session.get("uid")
+    def post(self, *args, **kwargs):
+        manager_id = session.get('uid')
         manager = get_user_by_id(manager_id).username
-        s3_files = request.values.to_dict().pop("s3_files").split(",")
-        currentTimeZoneOffsetInHours = request.values.to_dict().pop(
-            "currentTimeZoneOffsetInHours"
-        )
         managers_zooms = self.get_managers_zooms(user=manager)
-
-        # for dir, file_list in request.files.lists():
-        # for file in file_list:
-        #     print(f'{manager}/{dir}/{file.filename}')
 
         # если имеется информация по zoom по данному пользователю
         # формирую временные отрезки для последующего поиска нужной zoom конференции
         if managers_zooms.count().sum() == 0:
             self.data = json.dumps(
-                {"status_upload": "failed", "message": "ManagerNotFoundError"}
-            )
+                {'status_upload': 'failed', 'message': 'ManagerNotFoundError'},
+                indent=2,
+                ensure_ascii=False).encode('utf-8')
             return super().post()
         else:
             zoom_timeframes = self.get_zoom_timeframes(managers_zooms)
-
-        with TemporaryDirectory() as tmpdir:
-            s3_client = Client()
-            for path, list_files in request.files.lists():
-                data_in_path = path[:19]
-                if self.check_date_format(data_in_path, date_format):
-                    datetime64_obj = np.datetime64(data_in_path.replace(".", ":"))
-                    # привожу к utc и +3 мск
-                    datetime64_obj = datetime64_obj + np.timedelta64(
-                        int(currentTimeZoneOffsetInHours) + tz_msk, "h"
-                    )
-                    for zt_base, zt_start, zt_end in zoom_timeframes:
-                        if self.check_date_include(datetime64_obj, zt_start, zt_end):
-                            for file in list_files:
-                                zt_base = np.datetime_as_string(
-                                    np.datetime64(zt_base), unit="s"
-                                )
-                                zt_base = datetime.strptime(
-                                    zt_base, "%Y-%m-%dT%H:%M:%S"
-                                )
-
-                                file_path = os.path.join(
-                                    manager,
-                                    zt_base.strftime(save_date_format),
-                                    path,
-                                    file.filename,
-                                ).replace("\\", "/")
-
-                                if file_path not in s3_files:
-                                    tmp_file_dir = os.path.join(
-                                        tmpdir,
-                                        manager,
-                                        zt_base.strftime(save_date_format),
-                                        path,
-                                    )
-
-                                    os.makedirs(tmp_file_dir, exist_ok=True)
-                                    file.save(os.path.join(tmp_file_dir, file.filename))
-                                    uploaded_files.append(
-                                        f"{manager}-..-{file.filename}"
-                                    )
-            try:
-                s3_client.put(os.path.join(tmpdir, manager))
-                update_last_update_zoom(manager_id)
-                self.data = json.dumps(
-                    {"status_upload": "ok", "cloudfiles": uploaded_files}
-                )
-            except FileNotFoundError as err:
-                self.data = json.dumps(
-                    {"status_upload": "failed", "message": "FileNotFoundError"}
-                )
-
+            self.data = json.dumps({'zoom_timeframes': zoom_timeframes},
+                                   ensure_ascii=False, indent=2).encode('utf-8')
         return super().post()
 
 
-class ApiZoomS3GetUserFilesView(APIView):
-    def post(self):
-        manager_id = session.get("uid")
-        manager_name = get_user_by_id(manager_id).username
-        s3_client = Client()
-        user_files = s3_client.walk(manager_name)
-        self.data = json.dumps(
-            {"cloudfiles": user_files}, indent=2, ensure_ascii=False
-        ).encode("utf-8")
-        return super().post()
+class ApiUserName(APIView):
+    def post(self, *args, **kwargs):
+        manager_id = session.get('uid')
+        manager = get_user_by_id(manager_id).username
+        self.data = json.dumps({'username': manager}).encode('utf-8')
+        return super(ApiUserName, self).post()
 
 
 # class TestView(APIView):
