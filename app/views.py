@@ -654,8 +654,8 @@ class Calculate:
             expenses = stats["expenses"].sum()
             expenses_month = stats_30d["expenses"].sum()
 
-            # if not leads and not expenses:
-            #     continue
+            if not leads and not expenses:
+                continue
 
             profit = income - expenses - (leads * 250 + income * 0.35)
             profit_month = (
