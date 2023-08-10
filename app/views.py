@@ -52,6 +52,7 @@ from app.data import (
     StatisticsUTMGroupByEnum,
     CalculateColumnEnum,
     StatisticsUTMColumnEnum,
+    PACKAGES_COMPARE,
 )
 from config import DATA_FOLDER, CREDENTIALS_FILE, RESULTS_FOLDER
 
@@ -613,100 +614,113 @@ class Calculate:
         self._statistics_30d = statistics_30d
         self._filters = filters
 
-        stats = dict(
-            map(
-                lambda item: (item[0], item[1]),
-                self._statistics.groupby(by=self._filters.groupby, dropna=False),
-            )
+        groupby = self._filters.groupby
+
+        statistics = self._statistics[["package", groupby]].drop_duplicates()
+        statistics = statistics.merge(
+            roistat_levels, how="left", left_on=groupby, right_index=True
         )
-        stats_30d = dict(
-            map(
-                lambda item: (item[0], item[1]),
-                self._statistics_30d.groupby(by=self._filters.groupby, dropna=False),
-            )
+        rs_levels = roistat_levels.copy()
+        rs_levels["id"] = rs_levels.index
+        statistics = (
+            statistics[["name", "level"]]
+            .drop_duplicates()
+            .merge(rs_levels, how="left", on=["name", "level"])[["id", "name", "title"]]
         )
 
-        self._data = pandas.DataFrame(columns=self.columns.keys())
-        for name, group in self._leads.groupby(by=self._filters.groupby, dropna=False):
-            group_30d = self._leads_30d[self._leads_30d[self._filters.groupby] == name]
+        data = []
 
-            leads = len(group)
-            leads_30d = len(group_30d)
-            if not leads:
-                continue
+        for name, group in statistics.groupby(by=["name"]):
+            title = " ■ ".join(group["title"].tolist())
 
-            name_id = roistat_levels[roistat_levels["name"] == str(name)].index[0]
-            title = roistat_levels[roistat_levels["name"] == str(name)].iloc[0].title
-            stats_group = stats.get(name_id)
-            stats_group_30d = stats_30d.get(
-                name_id, pandas.DataFrame(columns=self.columns.keys())
+            group_leads = self._leads[self._leads[groupby] == name]
+            group_leads_30d = self._leads_30d[self._leads_30d[groupby] == name]
+
+            stats = self._statistics[
+                self._statistics[groupby].isin(group["id"].tolist())
+            ]
+            stats_30d = self._statistics_30d[
+                self._statistics_30d[groupby].isin(group["id"].tolist())
+            ]
+
+            leads = len(group_leads)
+            leads_month = len(group_leads_30d)
+
+            income = group_leads.ipl.sum()
+            income_month = group_leads_30d.ipl.sum()
+
+            ipl = income / leads if leads else 0
+
+            expenses = stats["expenses"].sum()
+            expenses_month = stats_30d["expenses"].sum()
+
+            # if not leads and not expenses:
+            #     continue
+
+            profit = income - expenses - (leads * 250 + income * 0.35)
+            profit_month = (
+                income_month
+                - expenses_month
+                - (leads_month * 250 + income_month * 0.35)
             )
 
-            expenses = (
-                round(stats_group.expenses.sum()) if stats_group is not None else 0
-            )
-            if not expenses and name != ":utm:email":
-                expenses = leads * 400
+            ppl = profit / leads if leads else 0
+            ppl_30d = profit_month / leads_month if leads_month else 0
 
-            expenses_month = (
-                round(stats_group_30d.expenses.sum())
-                if stats_group_30d is not None
-                else 0
-            )
-            if not expenses_month and name != ":utm:email":
-                expenses_month = leads_30d * 400
+            cpl = expenses / leads if leads else 0
 
-            income = int(group.ipl.sum())
-            income_month = int(group_30d.ipl.sum())
-            ipl = int(round(income / leads)) if leads else 0
-            profit = int(round(income - expenses - (leads * 250 + income * 0.35)))
-            profit_30d = int(
-                round(
-                    income_month
-                    - expenses_month
-                    - (leads_30d * 250 + income_month * 0.35)
-                )
-            )
-            ppl = int(round(profit / leads)) if leads else 0
-            ppl_30d = int(round(profit_30d / leads_30d)) if leads_30d else 0
-            cpl = int(round(expenses / leads)) if leads else 0
             ppl_range = detect_positive(ppl)
             ppl_30d_value = detect_positive(ppl_30d)
+
             leads_range = detect_activity(leads)
-            leads_30d_value = detect_activity(leads_30d)
+            leads_30d_value = detect_activity(leads_month)
+
             action = detect_action(
                 ppl_range, ppl_30d_value, leads_range, leads_30d_value
             )
-            self._data = self._data.append(
-                {
-                    CalculateColumnEnum.name.name: (
-                        "" if title is None else title,
-                        action.name,
-                        name,
-                    ),
-                    CalculateColumnEnum.leads.name: leads,
-                    CalculateColumnEnum.leads_month.name: leads_30d,
-                    CalculateColumnEnum.income.name: income,
-                    CalculateColumnEnum.income_month.name: income_month,
-                    CalculateColumnEnum.ipl.name: ipl,
-                    CalculateColumnEnum.expenses.name: expenses,
-                    CalculateColumnEnum.expenses_month.name: expenses_month,
-                    CalculateColumnEnum.profit.name: profit,
-                    CalculateColumnEnum.ppl.name: ppl,
-                    CalculateColumnEnum.cpl.name: cpl,
-                    CalculateColumnEnum.ppl_range.name: (ppl, ppl_range.value),
-                    CalculateColumnEnum.ppl_30d.name: (ppl_30d, ppl_30d_value.value),
-                    CalculateColumnEnum.leads_range.name: (leads, leads_range.value),
-                    CalculateColumnEnum.leads_30d.name: (
-                        leads_30d,
-                        leads_30d_value.value,
-                    ),
-                    CalculateColumnEnum.action.name: (action.value, action.name),
-                },
-                ignore_index=True,
+
+            data.append(
+                [
+                    (title, action.name, name),
+                    leads,
+                    leads_month,
+                    income,
+                    income_month,
+                    ipl,
+                    expenses,
+                    expenses_month,
+                    profit,
+                    ppl,
+                    cpl,
+                    (ppl, ppl_range.value),
+                    (ppl_30d, ppl_30d_value.value),
+                    (leads, leads_range.value),
+                    (leads_month, leads_30d_value.value),
+                    (action.value, action.name),
+                ]
             )
 
-        self._data = self._data.reset_index(drop=True)
+        self._data = pandas.DataFrame(
+            data,
+            columns=[
+                CalculateColumnEnum.name.name,
+                CalculateColumnEnum.leads.name,
+                CalculateColumnEnum.leads_month.name,
+                CalculateColumnEnum.income.name,
+                CalculateColumnEnum.income_month.name,
+                CalculateColumnEnum.ipl.name,
+                CalculateColumnEnum.expenses.name,
+                CalculateColumnEnum.expenses_month.name,
+                CalculateColumnEnum.profit.name,
+                CalculateColumnEnum.ppl.name,
+                CalculateColumnEnum.cpl.name,
+                CalculateColumnEnum.ppl_range.name,
+                CalculateColumnEnum.ppl_30d.name,
+                CalculateColumnEnum.leads_range.name,
+                CalculateColumnEnum.leads_30d.name,
+                CalculateColumnEnum.action.name,
+            ],
+        ).reset_index(drop=True)
 
     @property
     def columns(self) -> Dict[str, str]:
@@ -812,6 +826,8 @@ class StatisticsRoistatView(TemplateView):
 
     order: List[Dict[str, str]]
     filters: StatisticsRoistatFiltersData = None
+    packages_levels: Dict[int, Dict[str, int]]
+    roistat_packages: pandas.DataFrame = None
     roistat_levels: pandas.DataFrame = None
     leads: pandas.DataFrame = None
     statistics: pandas.DataFrame = None
@@ -925,26 +941,42 @@ class StatisticsRoistatView(TemplateView):
         return leads, statistics
 
     def get_extras_group(self, group: str) -> List[Tuple[str, str]]:
-        stats_groups = []
-        level_ids = {}
-        for row in self.statistics[group].unique():
-            try:
-                level = tuple(self.roistat_levels.loc[row].tolist()[:2])
-                level_ids[level[0]] = row
-            except KeyError:
-                level = ("undefined", "Undefined")
-                level_ids["undefined"] = 0
-            if level not in stats_groups:
-                stats_groups.append(level)
-        leads_groups = list(self.leads[group].unique())
-        output = list(filter(lambda item: item[0] in leads_groups, stats_groups))
+        statistics = self.statistics[self.statistics[group] != 0][
+            ["package", group]
+        ].drop_duplicates()
+        statistics = statistics.merge(
+            self.roistat_levels, how="left", left_on=group, right_index=True
+        )
+        roistat_levels = self.roistat_levels.copy()
+        roistat_levels["id"] = roistat_levels.index
+        statistics = (
+            statistics[["name", "level"]]
+            .drop_duplicates()
+            .merge(roistat_levels, how="left", on=["name", "level"])[
+                ["id", "name", "title"]
+            ]
+        )
+        level_ids = dict(
+            map(
+                lambda item: (
+                    item[0],
+                    (item[1]["id"].tolist(), " ■ ".join(item[1]["title"])),
+                ),
+                statistics.groupby(by=["name"]),
+            )
+        )
+        output = list(map(lambda item: (item[0], item[1][1]), level_ids.items()))
         if self.filters[group] not in list(map(lambda item: item[0], output)):
             self.filters[group] = None
         if self.filters[group] is not None:
             self.leads = self.leads[self.leads[group] == self.filters[group]]
+            available = list(
+                filter(lambda item: self.filters[group] == item[0], level_ids.items())
+            )
             self.statistics = self.statistics[
-                self.statistics[group] == level_ids.get(self.filters[group], 0)
+                self.statistics[group].isin(available[0][1][0])
             ]
+
         return output
 
     def get_extras(self) -> Dict[str, Any]:
@@ -1124,6 +1156,16 @@ class StatisticsRoistatView(TemplateView):
     def get(self):
         self.filters = self.get_filters(request.args)
 
+        self.roistat_packages = pickle_loader.roistat_packages
+        self.packages_levels = {}
+        for index, row in self.roistat_packages.iterrows():
+            pl = dict(map(reversed, PACKAGES_COMPARE.get(row["name"]).items()))
+            self.packages_levels[index] = {
+                "account": int(pl.get("account", "level_0_id")[6]),
+                "campaign": int(pl.get("campaign", "level_0_id")[6]),
+                "group": int(pl.get("group", "level_0_id")[6]),
+                "ad": int(pl.get("ad", "level_0_id")[6]),
+            }
         self.roistat_levels = pickle_loader.roistat_levels
         self.leads_full = pickle_loader.roistat_leads
         self.statistics_full = pickle_loader.roistat_db
@@ -1258,7 +1300,7 @@ class StatisticsRoistatView(TemplateView):
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("columns", self.output_columns)
-        self.context("data", calc.data)
+        self.context("data", calc.data.reset_index(drop=True))
         self.context("total", pandas.Series(total_data))
         self.context("url", link)
         self.context("qs_tail", "&" if qs else "?")
@@ -4891,6 +4933,7 @@ class WeekStatsChannelsView(FilteringBaseView):
         ipl = (
             ipl_available["ipl"].sum() / len(ipl_available) if len(ipl_available) else 0
         )
+        data_expenses.sort_values(by=["channel"], inplace=True)
         data = pandas.concat(
             [
                 pandas.DataFrame(

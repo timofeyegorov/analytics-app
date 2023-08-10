@@ -45,7 +45,7 @@
                                 {% endif %}
                             </td>
                         {% else %}
-                            <td class="nowrap{% if is_tuple(statistic[column]) %} colored {{ statistic[column].1 }}{% endif %}">{% if column == "name" %}<a href="{{ url }}{{ qs_tail }}details={{ statistic[column].2 }}">{% endif %}{% if is_tuple(statistic[column]) %}{{ statistic[column].0 }}{% else %}{{ statistic[column] }}{% endif %}{% if column == "name" %}</a>{% endif %}</td>
+                            <td class="nowrap{% if is_tuple(statistic[column]) %} colored {{ statistic[column].1 }}{% endif %}">{% if column == "name" %}<a href="{{ url }}{{ qs_tail }}details={{ statistic[column].2 }}" title="{% if is_tuple(statistic[column]) %}{{ statistic[column].0 }}{% else %}{{ statistic[column] }}{% endif %}">{% endif %}{% if is_tuple(statistic[column]) %}{{ statistic[column].0 }}{% else %}{{ statistic[column] }}{% endif %}{% if column == "name" %}</a>{% endif %}</td>
                         {% endif %}
                     {% endfor %}
                 </tr>

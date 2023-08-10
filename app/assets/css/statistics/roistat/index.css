@@ -1,0 +1,7 @@
+table td.colored > a {
+    display:inline-block;
+    line-height:1;
+    max-width:400px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
