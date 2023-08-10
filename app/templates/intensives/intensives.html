@@ -8,27 +8,8 @@
 </head>
 <style>
     input.form-control {
-        max-width: 400px;
+        max-width: 150px;
         padding: 8px;
-    }
-
-    .form-container {
-        max-width: 400px; /* Максимальная ширина контейнера (примерное значение, можно изменить) */
-        display: flex;
-        /* margin: 0 auto; */
-        padding: 0px; /* Добавление внутренних отступов для внешнего вида */
-    }
-
-    .form-event {
-        order: 1;
-        margin-left: 10px;
-        max-width: 250px;
-    }
-
-    .form-payment {
-        order: 2;
-        margin-left: 30px;
-        max-width: 250px;
     }
 
     .custom-btn {
@@ -38,6 +19,32 @@
     .menu-container {
         margin-left: 10px;
     }
+
+    .form-row {
+        margin-bottom: 10px;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-group {
+        margin-right: 10px;
+    }
+
+    .form-group:last-child {
+        margin-right: 0;
+    }
+
+    .form-group label {
+        flex-shrink: 0;
+        margin-right: 5px;
+    }
+
+    .form-group input {
+        max-width: 150px;
+        padding: 8px;
+    }
+
 </style>
 <body>
 <h1 align="center">Оборот с воронки</h1>
@@ -47,38 +54,41 @@
 
 <hr>
 <div class="form-container">
-    <div class="form-event">
-        <p><strong>Дата мероприятия:</strong></p>
-        <form action="{{ url_for('intensives') }}" method="post">
-            <label for="start_date">Дата начала:</label>
-            <input type="date" class="form-control" id="start_date" name="start_date" required>
-            <label for="end_date">Дата конца:</label>
-            <input type="date" class="form-control" id="end_date" name="end_date" required>
-            <button type="submit" name="change_data_events" class="btn btn-info custom-btn">Получить данные</button>
-        </form>
-    </div>
-
-    <div class="form-payment">
-        <p><strong>Дата оплаты:</strong></p>
-        <form action="{{ url_for('intensives') }}" method="post">
-            <label for="start_date">Дата начала:</label>
-            <input type="date" class="form-control" id="start_date_pay" name="start_date_pay" required>
-            <label for="end_date">Дата конца:</label>
-            <input type="date" class="form-control" id="end_date_pay" name="end_date_pay" required>
-            <button type="submit" name="change_data_payment" class="btn btn-info custom-btn">Получить данные</button>
-        </form>
-    </div>
+    <form action="{{ url_for('intensives') }}" method="post">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start_date">Мероприятия с:</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" required>
+            </div>
+            <div class="form-group">
+                <label for="end_date">Мероприятия до:</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" required>
+            </div>
+            <div class="form-group">
+                <label for="start_date_pay">Оплата с:</label>
+                <input type="date" class="form-control" id="start_date_pay" name="start_date_pay" required>
+            </div>
+            <div class="form-group">
+                <label for="end_date_pay">Оплата до:</label>
+                <input type="date" class="form-control" id="end_date_pay" name="end_date_pay" required>
+            </div>
+            <div class="form-group">
+                <br>
+                <button type="submit" name="get_data" class="btn btn-info custom-btn">Получить данные</button>
+            </div>
+        </div>
+    </form>
 </div>
 <hr>
 
-<table style="border-collapse: collapse;margin-left: 10px;">
+<table style="border-collapse: collapse; margin-left: 10px;">
     <tr>
-        <th style="border: 1px solid black;padding: 5px;">Все оплаты за период:</th>
-        <td style="border: 1px solid black;padding: 5px;">{%if result_payment%}{{result_payment}} руб.{%endif%}</td>
+        <th style="border: 1px solid black; padding: 5px;">Все оплаты за период:</th>
+        <td style="border: 1px solid black; padding: 5px;">{% if result_payment %}{{ result_payment }} руб.{% endif %}</td>
     </tr>
     <tr>
-        <th style="border: 1px solid black;padding: 5px;">Минимум 1 касание с воронкой:</th>
-        <td style="border: 1px solid black;padding: 5px;">{%if result_events%}{{result_events}} руб.{%endif%}</td>
+        <th style="border: 1px solid black; padding: 5px;">Минимум 1 касание с воронкой:</th>
+        <td style="border: 1px solid black; padding: 5px;">{% if result_events %}{{ result_events }} руб.{% endif %}</td>
     </tr>
 </table>
 

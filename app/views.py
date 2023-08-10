@@ -56,7 +56,6 @@ from app.data import (
 )
 from config import DATA_FOLDER, CREDENTIALS_FILE, RESULTS_FOLDER
 
-
 pickle_loader = PickleLoader()
 
 UNDEFINED = "Undefined"
@@ -566,11 +565,11 @@ class DetectActivity:
 
 class DetectAction:
     def __call__(
-        self,
-        positive_period: StatusColor,
-        positive_30d: StatusColor,
-        activity_period: StatusColor,
-        activity_30d: StatusColor,
+            self,
+            positive_period: StatusColor,
+            positive_30d: StatusColor,
+            activity_period: StatusColor,
+            activity_30d: StatusColor,
     ) -> Action:
         if activity_period == StatusColor.high:
             if positive_period in (StatusColor.high, StatusColor.middle):
@@ -600,13 +599,13 @@ class Calculate:
     _data: pandas.DataFrame
 
     def __init__(
-        self,
-        leads: pandas.DataFrame,
-        statistics: pandas.DataFrame,
-        leads_30d: pandas.DataFrame,
-        statistics_30d: pandas.DataFrame,
-        filters: StatisticsRoistatFiltersData,
-        roistat_levels: pandas.DataFrame,
+            self,
+            leads: pandas.DataFrame,
+            statistics: pandas.DataFrame,
+            leads_30d: pandas.DataFrame,
+            statistics_30d: pandas.DataFrame,
+            filters: StatisticsRoistatFiltersData,
+            roistat_levels: pandas.DataFrame,
     ):
         self._leads = leads
         self._statistics = statistics
@@ -659,9 +658,9 @@ class Calculate:
 
             profit = income - expenses - (leads * 250 + income * 0.35)
             profit_month = (
-                income_month
-                - expenses_month
-                - (leads_month * 250 + income_month * 0.35)
+                    income_month
+                    - expenses_month
+                    - (leads_month * 250 + income_month * 0.35)
             )
 
             ppl = profit / leads if leads else 0
@@ -765,22 +764,22 @@ def extra_table(leads: pandas.DataFrame) -> pandas.DataFrame:
                 "более 100 000 руб.",
             ]
             subcategories = (
-                available
-                + leads[~leads[column_name].isin(available)][column_name]
-                .unique()
-                .tolist()
+                    available
+                    + leads[~leads[column_name].isin(available)][column_name]
+                    .unique()
+                    .tolist()
             )
             for item in subcategories.copy():
                 if item not in leads[column_name].unique():
                     subcategories.remove(item)
         else:
             subcategories = (
-                leads[leads[column_name].isin(target_audience)][column_name]
-                .unique()
-                .tolist()
-                + leads[~leads[column_name].isin(target_audience)][column_name]
-                .unique()
-                .tolist()
+                    leads[leads[column_name].isin(target_audience)][column_name]
+                    .unique()
+                    .tolist()
+                    + leads[~leads[column_name].isin(target_audience)][column_name]
+                    .unique()
+                    .tolist()
             )
         for subcategory in subcategories:
             result.append(
@@ -997,7 +996,7 @@ class StatisticsRoistatView(TemplateView):
         }
 
     def get_details(
-        self, name: str = None
+            self, name: str = None
     ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         if name is None:
             return None, None
@@ -1074,7 +1073,7 @@ class StatisticsRoistatView(TemplateView):
         )
 
     def get_download_statistics(
-        self, workbook: Workbook, data: pandas.DataFrame, total_data: dict
+            self, workbook: Workbook, data: pandas.DataFrame, total_data: dict
     ):
         worksheet = workbook.add_worksheet("Статистика")
         worksheet.write_row(
@@ -1407,7 +1406,7 @@ class StatisticsUTMView(TemplateView):
         }
 
     def get_details(
-        self, name: str = None
+            self, name: str = None
     ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         if name is None:
             return None, None
@@ -1811,7 +1810,7 @@ class VKXlsxAdsView(MethodView):
         return super().dispatch_request(*args, **kwargs)
 
     def create_ads(
-        self, workbook: Workbook, categories: Dict[int, str], countries: Dict[int, str]
+            self, workbook: Workbook, categories: Dict[int, str], countries: Dict[int, str]
     ):
         worksheet = workbook.add_worksheet("Ads")
         columns = [
@@ -2062,35 +2061,35 @@ class VKXlsxAdsView(MethodView):
         data["sex__f__impressions_rate"] = data["sex__f__impressions_rate"] * 100
         data["sex__f__clicks_rate"] = data["sex__f__clicks_rate"] * 100
         data["age__12_18__impressions_rate"] = (
-            data["age__12_18__impressions_rate"] * 100
+                data["age__12_18__impressions_rate"] * 100
         )
         data["age__12_18__clicks_rate"] = data["age__12_18__clicks_rate"] * 100
         data["age__18_21__impressions_rate"] = (
-            data["age__18_21__impressions_rate"] * 100
+                data["age__18_21__impressions_rate"] * 100
         )
         data["age__18_21__clicks_rate"] = data["age__18_21__clicks_rate"] * 100
         data["age__21_24__impressions_rate"] = (
-            data["age__21_24__impressions_rate"] * 100
+                data["age__21_24__impressions_rate"] * 100
         )
         data["age__21_24__clicks_rate"] = data["age__21_24__clicks_rate"] * 100
         data["age__24_27__impressions_rate"] = (
-            data["age__24_27__impressions_rate"] * 100
+                data["age__24_27__impressions_rate"] * 100
         )
         data["age__24_27__clicks_rate"] = data["age__24_27__clicks_rate"] * 100
         data["age__27_30__impressions_rate"] = (
-            data["age__27_30__impressions_rate"] * 100
+                data["age__27_30__impressions_rate"] * 100
         )
         data["age__27_30__clicks_rate"] = data["age__27_30__clicks_rate"] * 100
         data["age__30_35__impressions_rate"] = (
-            data["age__30_35__impressions_rate"] * 100
+                data["age__30_35__impressions_rate"] * 100
         )
         data["age__30_35__clicks_rate"] = data["age__30_35__clicks_rate"] * 100
         data["age__35_45__impressions_rate"] = (
-            data["age__35_45__impressions_rate"] * 100
+                data["age__35_45__impressions_rate"] * 100
         )
         data["age__35_45__clicks_rate"] = data["age__35_45__clicks_rate"] * 100
         data["age__45_100__impressions_rate"] = (
-            data["age__45_100__impressions_rate"] * 100
+                data["age__45_100__impressions_rate"] * 100
         )
         data["age__45_100__clicks_rate"] = data["age__45_100__clicks_rate"] * 100
         worksheet.write_row(0, 0, data.columns)
@@ -2657,12 +2656,12 @@ class VKXlsxLeadsView(MethodView):
         )
         leads = leads[
             (
-                leads.utm_source.str.contains("vk")
-                | leads.utm_source.str.contains("VK")
-                | leads.utm_source.str.contains("Vk")
+                    leads.utm_source.str.contains("vk")
+                    | leads.utm_source.str.contains("VK")
+                    | leads.utm_source.str.contains("Vk")
             )
             & ~leads.utm_source.str.contains("kladovka")
-        ]
+            ]
         leads["created_at"] = leads["created_at"].astype(str)
         leads["turnover_on_lead"] = leads["turnover_on_lead"].astype(float)
         leads = leads.reset_index(drop=True)
@@ -2871,7 +2870,7 @@ class VKXlsxView(TemplateView):
         )
         leads = leads[
             leads.utm_source.str.contains("vk") | leads.utm_source.str.contains("VK")
-        ]
+            ]
         # leads["date_request"] = leads["date_request"].astype(str)
         # leads["date_payment"] = leads["date_payment"].astype(str)
         # leads["date_status_change"] = leads["date_status_change"].astype(str)
@@ -2955,25 +2954,25 @@ class ChannelsView(TemplateView):
     title = "Каналы"
 
     def _filter_date_from(
-        self, date: datetime.datetime, leads: pandas.DataFrame
+            self, date: datetime.datetime, leads: pandas.DataFrame
     ) -> pandas.DataFrame:
         if date:
             leads = leads[
                 leads.created_at >= datetime.datetime.strptime(date, "%Y-%m-%d")
-            ]
+                ]
         return leads
 
     def _filter_date_to(
-        self, date: datetime.datetime, leads: pandas.DataFrame
+            self, date: datetime.datetime, leads: pandas.DataFrame
     ) -> pandas.DataFrame:
         if date:
             leads = leads[
                 leads.created_at
                 < (
-                    datetime.datetime.strptime(date, "%Y-%m-%d")
-                    + datetime.timedelta(days=1)
+                        datetime.datetime.strptime(date, "%Y-%m-%d")
+                        + datetime.timedelta(days=1)
                 )
-            ]
+                ]
         return leads
 
     def get_choices(self, leads: pandas.DataFrame) -> Dict[str, List[str]]:
@@ -3002,7 +3001,7 @@ class ChannelsView(TemplateView):
         }
 
     def get_filtered_data(
-        self, leads: pandas.DataFrame, filters: Dict[str, str]
+            self, leads: pandas.DataFrame, filters: Dict[str, str]
     ) -> pandas.DataFrame:
         leads = self._filter_date_from(filters.get("date_from"), leads)
         leads = self._filter_date_to(filters.get("date_to"), leads)
@@ -3098,7 +3097,7 @@ class ApiVKLeadsView(APIView):
             leads.utm_source.str.contains("vk")
             | leads.utm_source.str.contains("VK")
             | leads.utm_source.str.contains("Vk")
-        ]
+            ]
         leads["created_at"] = leads["created_at"].astype(str)
         leads = leads.reset_index(drop=True)
         return leads
@@ -3437,7 +3436,7 @@ class ZoomsView(FilteringBaseView):
     values: pandas.DataFrame
     values_path: Path = Path(DATA_FOLDER) / "week" / "managers_zooms.pkl"
     controllable_path: Path = (
-        Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
+            Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
     )
 
     def filters_initial(self) -> Dict[str, Any]:
@@ -3456,30 +3455,30 @@ class ZoomsView(FilteringBaseView):
             self.values = self.values[
                 self.values["purchase_probability"]
                 >= self.filters.purchase_probability_from
-            ]
+                ]
 
         if self.filters.purchase_probability_to is not None:
             self.values = self.values[
                 self.values["purchase_probability"]
                 <= self.filters.purchase_probability_to
-            ]
+                ]
 
         if self.filters.expected_payment_date_from:
             self.values = self.values[
                 self.values["expected_payment_date"]
                 >= self.filters.expected_payment_date_from
-            ]
+                ]
 
         if self.filters.expected_payment_date_to:
             self.values = self.values[
                 self.values["expected_payment_date"]
                 <= self.filters.expected_payment_date_to
-            ]
+                ]
 
         if self.filters.on_control is not None:
             self.values = self.values[
                 self.values["on_control"] == self.filters.on_control
-            ]
+                ]
 
         self.values.reset_index(drop=True, inplace=True)
 
@@ -3501,12 +3500,12 @@ class ZoomsView(FilteringBaseView):
             date_to = datetime.date.fromisoformat(date_to) if str(date_to) else None
 
         purchase_probability_from = (
-            request.args.get("purchase_probability_from") or None
+                request.args.get("purchase_probability_from") or None
         )
         purchase_probability_to = request.args.get("purchase_probability_to") or None
 
         expected_payment_date_from = (
-            request.args.get("expected_payment_date_from") or None
+                request.args.get("expected_payment_date_from") or None
         )
         if expected_payment_date_from is None:
             expected_payment_date_from = initial.get("expected_payment_date_from")
@@ -3572,7 +3571,7 @@ class ZoomsView(FilteringBaseView):
         if self.filters[group] is not None:
             self.values = self.values[
                 self.values[group_id] == self.filters[group]
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
         return groups.values.tolist()
 
     def get_extras(self):
@@ -3845,10 +3844,10 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
         if self.filters.date:
             self.values = self.values[
                 self.values["date"] >= self.filters.date
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts = self.counts[
                 self.counts["date"] >= self.filters.date
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
     def get_extras_group(self, group: str) -> List[List[str]]:
         group_id = f"{group}_id"
@@ -3862,15 +3861,15 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
             self.filters[group] = None
         if self.filters[group] is not None:
             if (
-                group in ["group", "manager", "channel"]
-                and group_id in self.counts.columns
+                    group in ["group", "manager", "channel"]
+                    and group_id in self.counts.columns
             ):
                 self.counts = self.counts[
                     self.counts[group_id] == self.filters[group]
-                ].reset_index(drop=True)
+                    ].reset_index(drop=True)
             self.values = self.values[
                 self.values[group_id] == self.filters[group]
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
         return groups.values.tolist()
 
     def get_extras(self):
@@ -3882,15 +3881,15 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
         }
 
     def get_values_week(
-        self,
-        date_from: datetime.date,
-        date_end: datetime.date,
-        date_to: datetime.date,
-        weeks: int,
+            self,
+            date_from: datetime.date,
+            date_end: datetime.date,
+            date_to: datetime.date,
+            weeks: int,
     ) -> List[int]:
         values = self.values[
             (self.values["date"] >= date_from) & (self.values["date"] <= date_to)
-        ].reset_index(drop=True)
+            ].reset_index(drop=True)
 
         output = []
         while date_from <= date_end:
@@ -3899,7 +3898,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
                 values[
                     (values["profit_date"] >= date_from)
                     & (values["profit_date"] <= date_to)
-                ]["profit"].sum()
+                    ]["profit"].sum()
             )
             date_from += datetime.timedelta(weeks=1)
 
@@ -3960,7 +3959,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
                 self.counts[
                     (self.counts["date"] >= date_from)
                     & (self.counts["date"] <= date_to)
-                ]["count"].sum()
+                    ]["count"].sum()
             )
             date_from += datetime.timedelta(weeks=1)
 
@@ -4111,52 +4110,52 @@ class WeekStatsManagersView(FilteringBaseView):
         if self.filters.value_date_from:
             self.managers = self.managers[
                 self.managers["date"] >= self.filters.value_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.values_zoom = self.values_zoom[
                 self.values_zoom["date"] >= self.filters.value_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts_zoom = self.counts_zoom[
                 self.counts_zoom["date"] >= self.filters.value_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.values_so = self.values_so[
                 self.values_so["date"] >= self.filters.value_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts_so = self.counts_so[
                 self.counts_so["date"] >= self.filters.value_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.value_date_to:
             self.managers = self.managers[
                 self.managers["date"] <= self.filters.value_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.values_zoom = self.values_zoom[
                 self.values_zoom["date"] <= self.filters.value_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts_zoom = self.counts_zoom[
                 self.counts_zoom["date"] <= self.filters.value_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.values_so = self.values_so[
                 self.values_so["date"] <= self.filters.value_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts_so = self.counts_so[
                 self.counts_so["date"] <= self.filters.value_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.profit_date_from:
             self.values_zoom = self.values_zoom[
                 self.values_zoom["profit_date"] >= self.filters.profit_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.values_so = self.values_so[
                 self.values_so["profit_date"] >= self.filters.profit_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.profit_date_to:
             self.values_zoom = self.values_zoom[
                 self.values_zoom["profit_date"] <= self.filters.profit_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.values_so = self.values_so[
                 self.values_so["profit_date"] <= self.filters.profit_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
         cyr_month = [
@@ -4188,11 +4187,11 @@ class WeekStatsManagersView(FilteringBaseView):
         }
 
     def process_row(
-        self,
-        name: str,
-        data_count: int,
-        data_profit_from: float,
-        data_payment_count: int,
+            self,
+            name: str,
+            data_count: int,
+            data_profit_from: float,
+            data_payment_count: int,
     ) -> Dict[str, Any]:
         data_profit_on = data_profit_from / data_count if data_count > 0 else 0
         data_conversion = data_payment_count / data_count if data_count > 0 else 0
@@ -4229,10 +4228,10 @@ class WeekStatsManagersView(FilteringBaseView):
 
         self.values_zoom = self.values_zoom[
             self.values_zoom["profit_date"] >= self.values_zoom["date"]
-        ]
+            ]
         self.values_so = self.values_so[
             self.values_so["profit_date"] >= self.values_so["date"]
-        ]
+            ]
 
         self.filtering_values()
         self.get_extras()
@@ -4250,14 +4249,14 @@ class WeekStatsManagersView(FilteringBaseView):
                 manager_id = row_data["manager_id"]
                 zooms_counts = self.counts_zoom[
                     self.counts_zoom["manager_id"] == manager_id
-                ]
+                    ]
                 zooms_analytics = self.values_zoom[
                     self.values_zoom["manager_id"] == manager_id
-                ]
+                    ]
                 so_counts = self.counts_so[self.counts_so["manager_id"] == manager_id]
                 so_analytics = self.values_so[
                     self.values_so["manager_id"] == manager_id
-                ]
+                    ]
                 row = {
                     **dict.fromkeys(self.columns.keys(), pandas.NA),
                     "manager": row_data["manager"],
@@ -4382,11 +4381,11 @@ class ManagersSalesCoursesView(FilteringBaseView):
         if self.filters.payment_date_from:
             self.sales = self.sales[
                 self.sales["payment_date"] >= self.filters.payment_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
         if self.filters.payment_date_to:
             self.sales = self.sales[
                 self.sales["payment_date"] <= self.filters.payment_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
         self.extras = {
@@ -4506,11 +4505,11 @@ class ManagersSalesDatesView(FilteringBaseView):
         if self.filters.payment_date_from:
             self.sales = self.sales[
                 self.sales["payment_date"] >= self.filters.payment_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
         if self.filters.payment_date_to:
             self.sales = self.sales[
                 self.sales["payment_date"] <= self.filters.payment_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
     def get_extras_group(self, group: str) -> List[List[str]]:
         group_id = f"{group}_id"
@@ -4525,7 +4524,7 @@ class ManagersSalesDatesView(FilteringBaseView):
         if self.filters[group] is not None:
             self.sales = self.sales[
                 self.sales[group_id] == self.filters[group]
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
         return groups.values.tolist()
 
     def get_extras(self) -> Dict[str, Any]:
@@ -4562,7 +4561,7 @@ class ManagersSalesDatesView(FilteringBaseView):
         for manager_name, manager in self.sales.groupby(by=["manager"]):
             dates = {}
             for order_date_name, order_date in manager.groupby(
-                by=["order_date_name"], sort=False
+                    by=["order_date_name"], sort=False
             ):
                 dates[order_date_name] = order_date["profit"].sum()
             source.append(
@@ -4600,7 +4599,7 @@ class ManagersSalesDatesView(FilteringBaseView):
             if match_month:
                 month_rename[
                     column
-                ] = f"{match_month.group(1)}, {months[int(match_month.group(2))-1]}"
+                ] = f"{match_month.group(1)}, {months[int(match_month.group(2)) - 1]}"
         data.rename(columns=month_rename, inplace=True)
 
         data.rename(
@@ -4699,40 +4698,40 @@ class WeekStatsChannelsView(FilteringBaseView):
         if self.filters.order_date_from:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["date"] >= self.filters.order_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts_expenses = self.counts_expenses[
                 self.counts_expenses["date"] >= self.filters.order_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.channels_count = self.channels_count[
                 self.channels_count["date"] >= self.filters.order_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.roistat = self.roistat[
                 self.roistat["date"] >= self.filters.order_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.order_date_to:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["date"] <= self.filters.order_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.counts_expenses = self.counts_expenses[
                 self.counts_expenses["date"] <= self.filters.order_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.channels_count = self.channels_count[
                 self.channels_count["date"] <= self.filters.order_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
             self.roistat = self.roistat[
                 self.roistat["date"] <= self.filters.order_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.profit_date_from:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["profit_date"] >= self.filters.profit_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.profit_date_to:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["profit_date"] <= self.filters.profit_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
         cyr_month = [
@@ -4801,7 +4800,7 @@ class WeekStatsChannelsView(FilteringBaseView):
 
         self.values_expenses = self.values_expenses[
             self.values_expenses["profit_date"] >= self.values_expenses["date"]
-        ]
+            ]
 
         self.filtering_values()
         self.get_extras()
@@ -5092,7 +5091,7 @@ class ChangeZoomView(APIView):
             (source["manager_id"] == values.loc[0, "manager_id"])
             & (source["lead"] == values.loc[0, "lead"])
             & (source["date"] == values.loc[0, "date"])
-        ]
+            ]
         if len(source_one):
             source_data = source_one.iloc[0].to_dict()
             source_data.update(**values.iloc[0].to_dict())
@@ -5109,10 +5108,10 @@ class ChangeZoomView(APIView):
         info_columns = list(info.keys())
         estimate = ""
         if (
-            "purchase_probability" in info_columns
-            and "potential_order_amount" in info_columns
-            and not pandas.isna(info["purchase_probability"])
-            and not pandas.isna(info["potential_order_amount"])
+                "purchase_probability" in info_columns
+                and "potential_order_amount" in info_columns
+                and not pandas.isna(info["purchase_probability"])
+                and not pandas.isna(info["potential_order_amount"])
         ):
             estimate = f'{round(info["potential_order_amount"] * info["purchase_probability"] / 100):,} ₽'.replace(
                 ",", " "
@@ -5237,10 +5236,10 @@ class IntensivesView(FilteringBaseView):
     filters: IntensivesFiltersData
 
     sources_registrations_path: Path = (
-        Path(DATA_FOLDER) / "week" / "intensives_registrations.pkl"
+            Path(DATA_FOLDER) / "week" / "intensives_registrations.pkl"
     )
     sources_preorders_path: Path = (
-        Path(DATA_FOLDER) / "week" / "intensives_preorders.pkl"
+            Path(DATA_FOLDER) / "week" / "intensives_preorders.pkl"
     )
     sources_values_path: Path = Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
     sources_payments_path: Path = Path(DATA_FOLDER) / "week" / "payments.pkl"
@@ -5303,18 +5302,18 @@ class IntensivesView(FilteringBaseView):
         if self.filters.date_from:
             self.sources_registrations = self.sources_registrations[
                 self.sources_registrations["date"] >= self.filters.date_from
-            ]
+                ]
             self.sources_preorders = self.sources_preorders[
                 self.sources_preorders["date"] >= self.filters.date_from
-            ]
+                ]
 
         if self.filters.date_to:
             self.sources_registrations = self.sources_registrations[
                 self.sources_registrations["date"] <= self.filters.date_to
-            ]
+                ]
             self.sources_preorders = self.sources_preorders[
                 self.sources_preorders["date"] <= self.filters.date_to
-            ]
+                ]
 
         self.sources_registrations.reset_index(drop=True, inplace=True)
         self.sources_preorders.reset_index(drop=True, inplace=True)
@@ -5327,63 +5326,63 @@ class IntensivesView(FilteringBaseView):
 
     def parse_conversion_registration_deal(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["deals_registrations"])
-            or pandas.isna(item["registrations"])
-            or item["registrations"] == 0
+                pandas.isna(item["deals_registrations"])
+                or pandas.isna(item["registrations"])
+                or item["registrations"] == 0
         ):
             return ""
         return item["deals_registrations"] / item["registrations"]
 
     def parse_conversion_member_deal(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["deals_registrations"])
-            or pandas.isna(item["members"])
-            or item["members"] == 0
+                pandas.isna(item["deals_registrations"])
+                or pandas.isna(item["members"])
+                or item["members"] == 0
         ):
             return ""
         return item["deals_registrations"] / item["members"]
 
     def parse_conversion_so_deal(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["deals_registrations"])
-            or pandas.isna(item["so"])
-            or item["so"] == 0
+                pandas.isna(item["deals_registrations"])
+                or pandas.isna(item["so"])
+                or item["so"] == 0
         ):
             return ""
         return item["deals_registrations"] / item["so"]
 
     def parse_ppd(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["profit_registrations"])
-            or pandas.isna(item["deals_registrations"])
-            or item["deals_registrations"] == 0
+                pandas.isna(item["profit_registrations"])
+                or pandas.isna(item["deals_registrations"])
+                or item["deals_registrations"] == 0
         ):
             return ""
         return item["profit_registrations"] / item["deals_registrations"]
 
     def parse_ppm(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["profit_registrations"])
-            or pandas.isna(item["members"])
-            or item["members"] == 0
+                pandas.isna(item["profit_registrations"])
+                or pandas.isna(item["members"])
+                or item["members"] == 0
         ):
             return ""
         return item["profit_registrations"] / item["members"]
 
     def parse_ppr(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["profit_registrations"])
-            or pandas.isna(item["registrations"])
-            or item["registrations"] == 0
+                pandas.isna(item["profit_registrations"])
+                or pandas.isna(item["registrations"])
+                or item["registrations"] == 0
         ):
             return ""
         return item["profit_registrations"] / item["registrations"]
 
     def parse_ppso(self, item: pandas.Series) -> Any:
         if (
-            pandas.isna(item["profit_preorders"])
-            or pandas.isna(item["deals_preorders"])
-            or item["deals_preorders"] == 0
+                pandas.isna(item["profit_preorders"])
+                or pandas.isna(item["deals_preorders"])
+                or item["deals_preorders"] == 0
         ):
             return ""
         return item["profit_preorders"] / item["deals_preorders"]
@@ -5455,12 +5454,12 @@ class IntensivesView(FilteringBaseView):
         registrations_list = []
         if self.sources_registrations is not None:
             for (course_name, date), course in self.sources_registrations.groupby(
-                by=["course", "date"]
+                    by=["course", "date"]
             ):
                 payments = self.sources_payments[
                     (self.sources_payments["pochta"].isin(course["email"].tolist()))
                     & (self.sources_payments["data_oplaty"] >= date)
-                ]
+                    ]
                 registrations_list.append(
                     {
                         "course": course_name,
@@ -5482,12 +5481,12 @@ class IntensivesView(FilteringBaseView):
         preorders_list = []
         if self.sources_preorders is not None:
             for (course_name, date), course in self.sources_preorders.groupby(
-                by=["course", "date"]
+                    by=["course", "date"]
             ):
                 payments = self.sources_payments[
                     (self.sources_payments["pochta"].isin(course["email"].tolist()))
                     & (self.sources_payments["data_oplaty"] >= date)
-                ]
+                    ]
                 preorders_list.append(
                     {
                         "course": course_name,
@@ -5632,18 +5631,18 @@ class PromoView(FilteringBaseView):
         if self.filters.date_from:
             self.sources_intensives = self.sources_intensives[
                 self.sources_intensives["date"] >= self.filters.date_from
-            ]
+                ]
             self.sources_so = self.sources_so[
                 self.sources_so["date"] >= self.filters.date_from
-            ]
+                ]
 
         if self.filters.date_to:
             self.sources_intensives = self.sources_intensives[
                 self.sources_intensives["date"] <= self.filters.date_to
-            ]
+                ]
             self.sources_so = self.sources_so[
                 self.sources_so["date"] <= self.filters.date_to
-            ]
+                ]
 
         self.sources_intensives.reset_index(drop=True, inplace=True)
         self.sources_so.reset_index(drop=True, inplace=True)
@@ -5684,7 +5683,7 @@ class PromoView(FilteringBaseView):
                     (self.sources_so["date"] == date)
                     & (self.sources_so["email"].isin(emails["email"].unique().tolist()))
                     & (self.sources_so["payment_date"] >= self.sources_so["date"])
-                ]
+                    ]
                 leads = source_so_group.drop_duplicates(subset=["date", "lead_id"])
                 so_value = len(emails)
                 deals_value = len(leads)
@@ -5873,7 +5872,7 @@ class IntensivesFunnelChannelView(FilteringBaseView):
     filters: IntensivesFunnelChannelFiltersData
 
     sources_expenses_path: Path = (
-        Path(DATA_FOLDER) / "week" / "funnel_channel_expenses.pkl"
+            Path(DATA_FOLDER) / "week" / "funnel_channel_expenses.pkl"
     )
     sources_profit_path: Path = Path(DATA_FOLDER) / "week" / "funnel_channel_profit.pkl"
 
@@ -5947,28 +5946,28 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         if self.filters.order_date_from:
             self.sources_expenses = self.sources_expenses[
                 self.sources_expenses["date"] >= self.filters.order_date_from
-            ]
+                ]
             self.sources_profit = self.sources_profit[
                 self.sources_profit["date"] >= self.filters.order_date_from
-            ]
+                ]
 
         if self.filters.order_date_to:
             self.sources_expenses = self.sources_expenses[
                 self.sources_expenses["date"] <= self.filters.order_date_to
-            ]
+                ]
             self.sources_profit = self.sources_profit[
                 self.sources_profit["date"] <= self.filters.order_date_to
-            ]
+                ]
 
         if self.filters.profit_date_from:
             self.sources_profit = self.sources_profit[
                 self.sources_profit["profit_date"] >= self.filters.profit_date_from
-            ]
+                ]
 
         if self.filters.profit_date_to:
             self.sources_profit = self.sources_profit[
                 self.sources_profit["profit_date"] <= self.filters.profit_date_to
-            ]
+                ]
 
         self.sources_expenses.reset_index(drop=True, inplace=True)
         self.sources_profit.reset_index(drop=True, inplace=True)
@@ -5996,8 +5995,8 @@ class IntensivesFunnelChannelView(FilteringBaseView):
         rows = []
         total = {}
         for (
-            channel_name,
-            channel_title,
+                channel_name,
+                channel_title,
         ), channel_group in self.sources_expenses.groupby(
             by=["channel", "channel_title"]
         ):
@@ -6008,12 +6007,12 @@ class IntensivesFunnelChannelView(FilteringBaseView):
                 profit_group = self.sources_profit[
                     (self.sources_profit["channel"] == channel_name)
                     & (self.sources_profit["funnel"] == funnel_name)
-                ]
+                    ]
                 expenses_sum = float(expenses_group["expenses"].sum())
                 profit_sum = float(profit_group["profit"].sum())
                 profit_percent = (
-                    profit_sum / expenses_sum if expenses_sum > 0 else 0
-                ) * 100
+                                     profit_sum / expenses_sum if expenses_sum > 0 else 0
+                                 ) * 100
                 expenses_name = f"Расход {funnel_name}"
                 profit_name = f"Оборот {funnel_name}"
                 row.update(
@@ -6037,8 +6036,8 @@ class IntensivesFunnelChannelView(FilteringBaseView):
                         item[1] == 0 if self.filters.is_percent else item[0] == 0
                     )
             if (
-                len(is_none) > 0
-                and len(list(filter(lambda item: item is False, is_none))) > 0
+                    len(is_none) > 0
+                    and len(list(filter(lambda item: item is False, is_none))) > 0
             ):
                 rows.append(row)
 
@@ -6077,46 +6076,22 @@ class Intensives(TemplateView):
         )
 
     def post(self):
-        if "change_data_payment" in request.form:
-            start_date = (
-                datetime.datetime.strptime(
-                    request.form["start_date_pay"], "%Y-%m-%d"
-                ).date()
-            ).strftime("%Y-%m-%d")
-            end_date = (
-                datetime.datetime.strptime(
-                    request.form["end_date_pay"], "%Y-%m-%d"
-                ).date()
-            ).strftime("%Y-%m-%d")
-            try:
-                result_payment = get_payment(start_date, end_date)
-                session["result_payment"] = int(result_payment)
-            except Exception as e:
-                result_payment = 0
-                session["result_payment"] = int(result_payment)
-                with open(
-                    "app/intensives/intensives.log", "a", encoding="utf-8"
-                ) as file:
-                    file.write(f"{datetime.datetime.now()} {e}\n")
+        start_date = (datetime.datetime.strptime(request.form["start_date_pay"], '%Y-%m-%d').date()).strftime(
+            '%Y-%m-%d')
+        end_date = (datetime.datetime.strptime(request.form["end_date_pay"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
+        start_date2 = (datetime.datetime.strptime(request.form["start_date"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
+        end_date2 = (datetime.datetime.strptime(request.form["end_date"], '%Y-%m-%d').date()).strftime('%Y-%m-%d')
+        try:
+            result_payment = get_payment(start_date, end_date)
+            session['result_payment'] = int(result_payment)
+            result_events = get_funnel_payment(start_date2, end_date2)
+            session['result_events'] = int(result_events)
+        except Exception as e:
+            result_payment = 0
+            session['result_payment'] = result_payment
+            result_events = 0
+            session['result_events'] = result_events
+            with open('app/intensives/intensives.log', 'a', encoding='utf-8') as file:
+                file.write(f'{datetime.datetime.now()} {e}\n')
 
-            return redirect(url_for("intensives"))
-        if "change_data_events" in request.form:
-            start_date = (
-                datetime.datetime.strptime(
-                    request.form["start_date"], "%Y-%m-%d"
-                ).date()
-            ).strftime("%Y-%m-%d")
-            end_date = (
-                datetime.datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%Y-%m-%d")
-            try:
-                result_events = get_funnel_payment(start_date, end_date)
-                session["result_events"] = int(result_events)
-            except Exception as e:
-                result_payment = 0
-                session["result_payment"] = int(result_payment)
-                with open(
-                    "app/intensives/intensives.log", "a", encoding="utf-8"
-                ) as file:
-                    file.write(f"{datetime.datetime.now()} {e}\n")
-            return redirect(url_for("intensives"))
+        return redirect(url_for("intensives"))
