@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Оборот по мероприятиям</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1/daterangepicker.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script type="text/javascript"
+            src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1/daterangepicker.min.js"></script>
+
+</head>
+<style>
+    input.form-control {
+        max-width: 150px;
+        padding: 8px;
+    }
+
+<!--    .custom-btn {-->
+<!--        margin-top: 10px;-->
+<!--    }-->
+
+    .menu-container {
+        margin-left: 10px;
+    }
+
+    .form-row {
+        margin-bottom: 10px;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-group {
+        margin-right: 10px;
+    }
+
+    .form-group:last-child {
+        margin-right: 0;
+    }
+
+    .form-group label {
+        flex-shrink: 0;
+        margin-right: 5px;
+    }
+
+    .form-group input {
+        max-width: 150px;
+        padding: 0px;
+    }
+
+
+</style>
+<body>
+<h1 align="center">Оборот по мероприятиям</h1>
+<div class="menu-container">
+    <a href="https://analytic.neural-university.ru/" class="btn btn-info">В меню</a>
+</div>
+
+<hr>
+<div class="form-container">
+    <form action="{{ url_for('intensives_events') }}" method="post">
+        <div class="form-row">
+            <div class="form-group">
+                <b>Мероприятия: </b>
+                <input type="date" id="start_date" name="start_date" title="Дата начала" required>
+            </div>
+            <div class="form-group">
+                <input type="date" id="end_date" name="end_date" title="Дата окончания" required>
+            </div>
+            <div class="form-group">
+                <b>Оплаты:</b>
+                <label><input type="checkbox" name="checkbox_value" value="1week"> 1 неделя</label>
+            </div>
+            <div class="form-group">
+
+                <label><input type="checkbox" name="checkbox_value" value="2week"> 2 недели</label>
+            </div>
+            <div class="form-group">
+
+                <label><input type="checkbox" name="checkbox_value" value="4week"> 4 недели</label>
+            </div>
+            <div class="form-group">
+
+                <label><input type="checkbox" name="checkbox_value" value="8week"> 8 недель</label>
+            </div>
+            <div class="form-group">
+                <input type="hidden" id="custom_period" name="custom_period" readonly>
+                <button class="btn btn-outline-secondary" type="button" id="custom_period_btn">Свой период
+                </button>
+            </div>
+            <div class="form-group">
+                <button type="submit" name="get_data" class="btn btn-info custom-btn">Получить данные</button>
+            </div>
+        </div>
+    </form>
+</div>
+<hr>
+
+{{ table | safe }}
+
+<script>
+    $(document).ready(function() {
+        $('#custom_period_btn').click(function() {
+            $('#custom_period').daterangepicker({
+                opens: 'left',
+                locale: {
+                    format: 'YYYY-MM-DD',
+                    applyLabel: 'Применить',
+                    cancelLabel: 'Отмена',
+                    fromLabel: 'С',
+                    toLabel: 'По',
+                    customRangeLabel: 'Свой период',
+                }
+            });
+            $('#custom_period').data('daterangepicker').toggle();
+        });
+    });
+</script>
+</body>
+</html>

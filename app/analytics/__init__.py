@@ -1607,6 +1607,7 @@ class callsSettings(MethodView):
 
 
 app.add_url_rule("/intensives", view_func=views.Intensives.as_view('intensives'))
+app.add_url_rule("/intensivesevents", view_func=views.IntensivesEvents.as_view('intensives_events'))
 
 app.add_url_rule("/calls", view_func=CallsMain.as_view("calls_main"))
 app.add_url_rule("/numbers", view_func=callsNumbers.as_view("calls_numbers"))
