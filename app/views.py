@@ -6095,3 +6095,42 @@ class Intensives(TemplateView):
                 file.write(f'{datetime.datetime.now()} {e}\n')
 
         return redirect(url_for("intensives"))
+
+
+from app.intensives.tools_events import get_payment, get_funnel_payment
+# Еще отчет по интенсивам, детальный
+class IntensivesEvents(TemplateView):
+    def get(self):
+        return render_template('intensives/intensives_event.html', table=session.get('table', ''))
+
+    def post(self):
+        try:
+            # Даты мероприятий
+            start_date_event = datetime.datetime.strptime(request.form["start_date"], '%Y-%m-%d').date()
+            end_date_event = datetime.datetime.strptime(request.form["end_date"], '%Y-%m-%d').date()
+            # Даты оплаты
+            custom_period = request.form.get('custom_period')
+            checkbox_value = request.form.get('checkbox_value')
+            if custom_period:
+                start_date_custom, end_date_custom = custom_period.split(' - ')
+                start_date_pay = datetime.datetime.strptime(start_date_custom, '%Y-%m-%d').date()
+                end_date_pay = datetime.datetime.strptime(end_date_custom, '%Y-%m-%d').date()
+            elif checkbox_value:
+                checkbox_values = {
+                    '1week': 7,
+                    '2week': 14,
+                    '4week': 28,
+                    '8week': 56
+                }
+
+                end_date_pay = (end_date_event + datetime.timedelta(days=checkbox_values.get(checkbox_value))).strftime(
+                    '%Y-%m-%d')
+                start_date_pay = end_date_event.strftime('%Y-%m-%d')
+            get_payment(start_date_pay, end_date_pay)
+            table = get_funnel_payment(start_date_event.strftime('%Y-%m-%d'), end_date_event.strftime('%Y-%m-%d'))
+            table_html = table.to_html(classes='table table-striped table-bordered')
+            session['table'] = table_html
+        except Exception as e:
+            with open('app/intensives/intensives_events.log', 'a', encoding='utf-8') as file:
+                file.write(f'{datetime.datetime.now()} {e}\n')
+        return redirect(url_for('intensives_events'))
