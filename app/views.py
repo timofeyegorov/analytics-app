@@ -3870,9 +3870,8 @@ class TildaQuizWeightView(APIView):
         note = {
             "params": {
                 "note_type": "common",
-                "service": "Проставлен тег веса по следующим ответам",
                 "text": "\n".join(
-                    ["Проставлен тег веса по следующим ответам:", ""]
+                    ["Проставлен тег веса", "", f"Вес: {weight}", f"Тег: {tag}"]
                     + [": ".join(item) for item in need_data.values()]
                 ),
             },
