@@ -454,6 +454,7 @@ class AmoCRMAPI:
 
     def __call__(
         self,
+        method_type:str,
         method: str,
         params: Dict[str, Any] = None,
         is_file: bool = False,
@@ -467,11 +468,21 @@ class AmoCRMAPI:
             url = self._get_url_drive(method)
         else:
             url = self._get_url(method)
-        response = requests.post(
-            url,
-            json=params,
-            headers={"Authorization": f'Bearer {auth.get("access_token")}'},
-        )
+        response = None
+        if method_type == 'post':
+            response = requests.post(
+                url,
+                json=params,
+                headers={"Authorization": f'Bearer {auth.get("access_token")}'},
+            )
+        if method_type == 'patch':
+            response = requests.patch(
+                url,
+                data=params,
+                headers={"Authorization": f'Bearer {auth.get("access_token")}'},
+            )
+        if response is None:
+            return
         try:
             data = response.json()
         except requests.exceptions.JSONDecodeError:
@@ -3826,12 +3837,17 @@ class TildaQuizWeightView(APIView):
             tag = "1 очередь"
         self.data = {"weigh": weight, "tag": tag}
         amocrm_api = AmoCRMAPI()
-        amocrm_api("leads/tags", [{"name": tag}])
-        amocrm_api(f'leads/{lead.get("id")}', {
-            "_embedded": {
-                "tags": lead.get("tags", []) +amocrm_api.response.get("_embedded", {}).get("tags", []),
+        amocrm_api('post',"leads/tags", [{"name": tag}])
+        amocrm_api(
+            'patch',
+            f'leads/{lead.get("id")}',
+            {
+                "_embedded": {
+                    "tags": lead.get("tags", [])
+                    + amocrm_api.response.get("_embedded", {}).get("tags", []),
+                },
             },
-        })
+        )
         print("-----------------------------")
         print(amocrm_api.error)
         print(amocrm_api.response)
