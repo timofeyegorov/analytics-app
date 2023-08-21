@@ -3565,13 +3565,13 @@ class StatisticsGroupsByCampaignView(APIView):
 
 
 class TildaQuizWeightView(APIView):
-    def get(self, *args, **kwargs):
+    def post(self, *args, **kwargs):
         print(args)
         print(kwargs)
         print(request.args)
         print(request.form)
         print(request.data)
-        return super().get(*args, **kwargs)
+        return super().post(*args, **kwargs)
 
 
 class FilteringBaseView(TemplateView):
