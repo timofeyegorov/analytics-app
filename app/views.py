@@ -3617,7 +3617,7 @@ class TildaQuizWeightView(APIView):
         leads = data.get("leads", {}).get("add", [])
         if leads:
             lead = leads[0]
-            print(lead)
+            print(json.dumps(lead, indent=2, ensure_ascii=False))
         return super().post(*args, **kwargs)
         data = dict(
             zip(
