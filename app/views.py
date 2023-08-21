@@ -503,7 +503,7 @@ class AmoCRMAPI:
         is_file: bool = False,
         *args,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ):
         if params is None:
             params = {}
         auth = self._get_auth()
@@ -3869,15 +3869,20 @@ class TildaQuizWeightView(APIView):
         else:
             tag = "1 очередь"
         self.data = {"weigh": weight, "tag": tag}
-        tags = {
-            "_embedded": {
-                "tags": lead.get("tags", []) + [{"name": tag}],
-            },
-        }
+        tags = [
+            {
+                "id": lead.get("id"),
+                "_embedded": {
+                    "tags": lead.get("tags", []) + [{"name": tag}],
+                },
+            }
+        ]
         amocrm_api = AmoCRMAPI()
-        amocrm_api(f'/api/v4/leads/{lead.get("id")}', tags)
+        amocrm_api("/api/v4/leads", tags)
+        print('-----------------------------')
         print(amocrm_api.error)
         print(amocrm_api.response)
+        print('-----------------------------')
         print(json.dumps(tags, indent=2, ensure_ascii=False))
         return super().post(*args, **kwargs)
 
