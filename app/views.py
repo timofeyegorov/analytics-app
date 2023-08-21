@@ -441,8 +441,8 @@ class AmoCRMAPI:
     _version: str = "v4"
     _credentials_file: str = "amocrm-credentials.json"
     _auth_file: str = "amocrm-auth.json"
-    _error: Dict[str, Any] = None
-    _response: Dict[str, Any] = None
+    _error: Optional[Dict[str, Any]] = None
+    _response: Optional[Dict[str, Any]] = None
 
     @property
     def error(self) -> Optional[Dict[str, Any]]:
@@ -461,6 +461,8 @@ class AmoCRMAPI:
         *args,
         **kwargs,
     ):
+        self._error = None
+        self._response = None
         if params is None:
             params = {}
         auth = self._get_auth()
@@ -3786,7 +3788,6 @@ class TildaQuizWeightView(APIView):
                 "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
             ),
         }
-        print(value)
         weights = {
             "position": {
                 "top_menedzher": 15,
@@ -3826,9 +3827,7 @@ class TildaQuizWeightView(APIView):
             weights.get(question, {}).get(answer, 0)
             for question, answer in value.items()
         ]
-        print(answers_weights)
         weight = sum(answers_weights)
-        print(weight)
         if weight < 0:
             tag = "Не звоним"
         elif 0 <= weight <= 29:
@@ -3837,7 +3836,6 @@ class TildaQuizWeightView(APIView):
             tag = "2 очередь"
         else:
             tag = "1 очередь"
-        print(tag)
         self.data = {"weigh": weight, "tag": tag}
         amocrm_api = AmoCRMAPI()
         amocrm_api("post", "leads/tags", [{"name": tag}])
@@ -3851,6 +3849,7 @@ class TildaQuizWeightView(APIView):
             },
         }
         amocrm_api("patch", f'leads/{lead.get("id")}', data)
+
         return super().post(*args, **kwargs)
 
 
