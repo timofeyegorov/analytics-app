@@ -3874,7 +3874,7 @@ class TildaQuizWeightView(APIView):
                 "service": "Проставлен тег веса по следующим ответам",
                 "text": "\n".join(
                     # ["Проставлен тег веса по следующим ответам:", ""]
-                    +[": ".join(item) for item in need_data.values()]
+                    [": ".join(item) for item in need_data.values()]
                 ),
             },
         }
