@@ -46,7 +46,7 @@ from app.data import (
     StatisticsUTMColumnEnum,
     PACKAGES_COMPARE,
 )
-from config import DATA_FOLDER
+from config import DATA_FOLDER, BASE_DIR
 
 pickle_loader = PickleLoader()
 
@@ -434,6 +434,173 @@ class StatisticsUTMFiltersData(BaseModel):
             self.utm_term = value
         elif key == "utm_content":
             self.utm_content = value
+
+
+class AmoCRMAPI:
+    _host: str = "neuraluniversity.amocrm.ru"
+    _version: str = "v4"
+    _credentials_file: str = "amocrm-credentials.json"
+    _auth_file: str = "amocrm-auth.json"
+    _error: Dict[str, Any] = None
+    _response: Dict[str, Any] = None
+
+    @property
+    def error(self) -> Optional[Dict[str, Any]]:
+        return self._error
+
+    @property
+    def response(self) -> Optional[Dict[str, Any]]:
+        return self._response
+
+    # @classmethod
+    # def parse_textarea(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_text(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_multitext(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_tracking_data(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_select(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_multiselect(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_numeric(cls, value) -> str:
+    #     return str(value)
+    #
+    # @classmethod
+    # def parse_checkbox(cls, value) -> str:
+    #     return "Да" if value is True else "Нет"
+    #
+    # @classmethod
+    # def parse_date_time(cls, value) -> datetime.datetime:
+    #     return datetime.datetime.fromtimestamp(
+    #         value, tz=pytz.timezone("Europe/Moscow")
+    #     )
+    #
+    # @classmethod
+    # def parse_date(cls, value) -> datetime.datetime:
+    #     return datetime.datetime.fromtimestamp(
+    #         value, tz=pytz.timezone("Europe/Moscow")
+    #     )
+
+    def __call__(
+        self,
+        method: str,
+        params: Dict[str, Any] = None,
+        is_file: bool = False,
+        *args,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        if params is None:
+            params = {}
+        auth = self._get_auth()
+        if is_file:
+            url = self._get_url_drive(method)
+        else:
+            url = self._get_url(method)
+        response = requests.patch(
+            url,
+            params=params,
+            headers={"Authorization": f'Bearer {auth.get("access_token")}'},
+        )
+        try:
+            data = response.json()
+        except requests.exceptions.JSONDecodeError:
+            data = response.content.decode("utf-8")
+        if not response.ok:
+            if data.get("status") == 401:
+                self._refresh_token(auth.get("refresh_token"))
+                self._error = None
+                self._response = None
+                self(method, *args, **kwargs)
+            else:
+                self._error = data
+        else:
+            self._response = data
+
+    def _get_url_prefix(self) -> str:
+        return f"https://{self._host}/"
+
+    def _get_url(self, method: str) -> str:
+        if method is None:
+            method = ""
+        return f"{self._get_url_prefix()}api/{self._version}/{method}"
+
+    def _get_url_drive(self, method: str) -> str:
+        return f"https://drive-b.amocrm.ru/{method}"
+
+    def _get_credentials(self) -> Dict[str, Any]:
+        try:
+            with open(BASE_DIR / self._credentials_file, "r") as file_ref:
+                return json.load(file_ref)
+        except FileNotFoundError:
+            return {}
+
+    def _request_access_token(
+        self, args: Dict[str, str]
+    ) -> Optional[Dict[str, Any]]:
+        response = requests.post(
+            f"{self._get_url_prefix()}oauth2/access_token", json=args
+        )
+        if response.ok:
+            data = response.json()
+            data.update(
+                {
+                    "expires_in": str(
+                        datetime.datetime.utcnow()
+                        + datetime.timedelta(seconds=data.get("expires_in"))
+                    )
+                }
+            )
+            with open(BASE_DIR / self._auth_file, "w") as file_ref:
+                json.dump(data, file_ref, indent=2, ensure_ascii=False)
+            return data
+        else:
+            self._error = response.json()
+
+    def _refresh_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
+        return self._request_access_token(
+            {
+                **self._get_credentials(),
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+            }
+        )
+
+    def _authorize(self) -> Optional[Dict[str, Any]]:
+        return self._request_access_token(
+            {
+                **self._get_credentials(),
+                "grant_type": "authorization_code",
+            }
+        )
+
+    def _get_auth(self) -> Optional[Dict[str, Any]]:
+        try:
+            with open(BASE_DIR / self._auth_file, "r") as file_ref:
+                auth = json.load(file_ref)
+        except FileNotFoundError:
+            auth = self._authorize()
+        if auth is not None:
+            expires_in = datetime.datetime.strptime(
+                auth.get("expires_in"), "%Y-%m-%d %H:%M:%S.%f"
+            ) - datetime.timedelta(minutes=1)
+            if expires_in <= datetime.datetime.utcnow():
+                auth = self._refresh_token(auth.get("refresh_token"))
+            return auth
 
 
 class StatisticsView(TemplateView):
@@ -3630,9 +3797,12 @@ class TildaQuizWeightView(APIView):
             [
                 (
                     parse_slug(item.get("name")),
-                    parse_slug((item.get("values", [{"value": ""}]) or [{"value": ""}])[
-                        0
-                    ].get("value", "")),
+                    parse_slug(
+                        (
+                            item.get("values", [{"value": ""}])
+                            or [{"value": ""}]
+                        )[0].get("value", "")
+                    ),
                 )
                 for item in lead.get("custom_fields")
             ]
@@ -3649,7 +3819,6 @@ class TildaQuizWeightView(APIView):
                 "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
             ),
         }
-        print(value)
         weights = {
             "position": {
                 "top_menedzher": 15,
@@ -3700,7 +3869,15 @@ class TildaQuizWeightView(APIView):
         else:
             tag = "1 очередь"
         self.data = {"weigh": weight, "tag": tag}
-        print(self.data)
+        tags = [
+            {
+                "id": lead.get("id"),
+                "_embedded": {
+                    "tags": lead.get("tags", [])+[{"name":tag}],
+                },
+            }
+        ]
+        print(json.dumps(tags, indent=2, ensure_ascii=False))
         return super().post(*args, **kwargs)
 
 
