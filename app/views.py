@@ -3627,7 +3627,20 @@ class TildaQuizWeightView(APIView):
             return super().post(*args, **kwargs)
 
         print(json.dumps(lead, indent=2, ensure_ascii=False))
-        print(dict([(parse_slug(item.get("name")), (item.get("values", [""]) or [""])[0]) for item in lead.get("custom_fields")]))
+        print(
+            dict(
+                [
+                    (
+                        parse_slug(item.get("name")),
+                        (
+                            item.get("values", [{"value": ""}])
+                            or [{"value": ""}]
+                        )[0].get("value", ""),
+                    )
+                    for item in lead.get("custom_fields")
+                ]
+            )
+        )
 
         return super().post(*args, **kwargs)
         data = dict(
