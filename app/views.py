@@ -3817,7 +3817,7 @@ class TildaQuizWeightView(APIView):
             "implementation_budget": {
                 "do_200_000_r": 0,
                 "200_000_r_500_000_r": 5,
-                "500_000_r_1_mlnr": 10,
+                "500_000_r_1_mln_r": 10,
                 "1_mlnr_2_mlnr": 10,
                 "bolee_2_mlnr": 10,
             },
