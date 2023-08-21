@@ -3871,12 +3871,12 @@ class TildaQuizWeightView(APIView):
             "post",
             f'leads/{lead.get("id")}/notes',
             {
-                "note_type": "extended_service_message",
                 "params": {
-                   "service": "Проставлен тег веса по следующим ответам",
-                   "text": "\n".join(
-            [": ".join(item) for item in need_data.values()]
-        )
+                    "note_type": "extended_service_message",
+                    "service": "Проставлен тег веса по следующим ответам",
+                    "text": "\n".join(
+                        [": ".join(item) for item in need_data.values()]
+                    ),
                 },
             },
         )
