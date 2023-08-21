@@ -3838,17 +3838,15 @@ class TildaQuizWeightView(APIView):
         self.data = {"weigh": weight, "tag": tag}
         amocrm_api = AmoCRMAPI()
         amocrm_api("post", "leads/tags", [{"name": tag}])
-        print(lead)
         data = {
             "_embedded": {
                 "tags": [
-                    {"id": item.get("id")}
+                    {"id": int(item.get("id"))}
                     for item in lead.get("tags", [])
                     + amocrm_api.response.get("_embedded", {}).get("tags", [])
                 ],
             },
         }
-        print(data)
         amocrm_api("patch", f'leads/{lead.get("id")}', data)
         print("-----------------------------")
         print(amocrm_api.error)
