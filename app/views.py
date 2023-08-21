@@ -3562,7 +3562,7 @@ class TildaQuizWeightView(APIView):
         print(request.values)
         print(request.form)
         print(request.data)
-        print(request.json)
+        return super().post(*args, **kwargs)
         source = dict(request.form)
         data = dict(
             zip(
