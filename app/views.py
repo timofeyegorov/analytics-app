@@ -1,6 +1,4 @@
-import os
 import re
-import sys
 import json
 import pytz
 import pandas
@@ -8,12 +6,9 @@ import pickle
 import requests
 import tempfile
 import datetime
-import httplib2
-import apiclient
 
 from enum import Enum
 from math import ceil
-from uuid import uuid4
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional, Callable
 from collections import OrderedDict
@@ -21,7 +16,6 @@ from transliterate import slugify
 from urllib.parse import urlparse, parse_qsl, urlencode, unquote
 from pydantic import BaseModel, ConstrainedDate, conint
 from werkzeug.datastructures import ImmutableMultiDict
-from oauth2client.service_account import ServiceAccountCredentials
 from flask_sqlalchemy import BaseQuery
 
 from xlsxwriter import Workbook
@@ -29,7 +23,6 @@ from xlsxwriter import Workbook
 from flask import (
     request,
     render_template,
-    send_file,
     abort,
     send_file,
     session,
@@ -39,7 +32,6 @@ from flask import (
 from flask.views import MethodView
 
 from app import decorators
-from app.database import models
 from app.plugins.ads import vk
 from app.analytics import utils
 from app.analytics.pickle_load import PickleLoader
@@ -54,7 +46,7 @@ from app.data import (
     StatisticsUTMColumnEnum,
     PACKAGES_COMPARE,
 )
-from config import DATA_FOLDER, CREDENTIALS_FILE, RESULTS_FOLDER
+from config import DATA_FOLDER
 
 pickle_loader = PickleLoader()
 
@@ -3566,11 +3558,75 @@ class StatisticsGroupsByCampaignView(APIView):
 
 class TildaQuizWeightView(APIView):
     def post(self, *args, **kwargs):
-        print(args)
-        print(kwargs)
-        print(request.args)
-        print(request.form)
-        print(request.data)
+        source = dict(request.form)
+        print(source)
+        data = dict(
+            zip(
+                [parse_slug(item) for item in source.keys()],
+                [parse_slug(item) for item in source.values()],
+            )
+        )
+        value = {
+            "position": data.get("vasha_dolzhnost"),
+            "employees_quantity": data.get("razmer_vashej_kompanii"),
+            "have_curators": data.get("est_li_v_vashej_kompanii_kuratory_"),
+            "need_neuro_curator": data.get(
+                "hotite_li_vy_vnedrjat_nejro_kuratora"
+            ),
+            "implementation_budget": data.get(
+                "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
+            ),
+        }
+        weights = {
+            "position": {
+                "top_menedzher": 15,
+                "linejnyj_rukovoditel": 15,
+                "sobstvennik": 15,
+                "investoraktsioner": 5,
+                "direktor_po_produktu": 15,
+                "menedzher_produkta": 5,
+                "prepodavatel": 0,
+                "drugoe": 0,
+            },
+            "employees_quantity": {
+                "do_10_sotrudnikov": -50,
+                "10_100_sotrudnikov": 5,
+                "100_1000": 10,
+                "1000_10_000": 10,
+                "bolee_10_000": 10,
+            },
+            "have_curators": {
+                "net": -50,
+                "da": 15,
+            },
+            "need_neuro_curator": {
+                "da": 15,
+                "ne_uveren": 5,
+                "net": 0,
+            },
+            "implementation_budget": {
+                "do_200_000_r": 0,
+                "200_000_r_500_000_r": 5,
+                "500_000_r_1_mlnr": 10,
+                "1_mlnr_2_mlnr": 10,
+                "bolee_2_mlnr": 10,
+            },
+        }
+        weight = sum(
+            [
+                weights.get(question, {}).get(answer, 0)
+                for question, answer in value.items()
+            ]
+        )
+        if weight < 0:
+            tag = "Не звоним"
+        elif 0 <= weight <= 29:
+            tag = "3 очередь"
+        elif 0 <= weight <= 29:
+            tag = "2 очередь"
+        else:
+            tag = "1 очередь"
+        self.data = {"weigh": weight, "tag": tag}
         return super().post(*args, **kwargs)
 
 
