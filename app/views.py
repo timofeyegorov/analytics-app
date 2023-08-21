@@ -3762,30 +3762,35 @@ class TildaQuizWeightView(APIView):
         ):
             return super().post(*args, **kwargs)
 
+        print(lead.get("custom_fields"))
         data = dict(
             [
                 (
                     parse_slug(item.get("name")),
-                    parse_slug(
-                        (
-                            item.get("values", [{"value": ""}])
-                            or [{"value": ""}]
-                        )[0].get("value", "")
-                    ),
+                    (0,(item.get("values", [{"value": ""}]) or [{"value": ""}])[
+                        0
+                    ].get("value", "")),
                 )
                 for item in lead.get("custom_fields")
             ]
         )
+        print(data)
 
         value = {
-            "position": data.get("vasha_dolzhnost"),
-            "employees_quantity": data.get("razmer_vashej_kompanii"),
-            "have_curators": data.get("est_li_v_vashej_kompanii_kuratory_"),
-            "need_neuro_curator": data.get(
-                "hotite_li_vy_vnedrjat_nejro_kuratora"
+            "position": parse_slug(data.get("vasha_dolzhnost")[1]),
+            "employees_quantity": parse_slug(
+                data.get("razmer_vashej_kompanii")[1]
             ),
-            "implementation_budget": data.get(
-                "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
+            "have_curators": parse_slug(
+                data.get("est_li_v_vashej_kompanii_kuratory_")[1]
+            ),
+            "need_neuro_curator": parse_slug(
+                data.get("hotite_li_vy_vnedrjat_nejro_kuratora")[1]
+            ),
+            "implementation_budget": parse_slug(
+                data.get(
+                    "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
+                )[1]
             ),
         }
         weights = {
