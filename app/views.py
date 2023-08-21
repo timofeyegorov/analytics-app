@@ -3558,8 +3558,12 @@ class StatisticsGroupsByCampaignView(APIView):
 
 class TildaQuizWeightView(APIView):
     def post(self, *args, **kwargs):
+        print(request.args)
+        print(request.values)
+        print(request.form)
+        print(request.data)
+        print(request.json)
         source = dict(request.form)
-        print(source)
         data = dict(
             zip(
                 [parse_slug(item) for item in source.keys()],
