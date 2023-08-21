@@ -3788,7 +3788,6 @@ class TildaQuizWeightView(APIView):
                 "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
             ),
         }
-        print("\n".join([": ".join(item) for item in need_data.values()]))
 
         value = {
             "position": parse_slug(data.get("vasha_dolzhnost")[1]),
@@ -3868,6 +3867,21 @@ class TildaQuizWeightView(APIView):
             },
         }
         amocrm_api("patch", f'leads/{lead.get("id")}', data)
+        amocrm_api(
+            "post",
+            f'leads/{lead.get("id")}/notes',
+            {
+                "note_type": "extended_service_message",
+                "params": {
+                   "service": "Проставлен тег веса по следующим ответам",
+                   "text": "\n".join(
+            [": ".join(item) for item in need_data.values()]
+        )
+                },
+            },
+        )
+        print(amocrm_api.error)
+        print(amocrm_api.response)
 
         return super().post(*args, **kwargs)
 
