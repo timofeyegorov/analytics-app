@@ -3614,10 +3614,20 @@ class StatisticsGroupsByCampaignView(APIView):
 class TildaQuizWeightView(APIView):
     def post(self, *args, **kwargs):
         data = parse_request_data(dict(request.form))
+
         leads = data.get("leads", {}).get("add", [])
-        if leads:
-            lead = leads[0]
-            print(json.dumps(lead, indent=2, ensure_ascii=False))
+        if not leads:
+            return super().post(*args, **kwargs)
+
+        lead = leads[0]
+        if (
+            lead.get("pipeline_id") != "4869075"
+            or lead.get("status_id") != "44172885"
+        ):
+            return super().post(*args, **kwargs)
+
+        print(json.dumps(lead, indent=2, ensure_ascii=False))
+
         return super().post(*args, **kwargs)
         data = dict(
             zip(
