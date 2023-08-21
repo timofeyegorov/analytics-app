@@ -3848,10 +3848,6 @@ class TildaQuizWeightView(APIView):
             },
         }
         amocrm_api("patch", f'leads/{lead.get("id")}', data)
-        print("-----------------------------")
-        print(amocrm_api.error)
-        print(amocrm_api.response)
-        print("-----------------------------")
         return super().post(*args, **kwargs)
 
 
