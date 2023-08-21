@@ -3786,6 +3786,7 @@ class TildaQuizWeightView(APIView):
                 "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
             ),
         }
+        print(value)
         weights = {
             "position": {
                 "top_menedzher": 15,
@@ -3821,20 +3822,22 @@ class TildaQuizWeightView(APIView):
                 "bolee_2_mlnr": 10,
             },
         }
-        weight = sum(
-            [
-                weights.get(question, {}).get(answer, 0)
-                for question, answer in value.items()
-            ]
-        )
+        answers_weights = [
+            weights.get(question, {}).get(answer, 0)
+            for question, answer in value.items()
+        ]
+        print(answers_weights)
+        weight = sum(answers_weights)
+        print(weight)
         if weight < 0:
             tag = "Не звоним"
         elif 0 <= weight <= 29:
             tag = "3 очередь"
-        elif 0 <= weight <= 29:
+        elif 30 <= weight <= 44:
             tag = "2 очередь"
         else:
             tag = "1 очередь"
+        print(tag)
         self.data = {"weigh": weight, "tag": tag}
         amocrm_api = AmoCRMAPI()
         amocrm_api("post", "leads/tags", [{"name": tag}])
