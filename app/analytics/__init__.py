@@ -1,13 +1,26 @@
 from app import app
-from .table_loaders import get_clusters, get_segments, get_landings, get_turnover
-from .table_loaders import get_leads_ta_stats, get_segments_stats, get_traffic_sources
+from .table_loaders import (
+    get_clusters,
+    get_segments,
+    get_landings,
+    get_turnover,
+)
+from .table_loaders import (
+    get_leads_ta_stats,
+    get_segments_stats,
+    get_traffic_sources,
+)
 from .table_loaders import (
     get_channels,
     get_channels_summary,
     get_channels_detailed,
     get_payments_accumulation,
 )
-from .table_loaders import get_marginality, get_audience_type, get_audience_type_percent
+from .table_loaders import (
+    get_marginality,
+    get_audience_type,
+    get_audience_type_percent,
+)
 
 from app.tables import (
     calculate_clusters,
@@ -80,7 +93,9 @@ def getPlotCSV():
         return Response(
             df.to_csv(),
             mimetype="text/csv",
-            headers={"Content-disposition": f"attachment; filename={report}.csv"},
+            headers={
+                "Content-disposition": f"attachment; filename={report}.csv"
+            },
         )
     else:
         report = marginality
@@ -89,7 +104,9 @@ def getPlotCSV():
         return Response(
             df.to_csv(),
             mimetype="text/csv",
-            headers={"Content-disposition": f"attachment; filename={report}.csv"},
+            headers={
+                "Content-disposition": f"attachment; filename={report}.csv"
+            },
         )
 
 
@@ -120,7 +137,9 @@ def get_table_one_campaign(campaign, column_unique, table, **kwargs):
     return table
 
 
-@app.route("/channels_summary", methods=["GET", "POST"], endpoint="channels_summary")
+@app.route(
+    "/channels_summary", methods=["GET", "POST"], endpoint="channels_summary"
+)
 @decorators.auth
 def channels_summary():
     columns_dict = {
@@ -138,7 +157,9 @@ def channels_summary():
 
     date_start = request.args.get("date_start", default="")
     date_end = request.args.get("date_end", default="")
-    utm_source = request.args.get("utm_source", default="")  # Значение utm_source
+    utm_source = request.args.get(
+        "utm_source", default=""
+    )  # Значение utm_source
     source = request.args.get("source", default="")  # Имя канала
     utm_2 = request.args.get("utm_2")  # Значение utm для разбивки
     only_ru = bool(request.args.get("only_ru"))
@@ -149,7 +170,7 @@ def channels_summary():
         utm_2_value = request.args.get("channel")[2:]
         # Загружаем текущую разбивку по лидам для повторного отображения
         with open(
-                os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "rb"
+            os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "rb"
         ) as f:
             tables = pkl.load(f)
         # Загружаем отфильтрованную ранее базу лидов для расчета
@@ -165,12 +186,15 @@ def channels_summary():
                 unique_sources = unique_sources[
                     unique_sources.created_at
                     >= datetime.strptime(date_start, "%Y-%m-%d")
-                    ]
+                ]
             if date_end:
                 unique_sources = unique_sources[
                     unique_sources.created_at
-                    < (datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
-                    ]
+                    < (
+                        datetime.strptime(date_end, "%Y-%m-%d")
+                        + timedelta(days=1)
+                    )
+                ]
             unique_sources = unique_sources["trafficologist"].unique().tolist()
 
         # Загружаем значения фильтров
@@ -247,12 +271,14 @@ def channels_summary():
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
         # table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
             table = table[
                 table.created_at
                 < (datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
-                ]
+            ]
         unique_sources = table["trafficologist"].unique()
 
         if utm_source:
@@ -313,7 +339,7 @@ def channels_summary():
         with open(os.path.join(RESULTS_FOLDER, "current_leads.pkl"), "wb") as f:
             pkl.dump(table, f)
         with open(
-                os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
+            os.path.join(RESULTS_FOLDER, "current_channel_summary.pkl"), "wb"
         ) as f:
             pkl.dump(tables, f)
 
@@ -415,15 +441,24 @@ def audience_type():
     utm_unique = np.unique(utm)
     utm_value_unique = np.unique(utm_value)
 
-    if date_start or date_end or (len(utm_unique) != 1) or (len(utm_value_unique) != 1):
+    if (
+        date_start
+        or date_end
+        or (len(utm_unique) != 1)
+        or (len(utm_value_unique) != 1)
+    ):
         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
             table = pkl.load(f)
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         for i in range(10):
             if (utm[i] != [""]) or (utm_value[i] != [""]):
                 el = utm[i] + "=" + utm_value[i]
@@ -469,22 +504,32 @@ def audience_type_percent():
     utm_unique = np.unique(utm)
     utm_value_unique = np.unique(utm_value)
 
-    if date_start or date_end or (len(utm_unique) != 1) or (len(utm_value_unique) != 1):
+    if (
+        date_start
+        or date_end
+        or (len(utm_unique) != 1)
+        or (len(utm_value_unique) != 1)
+    ):
         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
             table = pkl.load(f)
         # table.date_request = pd.to_datetime(table.date_request).dt.normalize()  # Переводим столбец sent в формат даты
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         for i in range(10):
             if (utm[i] != [""]) or (utm_value[i] != [""]):
                 el = utm[i] + "=" + utm_value[i]
                 table = table[table["traffic_channel"].str.contains(el)]
         if len(table) == 0:
             return render_template(
-                "audience_type_percent.html", error="Нет данных для заданного периода"
+                "audience_type_percent.html",
+                error="Нет данных для заданного периода",
             )
         table = calculate_audience_tables_by_date(table)
         tables = calculate_audience_type_percent_result(table)
@@ -511,16 +556,23 @@ def segments():
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "segments.html", error="Нет данных для заданного периода"
             )
         tables = calculate_segments(table)
         return render_template(
-            "segments.html", tables=tables, date_start=date_start, date_end=date_end
+            "segments.html",
+            tables=tables,
+            date_start=date_start,
+            date_end=date_end,
         )
     tables = get_segments()
     return render_template(
@@ -537,27 +589,36 @@ def turnover():
     date_payment_start = request.args.get("date_payment_start")
     date_payment_end = request.args.get("date_payment_end")
     tab = request.args.get("tab")
-    if date_request_start or date_request_end or date_payment_start or date_payment_end:
+    if (
+        date_request_start
+        or date_request_end
+        or date_payment_start
+        or date_payment_end
+    ):
         with open(os.path.join(RESULTS_FOLDER, "leads.pkl"), "rb") as f:
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         table.date_payment = pd.to_datetime(table.date_payment).dt.normalize()
         if date_request_start:
             table = table[
-                table.created_at >= datetime.strptime(date_request_start, "%Y-%m-%d")
-                ]
+                table.created_at
+                >= datetime.strptime(date_request_start, "%Y-%m-%d")
+            ]
         if date_request_end:
             table = table[
-                table.created_at <= datetime.strptime(date_request_end, "%Y-%m-%d")
-                ]
+                table.created_at
+                <= datetime.strptime(date_request_end, "%Y-%m-%d")
+            ]
         if date_payment_start:
             table = table[
-                table.date_payment >= datetime.strptime(date_payment_start, "%Y-%m-%d")
-                ]
+                table.date_payment
+                >= datetime.strptime(date_payment_start, "%Y-%m-%d")
+            ]
         if date_payment_end:
             table = table[
-                table.date_payment <= datetime.strptime(date_payment_end, "%Y-%m-%d")
-                ]
+                table.date_payment
+                <= datetime.strptime(date_payment_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "turnover.html", error="Нет данных для заданного периода"
@@ -605,9 +666,13 @@ def clusters():
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "clusters.html",
@@ -643,9 +708,13 @@ def traffic_sources():
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "traffic_sources.html",
@@ -682,9 +751,13 @@ def segments_stats():
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "segments_stats.html",
@@ -720,9 +793,13 @@ def leads_ta_stats():
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "leads_ta_stats.html",
@@ -732,7 +809,10 @@ def leads_ta_stats():
             )
         table = calculate_leads_ta_stats(table)
         return render_template(
-            "leads_ta_stats.html", table=table, date_start=date_start, date_end=date_end
+            "leads_ta_stats.html",
+            table=table,
+            date_start=date_start,
+            date_end=date_end,
         )
     table = get_leads_ta_stats()
     return render_template("leads_ta_stats.html", table=table)
@@ -748,16 +828,23 @@ def landings():
             table = pkl.load(f)
         table.created_at = pd.to_datetime(table.created_at).dt.normalize()
         if date_start:
-            table = table[table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")]
+            table = table[
+                table.created_at >= datetime.strptime(date_start, "%Y-%m-%d")
+            ]
         if date_end:
-            table = table[table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")]
+            table = table[
+                table.created_at <= datetime.strptime(date_end, "%Y-%m-%d")
+            ]
         if len(table) == 0:
             return render_template(
                 "landings.html", error="Нет данных для заданного периода"
             )
         table = calculate_landings(table)
         return render_template(
-            "landings.html", tables=table, date_start=date_start, date_end=date_end
+            "landings.html",
+            tables=table,
+            date_start=date_start,
+            date_end=date_end,
         )
     tables = get_landings()
     return render_template(
@@ -848,6 +935,10 @@ app.add_url_rule(
     ),
 )
 app.add_url_rule(
+    "/api/tilda/quiz-weight",
+    view_func=views.TildaQuizWeightView.as_view("tilda_quiz_weight"),
+)
+app.add_url_rule(
     "/week-stats/expenses",
     view_func=views.WeekStatsExpensesView.as_view("week_stats_expenses"),
 )
@@ -885,7 +976,9 @@ app.add_url_rule(
 )
 app.add_url_rule(
     "/intensives/registration",
-    view_func=views.IntensivesRegistrationView.as_view("intensives_registration"),
+    view_func=views.IntensivesRegistrationView.as_view(
+        "intensives_registration"
+    ),
 )
 app.add_url_rule(
     "/intensives/preorder",
@@ -893,7 +986,9 @@ app.add_url_rule(
 )
 app.add_url_rule(
     "/intensives/funnel-channel",
-    view_func=views.IntensivesFunnelChannelView.as_view("intensives_funnel_channel"),
+    view_func=views.IntensivesFunnelChannelView.as_view(
+        "intensives_funnel_channel"
+    ),
 )
 app.add_url_rule(
     "/api/intensives/so/<date>",
@@ -901,7 +996,9 @@ app.add_url_rule(
 )
 app.add_url_rule(
     "/api/intensives/<course>/<date>",
-    view_func=views.IntensivesCourseDateAPIView.as_view("api_intensives_course_date"),
+    view_func=views.IntensivesCourseDateAPIView.as_view(
+        "api_intensives_course_date"
+    ),
 )
 app.add_url_rule(
     "/api/change-zoom/<manager_id>/<lead>/<date>",
@@ -942,11 +1039,15 @@ app.add_url_rule(
 )
 app.add_url_rule(
     "/api/v1/get-user-files",
-    view_func=views_api_v1.ApiZoomS3GetUserFilesView.as_view("api_get_user_files"),
+    view_func=views_api_v1.ApiZoomS3GetUserFilesView.as_view(
+        "api_get_user_files"
+    ),
 )
 app.add_url_rule(
     "/api/v1/user-zoom-timeframes",
-    view_func=views_api_v1.ApiUserZoomTimeframes.as_view("api_user_zoom_timeframes"),
+    view_func=views_api_v1.ApiUserZoomTimeframes.as_view(
+        "api_user_zoom_timeframes"
+    ),
 )
 app.add_url_rule(
     "/api/v1/get-user-name",
@@ -954,7 +1055,9 @@ app.add_url_rule(
 )
 app.add_url_rule(
     "/api/v1/update-upload-date",
-    view_func=views_api_v1.ApiUpdateZoomUploadDate.as_view("api_update_upload_date"),
+    view_func=views_api_v1.ApiUpdateZoomUploadDate.as_view(
+        "api_update_upload_date"
+    ),
 )
 
 
@@ -980,7 +1083,9 @@ def parse_vacancies():
     employer_id = config["hh"]["employer_id"]
     managers_url = f"employers/{employer_id}/managers"
 
-    response = requests.get("https://api.hh.ru/" + managers_url, headers=headers)
+    response = requests.get(
+        "https://api.hh.ru/" + managers_url, headers=headers
+    )
 
     manager_ids = [el["id"] for el in response.json()["items"]]
 
@@ -994,7 +1099,8 @@ def parse_vacancies():
         )
         for item in response.json()["items"]:
             response = requests.get(
-                f'https://api.hh.ru/vacancies/{item["id"]}/stats', headers=headers
+                f'https://api.hh.ru/vacancies/{item["id"]}/stats',
+                headers=headers,
             )
             for value in response.json()["items"]:
                 vacancy = {
@@ -1031,9 +1137,12 @@ def parse_vacancies():
     df_update = pd.DataFrame(vacancies)
     df_update.fillna(0, inplace=True)
     df_update = df_update.melt(
-        id_vars=["id", "name", "area", "date"], value_vars=["responses", "views"]
+        id_vars=["id", "name", "area", "date"],
+        value_vars=["responses", "views"],
     ).sort_values(by=["id", "date"])
-    df_update["id"] = df_update["id"].astype("int")  # Преобразуем id в целое число
+    df_update["id"] = df_update["id"].astype(
+        "int"
+    )  # Преобразуем id в целое число
 
     # Подгружаем ранее сохраненные данные
     df_storage = pd.read_csv("vacancies.csv")
@@ -1044,8 +1153,12 @@ def parse_vacancies():
     df.to_csv("vacancies.csv", index=False)
 
     # Удаляем дубликаты, осталяем последнее значение
-    df.drop_duplicates(subset=["id", "date", "variable"], keep="last", inplace=True)
-    df.sort_values(by=["id", "date"], inplace=True)  # Сортируем данные по id и дате
+    df.drop_duplicates(
+        subset=["id", "date", "variable"], keep="last", inplace=True
+    )
+    df.sort_values(
+        by=["id", "date"], inplace=True
+    )  # Сортируем данные по id и дате
 
     # Создаем вспомогательные датасеты отдельно с откликами и просмотрами по вакансии
     df_res = df[df["variable"] == "responses"]
@@ -1149,7 +1262,8 @@ def parse_vacancies():
 
     df_out = (
         df.pivot_table(
-            index=["id", "name", "area", "variable", "range", "fact"], columns=["date"]
+            index=["id", "name", "area", "variable", "range", "fact"],
+            columns=["date"],
         )
         .fillna(0)
         .astype(int)
@@ -1190,7 +1304,8 @@ def parse_vacancies():
             str(df_values[i][j]) + "%" for j in range(7, len(df_values[i]))
         ]
         df_values[i + 1] = df_values[i + 1][:7] + [
-            str(df_values[i + 1][j]) + "%" for j in range(7, len(df_values[i + 1]))
+            str(df_values[i + 1][j]) + "%"
+            for j in range(7, len(df_values[i + 1]))
         ]
 
     df_values[0][0] = "№"
@@ -1262,11 +1377,15 @@ class CallsMain(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             # Вызываем функцию для получения данных с api
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return render_template(
@@ -1294,7 +1413,9 @@ class callsNumbers(MethodView):
         message = request.args.get("message", "")
         type_table = session.get("type_table")
         pivot_table = table_number(type_table)
-        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        table_html = pivot_table.to_html(
+            classes="table table-striped table-bordered"
+        )
         return render_template(
             "calls/numbers.html",
             table=table_html,
@@ -1312,10 +1433,14 @@ class callsNumbers(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return redirect(url_for("calls_numbers", message=message))
@@ -1345,7 +1470,9 @@ class callsOpeners(MethodView):
         message = request.args.get("message", "")
         type_table = session.get("type_table")
         pivot_table = table_opener(type_table)
-        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        table_html = pivot_table.to_html(
+            classes="table table-striped table-bordered"
+        )
         return render_template(
             "calls/openers.html",
             table=table_html,
@@ -1363,10 +1490,14 @@ class callsOpeners(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return redirect(url_for("calls_openers", message=message))
@@ -1395,7 +1526,9 @@ class callsHours(MethodView):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_time_day()
-        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        table_html = pivot_table.to_html(
+            classes="table table-striped table-bordered"
+        )
         return render_template(
             "calls/hours.html",
             table=table_html,
@@ -1413,10 +1546,14 @@ class callsHours(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return redirect(url_for("calls_hours", message=message))
@@ -1437,7 +1574,9 @@ class callsOpenerNumber(MethodView):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_opener_number(2)
-        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        table_html = pivot_table.to_html(
+            classes="table table-striped table-bordered"
+        )
         return render_template(
             "calls/openernumber.html",
             table=table_html,
@@ -1479,10 +1618,14 @@ class callsOpenerNumber(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return redirect(url_for("calls_openernumber", message=message))
@@ -1494,7 +1637,9 @@ class callsOpenerHour(MethodView):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_opener_time(2)
-        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        table_html = pivot_table.to_html(
+            classes="table table-striped table-bordered"
+        )
         return render_template(
             "calls/openerhours.html",
             table=table_html,
@@ -1536,10 +1681,14 @@ class callsOpenerHour(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return redirect(url_for("calls_openerhour", message=message))
@@ -1551,7 +1700,9 @@ class callsMedTime(MethodView):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_timecall()
-        table_html = pivot_table.to_html(classes="table table-striped table-bordered")
+        table_html = pivot_table.to_html(
+            classes="table table-striped table-bordered"
+        )
         return render_template(
             "calls/medtime.html",
             table=table_html,
@@ -1569,10 +1720,14 @@ class callsMedTime(MethodView):
             end_date = (
                 datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
             ).strftime("%d-%m-%Y")
-            data_range = f"Текущий диапазон данных: с {start_date} по {end_date}"
+            data_range = (
+                f"Текущий диапазон данных: с {start_date} по {end_date}"
+            )
             set_datarange(data_range)
             if start_import(start_date, end_date) == 200:
-                message = f"Получены данные звонков с {start_date} по {end_date}"
+                message = (
+                    f"Получены данные звонков с {start_date} по {end_date}"
+                )
             else:
                 message = f"Ошибка получения данных на стороне Sipuni"
             return redirect(url_for("calls_medtime", message=message))
@@ -1591,23 +1746,34 @@ class callsMedTime(MethodView):
 
 class callsSettings(MethodView):
     def get(self):
-        return render_template("calls/settings.html", openers=show_openers_list())
+        return render_template(
+            "calls/settings.html", openers=show_openers_list()
+        )
 
     def post(self):
         if "change_settings" in request.form:
             settings_openers(request.form.getlist("options"))
-            return render_template("calls/settings.html", openers=show_openers_list())
+            return render_template(
+                "calls/settings.html", openers=show_openers_list()
+            )
         elif "dell_settings" in request.form:
             settings_delete()
-            return render_template("calls/settings.html", openers=settings_delete())
+            return render_template(
+                "calls/settings.html", openers=settings_delete()
+            )
         else:
-            return render_template("calls/settings.html", openers=settings_delete())
+            return render_template(
+                "calls/settings.html", openers=settings_delete()
+            )
 
 
-
-
-app.add_url_rule("/intensives", view_func=views.Intensives.as_view('intensives'))
-app.add_url_rule("/intensivesevents", view_func=views.IntensivesEvents.as_view('intensives_events'))
+app.add_url_rule(
+    "/intensives", view_func=views.Intensives.as_view("intensives")
+)
+app.add_url_rule(
+    "/intensivesevents",
+    view_func=views.IntensivesEvents.as_view("intensives_events"),
+)
 
 app.add_url_rule("/calls", view_func=CallsMain.as_view("calls_main"))
 app.add_url_rule("/numbers", view_func=callsNumbers.as_view("calls_numbers"))
@@ -1616,6 +1782,8 @@ app.add_url_rule("/hours", view_func=callsHours.as_view("calls_hours"))
 app.add_url_rule(
     "/openernumber", view_func=callsOpenerNumber.as_view("calls_openernumber")
 )
-app.add_url_rule("/openerhours", view_func=callsOpenerHour.as_view("calls_openerhour"))
+app.add_url_rule(
+    "/openerhours", view_func=callsOpenerHour.as_view("calls_openerhour")
+)
 app.add_url_rule("/medtime", view_func=callsMedTime.as_view("calls_medtime"))
 app.add_url_rule("/settings", view_func=callsSettings.as_view("calls_settings"))
