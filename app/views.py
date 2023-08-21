@@ -3831,7 +3831,7 @@ class TildaQuizWeightView(APIView):
             },
         }
         amocrm_api = AmoCRMAPI()
-        amocrm_api("/api/v4/leads/tags", [{"name": tag}])
+        amocrm_api("leads/tags", [{"name": tag}])
         print("-----------------------------")
         print(amocrm_api.error)
         print(amocrm_api.response)
