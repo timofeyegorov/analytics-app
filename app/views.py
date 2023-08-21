@@ -182,7 +182,7 @@ def parse_request_data(data):
             construct(_fields, _value, _output[_field_name])
 
     output = None
-    for field_str, value in data:
+    for field_str, value in data.items():
         fields = []
         parse_field_str(field_str, fields)
         if not fields:
@@ -3613,8 +3613,6 @@ class StatisticsGroupsByCampaignView(APIView):
 
 class TildaQuizWeightView(APIView):
     def post(self, *args, **kwargs):
-        print(dict(request.form))
-        print(list(request.form))
         print(parse_request_data(dict(request.form)))
         return super().post(*args, **kwargs)
         data = dict(
