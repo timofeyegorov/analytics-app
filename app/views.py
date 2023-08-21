@@ -3630,9 +3630,9 @@ class TildaQuizWeightView(APIView):
             [
                 (
                     parse_slug(item.get("name")),
-                    (item.get("values", [{"value": ""}]) or [{"value": ""}])[
+                    parse_slug((item.get("values", [{"value": ""}]) or [{"value": ""}])[
                         0
-                    ].get("value", ""),
+                    ].get("value", "")),
                 )
                 for item in lead.get("custom_fields")
             ]
@@ -3649,6 +3649,7 @@ class TildaQuizWeightView(APIView):
                 "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
             ),
         }
+        print(value)
         weights = {
             "position": {
                 "top_menedzher": 15,
