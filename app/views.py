@@ -3868,11 +3868,11 @@ class TildaQuizWeightView(APIView):
         }
         amocrm_api("patch", f'leads/{lead.get("id")}', data)
         note = {
-            "note_type": "extended_service_message",
+            "note_type": "common",
             "params": {
-                "service": "Проставлен тег веса по следующим ответам",
+                # "service": "Проставлен тег веса по следующим ответам",
                 "text": "\n".join(
-                    [": ".join(item) for item in need_data.values()]
+                    ["Проставлен тег веса по следующим ответам:", ""]+[": ".join(item) for item in need_data.values()]
                 ),
             },
         }
