@@ -10,7 +10,7 @@ import datetime
 from enum import Enum
 from math import ceil
 from pathlib import Path
-from typing import Tuple, List, Dict, Any, Optional, Callable
+from typing import Tuple, List, Dict, Any, Optional, Callable, Union
 from collections import OrderedDict
 from transliterate import slugify
 from urllib.parse import urlparse, parse_qsl, urlencode, unquote
@@ -138,6 +138,61 @@ def parse_date(value: str) -> datetime.date:
     if len(groups[1]) == 1:
         groups[1] = f"0{groups[1]}"
     return datetime.date.fromisoformat("-".join(list(reversed(groups))))
+
+
+def parse_field_str(
+    value: str, result: List[Tuple[Union[int, str], type]] = None
+):
+    if result is None:
+        result = []
+    matched = re.match(r"^([^\[^\]]+)(.*)$", value)
+    field_key = matched.group(1)
+    tail = matched.group(2)
+    try:
+        field_key = int(field_key)
+        type_class = list
+    except ValueError:
+        type_class = dict
+    result.append((field_key, type_class))
+    matched = re.match(r"^\[([^\[^\]]+)\](.*)$", tail)
+    if matched:
+        parse_field_str("".join(matched.groups()), result)
+
+
+def parse_request_data(data):
+    def construct(_fields, _value, _output):
+        _field_name, _type_class = _fields.pop(0)
+        if isinstance(_output, dict):
+            if _field_name not in _output.keys():
+                _output[_field_name] = _value
+            if not _fields:
+                return
+            _field_name1, _type_class1 = _fields[0]
+            if not isinstance(_output[_field_name], _type_class1):
+                _output[_field_name] = _type_class1()
+            construct(_fields, _value, _output[_field_name])
+        elif isinstance(_output, list):
+            if len(_output) <= _field_name:
+                _output.insert(_field_name, _value)
+            if not _fields:
+                return
+            _field_name1, _type_class1 = _fields[0]
+            if not isinstance(_output[_field_name], _type_class1):
+                _output[_field_name] = _type_class1()
+            construct(_fields, _value, _output[_field_name])
+
+    output = None
+    for field_str, value in data:
+        fields = []
+        parse_field_str(field_str, fields)
+        if not fields:
+            continue
+        field_name, type_class = fields[0]
+        if not isinstance(output, type_class):
+            output = type_class()
+        construct(fields, value, output)
+
+    return output
 
 
 class ContextTemplate:
@@ -3558,12 +3613,8 @@ class StatisticsGroupsByCampaignView(APIView):
 
 class TildaQuizWeightView(APIView):
     def post(self, *args, **kwargs):
-        print(request.args)
-        print(request.values)
-        print(request.form)
-        print(request.data)
+        print(parse_request_data(dict(request.form)))
         return super().post(*args, **kwargs)
-        source = dict(request.form)
         data = dict(
             zip(
                 [parse_slug(item) for item in source.keys()],
