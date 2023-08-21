@@ -452,50 +452,6 @@ class AmoCRMAPI:
     def response(self) -> Optional[Dict[str, Any]]:
         return self._response
 
-    # @classmethod
-    # def parse_textarea(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_text(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_multitext(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_tracking_data(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_select(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_multiselect(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_numeric(cls, value) -> str:
-    #     return str(value)
-    #
-    # @classmethod
-    # def parse_checkbox(cls, value) -> str:
-    #     return "Да" if value is True else "Нет"
-    #
-    # @classmethod
-    # def parse_date_time(cls, value) -> datetime.datetime:
-    #     return datetime.datetime.fromtimestamp(
-    #         value, tz=pytz.timezone("Europe/Moscow")
-    #     )
-    #
-    # @classmethod
-    # def parse_date(cls, value) -> datetime.datetime:
-    #     return datetime.datetime.fromtimestamp(
-    #         value, tz=pytz.timezone("Europe/Moscow")
-    #     )
-
     def __call__(
         self,
         method: str,
@@ -511,7 +467,7 @@ class AmoCRMAPI:
             url = self._get_url_drive(method)
         else:
             url = self._get_url(method)
-        response = requests.patch(
+        response = requests.post(
             url,
             params=params,
             headers={"Authorization": f'Bearer {auth.get("access_token")}'},
@@ -3875,11 +3831,16 @@ class TildaQuizWeightView(APIView):
             },
         }
         amocrm_api = AmoCRMAPI()
-        amocrm_api(f'leads/{lead.get("id")}', tags)
+        amocrm_api("/api/v4/leads/tags", [{"name": tag}])
         print("-----------------------------")
         print(amocrm_api.error)
         print(amocrm_api.response)
         print("-----------------------------")
+        # amocrm_api(f'leads/{lead.get("id")}', tags)
+        # print("-----------------------------")
+        # print(amocrm_api.error)
+        # print(amocrm_api.response)
+        # print("-----------------------------")
         print(json.dumps(tags, indent=2, ensure_ascii=False))
         return super().post(*args, **kwargs)
 
