@@ -3788,7 +3788,7 @@ class TildaQuizWeightView(APIView):
                 "kakoj_bjudzhet_na_vnedrenie_nejro_kuratora_u_vashej_kompanii"
             ),
         }
-        print(need_data)
+        print("\n".join([": ".join(item) for item in need_data.values()]))
 
         value = {
             "position": parse_slug(data.get("vasha_dolzhnost")[1]),
