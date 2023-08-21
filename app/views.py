@@ -469,7 +469,7 @@ class AmoCRMAPI:
             url = self._get_url(method)
         response = requests.post(
             url,
-            data=params,
+            json=params,
             headers={"Authorization": f'Bearer {auth.get("access_token")}'},
         )
         try:
