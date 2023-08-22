@@ -34,7 +34,6 @@ from config import DATA_FOLDER, CREDENTIALS_FILE
 from app.analytics import pickle_loader
 from app.dags.decorators import log_execution_time
 
-
 DATA_PATH = Path(DATA_FOLDER) / "week"
 os.makedirs(DATA_PATH, exist_ok=True)
 
@@ -141,7 +140,7 @@ def parse_cell_data(cell: Dict[str, Dict[str, Any]]) -> str:
     color = cell.get("effectiveFormat", {}).get("backgroundColor")
     lead_id = parse_lead_id(value)
     if not pandas.isna(lead_id) and (
-        not color or Color(rgb=list(color.values())[:3]).get_hex_l() != "#98e098"
+            not color or Color(rgb=list(color.values())[:3]).get_hex_l() != "#98e098"
     ):
         value = ""
     return value
@@ -157,8 +156,8 @@ def count_query_params_concurrency(target: dict, value: dict) -> int:
         list(
             filter(
                 lambda item: target.get(item) == value.get(item)
-                and target.get(item) is not None
-                and value.get(item) is not None,
+                             and target.get(item) is not None
+                             and value.get(item) is not None,
                 columns,
             )
         )
@@ -176,7 +175,7 @@ def compare_exact_params(params: List[str], target: dict, value: dict) -> bool:
 
 
 def matched_url(
-    target_query: Dict[str, str], matched_query_dict: Dict[str, str]
+        target_query: Dict[str, str], matched_query_dict: Dict[str, str]
 ) -> List[int]:
     target_query = dict(
         map(
@@ -305,16 +304,16 @@ def detect_lead(item: pandas.Series, rows: pandas.DataFrame) -> Optional[pandas.
     if lead is None:
         amo = rows[
             (
-                (rows["amo_current"] == "")
-                | rows["amo_current"].isna()
-                | rows["amo_current"].isnull()
+                    (rows["amo_current"] == "")
+                    | rows["amo_current"].isna()
+                    | rows["amo_current"].isnull()
             )
             & (
-                (rows["amo_main"] == "")
-                | rows["amo_main"].isna()
-                | rows["amo_main"].isnull()
+                    (rows["amo_main"] == "")
+                    | rows["amo_main"].isna()
+                    | rows["amo_main"].isnull()
             )
-        ]
+            ]
         matched = amo[amo["target_short"] == target_short]
         if len(matched):
             matched_query = dict(
@@ -382,7 +381,7 @@ def get_spreadsheet_url(name: str) -> str:
 
 
 def read_zoom_day(
-    worksheet: Worksheet, current_date: date
+        worksheet: Worksheet, current_date: date
 ) -> Tuple[Optional[pandas.DataFrame], Optional[pandas.DataFrame]]:
     print(f'    - Reading day {current_date.strftime("%d.%m.%Y")}')
     values = []
@@ -429,7 +428,7 @@ def read_zoom_day(
 
 
 def read_zoom_month(
-    spreadsheet_id: str, month: date
+        spreadsheet_id: str, month: date
 ) -> Tuple[pandas.DataFrame, Optional[pandas.DataFrame]]:
     print(
         f'  - Reading month {month.strftime("%m.%Y")} from url {get_spreadsheet_url(spreadsheet_id)}'
@@ -465,7 +464,7 @@ def read_zoom_month(
 
 
 def read_payments(
-    service: GoogleAPIClientResource, spreadsheet_id: str
+        service: GoogleAPIClientResource, spreadsheet_id: str
 ) -> pandas.DataFrame:
     spreadsheets = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
     payments_columns = ["manager_id", "lead", "date", "profit"]
@@ -492,13 +491,13 @@ def read_payments(
             payments = payments[
                 (
                     ~(
-                        payments["date"].isna()
-                        | payments["lead"].isna()
-                        | payments["manager_id"].isna()
+                            payments["date"].isna()
+                            | payments["lead"].isna()
+                            | payments["manager_id"].isna()
                     )
                 )
                 & (payments["profit"] > 0)
-            ]
+                ]
             output = pandas.DataFrame(
                 list(
                     map(
@@ -604,7 +603,7 @@ def get_payments():
     data = pandas.DataFrame(
         values[1:],
         columns=values[0]
-        + [f"Undefined {item}" for item in range(columns_quantity - len(values[0]))],
+                + [f"Undefined {item}" for item in range(columns_quantity - len(values[0]))],
     )
 
     data.rename(
@@ -622,7 +621,7 @@ def get_payments():
 @log_execution_time("get_stats")
 def get_stats():
     def processing_source(
-        values: List[List[str]], columns_info: List[Tuple[str, str, Callable]]
+            values: List[List[str]], columns_info: List[Tuple[str, str, Callable]]
     ) -> pandas.DataFrame:
         columns_count = max(list(map(lambda item: len(item), values[1:])))
         headers_count = len(values[0])
@@ -682,7 +681,7 @@ def get_stats():
     service = discovery.build("sheets", "v4", http=http_auth)
     spreadsheet_id = "1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
     for sheet in (
-        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+            service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
     ):
         title = sheet.get("properties").get("title")
         values = (
@@ -715,7 +714,7 @@ def get_stats():
                 if lead is not None:
                     account_by_url = url_account[
                         url_account["url"] == lead["traffic_channel"]
-                    ].reset_index(drop=True)
+                        ].reset_index(drop=True)
                     if not account_by_url.empty:
                         channel_unique = account_by_url.loc[0, "account"]
                         channel = account_by_url.loc[0, "account_title"]
@@ -736,9 +735,9 @@ def get_stats():
             )
             source_payments = source_payments[
                 ~(
-                    source_payments["manager_id"].isna()
-                    | (source_payments["manager_id"] == "")
-                    | source_payments["lead_id"].isna()
+                        source_payments["manager_id"].isna()
+                        | (source_payments["manager_id"] == "")
+                        | source_payments["lead_id"].isna()
                 )
             ].reset_index(drop=True)
             source_payments["profit"].fillna(0, inplace=True)
@@ -756,9 +755,9 @@ def get_stats():
             source_so.insert(0, "manager_id", source_so["manager"].apply(parse_slug))
             source_so = source_so[
                 ~(
-                    source_so["manager_id"].isna()
-                    | (source_so["manager_id"] == "")
-                    | source_so["lead_id"].isna()
+                        source_so["manager_id"].isna()
+                        | (source_so["manager_id"] == "")
+                        | source_so["lead_id"].isna()
                 )
             ].reset_index(drop=True)
             source_so.drop_duplicates(subset=["lead_id"], inplace=True)
@@ -774,7 +773,7 @@ def get_stats():
     )
     groups_list = []
     for (manager_id, manager), manager_id_rows in manager_group.groupby(
-        by=["manager_id", "manager"]
+            by=["manager_id", "manager"]
     ):
         groups_count = dict(
             map(
@@ -848,8 +847,8 @@ def get_stats():
     expenses = (
         source_payments[
             ~(
-                source_payments["order_date"].isna()
-                | source_payments["profit_date"].isna()
+                    source_payments["order_date"].isna()
+                    | source_payments["profit_date"].isna()
             )
         ][
             [
@@ -872,7 +871,7 @@ def get_stats():
         source_zoom_count = pickle.load(file_ref)
     zoom_count_list = []
     for (manager_id, zoom_date), rows in source_zoom_count.groupby(
-        by=["manager_id", "date"]
+            by=["manager_id", "date"]
     ):
         zoom_count_list.append(
             {
@@ -892,8 +891,8 @@ def get_stats():
     zoom = (
         source_payments[
             ~(
-                source_payments["zoom_date"].isna()
-                | source_payments["profit_date"].isna()
+                    source_payments["zoom_date"].isna()
+                    | source_payments["profit_date"].isna()
             )
         ][
             [
@@ -1016,7 +1015,7 @@ def update_so():
     data = None
 
     for sheet in (
-        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
+            service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute().get("sheets")
     ):
         title = sheet.get("properties").get("title")
         if title == "SpecialOffers":
@@ -1060,7 +1059,7 @@ def update_so():
             data.fillna("", inplace=True)
             for column in data.columns:
                 if column in ["data_zoom", "data_so"] or str(column).startswith(
-                    "data_oplaty_"
+                        "data_oplaty_"
                 ):
                     data[column] = data[column].apply(
                         lambda item: str(item.strftime("%d.%m.%Y")) if item else ""
@@ -1098,7 +1097,7 @@ def update_so():
             ).execute()
             service.spreadsheets().values().update(
                 spreadsheetId=spreadsheet_id,
-                range=f"SpecialOffers!A1:ZZ{len(data)+1}",
+                range=f"SpecialOffers!A1:ZZ{len(data) + 1}",
                 valueInputOption="USER_ENTERED",
                 body={"values": values},
             ).execute()
@@ -1335,7 +1334,7 @@ def get_funnel_channel():
 
     rows_expenses = []
     for (date, funnel, account, account_title), group in expenses.groupby(
-        by=["date", "funnel", "account", "account_title"]
+            by=["date", "funnel", "account", "account_title"]
     ):
         rows_expenses.append(
             {
@@ -1349,7 +1348,7 @@ def get_funnel_channel():
 
     rows_profit = []
     for (date, funnel, account, account_title, profit_date), group in data.groupby(
-        by=["date", "funnel", "account", "account_title", "profit_date"]
+            by=["date", "funnel", "account", "account_title", "profit_date"]
     ):
         rows_profit.append(
             {
@@ -1393,7 +1392,7 @@ def get_intensives_emails():
             print(f"     | URL is undefined")
 
     def read_excel(
-        course_name: str, file: Optional[pandas.ExcelFile]
+            course_name: str, file: Optional[pandas.ExcelFile]
     ) -> Optional[pandas.DataFrame]:
         if file is None:
             return
@@ -1426,6 +1425,7 @@ def get_intensives_emails():
         )
     )
     print()
+
     if summary_file is None:
         return
 
@@ -1436,10 +1436,12 @@ def get_intensives_emails():
         ),
         inplace=True,
     )
+
     summary.rename(
         columns={
             "fajl_s_registratsijami": "intensives_registrations",
             "fajl_s_predzakazami": "intensives_preorders",
+            "fajl_s_uchastnikami": "intensives_members",
         },
         inplace=True,
     )
@@ -1448,8 +1450,10 @@ def get_intensives_emails():
     sources = {
         "intensives_registrations": pandas.DataFrame(columns=data_columns),
         "intensives_preorders": pandas.DataFrame(columns=data_columns),
+        "intensives_members": pandas.DataFrame(columns=data_columns),
     }
     for _, summary_row in summary.iterrows():
+
         print("-> Read sources")
         registrations_dataframe = read_excel(
             summary_row["intensiv"],
@@ -1472,6 +1476,16 @@ def get_intensives_emails():
                 ignore_index=True,
             )
         print()
+        # NEW
+        members_dataframe = read_excel(
+            summary_row["intensiv"],
+            sources_read(get_download_url(summary_row.intensives_members)),
+        )
+        if members_dataframe is not None:
+            sources["intensives_members"] = pandas.concat(
+                [sources["intensives_members"], members_dataframe],
+                ignore_index=True,
+            )
 
     for source_name, source in sources.items():
         with open(Path(DATA_PATH / f"{source_name}.pkl"), "wb") as file_ref:
@@ -1572,7 +1586,6 @@ dag = DAG(
     start_date=datetime(2017, 3, 20),
     catchup=False,
 )
-
 
 get_payments_operator = PythonOperator(
     task_id="get_payments",
