@@ -231,15 +231,6 @@ def get_intensives_preorder_stats():
             pickle.dump(dataframe, file_ref)
 
 
-@log_execution_time("get_intensives_members_stats")
-def get_intensives_members_stats():
-    source = get_intensives_emails("1-3nr1hn2G111qeMYE9XTK9a-zv_b_wKM335MT1SzyJg")
-    if source is not None:
-        dataframe = processing_intensives_stats(source)
-        with open(Path(RESULTS_FOLDER, "intensives_members.pkl"), "wb") as file_ref:
-            pickle.dump(dataframe, file_ref)
-
-
 dag = DAG(
     "intensives",
     description="Collect intensives profit",
@@ -259,8 +250,3 @@ get_intensives_preorder_stats_operator = PythonOperator(
     dag=dag,
 )
 
-get_intensives_members_stats_operator = PythonOperator(
-    task_id="get_intensives_members_stats",
-    python_callable=get_intensives_members_stats,
-    dag=dag,
-)
