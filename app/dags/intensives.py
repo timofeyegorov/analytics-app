@@ -93,7 +93,7 @@ def get_google_service() -> GoogleAPIClientResource:
 
 def get_intensives_payments(service: GoogleAPIClientResource) -> pandas.DataFrame:
     def processing_source(
-        values: List[List[str]], columns_info: List[Tuple[str, str, Callable]]
+            values: List[List[str]], columns_info: List[Tuple[str, str, Callable]]
     ) -> pandas.DataFrame:
         columns_count = max(list(map(lambda item: len(item), values[1:])))
         headers_count = len(values[0])
@@ -195,11 +195,11 @@ def processing_intensives_stats(source: pandas.DataFrame) -> pandas.DataFrame:
             row_payments = payments[
                 (payments["profit_date"] >= getattr(row, "data_intensiva"))
                 & (payments["email"] == getattr(row, "e_mail"))
-            ]
+                ]
             if row_next is not None:
                 row_payments = row_payments[
                     row_payments["profit_date"] < getattr(row_next, "data_intensiva")
-                ]
+                    ]
             values.append(
                 (
                     getattr(row, "data_intensiva"),
@@ -217,7 +217,7 @@ def get_intensives_registration_stats():
     if source is not None:
         dataframe = processing_intensives_stats(source)
         with open(
-            Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb"
+                Path(RESULTS_FOLDER, "intensives_registration.pkl"), "wb"
         ) as file_ref:
             pickle.dump(dataframe, file_ref)
 
@@ -228,6 +228,15 @@ def get_intensives_preorder_stats():
     if source is not None:
         dataframe = processing_intensives_stats(source)
         with open(Path(RESULTS_FOLDER, "intensives_preorder.pkl"), "wb") as file_ref:
+            pickle.dump(dataframe, file_ref)
+
+
+@log_execution_time("get_intensives_members_stats")
+def get_intensives_members_stats():
+    source = get_intensives_emails("1-3nr1hn2G111qeMYE9XTK9a-zv_b_wKM335MT1SzyJg")
+    if source is not None:
+        dataframe = processing_intensives_stats(source)
+        with open(Path(RESULTS_FOLDER, "intensives_members.pkl"), "wb") as file_ref:
             pickle.dump(dataframe, file_ref)
 
 
@@ -247,5 +256,11 @@ get_intensives_registration_stats_operator = PythonOperator(
 get_intensives_preorder_stats_operator = PythonOperator(
     task_id="get_intensives_preorder_stats",
     python_callable=get_intensives_preorder_stats,
+    dag=dag,
+)
+
+get_intensives_members_stats_operator = PythonOperator(
+    task_id="get_intensives_members_stats",
+    python_callable=get_intensives_members_stats,
     dag=dag,
 )
