@@ -2,6 +2,8 @@ import io
 import os
 import re
 import hmac
+
+import pandas
 import pydantic
 import requests
 
@@ -172,3 +174,25 @@ class Client:
                 replace(f'{self.env.bucket}/', '')
                 for path, _, file_list in self.s3fs.walk(path=path)
                 for file in file_list]
+
+    def get_paths_2_level(self) -> list[str]:
+        """
+        Генератор пути второго уровня всех пользователей,
+        в которых располагаются json файлы
+        """
+        for folder in self.ls():
+            if folder.type == PathInfoTypeEnum.directory:
+                for sub_f in self.ls(folder.name):
+                    if sub_f.type == PathInfoTypeEnum.directory:
+                        yield sub_f.name
+
+    def open(self, path: str):
+        """
+        Метод возвращает объект файлового типа из файловой системы
+        Результирующий экземпляр должен правильно функционировать в контексте <with>
+
+        :param path: путь до файла.
+        :return: список имен файлов с указанием относительного пути
+        """
+        path = self._resolve_path(path)
+        return self.s3fs.open(path)

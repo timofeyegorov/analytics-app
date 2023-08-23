@@ -1,3 +1,4 @@
+<span  id="app">
 <form action="{{ url_for('zooms') }}">
     <div class="filter-block">
         <div class="field">
@@ -10,7 +11,7 @@
         </div>
         <div class="field">
             <label for="field-manager">Менеджер</label>
-            <select name="manager" id="field-manager"{% if not extras.managers %} disabled="disabled"{% endif %}>
+            <select name="manager" id="field-manager"{% if not extras.managers %} disabled="disabled"{% endif %} v-model="selectedManager">
                 {% if extras.managers %}
                     <option value="__all__">-- Все --</option>
                     {% for option in extras.managers %}
@@ -69,10 +70,10 @@
         </div>
     </div>
     <div class="filter-actions" >
-        <button class="btn btn-primary">Обновить</button>
-        <button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button>
-        <button type="button" class="btn btn-warning excel-download">Скачать Excel</button>
-        <span id="app" style="padding-left: 3px;" v-cloak>
+        <span style="padding-right: 3px;"><button class="btn btn-primary">Обновить</button></span>
+        <span style="padding-right: 3px;"><button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button></span>
+        <span style="padding-right: 2px;"><button type="button" class="btn btn-warning excel-download">Скачать Excel</button></span>
+        <span style="padding-left: 3px;" v-cloak>
             <span v-if="zoomOn">               
                 <span id="app" style="padding-left: 0px;">
                 <button v-if="isLoading" class="btn btn-info" type="button" disabled>
@@ -85,9 +86,10 @@
                     class="btn btn-info" 
                     @click="upload_zoom">
                     Загрузить Zoom</button>
-                    {% if request.user.last_update_zoom %}<span style="padding-left: 15px;">Последняя дата загрузки: {{ request.user.last_update_zoom.strftime('%d.%m.%Y %H:%M') }} мск.</span> {% endif %}                
+                    <span style="padding-left: 15px;" v-if="selectedManager">[[ last_uploaded_zoom ]]</span>              
                 </span>
             </span>            
         </span>    
     </div>
 </form>
+</span>

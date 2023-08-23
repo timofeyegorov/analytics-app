@@ -37,8 +37,20 @@ def update_last_update_zoom(user_id: int):
             WHERE id = %s;
         """
         conn, cursor = connect()
-        cursor.execute(sql, (user_id, ))
+        cursor.execute(sql, (user_id,))
         conn.commit()
+    except Exception as err:
+        pass
+
+
+def get_last_update_zoom(username: str):
+    try:
+        sql = f"""
+            SELECT last_update_zoom FROM `users` WHERE username='{username}';
+        """
+        conn, cursor = connect()
+        cursor.execute(sql)
+        return cursor.fetchone()
     except Exception as err:
         pass
 

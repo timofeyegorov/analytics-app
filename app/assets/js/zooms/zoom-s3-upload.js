@@ -5,10 +5,32 @@ const App = {
             zoomOn: true,
             placeholder: 'Фамилия и Имя менеджера',
             files: [],
-            isLoading: false,                       
+            isLoading: false, 
+            selectedManager: '',
+            data_last_uploaded_zoom: null                      
         }
     },
-    methods: {        
+    computed: {
+        last_uploaded_zoom() {
+            this.get_last_uploded_zoom()
+            return this.data_last_uploaded_zoom
+        }
+    },
+    methods: {  
+        async get_last_uploded_zoom() {
+            const response = await fetch(`/api/v1/get-last-uploaded-zoom/${this.selectedManager}`,{
+                method: 'GET',
+            })
+            datetime_zoom = await response.json()
+            if (datetime_zoom['datetime_zoom']) {
+                this.data_last_uploaded_zoom = `Последняя дата загрузки ${datetime_zoom['datetime_zoom']} мск.`
+            }
+            else {
+                this.data_last_uploaded_zoom = null
+            }
+            
+        },
+
         async read_directory(directory_handle, path_prefix) {
             for await(let handle of directory_handle.values()) {
                 // console.log(handle)
@@ -53,7 +75,7 @@ const App = {
                                 unique_date_set.push(data.directory)
                             }
                         }
-                        unique_date_set.sort(this.date_compare).slice(0, 20)                                           
+                        unique_date_set.sort(this.date_compare).slice(0, 20)                                                               
                         
                         for (const data of datetime_checked_files) {
                             if (unique_date_set.includes(data.directory)) {

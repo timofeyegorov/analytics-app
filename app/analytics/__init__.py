@@ -1059,6 +1059,14 @@ app.add_url_rule(
         "api_update_upload_date"
     ),
 )
+app.add_url_rule(
+    "/api/v1/get-last-uploaded-zoom/<username>",
+    view_func=views_api_v1.ApiGetLastUpdateZoom.as_view("api_last_uploaded_zoom"),
+)
+app.add_url_rule(
+    "/api/v1/get-zoom-link/",
+    view_func=views_api_v1.ApiGetZoomLink.as_view("api_zoom_link"),
+)
 
 
 @app.route("/login/hh", endpoint="login_hh")
