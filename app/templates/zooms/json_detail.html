@@ -1,0 +1,477 @@
+<button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#canvas_{{item["Лид"]}}" aria-controls="canvas_{{item["Лид"]}}" @click="changeCurrentCanvas">Развернуть</button>
+
+<!-- canvas start -->
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="canvas_{{item["Лид"]}}" aria-labelledby="canvas_{{item["Лид"]}}Label" 
+    style="width:580px; opacity: 0.94; background-color: aliceblue; border-radius: 10px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="canvas_{{item["Лид"]}}Label">Отчет общий по Zoom</h5>                                                                                                                                                                                             
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>                                            
+    </div>
+    <div class="offcanvas-header">                                                
+        <span style="padding-left: 5px;">
+            Менеджер: {{ item['Менеджер'] }}<br>
+            Дата зума: {{ item['Дата зума'] }}<br>
+            Лид: {{ item['Лид'] }}<br>                                                            
+        </span>
+        <br>
+    </div>
+    <div class="offcanvas-header">
+        {% if item.text %}
+        <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+            <p>
+                {{ item.text }}                                                                     
+            </p>
+        </div><br>
+        {% endif %}  
+    </div>
+    <div class="offcanvas-body">
+        <div id="accordion">   
+            <!-- revealing -->
+            {% if item.revealing %}
+                <div class="card">
+                    <div class="card-header" id="headingOne" style="padding: 0;">                        
+                        <table style="border: 0px;">                       
+                        <tr>                                                                
+                            <td style="width: 300px; border: 0px;"><span style="font-size: 18px;">Выявления</span></td>
+                            {% if item.revealing.quality %}
+                                <td style="width: 30px; border: 0px;"><span style="font-size: 18px;">{{ item.revealing.quality }} % </span></td>
+                                <td style="width: 30px; border: 0px;"><div class="circle" style="background-color: hwb({{ item.revealing.quality }} 0% 0%);"></div></td>
+                            {% endif %}
+                            <td>
+                                <button 
+                                    class="btn btn-link" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#revealing_{{item['Лид']}}" 
+                                    aria-expanded="false" 
+                                    aria-controls="revealing_{{item['Лид']}}"
+                                    @click="expandCollapse"
+                                    {% if item.revealing_manager_questions or item.revealing_needs or item.revealing_work or item.revealing_salary or
+                                        item.revealing_remote or item.revealing_personal_up or item.revealing_it_up or 
+                                        item.revealing_activity_change or item.revealing_hobby or item.revealing_career or 
+                                        item.revealing_project %}{% else %}disabled{% endif %}
+                                    >Развернуть</button>
+                            </td>
+                        </tr>
+                    </table>
+                    </div>
+                    <div id="revealing_{{item['Лид']}}" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                    <div class="card-body">
+                        <div id="subaccordion"> 
+                            {% if item.revealing.text %}
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                                <p>
+                                    {{ item.revealing.text }}                                                                     
+                                </p>
+                            </div><br>
+                            {% endif %}                                                               
+                            {% for sub in [item.revealing_manager_questions, item.revealing_needs, item.revealing_work,
+                                    item.revealing_salary, item.revealing_remote, item.revealing_personal_up, item.revealing_it_up,
+                                    item.revealing_activity_change, item.revealing_hobby, item.revealing_career,
+                                    item.revealing_project] %}
+                                {% with name_list = ['Вопросы менеджера', 'Потребности', 'Трудоустройство',
+                                    'Зарплата', 'Удаленка', 'Развитие личностное', 'Развитие в IT',
+                                    'Смена деятельности', 'Хобби', 'Карьера', 'Проект'] %}
+                                    {% if sub %}
+                                    <div class="card" style="text-wrap: wrap;">
+                                        <div class="card-header" id="subheadingOne" style="padding: 0;">                        
+                                            <table style="border: 0px;">                       
+                                            <tr>
+                                                <td style="width: 300px; border: 0px;">
+                                                    <span style="font-size: 18px;">
+                                                        {{ name_list[loop.index-1] }}
+                                                    </span>
+                                                </td>
+                                                    <td style="width: 110px; border: 0px;">
+                                                        {% if sub.quality %}
+                                                        <span style="font-size: 18px">
+                                                            {% if sub.quality > 9 %}
+                                                                {{ sub.quality }}
+                                                            {% else %} 
+                                                                0{{ sub.quality }}
+                                                            {% endif %} %
+                                                        </span>
+                                                        {% endif %}
+                                                    </td>
+                                                    {% if sub.quality %}
+                                                        <td style="width: 20px; border: 0px;">
+                                                            <div class="circle" style="background-color: hwb({{ sub.quality }} 0% 0%);"></div>
+                                                        </td>
+                                                    {% endif %}
+                                                <td>
+                                                    <button 
+                                                        class="btn btn-link" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#revealing{{item['Лид']}}_{{loop.index-1}}" 
+                                                        aria-expanded="false" 
+                                                        aria-controls="revealing{{item['Лид']}}_{{loop.index-1}}"
+                                                        @click="expandCollapse"
+                                                        {% if sub.text %}{% else %}disabled{% endif %}
+                                                        >Развернуть</button>
+                                                </td>                                                                                            
+                                            </tr>
+                                        </table>
+                                        </div>                                                                                
+                                        {% if sub.text %}
+                                            <div id="revealing{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
+                                            <div class="card-body" style="position: relative; display: flex; white-space: normal;">
+                                                <p>
+                                                    {{ sub.text }}                                                                     
+                                                </p>
+                                            </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}                                                    
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- presentation -->
+            {% if item.presentation %}
+                <div class="card">
+                    <div class="card-header" id="headingTwo" style="padding: 0;">
+                    <table>                       
+                        <tr>
+                            <td style="width: 300px; border: 0px;"><span style="font-size: 18px;">Презентация</span></td>
+                            {% if item.presentation.quality %}
+                                <td style="width: 30px; border: 0px;"><span style="font-size: 18px;">{{ item.presentation.quality }} %</span></td>
+                                <td style="width: 30px; border: 0px;"><div class="circle" style="background-color: hwb({{ item.presentation.quality }} 0% 0%);"></div></td>
+                            {% endif %}
+                            <td>
+                                <button 
+                                    class="btn btn-link collapsed" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#presentation_{{item['Лид']}}" 
+                                    aria-expanded="false" 
+                                    aria-controls="presentation_{{item['Лид']}}"
+                                    @click="expandCollapse"
+                                    {% if item.presentation_advantages or item.presentation_demopanel or 
+                                        item.presentation_platform or item.presentation_stud or 
+                                        item.presentation_tariff or item.presentation_push or 
+                                        item.presentation_payment %}{% else %}disabled{% endif %}
+                                    >Развернуть
+                                    </button>
+                            </td>
+                        </tr>
+                    </table>
+                    </div>
+                    <div id="presentation_{{item['Лид']}}" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                    <div class="card-body">
+                        <div id="subaccordion">
+                            {% if item.presentation.text %}
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                                <p>
+                                    {{ item.presentation.text }}                                                                     
+                                </p>
+                            </div><br>
+                            {% endif %}                                                                 
+                            {% for sub in [item.presentation_advantages, item.presentation_demopanel,
+                                item.presentation_platform, item.presentation_stud,  
+                                item.presentation_tariff, item.presentation_push, 
+                                item.presentation_payment] %}
+                                {% with name_list = ['Преимущества название МП', 'Демопанель', 'Платформа обучения',
+                                    'Примеры других студентов', 'Тарифы', 'Пуш', 'Варианты оплат'] %}
+                                    {% if sub %}
+                                    <div class="card" style="text-wrap: wrap;">
+                                        <div class="card-header" id="subheadingOne" style="padding: 0;">                        
+                                            <table style="border: 0px;">                       
+                                            <tr>
+                                                <td style="width: 300px; border: 0px;">
+                                                    <span style="font-size: 18px;">
+                                                        {{ name_list[loop.index-1] }}
+                                                    </span>
+                                                </td>
+                                                <td style="width: 110px; border: 0px;">
+                                                    {% if sub.quality %}
+                                                    <span style="font-size: 18px">
+                                                        {% if sub.quality > 9 %}
+                                                            {{ sub.quality }}
+                                                        {% else %} 
+                                                            0{{ sub.quality }}
+                                                        {% endif %} %
+                                                    </span>
+                                                    {% endif %}
+                                                </td>
+                                                {% if sub.quality %}
+                                                    <td style="width: 20px; border: 0px;">
+                                                        <div class="circle" style="background-color: hwb({{ sub.quality }} 0% 0%);"></div>
+                                                    </td>
+                                                {% endif %}
+                                                <td>
+                                                    <button 
+                                                        class="btn btn-link" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#presentation{{item['Лид']}}_{{loop.index-1}}" 
+                                                        aria-expanded="false" 
+                                                        aria-controls="presentation{{item['Лид']}}_{{loop.index-1}}"
+                                                        {% if sub.text %}{% else %}disabled{% endif %}
+                                                        @click="expandCollapse"
+                                                        >Развернуть</button>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        </div>
+                                        {% if sub.text %}
+                                            <div id="presentation{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
+                                            <div class="card-body" style="position: relative; display: flex; white-space: normal;">
+                                                <p>
+                                                    {{ sub.text }}                                                                     
+                                                </p>
+                                            </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}                                                    
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- objections -->
+            {% if item.objections %}
+                <div class="card">
+                    <div class="card-header" id="headingThree" style="padding: 0;">
+                    <table>                       
+                        <tr>
+                            <td style="width: 300px; border: 0px;"><span style="font-size: 18px;">Возражения</span></td>
+                            {% if item.objections.quality %}
+                                <td style="width: 30px; border: 0px;"><span style="font-size: 18px;"> {{ item.objections.quality }} %</span></td>
+                                <td style="width: 30px; border: 0px;"><div class="circle" style="background-color: hwb({{ item.objections.quality }} 0% 0%);"></div></td>
+                            {% endif %}
+                            <td>
+                                <button 
+                                    class="btn btn-link collapsed" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#objections_{{item['Лид']}}" 
+                                    aria-expanded="false" 
+                                    aria-controls="objections_{{item['Лид']}}"
+                                    @click="expandCollapse"
+                                    {% if item.objections_customer or item.objections_not_working or item.objections_training_period or
+                                        item.objections_filling_courses or item.objections_expensive or item.objections_profession_not_suitable or 
+                                        item.objections_think_advise or item.objections_contract or item.objections_not_enough_skill or 
+                                        item.objections_project_to_approved or item.objections_before_buy %}{% else %}disabled{% endif %}
+                                    >Развернуть
+                                    </button>
+                            </td>
+                        </tr>
+                    </table>
+                    </div>
+                    <div id="objections_{{item['Лид']}}" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                    <div class="card-body">
+                        {% if item.objections.text %}
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                                <p>
+                                    {{ item.objections.text }}                                                                     
+                                </p>
+                            </div><br>
+                            {% endif %}   
+                        {% for sub in [item.objections_customer, item.objections_not_working, item.objections_training_period,
+                            item.objections_filling_courses, item.objections_expensive,  
+                            item.objections_profession_not_suitable, item.objections_think_advise, 
+                            item.objections_contract, item.objections_not_enough_skill,  
+                            item.objections_project_to_approved, item.objections_before_buy, 
+                            item.objections_reviews, item.objections_employment, item.objections_developer_salary] %}
+                            {% with name_list = ['Возражения клиента', 'Не получится', 'Срок обучения', 'Наполнение курсов',
+                                'Дорого', 'Не подойдет профессия', 'Подумаю/Посоветуюсь', 'Изучить договор/материалы', 
+                                'Не хватит навыков и опыта', 'Нужно согласовать проект', 'Попробовать перед покупкой',
+                                'Отзывы', 'Трудоустройство', 'Зарплата разработчика'] %}
+                                {% if sub %}
+                                <div class="card" style="text-wrap: wrap;">
+                                    <div class="card-header" id="subheadingOne" style="padding: 0;">                        
+                                        <table style="border: 0px;">                       
+                                        <tr>
+                                            <td style="width: 300px; border: 0px;">
+                                                <span style="font-size: 18px;">
+                                                    {{ name_list[loop.index-1] }}
+                                                </span>
+                                            </td>
+                                            <td style="width: 110px; border: 0px;">
+                                                {% if sub.quality %}
+                                                <span style="font-size: 18px">
+                                                    {% if sub.quality > 9 %}
+                                                        {{ sub.quality }}
+                                                    {% else %} 
+                                                        0{{ sub.quality }}
+                                                    {% endif %} %
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            {% if sub.quality %}
+                                                <td style="width: 20px; border: 0px;">
+                                                    <div class="circle" style="background-color: hwb({{ sub.quality }} 0% 0%);"></div>
+                                                </td>
+                                            {% endif %}
+                                            <td>
+                                                <button 
+                                                    class="btn btn-link" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#objections{{item['Лид']}}_{{loop.index-1}}" 
+                                                    aria-expanded="false" aria-controls="objections{{item['Лид']}}_{{loop.index-1}}"
+                                                    {% if sub.text %}{% else %}disabled{% endif %}
+                                                    @click="expandCollapse"
+                                                    >Развернуть</button>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    </div>
+                                    {% if sub.text %}
+                                        <div id="objections{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
+                                        <div class="card-body" style="position: relative; display: flex; white-space: normal;">
+                                            <p>
+                                                {{ sub.text }}                                                                     
+                                            </p>
+                                        </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %} 
+                    </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- materials -->
+            {% if item.materials %}
+                <div class="card">
+                    <div class="card-header" id="headingThree" style="padding: 0;">
+                    <table>                       
+                        <tr>
+                            <td style="width: 300px; border: 0px;"><span style="font-size: 18px;">Материалы</span></td>
+                            {% if item.materials.quality %}
+                                <td style="width: 30px; border: 0px;"><span style="font-size: 18px;"> {{ item.materials.quality }} %</span></td>
+                                <td style="width: 30px; border: 0px;"><div class="circle" style="background-color: hwb({{ item.materials.quality }} 0% 0%);"></div></td>                                                                        
+                            {% endif %}
+                                <td>
+                                    <button 
+                                        class="btn btn-link collapsed" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#materials_{{item['Лид']}}" 
+                                        aria-expanded="false" aria-controls="materials_{{item['Лид']}}"
+                                        {% if item.materials_promised or item.materials_gpt_recommendations %}
+                                        {% else %}disabled{% endif %}
+                                        @click="expandCollapse" 
+                                        >Развернуть
+                                        </button>
+                                </td>
+                        </tr>
+                    </table>
+                    </div>
+                    <div id="materials_{{item['Лид']}}" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                    <div class="card-body">
+                        {% if item.materials.text %}
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                                <p>
+                                    {{ item.materials.text }}                                                                     
+                                </p>
+                            </div><br>
+                            {% endif %} 
+                        {% for sub in [item.materials_promised, item.materials_gpt_recommendations] %}
+                            {% with name_list = ['Обещанные материалы менеджером', 'Рекомендации GPT'] %}
+                                {% if sub %}
+                                <div class="card" style="text-wrap: wrap;">
+                                    <div class="card-header" id="subheadingOne" style="padding: 0;">                        
+                                        <table style="border: 0px;">                       
+                                        <tr>
+                                            <td style="width: 300px; border: 0px;">
+                                                <span style="font-size: 18px;">
+                                                    {{ name_list[loop.index-1] }}
+                                                </span>
+                                            </td>
+                                            <td style="width: 110px; border: 0px;">
+                                                {% if sub.quality %}
+                                                <span style="font-size: 18px">
+                                                    {% if sub.quality > 9 %}
+                                                        {{ sub.quality }}
+                                                    {% else %} 
+                                                        0{{ sub.quality }}
+                                                    {% endif %} %
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            {% if sub.quality %}
+                                                <td style="width: 20px; border: 0px;">
+                                                    <div class="circle" style="background-color: hwb({{ sub.quality }} 0% 0%);"></div>
+                                                </td>
+                                            {% endif %}
+                                            <td>
+                                                <button 
+                                                    class="btn btn-link" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#materials{{item['Лид']}}_{{loop.index-1}}" 
+                                                    aria-expanded="false" 
+                                                    aria-controls="materials{{item['Лид']}}_{{loop.index-1}}"
+                                                    {% if sub.text %}{% else %}disabled{% endif %}
+                                                    @click="expandCollapse"
+                                                    >Развернуть</button>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    </div>
+                                    {% if sub.text %}
+                                        <div id="materials{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
+                                        <div class="card-body" style="position: relative; display: flex; white-space: normal;">
+                                            <p>
+                                                {{ sub.text }}                                                                     
+                                            </p>
+                                        </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %} 
+                    </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- general_report -->
+            {% if item.general_report %}
+                <div class="card">
+                    <div class="card-header" id="headingThree" style="padding: 0;">
+                    <table>                       
+                        <tr>
+                            <td style="width: 300px; border: 0px;"><span style="font-size: 18px;">Общий отчет</span></td>
+                            {% if item.general_report.quality %}
+                                <td style="width: 30px; border: 0px;"><span style="font-size: 18px;"> {{ item.general_report.quality }} %</span></td>
+                                <td style="width: 30px; border: 0px;"><div class="circle" style="background-color: hwb({{ item.general_report.quality }} 0% 0%);"></div></td>
+                            {% endif %}
+                            <td>
+                                <button 
+                                    class="btn btn-link collapsed" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#general_report_{{item['Лид']}}" 
+                                    aria-expanded="false" 
+                                    aria-controls="general_report_{{item['Лид']}}"
+                                    {% if item.general_report.text %}{% else %}disabled{% endif%}
+                                    @click="expandCollapse"
+                                    >Развернуть
+                                    </button>
+                            </td>
+                        </tr>
+                    </table>
+                    </div>
+                    <div id="general_report_{{item['Лид']}}" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                    <div class="card-body" style="position: relative; display: flex; white-space: normal;">
+                        <p>
+                            {{ item.general_report.text }}
+                        </p>
+                    </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- canvas end -->

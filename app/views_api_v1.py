@@ -5,6 +5,8 @@ import json
 import os
 import pickle
 from typing import List, Tuple
+
+import pandas
 from flask import session
 
 from dotenv import load_dotenv
@@ -13,6 +15,7 @@ import pandas as pd
 import numpy as np
 
 from typing import Dict, Any
+from transliterate import translit
 from pathlib import Path
 
 from flask import request
@@ -20,7 +23,7 @@ from flask.views import MethodView
 from flask.typing import ResponseReturnValue
 from flask.wrappers import Response
 
-from .database.auth import get_user_by_id, update_last_update_zoom
+from .database.auth import get_user_by_id, update_last_update_zoom, get_last_update_zoom
 from app.plugins.s3 import Client
 
 from config import DATA_FOLDER
@@ -126,6 +129,54 @@ class ApiUpdateZoomUploadDate(APIView):
         return super().post()
 
 
+class ApiGetZoomLink(APIView):
+    def post(self):
+        manager_id = session.get('uid')
+        link = None
+        if manager_id:
+            dataLink = request.json['dataLink'].replace('_', '/')
+            s3 = Client()
+            cloudfiles = s3.walk(dataLink)
+            for file in cloudfiles:
+                if 'mp4' in file:
+                    link = s3.link(file)
+                    break
+            self.data = json.dumps({
+                'data-link': link
+            }).encode('utf-8')
+        else:
+            self.data = json.dumps({
+                'status': 'failed'
+            }).encode('utf-8')
+        return super().post()
+
+
+class ApiGetLastUpdateZoom(APIView):
+    managers_zooms: Path = WEEK_FOLDER / "managers_zooms.pkl"
+
+    @staticmethod
+    def load_dataframe(path: Path) -> pandas.DataFrame:
+        with open(path, "rb") as file_ref:
+            dataframe: pandas.DataFrame = pickle.load(file_ref)
+        return dataframe
+
+    def get(self, username):
+        if session.get('uid'):
+            df = self.load_dataframe(self.managers_zooms)
+            username = df[df.manager_id == username].manager.unique()[0]
+            print(username)
+            datetime_zoom = get_last_update_zoom(username)
+            if datetime_zoom:
+                last_uploaded_zoom = datetime_zoom['last_update_zoom']
+                if datetime_zoom['last_update_zoom']:
+                    self.data = json.dumps(
+                        {'datetime_zoom': last_uploaded_zoom.strftime("%Y.%m.%d %H:%M")}
+                    ).encode('utf-8')
+            else:
+                self.data = json.dumps({'datetime_zoom': ''}).encode('utf-8')
+            return super().post()
+
+
 class ApiUserZoomTimeframes(APIView):
     managers_zooms_path: Path = Path(DATA_FOLDER) / "week" / "managers_zooms.pkl"
 
@@ -141,8 +192,8 @@ class ApiUserZoomTimeframes(APIView):
             managers_zooms.date
         ) + pd.to_timedelta(managers_zooms.time.astype(str))
         managers_zooms = managers_zooms[(managers_zooms.manager == user)].loc[
-            :, "datetime"
-        ]
+                         :, "datetime"
+                         ]
         return managers_zooms
 
     @staticmethod
@@ -156,12 +207,12 @@ class ApiUserZoomTimeframes(APIView):
 
             # если между текущим временем и следующем меньше дня
             time_duration = (
-                np.timedelta64(23, "h")
-                + np.timedelta64(59, "m")
-                + np.timedelta64(59, "s")
+                    np.timedelta64(23, "h")
+                    + np.timedelta64(59, "m")
+                    + np.timedelta64(59, "s")
             )
             if (
-                np.datetime64(next_zt, "D") - np.datetime64(cur_zt, "D")
+                    np.datetime64(next_zt, "D") - np.datetime64(cur_zt, "D")
             ) / np.timedelta64(1, "D") == 0:
                 if cur_zt != next_zt:
                     zoom_timeframes.append(
@@ -218,7 +269,6 @@ class ApiUserName(APIView):
         manager = get_user_by_id(manager_id).username
         self.data = json.dumps({'username': manager}).encode('utf-8')
         return super(ApiUserName, self).post()
-
 
 # class TestView(APIView):
 #     def get(self, *args, **kwargs):
