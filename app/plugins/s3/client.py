@@ -175,7 +175,7 @@ class Client:
                 for path, _, file_list in self.s3fs.walk(path=path)
                 for file in file_list]
 
-    def get_paths_2_level(self) -> list[str]:
+    def get_paths_2_level(self) -> List[str]:
         """
         Генератор пути второго уровня всех пользователей,
         в которых располагаются json файлы
