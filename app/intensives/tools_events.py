@@ -28,7 +28,6 @@ def get_payment(date_from: str, date_to: str) -> list:
     df = df[["Почта", "Сумма выручки", "Дата оплаты", "Месяц / Доплата"]]
     # Переименовываем столбцы и передаем словарь с новыми именами
     new_column_name = ['email', 'price', 'date', 'type']
-    df = df[1:]  # Удаляем первую строку из данных
     df = df.rename(columns=dict(zip(df.columns, new_column_name)))
     # Преобразуем данные в datatime
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
