@@ -17,9 +17,9 @@
     </div>
     <div class="offcanvas-header">
         {% if item.text %}
-        <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+        <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
             <p>
-                {{ item.text }}                                                                     
+                {{ item.text|safe }}                                                                     
             </p>
         </div><br>
         {% endif %}  
@@ -58,9 +58,9 @@
                     <div class="card-body">
                         <div id="subaccordion"> 
                             {% if item.revealing.text %}
-                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
                                 <p>
-                                    {{ item.revealing.text }}                                                                     
+                                    {{ item.revealing.text|safe }}                                                                     
                                 </p>
                             </div><br>
                             {% endif %}                                                               
@@ -115,7 +115,7 @@
                                             <div id="revealing{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
                                             <div class="card-body" style="position: relative; display: flex; white-space: normal;">
                                                 <p>
-                                                    {{ sub.text }}                                                                     
+                                                    {{ sub.text|safe }}                                                                     
                                                 </p>
                                             </div>
                                             </div>
@@ -163,9 +163,9 @@
                     <div class="card-body">
                         <div id="subaccordion">
                             {% if item.presentation.text %}
-                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
                                 <p>
-                                    {{ item.presentation.text }}                                                                     
+                                    {{ item.presentation.text|safe }}                                                                     
                                 </p>
                             </div><br>
                             {% endif %}                                                                 
@@ -219,7 +219,7 @@
                                             <div id="presentation{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
                                             <div class="card-body" style="position: relative; display: flex; white-space: normal;">
                                                 <p>
-                                                    {{ sub.text }}                                                                     
+                                                    {{ sub.text|safe }}                                                                     
                                                 </p>
                                             </div>
                                             </div>
@@ -266,9 +266,9 @@
                     <div id="objections_{{item['Лид']}}" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
                     <div class="card-body">
                         {% if item.objections.text %}
-                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
                                 <p>
-                                    {{ item.objections.text }}                                                                     
+                                    {{ item.objections.text|safe }}                                                                     
                                 </p>
                             </div><br>
                             {% endif %}   
@@ -325,7 +325,7 @@
                                         <div id="objections{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
                                         <div class="card-body" style="position: relative; display: flex; white-space: normal;">
                                             <p>
-                                                {{ sub.text }}                                                                     
+                                                {{ sub.text|safe }}                                                                     
                                             </p>
                                         </div>
                                         </div>
@@ -368,9 +368,9 @@
                     <div id="materials_{{item['Лид']}}" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
                     <div class="card-body">
                         {% if item.materials.text %}
-                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 150px;overflow: auto;">
+                            <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
                                 <p>
-                                    {{ item.materials.text }}                                                                     
+                                    {{ item.materials.text|safe }}                                                                     
                                 </p>
                             </div><br>
                             {% endif %} 
@@ -420,7 +420,7 @@
                                         <div id="materials{{item['Лид']}}_{{loop.index-1}}" class="collapse" aria-labelledby="subheadingOne" data-parent="#subaccordion">
                                         <div class="card-body" style="position: relative; display: flex; white-space: normal;">
                                             <p>
-                                                {{ sub.text }}                                                                     
+                                                {{ sub.text|safe }}                                                                     
                                             </p>
                                         </div>
                                         </div>
@@ -463,7 +463,7 @@
                     <div id="general_report_{{item['Лид']}}" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
                     <div class="card-body" style="position: relative; display: flex; white-space: normal;">
                         <p>
-                            {{ item.general_report.text }}
+                            {{ item.general_report.text|safe }}
                         </p>
                     </div>
                     </div>
