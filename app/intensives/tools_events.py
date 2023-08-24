@@ -6,6 +6,7 @@ import gspread
 import re
 from datetime import datetime, timedelta
 from config import DATA_FOLDER
+from pathlib import Path
 
 
 def format_percent(x):
@@ -22,9 +23,9 @@ def get_payment(date_from: str, date_to: str) -> list:
     worksheet = table_main.get_worksheet(0)
     data = worksheet.get_all_values()
     # Заворачиваем в dataframe
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data[1:], columns=data[0])
     # оставляем все строки и только нужные столбцы
-    df = df.iloc[:, [2, 8, 13, 17]]
+    df = df[["Почта", "Сумма выручки", "Дата оплаты", "Месяц / Доплата"]]
     # Переименовываем столбцы и передаем словарь с новыми именами
     new_column_name = ['email', 'price', 'date', 'type']
     df = df[1:]  # Удаляем первую строку из данных
@@ -53,17 +54,14 @@ def data_preparation(start_event: str, end_event: str, select_event: list) -> pd
     start = datetime.strptime(start_event, '%Y-%m-%d')
     end = datetime.strptime(end_event, '%Y-%m-%d')
 
-    file_preorders = f'{DATA_FOLDER}/week/intensives_preorders.pkl'
-    file_registrations = f'{DATA_FOLDER}/week/intensives_registrations.pkl'
-    file_members = f'{DATA_FOLDER}/week/intensives_members.pkl'
+    file_preorders = Path(DATA_FOLDER) / 'week' / 'intensives_preorders.pkl'
+    file_registrations = Path(DATA_FOLDER) / 'week' / 'intensives_registrations.pkl'
+    file_members = Path(DATA_FOLDER) / 'week' / 'intensives_members.pkl'
 
     # Чтение данных из файла .pkl
-    with open(file_preorders, 'rb') as pre:
-        data_preorders = pickle.load(pre)
-    with open(file_registrations, 'rb') as reg:
-        data_registrations = pickle.load(reg)
-    with open(file_members, 'rb') as mem:
-        data_members = pickle.load(mem)
+    data_preorders = pandas.read_pickle(file_preorders)
+    data_registrations = pandas.read_pickle(file_registrations)
+    data_members = pandas.read_pickle(file_members)
 
     # Подготовка таблиц
     preorders: pandas.DataFrame = data_preorders
