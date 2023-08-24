@@ -1,9 +1,9 @@
 <div id="statistics">    
-      <div class="spinner-grow spinner" style="width: 3rem; height: 3rem;" role="status" v-if="loading">
+      <div class="spinner-grow spinner" style="width: 1rem; height: 1rem;" role="status" v-if="loading">
         <span class="visually-hidden">Загрузка...</span>
       </div>
-    <div v-cloak>
-        <div class="form-check">
+    <div>
+        <div class="form-check" v-cloak>
             <input type="checkbox" class="form-check-input" id="showArchive" v-model="showArchiveData">
             <label class="form-check-label" for="showArchive" style="display: inline;">Показать архивную часть таблицы</label>
         </div>
@@ -15,15 +15,15 @@
                             <th class="sticky">{{ column }}</th>
                         {% endif %}
                     {% endfor %}
-                    <th class="sticky nowrap" v-if="showArchiveData">Вероятность<br>покупки</th>
-                    <th class="sticky nowrap" v-if="showArchiveData">Потенциальная<br>сумма<br>заказа</th>
-                    <th class="sticky nowrap" v-if="showArchiveData">Ожидаемая<br>дата<br>оплаты</th>
-                    <th class="sticky nowrap" v-if="showArchiveData">Оценочный<br>оборот</th>
-                    <th class="sticky nowrap" v-if="showArchiveData">На<br>контроле</th>
+                    <th class="sticky nowrap" v-if="showArchiveData" v-cloak>Вероятность<br>покупки</th>
+                    <th class="sticky nowrap" v-if="showArchiveData" v-cloak>Потенциальная<br>сумма<br>заказа</th>
+                    <th class="sticky nowrap" v-if="showArchiveData" v-cloak>Ожидаемая<br>дата<br>оплаты</th>
+                    <th class="sticky nowrap" v-if="showArchiveData" v-cloak>Оценочный<br>оборот</th>
+                    <th class="sticky nowrap" v-if="showArchiveData" v-cloak>На<br>контроле</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
+                <tr v-cloak>
                     <td class="nowrap info" colspan="3">{{ total["name"] }}</td>
                     <td class="nowrap info font-monospace text-right">{{ format_int(total["lead"]) }}</td>
                     {% if data.columns.shape[0] != 11 %}<td class="nowrap info" v-for="_ in {{ data.columns.shape[0] - 51 }}"></td>{% endif %}
@@ -72,7 +72,7 @@
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
-                        <td class="nowrap font-monospace" v-if="showArchiveData">
+                        <td class="nowrap font-monospace" v-if="showArchiveData" v-cloak>
                             <select class="controllable purchase-probability" data-name="purchase_probability" data-value="{{ item["purchase_probability"] }}">
                                 <option value=""{% if item["purchase_probability"] == "" %} selected="selected"{% endif %}></option>
                                 <option value="0"{% if item["purchase_probability"] == 0 %} selected="selected"{% endif %}>0</option>
@@ -88,14 +88,14 @@
                                 <option value="100"{% if item["purchase_probability"] == 100 %} selected="selected"{% endif %}>100</option>
                             </select> %
                         </td>
-                        <td class="nowrap font-monospace" v-if="showArchiveData">
+                        <td class="nowrap font-monospace" v-if="showArchiveData" v-cloak>
                             <input type="number" min="0" class="controllable potential-order-amount" value="{{ item["potential_order_amount"] }}" data-name="potential_order_amount" data-value="{{ item["potential_order_amount"] }}"> ₽
                         </td>
-                        <td class="nowrap" v-if="showArchiveData">
+                        <td class="nowrap" v-if="showArchiveData" v-cloak>
                             <input type="date" class="controllable expected-payment-date" value="{{ item["expected_payment_date"] }}" data-name="expected_payment_date" data-value="{{ item["expected_payment_date"] }}"><span class="clear"></span>
                         </td>
-                        <td  v-if="showArchiveData" class="nowrap font-monospace text-right estimate">{% if item["estimate"] != "" %}{{ format_int(item["estimate"]) }} ₽{% endif %}</td>
-                        <td class="nowrap" v-if="showArchiveData">
+                        <td  v-if="showArchiveData" class="nowrap font-monospace text-right estimate" v-cloak>{% if item["estimate"] != "" %}{{ format_int(item["estimate"]) }} ₽{% endif %}</td>
+                        <td class="nowrap" v-if="showArchiveData" v-cloak>
                             <input type="checkbox" class="controllable on-control" data-name="on_control"{% if item["on_control"] == True %} checked="checked"{% endif %} data-value="{% if item["on_control"] == True %}1{% else %}0{% endif %}">
                         </td>
                     </tr>

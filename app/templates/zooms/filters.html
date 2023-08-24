@@ -73,10 +73,10 @@
         <span style="padding-right: 3px;"><button class="btn btn-primary">Обновить</button></span>
         <span style="padding-right: 3px;"><button type="reset" class="btn btn-success btn-reset">Сбросить фильтр</button></span>
         <span style="padding-right: 2px;"><button type="button" class="btn btn-warning excel-download">Скачать Excel</button></span>
-        <span style="padding-left: 3px;" v-cloak>
+        <span style="padding-left: 3px;">
             <span v-if="zoomOn">               
                 <span id="app" style="padding-left: 0px;">
-                <button v-if="isLoading" class="btn btn-info" type="button" disabled>
+                <button v-if="isLoading" class="btn btn-info" type="button" disabled v-cloak>
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     <span class="sr-only"> Загрузка...</span>
                 </button>
@@ -86,7 +86,7 @@
                     class="btn btn-info" 
                     @click="upload_zoom">
                     Загрузить Zoom</button>
-                    <span style="padding-left: 15px;" v-if="selectedManager">[[ last_uploaded_zoom ]]</span>              
+                    <span style="padding-left: 15px;" v-if="selectedManager" v-cloak>[[ last_uploaded_zoom ]]</span>              
                 </span>
             </span>            
         </span>    
