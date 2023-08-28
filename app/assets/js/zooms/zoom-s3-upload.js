@@ -67,6 +67,7 @@ const App = {
                     const credential = await this.get_credential()
                     updated = false
                     const unique_date_set = []
+                    const temp_files = []
                     // console.log(zoom_timeframes)                     
                     
                     if (datetime_checked_files) {
@@ -93,8 +94,8 @@ const App = {
                                             files_to_upload = `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${data.file.name}`;                                
                                             if (!cloudfiles.cloudfiles.includes(files_to_upload)) {
                                                 const filename = '${filename}'                                                                                                          
-                                                await this.upload_file(
-                                                    `${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${filename}`,
+                                                const resp = await this.upload_file(
+                                                    `temp/${user.username}/${this.get_zoom_datetime(zt_base)}/${data.directory}/${filename}`,
                                                     credential.forms3.xAmzCredential,
                                                     credential.forms3.xAmzAlgorithm,
                                                     credential.forms3.xAmzDate,
@@ -104,8 +105,14 @@ const App = {
                                                     files_to_upload                                        
                                                 )
                                                 updated = true
+                                                if (resp) {
+                                                    temp_path = `${user.username}/${this.get_zoom_datetime(zt_base)}`
+                                                    if (!temp_files.includes(temp_path)) {
+                                                        temp_files.push(temp_path)
+                                                    }                                                    
+                                                }
                                             } else {
-                                                console.log('CurrentFilesUploaded')
+                                                console.warn('Current Files Uploaded')
                                             }                                                                
                                         }                       
                                 }
@@ -115,17 +122,21 @@ const App = {
                             }                          
                         }
                     } else {
-                        console.log('FileToUploadNotFound')
+                        console.error('File To Upload Not Found')
                     }               
                     
-                    this.isLoading = false;   
-                    
+                    this.isLoading = false;                    
+                    if (temp_files.length !== 0) {
+                        console.log(temp_files)
+                        const res = await this.copy_tempfiles(temp_files)
+                        console.log(await res.json())
+                    }                    
                 } catch (error) {
                     console.warn(error)
                     this.isLoading = false;
                 } 
             } else {
-                console.warn('invalid credentials (failure)')
+                console.warn('invalid credentials (failed)')
                 this.isLoading = false; 
             }                        
         },
@@ -142,9 +153,22 @@ const App = {
               }              
               return 0;
         },
+        async copy_tempfiles(tempfiles) {
+            const requestsOptions = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    tempfiles: tempfiles
+                })
+            };
+            const response = await fetch('/api/v1/complete-zoom-upload', requestsOptions)
+            return response
+        },
         
         async update_upload_date() {
-            const response = await fetch('/api/v1/update-upload-date',{
+            const response = await fetch('/api/v1/update-upload-date', {
                 method: 'POST',
             })
         },
@@ -229,7 +253,10 @@ const App = {
                 mode: "no-cors",
                 body: formS3,
             })
-            console.log('uploaded: ', uploaded_file)            
+            if (response) {
+                console.log('uploaded: ', uploaded_file)
+            }
+            return response                        
         },
     }
 }

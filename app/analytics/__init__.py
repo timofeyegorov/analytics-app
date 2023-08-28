@@ -1067,6 +1067,10 @@ app.add_url_rule(
     "/api/v1/get-zoom-link/",
     view_func=views_api_v1.ApiGetZoomLink.as_view("api_zoom_link"),
 )
+app.add_url_rule(
+    "/api/v1/complete-zoom-upload",
+    view_func=views_api_v1.ApiCopyTempZoomFiles.as_view("complete_zoom_upload"),
+)
 
 
 @app.route("/login/hh", endpoint="login_hh")
