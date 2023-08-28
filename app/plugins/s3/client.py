@@ -196,3 +196,11 @@ class Client:
         """
         path = self._resolve_path(path)
         return self.s3fs.open(path)
+
+    def mv(self, path1: str, path2: str, recursive=True):
+        """
+        Метод перемещения файла(ов) из одной директории в другую
+        """
+        path1 = self._resolve_path(path1)
+        path2 = self._resolve_path(path2)
+        return self.s3fs.mv(path1, path2, recursive)

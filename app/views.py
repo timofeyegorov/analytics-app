@@ -56,7 +56,6 @@ from app.data import (
 
 from config import DATA_FOLDER, BASE_DIR
 
-
 pickle_loader = PickleLoader()
 
 UNDEFINED = "Undefined"
@@ -150,7 +149,7 @@ def parse_date(value: str) -> datetime.date:
 
 
 def parse_field_str(
-    value: str, result: List[Tuple[Union[int, str], type]] = None
+        value: str, result: List[Tuple[Union[int, str], type]] = None
 ):
     if result is None:
         result = []
@@ -462,13 +461,13 @@ class AmoCRMAPI:
         return self._response
 
     def __call__(
-        self,
-        method_type: str,
-        method: str,
-        params: Dict[str, Any] = None,
-        is_file: bool = False,
-        *args,
-        **kwargs,
+            self,
+            method_type: str,
+            method: str,
+            params: Dict[str, Any] = None,
+            is_file: bool = False,
+            *args,
+            **kwargs,
     ):
         self._error = None
         self._response = None
@@ -528,7 +527,7 @@ class AmoCRMAPI:
             return {}
 
     def _request_access_token(
-        self, args: Dict[str, str]
+            self, args: Dict[str, str]
     ) -> Optional[Dict[str, Any]]:
         response = requests.post(
             f"{self._get_url_prefix()}oauth2/access_token", json=args
@@ -702,7 +701,7 @@ class StatisticsView(TemplateView):
                 if self.filters.groupby == StatisticsGroupByEnum.account.name:
                     info = statistics.accounts
                 elif (
-                    self.filters.groupby == StatisticsGroupByEnum.campaign.name
+                        self.filters.groupby == StatisticsGroupByEnum.campaign.name
                 ):
                     info = statistics.campaigns
                 elif self.filters.groupby == StatisticsGroupByEnum.group.name:
@@ -863,9 +862,9 @@ class Calculate:
 
             profit = income - expenses - (leads * 250 + income * 0.35)
             profit_month = (
-                income_month
-                - expenses_month
-                - (leads_month * 250 + income_month * 0.35)
+                    income_month
+                    - expenses_month
+                    - (leads_month * 250 + income_month * 0.35)
             )
 
             ppl = profit / leads if leads else 0
@@ -1063,7 +1062,7 @@ class StatisticsRoistatView(TemplateView):
     ]
 
     def parse_order(
-        self, order: str, available: List[str]
+            self, order: str, available: List[str]
     ) -> List[Dict[str, str]]:
         output = []
         if order:
@@ -1492,7 +1491,7 @@ class StatisticsRoistatView(TemplateView):
 
         details = request.args.get("details")
         if details not in list(
-            map(lambda item: item[2], calc.data.name.unique())
+                map(lambda item: item[2], calc.data.name.unique())
         ):
             details = None
         details_extra, details_leads = self.get_details(details)
@@ -1562,7 +1561,7 @@ class StatisticsUTMView(TemplateView):
     ]
 
     def parse_order(
-        self, order: str, available: List[str]
+            self, order: str, available: List[str]
     ) -> List[Dict[str, str]]:
         output = []
         if order:
@@ -1576,7 +1575,7 @@ class StatisticsUTMView(TemplateView):
         return output
 
     def get_filters(
-        self, source: ImmutableMultiDict
+            self, source: ImmutableMultiDict
     ) -> StatisticsUTMFiltersData:
         date = [source.get("date_from") or None, source.get("date_to") or None]
         utm_source = source.get("utm_source", "__all__")
@@ -1744,7 +1743,7 @@ class StatisticsUTMView(TemplateView):
 
         data = pandas.DataFrame(columns=self.extras["columns"].keys())
         for name, group in self.leads.groupby(
-            by=self.filters.groupby, dropna=False
+                by=self.filters.groupby, dropna=False
         ):
             leads = len(group)
             if not leads:
@@ -2065,10 +2064,10 @@ class VKXlsxAdsView(MethodView):
         return super().dispatch_request(*args, **kwargs)
 
     def create_ads(
-        self,
-        workbook: Workbook,
-        categories: Dict[int, str],
-        countries: Dict[int, str],
+            self,
+            workbook: Workbook,
+            categories: Dict[int, str],
+            countries: Dict[int, str],
     ):
         worksheet = workbook.add_worksheet("Ads")
         columns = [
@@ -2356,11 +2355,11 @@ class VKXlsxAdsView(MethodView):
 
         data["date"] = data["date"].astype(str)
         data["sex__m__impressions_rate"] = (
-            data["sex__m__impressions_rate"] * 100
+                data["sex__m__impressions_rate"] * 100
         )
         data["sex__m__clicks_rate"] = data["sex__m__clicks_rate"] * 100
         data["sex__f__impressions_rate"] = (
-            data["sex__f__impressions_rate"] * 100
+                data["sex__f__impressions_rate"] * 100
         )
         data["sex__f__clicks_rate"] = data["sex__f__clicks_rate"] * 100
         data["age__12_18__impressions_rate"] = (
@@ -2395,7 +2394,7 @@ class VKXlsxAdsView(MethodView):
                 data["age__45_100__impressions_rate"] * 100
         )
         data["age__45_100__clicks_rate"] = (
-            data["age__45_100__clicks_rate"] * 100
+                data["age__45_100__clicks_rate"] * 100
         )
         worksheet.write_row(0, 0, data.columns)
         for row, stat in enumerate(data.iterrows()):
@@ -3194,7 +3193,7 @@ class VKXlsxView(TemplateView):
         leads = leads[
             leads.utm_source.str.contains("vk")
             | leads.utm_source.str.contains("VK")
-        ]
+            ]
         # leads["date_request"] = leads["date_request"].astype(str)
         # leads["date_payment"] = leads["date_payment"].astype(str)
         # leads["date_status_change"] = leads["date_status_change"].astype(str)
@@ -3573,8 +3572,8 @@ class ApiVKAdsView(APIView):
                     else None,
                     "autobidding": str(
                         (
-                            item.get("autobidding")
-                            or vk_data.AdAutobiddingEnum(0)
+                                item.get("autobidding")
+                                or vk_data.AdAutobiddingEnum(0)
                         ).value
                     ),
                     "autobidding_max_cost": int(
@@ -3766,8 +3765,8 @@ class TildaQuizWeightView(APIView):
 
         lead = leads[0]
         if (
-            lead.get("pipeline_id") != "4869075"
-            or lead.get("status_id") != "44172885"
+                lead.get("pipeline_id") != "4869075"
+                or lead.get("status_id") != "44172885"
         ):
             return super().post(*args, **kwargs)
 
@@ -3778,8 +3777,8 @@ class TildaQuizWeightView(APIView):
                     (
                         item.get("name"),
                         (
-                            item.get("values", [{"value": ""}])
-                            or [{"value": ""}]
+                                item.get("values", [{"value": ""}])
+                                or [{"value": ""}]
                         )[0].get("value", ""),
                     ),
                 )
@@ -3871,7 +3870,7 @@ class TildaQuizWeightView(APIView):
                 "tags": [
                     {"id": int(item.get("id"))}
                     for item in lead.get("tags", [])
-                    + amocrm_api.response.get("_embedded", {}).get("tags", [])
+                                + amocrm_api.response.get("_embedded", {}).get("tags", [])
                 ],
             },
         }
@@ -3945,19 +3944,19 @@ class ZoomsView(FilteringBaseView):
     def filters_initial(self) -> Dict[str, Any]:
         return {
             "date_from": datetime.datetime.now().date()
-            - datetime.timedelta(weeks=1),
+                         - datetime.timedelta(weeks=1),
         }
 
     def filtering_values(self):
         if self.filters.date_from:
             self.values = self.values[
                 self.values["date"] >= self.filters.date_from
-            ]
+                ]
 
         if self.filters.date_to:
             self.values = self.values[
                 self.values["date"] <= self.filters.date_to
-            ]
+                ]
 
         if self.filters.purchase_probability_from is not None:
             self.values = self.values[
@@ -4015,7 +4014,7 @@ class ZoomsView(FilteringBaseView):
                 request.args.get("purchase_probability_from") or None
         )
         purchase_probability_to = (
-            request.args.get("purchase_probability_to") or None
+                request.args.get("purchase_probability_to") or None
         )
 
         expected_payment_date_from = (
@@ -4031,7 +4030,7 @@ class ZoomsView(FilteringBaseView):
             )
 
         expected_payment_date_to = (
-            request.args.get("expected_payment_date_to") or None
+                request.args.get("expected_payment_date_to") or None
         )
         if expected_payment_date_to is None:
             expected_payment_date_to = initial.get("expected_payment_date_to")
@@ -4117,21 +4116,26 @@ class ZoomsView(FilteringBaseView):
         )
         self.extras = {
             "exclude_columns": [
-                "manager_id",
-                "group_id",
-                "estimate",
-                "purchase_probability",
-                "potential_order_amount",
-                "expected_payment_date",
-                "on_control",
-            ] + zoom_json_columns[13:],
+                                   "manager_id",
+                                   "group_id",
+                                   "estimate",
+                                   "purchase_probability",
+                                   "potential_order_amount",
+                                   "expected_payment_date",
+                                   "on_control",
+                               ] + zoom_json_columns[13:],
             "groups": self.get_extras_group("group"),
             "managers": self.get_extras_group("manager"),
             "month": month,
         }
 
     @staticmethod
-    def __read_s3_json_to_df(json_name: str,
+    def __check_date(current_date: str, date_from: datetime, date_to: datetime):
+        if date_to is None:
+            return date_from <= datetime.datetime.strptime(current_date, "%Y%m%d").date()
+        return date_from <= datetime.datetime.strptime(current_date, "%Y%m%d").date() <= date_to
+
+    def __read_s3_json_to_df(self, json_name: str,
                              date_from: datetime.date,
                              date_to: datetime.date,
                              manager_list: list) -> Union[pandas.DataFrame, None]:
@@ -4146,28 +4150,35 @@ class ZoomsView(FilteringBaseView):
         df = pandas.DataFrame(columns=zoom_json_columns)
 
         for folder_path in s3.get_paths_2_level():
-        # local test
-        # for folder_path in [r'F:/Test/Гирса Юрий/20230801-1900',
-        #                     r'F:/Test/Фасхутдинова Эльвира/20230731-1100',
-        #                     r'F:/Test/Попелыш Наталья/20230730-1300',
-        #                     r'F:/Test/Попелыш Наталья/20230609-1600',
-        #                     ]:
-        #
-        #     try:
-        #         with open(folder_path + '/' + 'output_data.json', 'rb') as obj:
-        #             tmp_json = json.load(obj)
-            try:
-                with s3.open(folder_path + '/' + json_name) as obj:
-                    tmp_json = json.load(obj)
-            except FileNotFoundError:
-                continue
-
-            data = {}
+            manager = folder_path.split('/')[-2]
             datetime_obj = folder_path.split('/')[-1]
             date_str = datetime_obj.split('-')[0]
             time_str = datetime_obj.split('-')[1]
 
-            data['manager'] = folder_path.split('/')[-2]
+            # local test
+            # for folder_path in [r'F:/Test/Гирса Юрий/20230801-1900',
+            #                     r'F:/Test/Фасхутдинова Эльвира/20230731-1100',
+            #                     r'F:/Test/Попелыш Наталья/20230730-1300',
+            #                     r'F:/Test/Попелыш Наталья/20230609-1600',
+            #                     ]:
+            #
+            #     try:
+            #         with open(folder_path + '/' + 'output_data.json', 'rb') as obj:
+            #             tmp_json = json.load(obj)
+            if (manager in manager_list) and self.__check_date(current_date=date_str,
+                                                               date_from=date_from,
+                                                               date_to=date_to):
+                try:
+                    with s3.open(folder_path + '/' + json_name) as obj:
+                        tmp_json = json.load(obj)
+                except FileNotFoundError:
+                    continue
+            else:
+                continue
+
+            data = {}
+
+            data['manager'] = manager
             data['date'] = datetime.datetime.strptime(
                 f'{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}', "%Y-%m-%d").date()
 
@@ -4219,6 +4230,7 @@ class ZoomsView(FilteringBaseView):
                                                self.filters.date_from,
                                                self.filters.date_to,
                                                manager_list)
+
         if s3_data_df is not None:
             self.values = self.values.merge(
                 s3_data_df, how='left', on=["manager", "date", "time"]
@@ -4257,7 +4269,7 @@ class ZoomsView(FilteringBaseView):
                 "lead": len(data),
                 "potential_order_amount": data[
                     data["potential_order_amount"] != ""
-                ]["potential_order_amount"].sum(),
+                    ]["potential_order_amount"].sum(),
                 "estimate": data[data["estimate"] != ""]["estimate"].sum(),
             }
         )
@@ -4371,7 +4383,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
     def filters_initial(self) -> Dict[str, Any]:
         return {
             "date": datetime.datetime.now().date()
-            - datetime.timedelta(weeks=10),
+                    - datetime.timedelta(weeks=10),
         }
 
     def filters_preprocess(self, **kwargs) -> Dict[str, Any]:
@@ -4481,7 +4493,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
         values = self.values[
             (self.values["date"] >= date_from)
             & (self.values["date"] <= date_to)
-        ].reset_index(drop=True)
+            ].reset_index(drop=True)
 
         output = []
         while date_from <= date_end:
@@ -4506,7 +4518,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
 
         self.values = self.values[
             self.values["profit_date"] >= self.values["date"]
-        ]
+            ]
 
         with open(Path(DATA_FOLDER) / "week" / "groups.pkl", "rb") as file_ref:
             groups: pandas.DataFrame = pickle.load(file_ref)
@@ -4523,7 +4535,7 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
             ).rename(columns={"group": "group_id"})
 
         with open(
-            Path(DATA_FOLDER) / "week" / "channels.pkl", "rb"
+                Path(DATA_FOLDER) / "week" / "channels.pkl", "rb"
         ) as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
         channels["channel_id"] = channels["account_title"].apply(parse_slug)
@@ -4536,8 +4548,8 @@ class WeekStatsBaseCohortsView(FilteringBaseView):
 
         date_from = self.filters.date
         date_end = detect_week(datetime.datetime.now().date())[
-            0
-        ] - datetime.timedelta(weeks=1)
+                       0
+                   ] - datetime.timedelta(weeks=1)
         weeks = ((date_end - date_from) / 7 + datetime.timedelta(days=1)).days
 
         values_from = [date_from]
@@ -4860,10 +4872,10 @@ class WeekStatsManagersView(FilteringBaseView):
                     ]
                 zooms_analytics = self.values_zoom[
                     self.values_zoom["manager_id"] == manager_id
-                ]
+                    ]
                 so_counts = self.counts_so[
                     self.counts_so["manager_id"] == manager_id
-                ]
+                    ]
                 so_analytics = self.values_so[
                     self.values_so["manager_id"] == manager_id
                     ]
@@ -5016,7 +5028,7 @@ class ManagersSalesCoursesView(FilteringBaseView):
         source = []
         profit_total = self.sales["profit"].sum()
         for manager_name, manager in self.sales.groupby(
-            by=["manager"], sort=False
+                by=["manager"], sort=False
         ):
             profit_manager = manager["profit"].sum()
             group_data = {}
@@ -5264,11 +5276,11 @@ class WeekStatsChannelsView(FilteringBaseView):
     counts_expenses: pandas.DataFrame
 
     channels_count_path: Path = (
-        Path(DATA_FOLDER) / "week" / "channels_count.pkl"
+            Path(DATA_FOLDER) / "week" / "channels_count.pkl"
     )
     values_expenses_path: Path = Path(DATA_FOLDER) / "week" / "expenses.pkl"
     counts_expenses_path: Path = (
-        Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
+            Path(DATA_FOLDER) / "week" / "expenses_count.pkl"
     )
 
     def filters_initial(self) -> Dict[str, Any]:
@@ -5351,13 +5363,13 @@ class WeekStatsChannelsView(FilteringBaseView):
             self.values_expenses = self.values_expenses[
                 self.values_expenses["profit_date"]
                 >= self.filters.profit_date_from
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
         if self.filters.profit_date_to:
             self.values_expenses = self.values_expenses[
                 self.values_expenses["profit_date"]
                 <= self.filters.profit_date_to
-            ].reset_index(drop=True)
+                ].reset_index(drop=True)
 
     def get_extras(self) -> Dict[str, Any]:
         cyr_month = [
@@ -5447,7 +5459,7 @@ class WeekStatsChannelsView(FilteringBaseView):
         for channel_id, rows in self.values_expenses.groupby(by=["channel_id"]):
             roistat_leads = self.roistat[
                 self.roistat["channel_id"] == channel_id
-            ]
+                ]
             data_expenses_ipl_list.append(
                 {
                     "channel_id": channel_id,
@@ -5484,7 +5496,7 @@ class WeekStatsChannelsView(FilteringBaseView):
         if len(data_expenses):
             data_expenses["profit_on_expenses"] = data_expenses.apply(
                 lambda item: item["profit_from_expenses"]
-                / item["count_expenses"]
+                             / item["count_expenses"]
                 if item["count_expenses"]
                 else 0,
                 axis=1,
@@ -5520,7 +5532,7 @@ class WeekStatsChannelsView(FilteringBaseView):
         )
         data_expenses["average_payment_expenses"] = data_expenses.apply(
             lambda item: item["profit_from_expenses"]
-            / item["payment_count_expenses"]
+                         / item["payment_count_expenses"]
             if item["payment_count_expenses"]
             else 0,
             axis=1,
@@ -5541,7 +5553,7 @@ class WeekStatsChannelsView(FilteringBaseView):
         data_expenses.insert(0, "is_total", False)
 
         with open(
-            Path(DATA_FOLDER) / "week" / "channels.pkl", "rb"
+                Path(DATA_FOLDER) / "week" / "channels.pkl", "rb"
         ) as file_ref:
             channels: pandas.DataFrame = pickle.load(file_ref)
         channels["channel_id"] = channels["account_title"].apply(parse_slug)
@@ -5715,7 +5727,7 @@ class SearchLeadsView(TemplateView):
 class ChangeZoomView(APIView):
     def post(self, manager_id: str, lead: str, date: str):
         file_path = (
-            Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
+                Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
         )
         available_values = {
             "manager_id": parse_slug,
@@ -5828,7 +5840,7 @@ class IntensivesCourseDateAPIView(APIView):
         indexes = list(
             values[
                 (values["course"] == course) & (values["date"] == date)
-            ].index
+                ].index
         )
         if indexes:
             values.drop(labels=indexes, axis=0, inplace=True)
@@ -5911,7 +5923,7 @@ class IntensivesView(FilteringBaseView):
             Path(DATA_FOLDER) / "week" / "intensives_preorders.pkl"
     )
     sources_values_path: Path = (
-        Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
+            Path(DATA_FOLDER) / "week" / "intensives_values.pkl"
     )
     sources_payments_path: Path = Path(DATA_FOLDER) / "week" / "payments.pkl"
 
@@ -6133,9 +6145,9 @@ class IntensivesView(FilteringBaseView):
         registrations_list = []
         if self.sources_registrations is not None:
             for (
-                course_name,
-                date,
-            ), course in self.sources_registrations.groupby(
+                        course_name,
+                        date,
+                ), course in self.sources_registrations.groupby(
                 by=["course", "date"]
             ):
                 payments = self.sources_payments[
@@ -6278,11 +6290,11 @@ class PromoView(FilteringBaseView):
     filters: PromoFiltersData
 
     sources_intensives_path: Path = (
-        Path(DATA_FOLDER) / "week" / "intensives_so.pkl"
+            Path(DATA_FOLDER) / "week" / "intensives_so.pkl"
     )
     sources_so_path: Path = Path(DATA_FOLDER) / "week" / "source_so.pkl"
     sources_values_path: Path = (
-        Path(DATA_FOLDER) / "week" / "intensives_so_values.pkl"
+            Path(DATA_FOLDER) / "week" / "intensives_so_values.pkl"
     )
 
     extras: Dict[str, Any] = {}
@@ -6395,10 +6407,10 @@ class PromoView(FilteringBaseView):
                         )
                     )
                     & (
-                        self.sources_so["payment_date"]
-                        >= self.sources_so["date"]
+                            self.sources_so["payment_date"]
+                            >= self.sources_so["date"]
                     )
-                ]
+                    ]
                 leads = source_so_group.drop_duplicates(
                     subset=["date", "lead_id"]
                 )
@@ -6515,12 +6527,12 @@ class IntensivesBaseView(FilteringBaseView):
         if self.filters.date_from:
             self.source = self.source[
                 self.source["date"] >= self.filters.date_from
-            ]
+                ]
 
         if self.filters.date_to:
             self.source = self.source[
                 self.source["date"] <= self.filters.date_to
-            ]
+                ]
 
         self.source.reset_index(drop=True, inplace=True)
 
@@ -6605,7 +6617,7 @@ class IntensivesFunnelChannelView(FilteringBaseView):
             Path(DATA_FOLDER) / "week" / "funnel_channel_expenses.pkl"
     )
     sources_profit_path: Path = (
-        Path(DATA_FOLDER) / "week" / "funnel_channel_profit.pkl"
+            Path(DATA_FOLDER) / "week" / "funnel_channel_profit.pkl"
     )
 
     extras: Dict[str, Any] = {}
@@ -6695,13 +6707,13 @@ class IntensivesFunnelChannelView(FilteringBaseView):
             self.sources_profit = self.sources_profit[
                 self.sources_profit["profit_date"]
                 >= self.filters.profit_date_from
-            ]
+                ]
 
         if self.filters.profit_date_to:
             self.sources_profit = self.sources_profit[
                 self.sources_profit["profit_date"]
                 <= self.filters.profit_date_to
-            ]
+                ]
 
         self.sources_expenses.reset_index(drop=True, inplace=True)
         self.sources_profit.reset_index(drop=True, inplace=True)
@@ -6740,7 +6752,7 @@ class IntensivesFunnelChannelView(FilteringBaseView):
                 "": channel_title,
             }
             for funnel_name, expenses_group in channel_group.groupby(
-                by=["funnel"]
+                    by=["funnel"]
             ):
                 profit_group = self.sources_profit[
                     (self.sources_profit["channel"] == channel_name)
@@ -6848,7 +6860,7 @@ class Intensives(TemplateView):
             result_events = 0
             session["result_events"] = result_events
             with open(
-                "app/intensives/intensives.log", "a", encoding="utf-8"
+                    "app/intensives/intensives.log", "a", encoding="utf-8"
             ) as file:
                 file.write(f"{datetime.datetime.now()} {e}\n")
 
@@ -6881,7 +6893,7 @@ class IntensivesEvents(TemplateView):
             session['table'] = table_html
         except Exception as e:
             with open(
-                "app/intensives/intensives_events.log", "a", encoding="utf-8"
+                    "app/intensives/intensives_events.log", "a", encoding="utf-8"
             ) as file:
                 file.write(f"{datetime.datetime.now()} {e}\n")
         return redirect(url_for("intensives_events"))

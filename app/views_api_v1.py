@@ -164,7 +164,6 @@ class ApiGetLastUpdateZoom(APIView):
         if session.get('uid'):
             df = self.load_dataframe(self.managers_zooms)
             username = df[df.manager_id == username].manager.unique()[0]
-            print(username)
             datetime_zoom = get_last_update_zoom(username)
             if datetime_zoom:
                 last_uploaded_zoom = datetime_zoom['last_update_zoom']
@@ -191,9 +190,7 @@ class ApiUserZoomTimeframes(APIView):
         managers_zooms["datetime"] = pd.to_datetime(
             managers_zooms.date
         ) + pd.to_timedelta(managers_zooms.time.astype(str))
-        managers_zooms = managers_zooms[(managers_zooms.manager == user)].loc[
-                         :, "datetime"
-                         ]
+        managers_zooms = managers_zooms[managers_zooms.manager == user].loc[:, "datetime"]
         return managers_zooms
 
     @staticmethod
@@ -245,7 +242,7 @@ class ApiUserZoomTimeframes(APIView):
 
     def post(self, *args, **kwargs):
         manager_id = session.get('uid')
-        manager = get_user_by_id(manager_id).username
+        manager = get_user_by_id(manager_id).username.strip()
         managers_zooms = self.get_managers_zooms(user=manager)
 
         # если имеется информация по zoom по данному пользователю
@@ -269,6 +266,32 @@ class ApiUserName(APIView):
         manager = get_user_by_id(manager_id).username
         self.data = json.dumps({'username': manager}).encode('utf-8')
         return super(ApiUserName, self).post()
+
+
+class ApiCopyTempZoomFiles(APIView):
+    def post(self):
+        manager_id = session.get('uid')
+        if manager_id:
+            err_list = []
+            s3 = Client()
+            temp_files = json.loads(request.data.decode('utf-8'))
+            for item in temp_files['tempfiles']:
+                try:
+                    s3.mv(f'temp/{item}', item)
+                except FileNotFoundError:
+                    err_list.append(item)
+                    continue
+
+            self.data = json.dumps({
+                    'copy status': 'ok' if len(err_list) == 0 else 'failed',
+                    'errors': err_list
+                }).encode('utf-8')
+        else:
+            self.data = json.dumps({
+                'status': 'copy tempfiles failed'
+            }).encode('utf-8')
+        return super().post()
+
 
 # class TestView(APIView):
 #     def get(self, *args, **kwargs):
