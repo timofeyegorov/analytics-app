@@ -181,7 +181,7 @@ class Client:
         в которых располагаются json файлы
         """
         for folder in self.ls():
-            if folder.type == PathInfoTypeEnum.directory:
+            if folder.type == PathInfoTypeEnum.directory and folder.name != 'temp':
                 for sub_f in self.ls(folder.name):
                     if sub_f.type == PathInfoTypeEnum.directory:
                         yield sub_f.name
