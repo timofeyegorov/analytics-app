@@ -69,6 +69,12 @@ class PickleLoader:
         data = self._load(self.pickle_files_path / "roistat_leads.pkl")
         return data
 
+    # Новое. Расходы для funnel_channel
+    @property
+    def roistat_expenses(self) -> pandas.DataFrame:
+        data = self._load(self.pickle_files_path / "roistat_expenses.pkl")
+        return data
+
     @property
     def roistat_db(self) -> pandas.DataFrame:
         data = self._load(self.pickle_files_path / "roistat_db.pkl")
