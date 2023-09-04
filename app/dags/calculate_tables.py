@@ -413,6 +413,15 @@ def roistat_to_db():
         "roistat_to_db", date_now - datetime.timedelta(days=6), date_now
     )
 
+# Новая
+@log_execution_time("roistat_update_expenses")
+def roistat_update_expenses():
+    date_now = datetime.date.today()
+    dags_commands.calculate_tables(
+        "roistat_update_expenses", date_now - datetime.timedelta(days=6), date_now
+    )
+
+
 
 @log_execution_time("roistat_leads")
 def roistat_leads():
@@ -523,6 +532,12 @@ roistat_to_db_operator = PythonOperator(
 roistat_leads_operator = PythonOperator(
     task_id="roistat_leads", python_callable=roistat_leads, dag=dag
 )
+
+# Новая
+roistat_update_expenses_operator = PythonOperator(
+    task_id="roistat_update_expenses", python_callable=roistat_update_expenses, dag=dag
+)
+
 # roistat_update_levels_operator = PythonOperator(
 #     task_id="roistat_update_levels", python_callable=roistat_update_levels, dag=dag
 # )

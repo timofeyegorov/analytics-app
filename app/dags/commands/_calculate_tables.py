@@ -1,10 +1,12 @@
+import pandas as pd
 import pytz
 import pandas
 import pickle
 import datetime
-
 from time import sleep
 from pathlib import Path
+
+import requests
 
 from app import db
 from app.data import StatisticsRoistatPackageEnum, PACKAGES_COMPARE
@@ -12,8 +14,9 @@ from app.analytics import pickle_loader
 from app.database import models
 from app.plugins.ads import roistat
 from app.dags.utils import RoistatDetectLevels
+from sqlalchemy import create_engine, text
 
-from config import RESULTS_FOLDER
+from config import RESULTS_FOLDER, config
 
 from . import utils
 
@@ -83,11 +86,11 @@ def roistat_to_db(date_from: datetime.date, date_to: datetime.date):
                                     levels_instances.get(int(item[0][6])).id,
                                 )
                                 for item in dict(
-                                    filter(
-                                        lambda item: item[0].startswith("level_"),
-                                        rel.items(),
-                                    )
-                                ).items()
+                                filter(
+                                    lambda item: item[0].startswith("level_"),
+                                    rel.items(),
+                                )
+                            ).items()
                             ]
                         ),
                     }
@@ -186,7 +189,7 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
     roistat_leads.drop(
         roistat_leads[
             (roistat_leads["date"] >= date_from) & (roistat_leads["date"] <= date_to)
-        ].index,
+            ].index,
         inplace=True,
     )
 
@@ -205,11 +208,11 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
                                 "package": packages.get(row.package_id).name,
                                 "expenses": row.visits_cost,
                                 "account": levels.get(row.account_id).name
-                                or "undefined"
+                                           or "undefined"
                                 if levels.get(row.account_id)
                                 else "undefined",
                                 "campaign": levels.get(row.campaign_id).name
-                                or "undefined"
+                                            or "undefined"
                                 if levels.get(row.campaign_id)
                                 else "undefined",
                                 "group": levels.get(row.group_id).name or "undefined"
@@ -219,15 +222,15 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
                                 if levels.get(row.ad_id)
                                 else "undefined",
                                 "account_title": levels.get(row.account_id).title
-                                or "Undefined"
+                                                 or "Undefined"
                                 if levels.get(row.account_id)
                                 else "Undefined",
                                 "campaign_title": levels.get(row.campaign_id).title
-                                or "Undefined"
+                                                  or "Undefined"
                                 if levels.get(row.campaign_id)
                                 else "Undefined",
                                 "group_title": levels.get(row.group_id).title
-                                or "Undefined"
+                                               or "Undefined"
                                 if levels.get(row.group_id)
                                 else "Undefined",
                                 "ad_title": levels.get(row.ad_id).title or "Undefined"
@@ -235,8 +238,8 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
                                 else "Undefined",
                             }
                             for row in models.Roistat.query.filter_by(
-                                date=lead.date
-                            ).all()
+                            date=lead.date
+                        ).all()
                         ]
                     ),
                 }
@@ -272,7 +275,7 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
             "utm_term",
         ]
         + columns
-    ].rename(
+        ].rename(
         columns={
             "traffic_channel": "url",
             "quiz_answers1": "qa1",
@@ -301,6 +304,134 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
     with open(Path(RESULTS_FOLDER, "roistat_leads.pkl"), "wb") as file_ref:
         pickle.dump(roistat_leads, file_ref)
 
+
+# Новое
+def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
+    # ROISTAT
+    Api_key = config['roistat']['api_key']
+    project = config['roistat']['project_id']
+    api_url=config['roistat']['url']
+    # SQL
+    host = config['database']['host']
+    user = config['database']['user']
+    password = config['database']['password']
+    database = config['database']['db']
+
+    # Путь до pkl
+    pickle_folder = Path(RESULTS_FOLDER) / 'roistat_expenses.pkl'
+
+    # Параметры подключения api roistat
+    url_api = f'{api_url}/project/analytics/data?project={project}'
+    headers = {"Api-key": Api_key}
+
+    # Генератор дат для api
+    def date_range_generator(start_date, end_date):
+        current_date = start_date
+        while current_date <= end_date:
+            yield current_date
+            current_date += datetime.timedelta(days=1)
+
+    # Отдать параметры для запроса в api
+    def get_api_params(date):
+        data = {
+            "period": {
+                "from": f'{date}T00:00:00+0000',
+                "to": f'{date}T23:59:59+0000'
+            },
+            "dimensions": ["landing_page", "marker_level_1"],
+            "metrics": ["visitsCost"],
+            "filters": [
+                {
+                    "field": "visitsCost",
+                    "operator": ">",
+                    "value": "0"
+                }
+            ],
+        }
+        return data
+
+    # Получить расходы из roistat
+    def get_expenses(start_date, end_date) -> pd.DataFrame:
+        # Пустой DataFrame для расходов
+        data_expenses = pd.DataFrame(columns=["url", "account", "date", "expenses"])
+        # Генератор дат из всего диапазона (начало - сегодня)
+        data_generator = date_range_generator(start_date, end_date)
+        # Начинаем проходить по дням и вносить данные по расходам в df
+        for date_for_api in data_generator:
+            data = get_api_params(date_for_api)
+            response = requests.get(url_api, headers=headers, json=data)
+            dataset = response.json()
+            # Парсим json
+            for data in dataset["data"]:
+                date_default = data["dateFrom"]
+                date = datetime.datetime.strptime(date_default, "%Y-%m-%dT%H:%M:%S%z").strftime("%Y-%m-%d")
+                items = data["items"]
+                for item in items:
+                    expenses = item["metrics"][0]["value"]
+                    url = item["dimensions"]["landing_page"]["value"]
+                    account = item["dimensions"]["marker_level_1"]["value"]
+                    data_expenses.loc[len(data_expenses)] = [url, account, date, expenses]
+
+        data_expenses['date'] = pd.to_datetime(data_expenses['date'])
+
+        return data_expenses
+
+    # Заполнение БД выборкой
+    def push_to_db(data_expenses):
+        # создание подключения к бд
+        engine = create_engine(f'mysql://{user}:{password}@{host}/{database}')
+        # запись df в базу
+        data_expenses.to_sql('roistat_expenses', con=engine, if_exists='append', index=False)
+
+    def update_expenses_pkl(df: pandas.DataFrame, date):
+        # До этой даты обновляются значения
+        drop_date = pd.to_datetime(date)
+        # Загружаем текущие данные и убираем срез который обновим
+        load = pandas.read_pickle(pickle_folder)
+        old_data: pandas.DataFrame = load
+        # Преобразуем в дату
+        old_data['date'] = pd.to_datetime(old_data['date'])
+        filtered_data = old_data[old_data['date'] <= drop_date]
+        # Объединяем остаток с обновленным df
+        fresh_data = pd.concat([filtered_data, df], ignore_index=True)
+        # Сохраняем обновленный df
+        fresh_data.to_pickle(pickle_folder.as_posix())
+
+    def delete_old_db_records(limit_day: datetime.date):
+        # Создание соединения с базой данных
+        engine = create_engine(f'mysql://{user}:{password}@{host}/{database}')
+        connection = engine.connect()
+        # SQL-запрос для удаления записей
+        query = text(f"DELETE FROM roistat_expenses WHERE date >= '{limit_day}'")
+        try:
+            # Выполнение запроса и фиксация изменений
+            connection.execute(query)
+            connection.connection.commit()
+        except Exception as e:
+            print(e)
+        finally:
+            connection.close()
+
+    # работа по наполнению БД
+    def expenses_process():
+        print('заполнение')
+        # Диапазон для заполнения
+        start_date = date_from
+        end_date = date_to
+        try:
+            # Получение данных из api
+            new_data = get_expenses(start_date, end_date)
+            # Обновление pkl
+            update_expenses_pkl(new_data, start_date)
+            # Удаляем старое из базы
+            delete_old_db_records(start_date)
+            # Выгружаем новые данные в db
+            push_to_db(new_data)
+        except Exception as e:
+            print(f"Произошла ошибка roistat_expenses: {str(e)}")
+
+    # Запуск всей задачи
+    expenses_process()
 
 # def roistat_update_levels():
 #     statistics = pickle_loader.roistat_statistics

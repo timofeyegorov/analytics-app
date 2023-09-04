@@ -1229,47 +1229,47 @@ def get_managers_sales():
 def get_funnel_channel():
     rels = {
         "Интенсив 3 дня": [
-            "https://neural-university.ru/lp",
-            "https://neural-university.ru/lp_pro",
-            "https://neural-university.ru/lp_direct",
-            "https://terrauniversity.site",
-            "https://neural-university.ru/lp_marketing",
-            "https://neural-university.ru/lp_trading",
-            "https://neural-university.ru/lp_medicine",
-            "https://neural-university.ru/lp_sysadministrator",
-            "https://neural-university.ru/lp_1c_programmer",
-            "https://neural-university.ru/lp_project_product_manager",
-            "https://neural-university.ru/lp_web_programmer",
-            "https://neural-university.ru/lp_e-commerce",
-            "https://neural-university.ru/lp_vk",
-            "https://neural-university.ru/lp1",
-            "https://neural-university.ru/lp2",
-            "https://neural-university.ru/lp3",
-            "https://neural-university.ru/lp4",
-            "https://neural-university.ru/lp_python",
-            "https://neural-university.ru/lp_java",
-            "https://terrauniversity.website",
-            "https://terra-university.website",
-            "https://neural-university.ru/lp_protech",
-            "https://neural-university.ru/lp_mka",
-            "https://neural-university.ru/lp_pro",
-            "https://neural-university.ru/lp_mask",
-            "https://neural-university.ru/lp_engineer",
+            "neural-university.ru/lp",
+            "neural-university.ru/lp_pro",
+            "neural-university.ru/lp_direct",
+            "terrauniversity.site",
+            "neural-university.ru/lp_marketing",
+            "neural-university.ru/lp_trading",
+            "neural-university.ru/lp_medicine",
+            "neural-university.ru/lp_sysadministrator",
+            "neural-university.ru/lp_1c_programmer",
+            "neural-university.ru/lp_project_product_manager",
+            "neural-university.ru/lp_web_programmer",
+            "neural-university.ru/lp_e-commerce",
+            "neural-university.ru/lp_vk",
+            "neural-university.ru/lp1",
+            "neural-university.ru/lp2",
+            "neural-university.ru/lp3",
+            "neural-university.ru/lp4",
+            "neural-university.ru/lp_python",
+            "neural-university.ru/lp_java",
+            "terrauniversity.website",
+            "terra-university.website",
+            "neural-university.ru/lp_protech",
+            "neural-university.ru/lp_mka",
+            "neural-university.ru/lp_pro",
+            "neural-university.ru/lp_mask",
+            "neural-university.ru/lp_engineer",
         ],
         "Интенсив 2 дня": [
-            "https://neural-university.ru/lp_2day",
-            "https://neural-university.ru/web_16052023",
-            "https://ai-university.ru/lp_2day",
-            "https://ai-university.ru/",
+            "neural-university.ru/lp_2day",
+            "neural-university.ru/web_16052023",
+            "ai-university.ru/lp_2day",
+            "ai-university.ru/",
         ],
         "ChatGPT": [
-            "https://neural-university.ru/lp_chatgpt_web",
-            "https://neural-university.ru/webinar_chatgpt",
-            "https://neural-university.ru/lp_chatgpt_course",
-            "https://neural-university.ru/chatgpt_freecourse",
-            "https://neural-university.ru/lp_chatgpt_neurostaff_web",
+            "neural-university.ru/lp_chatgpt_web",
+            "neural-university.ru/webinar_chatgpt",
+            "neural-university.ru/lp_chatgpt_course",
+            "neural-university.ru/chatgpt_freecourse",
+            "neural-university.ru/lp_chatgpt_neurostaff_web",
         ],
-        "Курс 7 уроков": ["https://neural-university.ru/free_course"],
+        "Курс 7 уроков": ["neural-university.ru/free_course"],
     }
 
     def parse_url_path(value: str):
@@ -1323,7 +1323,8 @@ def get_funnel_channel():
         lambda account_id: roistat_levels.loc[account_id]["name"]
     )
     channels.reset_index(drop=True, inplace=True)
-    expenses = pickle_loader.roistat_leads[["account", "url", "expenses", "date"]]
+    # Изменено
+    expenses = pickle_loader.roistat_expenses[["account", "url", "expenses", "date"]]
     expenses["date"] = expenses["date"].apply(parse_date)
     expenses["url"] = expenses["url"].apply(parse_url_path)
     expenses = expenses[~expenses["url"].isna()]
