@@ -353,7 +353,7 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
     # Получить расходы из roistat
     def get_expenses(start_date, end_date) -> pd.DataFrame:
         # Пустой DataFrame для расходов
-        data_expenses = pd.DataFrame(columns=["url", "account", "date", "expenses"])
+        data_expenses = pd.DataFrame(columns=["account", "url", "expenses", "date"])
         # Генератор дат из всего диапазона (начало - сегодня)
         data_generator = date_range_generator(start_date, end_date)
         # Начинаем проходить по дням и вносить данные по расходам в df
@@ -370,7 +370,7 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
                     expenses = item["metrics"][0]["value"]
                     url = item["dimensions"]["landing_page"]["value"]
                     account = item["dimensions"]["marker_level_1"]["value"]
-                    data_expenses.loc[len(data_expenses)] = [url, account, date, expenses]
+                    data_expenses.loc[len(data_expenses)] = [account, url, expenses, date]
 
         data_expenses['date'] = pd.to_datetime(data_expenses['date'])
 
