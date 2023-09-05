@@ -180,15 +180,15 @@ def get_report(start_event: str, end_event: str, custom_period: str, select_chec
             '8week': 56
         }
         if len(select_checkbox) == 1:
-            start_date_pay = event_to
-            end_date_pay = (datetime.strptime(event_to, '%Y-%m-%d') + timedelta(
+            start_date_pay = event_from
+            end_date_pay = (datetime.strptime(event_from, '%Y-%m-%d') + timedelta(
                 days=checkbox_values.get(select_checkbox[0]))).strftime('%Y-%m-%d')
             result_table = get_funnel_payment(event_from, event_to, start_date_pay, end_date_pay, filter_event)
         else:
             final_table = pd.DataFrame()
             for select in select_checkbox:
-                start_date_pay = event_to
-                end_date_pay = (datetime.strptime(event_to, '%Y-%m-%d') + timedelta(
+                start_date_pay = event_from
+                end_date_pay = (datetime.strptime(event_from, '%Y-%m-%d') + timedelta(
                     days=checkbox_values.get(select))).strftime('%Y-%m-%d')
 
                 table = get_funnel_payment(event_from, event_to, start_date_pay, end_date_pay, filter_event)
