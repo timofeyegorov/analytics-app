@@ -130,12 +130,6 @@ def get_funnel_payment(start_event: str, end_event: str, start_pay: str, end_pay
         temporary_grouped = temporary_df.groupby(['date', 'event']).agg(
             {'full_price': 'max', 'reg_price': 'max', 'peop_price': 'max', 'so_price': 'max'}).reset_index()
 
-        def get_full_price(filtered_payments) -> int:
-            full_price = 0
-            for index, value, date in filtered_payments:
-                if email == index:
-                    full_price += value
-            return full_price
 
         # Заполнение оплат для фрейма
         for index, row in temporary_grouped.iterrows():
@@ -144,8 +138,8 @@ def get_funnel_payment(start_event: str, end_event: str, start_pay: str, end_pay
 
             # Фильтрация оплат со сдвигом от чекбокса
             filtered_payments = [item for item in payments if item[2] <= target_data]
-            # print(len(filtered_payments))
-            full_price = get_full_price(filtered_payments)
+            # Сдвигаемый расчет стоимости вхождения от даты вхождения и диапазона даты
+            full_price = sum(item[1] for item in filtered_payments if email == item[0])
             # Сумма оплат с почты
             if row['peop_price'] == 1:
                 temporary_grouped.at[index, 'peop_price'] = full_price
