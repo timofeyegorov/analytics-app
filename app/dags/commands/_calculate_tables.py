@@ -307,10 +307,11 @@ def roistat_leads(date_from: datetime.date, date_to: datetime.date):
 
 # Новое
 def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
+    tz = pytz.timezone('Europe/Moscow')
     # ROISTAT
     Api_key = config['roistat']['api_key']
     project = config['roistat']['project_id']
-    api_url=config['roistat']['url']
+    api_url = config['roistat']['url']
     # SQL
     host = config['database']['host']
     user = config['database']['user']
@@ -325,18 +326,20 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
     headers = {"Api-key": Api_key}
 
     # Генератор дат для api
-    def date_range_generator(start_date, end_date):
-        current_date = start_date
-        while current_date <= end_date:
-            yield current_date
-            current_date += datetime.timedelta(days=1)
+    def date_range(start: datetime.date, stop: datetime.date, step: datetime.timedelta, ) -> iter:
+        while start < stop:
+            date_next = start + step
+            if date_next > stop:
+                date_next = stop
+            yield start, date_next
+            start += step
 
     # Отдать параметры для запроса в api
-    def get_api_params(date):
+    def get_api_params(df: datetime.date, dt: datetime.date):
         data = {
             "period": {
-                "from": f'{date}T00:00:00+0000',
-                "to": f'{date}T23:59:59+0000'
+                "from": f"{tz.localize(datetime.datetime.combine(df, datetime.time.min))}",
+                "to": f"{tz.localize(datetime.datetime.combine(dt, datetime.time.min))}"
             },
             "dimensions": ["landing_page", "marker_level_1"],
             "metrics": ["visitsCost"],
@@ -351,20 +354,22 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
         return data
 
     # Получить расходы из roistat
-    def get_expenses(start_date, end_date) -> pd.DataFrame:
+    def get_expenses(start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
         # Пустой DataFrame для расходов
         data_expenses = pd.DataFrame(columns=["account", "url", "expenses", "date"])
         # Генератор дат из всего диапазона (начало - сегодня)
-        data_generator = date_range_generator(start_date, end_date)
+        data_generator = date_range(start_date, end_date, datetime.timedelta(days=1))
         # Начинаем проходить по дням и вносить данные по расходам в df
-        for date_for_api in data_generator:
-            data = get_api_params(date_for_api)
+        for df_range, dt_range in data_generator:
+            data = get_api_params(df_range, dt_range)
             response = requests.get(url_api, headers=headers, json=data)
             dataset = response.json()
             # Парсим json
             for data in dataset["data"]:
                 date_default = data["dateFrom"]
-                date = datetime.datetime.strptime(date_default, "%Y-%m-%dT%H:%M:%S%z").strftime("%Y-%m-%d")
+                date_datetime = datetime.datetime.strptime(date_default, "%Y-%m-%dT%H:%M:%S%z") + datetime.timedelta(
+                    hours=3)
+                date = date_datetime.strftime('%Y-%m-%d')
                 items = data["items"]
                 for item in items:
                     expenses = item["metrics"][0]["value"]
@@ -373,7 +378,6 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
                     data_expenses.loc[len(data_expenses)] = [account, url, expenses, date]
 
         data_expenses['date'] = pd.to_datetime(data_expenses['date'])
-
         return data_expenses
 
     # Заполнение БД выборкой
@@ -414,10 +418,9 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
 
     # работа по наполнению БД
     def expenses_process():
-        print('заполнение')
         # Диапазон для заполнения
-        start_date = date_from
-        end_date = date_to
+        start_date: datetime.date = date_from
+        end_date: datetime.date = date_to
         try:
             # Получение данных из api
             new_data = get_expenses(start_date, end_date)
