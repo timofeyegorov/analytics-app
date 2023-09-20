@@ -1232,6 +1232,7 @@ def get_funnel_channel():
             "https://neural-university.ru/lp",
             "https://neural-university.ru/lp_pro",
             "https://neural-university.ru/lp_direct",
+            "https://neural-university.ru/lp_direct/",
             "https://terrauniversity.site",
             "https://neural-university.ru/lp_marketing",
             "https://neural-university.ru/lp_trading",
@@ -1255,6 +1256,9 @@ def get_funnel_channel():
             "https://neural-university.ru/lp_pro",
             "https://neural-university.ru/lp_mask",
             "https://neural-university.ru/lp_engineer",
+            "https://neural-university.ru/lp_larchanka",
+            "https://neural-university.ru/lp_alekos",
+
         ],
         "Интенсив 2 дня": [
             "https://neural-university.ru/lp_2day",
@@ -1268,6 +1272,11 @@ def get_funnel_channel():
             "https://neural-university.ru/lp_chatgpt_course",
             "https://neural-university.ru/chatgpt_freecourse",
             "https://neural-university.ru/lp_chatgpt_neurostaff_web",
+            "https://neural-university.ru/pro_robotov",
+            "https://neural-university.ru/dushnila",
+            "https://neural-university.ru/alekos_channel",
+            "https://neural-university.ru/lp_protech2",
+            "https://neural-university.ru/lp_supercase",
         ],
         "Курс 7 уроков": ["https://neural-university.ru/free_course"],
     }
