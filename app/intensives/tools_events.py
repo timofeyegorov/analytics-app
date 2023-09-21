@@ -119,7 +119,7 @@ def get_funnel_payment(start_event: str, end_event: str, start_pay: str, end_pay
         temporary_df = pd.DataFrame(temporary_data,
                                     columns=['date', 'event', 'full_price', 'reg_price', 'peop_price', 'so_price'])
         for row in dataset.itertuples():
-            if row[4] == email and pd.Timestamp(start_event) <= data_in_set <= pd.Timestamp(end_event):
+            if row[4] == email and pd.Timestamp(start_event) <= row[3] <= pd.Timestamp(end_event):
 
                 price_reg = 1 if row[1] == 'Регистрации' else 0
                 price_mem = 1 if row[1] == 'Участники' else 0
