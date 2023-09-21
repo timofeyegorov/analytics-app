@@ -1262,6 +1262,7 @@ def get_funnel_channel():
         ],
         "Интенсив 2 дня": [
             "https://neural-university.ru/lp_2day",
+            "https://neural-university.ru/lp_2day/",
             "https://neural-university.ru/web_16052023",
             "https://ai-university.ru/lp_2day",
             "https://ai-university.ru/",
