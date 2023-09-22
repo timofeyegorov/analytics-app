@@ -1232,7 +1232,6 @@ def get_funnel_channel():
             "https://neural-university.ru/lp",
             "https://neural-university.ru/lp_pro",
             "https://neural-university.ru/lp_direct",
-            "https://neural-university.ru/lp_direct/",
             "https://terrauniversity.site",
             "https://neural-university.ru/lp_marketing",
             "https://neural-university.ru/lp_trading",
@@ -1262,7 +1261,6 @@ def get_funnel_channel():
         ],
         "Интенсив 2 дня": [
             "https://neural-university.ru/lp_2day",
-            "https://neural-university.ru/lp_2day/",
             "https://neural-university.ru/web_16052023",
             "https://ai-university.ru/lp_2day",
             "https://ai-university.ru/",
@@ -1285,7 +1283,7 @@ def get_funnel_channel():
     def parse_url_path(value: str):
         url = urlparse(str(value))
         if url.scheme and url.netloc and url.path:
-            return f"{url.scheme}://{url.netloc}{url.path}"
+            return f"{url.scheme}://{url.netloc}/{url.path.replace('/','')}"
         return pandas.NA
 
     def parse_funnel(value: str):
