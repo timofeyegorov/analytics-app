@@ -15,7 +15,7 @@ def format_percent(x):
 
 
 # Получение оплат
-def get_payment(date_from: str, date_to: str) -> list:
+def get_payment(date_from: str) -> pd.DataFrame:
     # Авторизация по сервисному аккаунту
     gc = gspread.service_account(filename='app/intensives/intensives-394715-16cd73454d4f.json')
     # Открытие таблицы
@@ -43,9 +43,7 @@ def get_payment(date_from: str, date_to: str) -> list:
     selected_data = df[(df['date'] >= pd.to_datetime(date_from)) & (df['type'] != 'доплата')]
     # Фрейм диапазона для обработки в функции просмотра таблиц мероприятий
     explore_frame = selected_data.loc[:, ['email', 'price', 'date']]
-    # Сохраняем пары значений в список списков
-    payments_list = explore_frame.values.tolist()
-    return payments_list
+    return explore_frame
 
 
 # Получение БД из pkl
@@ -90,73 +88,34 @@ def data_preparation(start_event: str, end_event: str, select_event: list) -> pd
 # Формирование отчета
 def get_funnel_payment(start_event: str, end_event: str, start_pay: str, end_pay: str,
                        select_event: list) -> pd.DataFrame:
-
     # Это значение нужно для того, чтобы понимать на сколько дней сдвигать динамический фильтр массива оплат
     start_date = datetime.strptime(start_pay, "%Y-%m-%d")
     end_date = datetime.strptime(end_pay, "%Y-%m-%d")
     date_difference = end_date - start_date
     # Преобразование разницы в количество дней (целое число)
     date_difference_in_days = date_difference.days
-
-
     # Получаем данные из БД
-    dataset = data_preparation(start_event, end_event, select_event)
-    dataset = dataset.fillna('empty')
-    # Получаем пары оплат
-    payments = get_payment(start_pay, end_pay)
-
-
-    # Уникальный список оплат
-    payments_set = list(set((email[0], email[2]) for email in payments))
-
-
-    # Результирующий dataframe для фреймов от оплаты
-    result_dataframe = pd.DataFrame()
-
-    # Логика работает от почты
-    for email, data_in_set in payments_set:
-        temporary_data = {'date': [], 'event': [], 'full_price': [], 'reg_price': [], 'peop_price': [], 'so_price': []}
-        temporary_df = pd.DataFrame(temporary_data,
-                                    columns=['date', 'event', 'full_price', 'reg_price', 'peop_price', 'so_price'])
-        for row in dataset.itertuples():
-            if row[4] == email and pd.Timestamp(start_event) <= row[3] <= pd.Timestamp(end_event):
-
-                price_reg = 1 if row[1] == 'Регистрации' else 0
-                price_mem = 1 if row[1] == 'Участники' else 0
-                price_pre = 1 if row[1] == 'Предзаказы' else 0
-                rows = [row[3], row[2], 0, price_reg, price_mem, price_pre]
-                temporary_df.loc[len(temporary_df)] = rows
-        # Фрейм всех вхождений конкретной почты
-        temporary_grouped = temporary_df.groupby(['date', 'event']).agg(
-            {'full_price': 'max', 'reg_price': 'max', 'peop_price': 'max', 'so_price': 'max'}).reset_index()
-
-
-        # Заполнение оплат для фрейма
-        for index, row in temporary_grouped.iterrows():
-            row_date = row['date']
-            target_data = row_date + timedelta(days=date_difference_in_days)
-
-            # Фильтрация оплат со сдвигом от чекбокса
-            filtered_payments = [item for item in payments if item[2] <= target_data]
-            # Сдвигаемый расчет стоимости вхождения от даты вхождения и диапазона даты
-            full_price = sum(item[1] for item in filtered_payments if email == item[0])
-            # Сумма оплат с почты
-            if row['peop_price'] == 1:
-                temporary_grouped.at[index, 'peop_price'] = full_price
-            if row['reg_price'] == 1:
-                temporary_grouped.at[index, 'reg_price'] = full_price
-            if row['so_price'] == 1:
-                temporary_grouped.at[index, 'so_price'] = full_price
-            temporary_grouped.at[index, 'full_price'] = full_price
-
-        # Наполняем конечный фрейм
-        result_dataframe = pd.concat([result_dataframe, temporary_grouped], ignore_index=True)
-        int_columns = ['full_price', 'reg_price', 'peop_price', 'so_price']
-        result_dataframe[int_columns] = result_dataframe[int_columns].astype(int)
+    dataset = data_preparation(start_event, end_event, select_event).fillna('empty').drop_duplicates()
+    # Получаем df оплат
+    payments = get_payment(start_pay)
+    # Результирующий dataframe
+    result_dataframe = pd.DataFrame(columns=['date', 'event', 'full_price', 'reg_price', 'peop_price', 'so_price'])
+    # Логика работает от почты из набора документов
+    for items in dataset.itertuples():
+        # заходим в документ оплат и ищем там почту
+        for row in payments.itertuples():
+            if items[4] == row[1] and pd.Timestamp(items[3]) <= row[3] <= pd.Timestamp(
+                    items[3] + timedelta(days=date_difference_in_days)):
+                price_reg = row[2] if items[1] == 'Регистрации' else 0
+                price_mem = row[2] if items[1] == 'Участники' else 0
+                price_pre = row[2] if items[1] == 'Предзаказы' else 0
+                rows = [items[3], items[2], row[2], price_reg, price_mem, price_pre]
+                result_dataframe.loc[len(result_dataframe)] = rows
     # Собираем финальный df
+    int_columns = ['full_price', 'reg_price', 'peop_price', 'so_price']
+    result_dataframe[int_columns] = result_dataframe[int_columns].astype(int)
     grouped = result_dataframe.groupby(['date', 'event']).agg(
         {'full_price': 'sum', 'reg_price': 'sum', 'peop_price': 'sum', 'so_price': 'sum'}).reset_index()
-
     grouped['%reg'] = grouped['reg_price'] / grouped['full_price']
     grouped['%peop'] = grouped['peop_price'] / grouped['full_price']
     grouped['%so'] = grouped['so_price'] / grouped['full_price']
