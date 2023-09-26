@@ -99,7 +99,8 @@ def get_funnel_payment(start_event: str, end_event: str, start_pay: str, end_pay
     # Получаем df оплат
     payments = get_payment(start_pay)
     # Результирующий dataframe
-    result_dataframe = pd.DataFrame(columns=['date', 'event', 'full_price', 'reg_price', 'peop_price', 'so_price'])
+    result_dataframe = pd.DataFrame(
+        columns=['date', 'event', 'full_price', 'reg_price', 'peop_price', 'so_price', 'email'])
     # Логика работает от почты из набора документов
     for items in dataset.itertuples():
         # заходим в документ оплат и ищем там почту
@@ -109,11 +110,13 @@ def get_funnel_payment(start_event: str, end_event: str, start_pay: str, end_pay
                 price_reg = row[2] if items[1] == 'Регистрации' else 0
                 price_mem = row[2] if items[1] == 'Участники' else 0
                 price_pre = row[2] if items[1] == 'Предзаказы' else 0
-                rows = [items[3], items[2], row[2], price_reg, price_mem, price_pre]
+                rows = [items[3], items[2], row[2], price_reg, price_mem, price_pre,items[4]]
                 result_dataframe.loc[len(result_dataframe)] = rows
     # Собираем финальный df
     int_columns = ['full_price', 'reg_price', 'peop_price', 'so_price']
     result_dataframe[int_columns] = result_dataframe[int_columns].astype(int)
+    result_dataframe = result_dataframe.groupby(['date', 'event', 'email']).agg(
+        {'full_price': 'max', 'reg_price': 'max', 'peop_price': 'max', 'so_price': 'max'}).reset_index()
     grouped = result_dataframe.groupby(['date', 'event']).agg(
         {'full_price': 'sum', 'reg_price': 'sum', 'peop_price': 'sum', 'so_price': 'sum'}).reset_index()
     grouped['%reg'] = grouped['reg_price'] / grouped['full_price']
