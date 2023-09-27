@@ -7,7 +7,7 @@
             <input type="checkbox" class="form-check-input" id="showArchive" v-model="showArchiveData">
             <label class="form-check-label" for="showArchive" style="display: inline;">Показать архивную часть таблицы</label>
         </div>
-        <table>
+        <table id="zoomTable">
             <thead>
                 <tr>
                     {% for column in data.columns %}
