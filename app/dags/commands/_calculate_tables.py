@@ -395,7 +395,7 @@ def roistat_update_expenses(date_from: datetime.date, date_to: datetime.date):
         old_data: pandas.DataFrame = load
         # Преобразуем в дату
         old_data['date'] = pd.to_datetime(old_data['date'])
-        filtered_data = old_data[old_data['date'] <= drop_date]
+        filtered_data = old_data[old_data['date'] < drop_date]
         # Объединяем остаток с обновленным df
         fresh_data = pd.concat([filtered_data, df], ignore_index=True)
         # Сохраняем обновленный df
