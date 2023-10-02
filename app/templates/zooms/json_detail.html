@@ -3,27 +3,14 @@
 <!-- canvas start -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="canvas_{{item["Лид"]}}" aria-labelledby="canvas_{{item["Лид"]}}Label" 
     style="width:580px; opacity: 0.94; background-color: aliceblue; border-radius: 10px;">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="canvas_{{item["Лид"]}}Label">Отчет общий по Zoom</h5>                                                                                                                                                                                             
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>                                            
-    </div>
     <div class="offcanvas-header">                                                
-        <span style="padding-left: 5px;">
+        <h5 style="padding-left: 5px;">
             Менеджер: {{ item['Менеджер'] }}<br>
             Дата зума: {{ item['Дата зума'] }}<br>
             Лид: {{ item['Лид'] }}<br>                                                            
-        </span>
-        <br>
-    </div>
-    <div class="offcanvas-header">
-        {% if item.text %}
-        <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
-            <p>
-                {{ item.text|safe }}                                                                     
-            </p>
-        </div><br>
-        {% endif %}  
-    </div>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>  
+    </div>    
     <div class="offcanvas-body">
         <div id="accordion">   
             <!-- revealing -->
@@ -469,6 +456,16 @@
                     </div>
                 </div>
             {% endif %}
+
+            <div class="offcanvas-header">
+                {% if item.text %}
+                <div class="card-body" style="position: relative; display: flex; white-space: normal; height: 300px;overflow: auto;">
+                    <p>
+                        {{ item.text|safe }}                                                                     
+                    </p>
+                </div><br>
+                {% endif %}  
+            </div>
 
             </div>
         </div>
