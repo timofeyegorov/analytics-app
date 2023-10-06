@@ -3893,6 +3893,137 @@ class TildaQuizWeightView(APIView):
         return super().post(*args, **kwargs)
 
 
+class TildaQuizNeuroEmployeeWeightView(APIView):
+    def post(self, *args, **kwargs):
+        data = parse_request_data(dict(request.form))
+
+        leads = data.get("leads", {}).get("add", [])
+        if not leads:
+            return super().post(*args, **kwargs)
+
+        lead = leads[0]
+        if (
+            lead.get("pipeline_id") != "7324037"
+            or lead.get("status_id") != "60974609"
+        ):
+            return super().post(*args, **kwargs)
+
+        data = dict(
+            [
+                (
+                    parse_slug(item.get("name")),
+                    (
+                        item.get("name"),
+                        (
+                            item.get("values", [{"value": ""}])
+                            or [{"value": ""}]
+                        )[0].get("value", ""),
+                    ),
+                )
+                for item in lead.get("custom_fields")
+            ]
+        )
+
+        need_data = {
+            "position": data.get("vasha_dolzhnost"),
+            "employees_quantity": data.get("razmer_vashej_kompanii"),
+            "need_neuro_employee": data.get(
+                "hotite_li_vy_vnedrjat_nejro_sotrudnika"
+            ),
+            "implementation_budget": data.get(
+                "kakoj_bjudzhet_na_vnedrenie_nejro_sotrudnika_u_vashej_kompanii"
+            ),
+        }
+
+        value = {
+            "position": parse_slug(data.get("vasha_dolzhnost")[1]),
+            "employees_quantity": parse_slug(
+                data.get("razmer_vashej_kompanii")[1]
+            ),
+            "need_neuro_employee": parse_slug(
+                data.get("hotite_li_vy_vnedrjat_nejro_sotrudnika")[1]
+            ),
+            "implementation_budget": parse_slug(
+                data.get(
+                    "kakoj_bjudzhet_na_vnedrenie_nejro_sotrudnika_u_vashej_kompanii"
+                )[1]
+            ),
+        }
+        weights = {
+            "position": {
+                "top_menedzher": 15,
+                "linejnyj_rukovoditel": 5,
+                "sobstvennik": 15,
+                "investor_aktsioner": 15,
+                "linejnyj_sotrudnik": 0,
+                "drugoe": 0,
+            },
+            "employees_quantity": {
+                "do_10_sotrudnikov": -50,
+                "10_100_sotrudnikov": 5,
+                "100_1000_sotrudnikov": 10,
+                "1000_10_000_sotrudnikov": 10,
+                "bolee_10_000_sotrudnikov": 10,
+            },
+            "need_neuro_employee": {
+                "da": 15,
+                "ne_uveren": 5,
+                "net": 0,
+            },
+            "implementation_budget": {
+                "do_200_tr": 0,
+                "200_500_tr": 5,
+                "500_1000_tr": 10,
+                "1000_2000_tr": 10,
+                "bolee_2000_tr": 10,
+            },
+        }
+        answers_weights = [
+            weights.get(question, {}).get(answer, 0)
+            for question, answer in value.items()
+        ]
+        weight = sum(answers_weights)
+        if weight < 0:
+            tag = "Не звоним"
+        elif 0 <= weight <= 20:
+            tag = "3 очередь"
+        elif 21 <= weight <= 34:
+            tag = "2 очередь"
+        else:
+            tag = "1 очередь"
+        self.data = {"weigh": weight, "tag": tag}
+        amocrm_api = AmoCRMAPI()
+        amocrm_api("post", "leads/tags", [{"name": tag}])
+        data = {
+            "_embedded": {
+                "tags": [
+                    {"id": int(item.get("id"))}
+                    for item in lead.get("tags", [])
+                    + amocrm_api.response.get("_embedded", {}).get("tags", [])
+                ],
+            },
+        }
+        amocrm_api("patch", f'leads/{lead.get("id")}', data)
+        note = {
+            "params": {
+                "note_type": "common",
+                "text": "\n".join(
+                    [
+                        "Проставлен тег веса",
+                        "",
+                        f"Вес: {weight}",
+                        f"Тег: {tag}",
+                        "",
+                    ]
+                    + [": ".join(item) for item in need_data.values()]
+                ),
+            },
+        }
+        amocrm_api("post", f'leads/{lead.get("id")}/notes', note)
+
+        return super().post(*args, **kwargs)
+
+
 class FilteringBaseView(TemplateView):
     filters_class = WeekStatsFiltersEmptyData
     filters: WeekStatsFiltersEmptyData

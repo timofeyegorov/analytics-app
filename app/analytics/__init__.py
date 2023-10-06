@@ -939,6 +939,12 @@ app.add_url_rule(
     view_func=views.TildaQuizWeightView.as_view("tilda_quiz_weight"),
 )
 app.add_url_rule(
+    "/api/tilda/quiz-weight/neuro-employee",
+    view_func=views.TildaQuizNeuroEmployeeWeightView.as_view(
+        "tilda_quiz_weight_neuro_employee"
+    ),
+)
+app.add_url_rule(
     "/week-stats/expenses",
     view_func=views.WeekStatsExpensesView.as_view("week_stats_expenses"),
 )
@@ -1061,7 +1067,9 @@ app.add_url_rule(
 )
 app.add_url_rule(
     "/api/v1/get-last-uploaded-zoom/<username>",
-    view_func=views_api_v1.ApiGetLastUpdateZoom.as_view("api_last_uploaded_zoom"),
+    view_func=views_api_v1.ApiGetLastUpdateZoom.as_view(
+        "api_last_uploaded_zoom"
+    ),
 )
 app.add_url_rule(
     "/api/v1/get-zoom-link/",
