@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div class="base-links">
+        <a href="/" class="btn btn-success">В меню</a><span class="btn btn-primary upload"></span><input type="file" name="source" accept="text/csv" id="field-source">
+    </div>
+    <div class="upload-data"></div>
+{% endblock %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='css/update/leads/index.css') }}" rel="stylesheet">
+{% endblock css %}
+
+{% block js %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/update/leads/index.js') }}"></script>
+{% endblock js %}

@@ -1,4 +1,6 @@
 from typing import Dict, Any
+from sqlalchemy.sql import functions
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from app import db
 
@@ -82,3 +84,33 @@ class Roistat(db.Model):
     campaign_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
     group_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
     ad_id = db.Column(db.ForeignKey("roistat_levels.id"), index=True)
+
+
+class TildaLead(db.Model):
+    __tablename__ = "tilda_leads"
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, index=True)
+    quiz_answers1 = db.Column(db.String(256), index=True)
+    quiz_answers2 = db.Column(db.String(256), index=True)
+    quiz_answers3 = db.Column(db.String(256), index=True)
+    quiz_answers4 = db.Column(db.String(256), index=True)
+    quiz_answers5 = db.Column(db.String(256), index=True)
+    quiz_answers6 = db.Column(db.String(256), index=True)
+    sp_book_id = db.Column(db.String(16), index=True)
+    roistat_fields_roistat = db.Column(db.String(16), index=True)
+    name = db.Column(db.String(256), index=True)
+    phone = db.Column(db.String(32), index=True)
+    email = db.Column(db.String(128), index=True)
+    roistat_url = db.Column(db.String(2048), index=True)
+    formid = db.Column(db.String(32), index=True)
+    formname = db.Column(db.String(32), index=True)
+    referer = db.Column(db.String(2048), index=True)
+    checkbox = db.Column(db.String(16), index=True)
+
+    @hybrid_property
+    def identifier_exp(self):
+        return functions.concat(self.created, "_", self.phone, "_", self.email)
+
+    @property
+    def identifier(self) -> str:
+        return f"{self.created}_{self.phone}_{self.email}"

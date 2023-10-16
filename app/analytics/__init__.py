@@ -46,9 +46,8 @@ from config import RESULTS_FOLDER
 
 import os
 import numpy as np
-from typing import List, Dict, Optional
-from flask import render_template, request, redirect, Response
-from datetime import datetime, timedelta
+from flask import Response
+from datetime import timedelta
 from urllib.parse import urlencode
 import requests
 import pandas as pd
@@ -57,9 +56,8 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 import pickle as pkl
 import json
-import html
 
-from app import views, views_amocrm, views_services, views_api_v1
+from app import views, views_amocrm, views_services, views_update, views_api_v1
 
 from .pickle_load import PickleLoader
 from . import utils
@@ -1038,6 +1036,10 @@ app.add_url_rule(
         "services_sources_week_expenses"
     ),
 )
+app.add_url_rule(
+    "/update/leads",
+    view_func=views_update.LeadsView.as_view("update_leads"),
+)
 # api v1
 app.add_url_rule(
     "/api/v1/zoom-upload",
@@ -1078,6 +1080,10 @@ app.add_url_rule(
 app.add_url_rule(
     "/api/v1/complete-zoom-upload",
     view_func=views_api_v1.ApiCopyTempZoomFiles.as_view("complete_zoom_upload"),
+)
+app.add_url_rule(
+    "/api/v1/upload/leads",
+    view_func=views_api_v1.ApiUploadLeads.as_view("api_upload_leads"),
 )
 
 

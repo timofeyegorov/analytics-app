@@ -97,7 +97,9 @@ def report_channels_summary(debug: bool = False):
 @app.route("/index", endpoint="index")
 @decorators.auth
 def index():
-    return render_template("index.html")  # , fig_leads_dynamics=fig_leads_dynamics)
+    return render_template(
+        "index.html"
+    )  # , fig_leads_dynamics=fig_leads_dynamics)
 
 
 @app.route("/leads", endpoint="leads")
@@ -105,7 +107,9 @@ def index():
 def data():
     data = get_leads_data()
     data.traffic_channel = data.traffic_channel.str.split("?").str[0]
-    return render_template("leads.html", tables={"Leads": data.drop(columns=["id"])})
+    return render_template(
+        "leads.html", tables={"Leads": data.drop(columns=["id"])}
+    )
 
 
 @app.route("/trafficologists", endpoint="trafficologists")
@@ -133,7 +137,9 @@ def target_audience():
     with open(os.path.join(RESULTS_FOLDER, "target_audience.pkl"), "rb") as f:
         target_audience = pkl.load(f)
     # return render_template('target_audience.html', target_audience=get_target_audience())
-    return render_template("target_audience.html", target_audience=target_audience)
+    return render_template(
+        "target_audience.html", target_audience=target_audience
+    )
 
 
 @app.route("/crops", endpoint="crops")
@@ -212,27 +218,31 @@ def expenses():
         ),
         "Расход с 1 по 20 января": [
             round(
-                exp[(exp["Дата"] >= "2022-01-01") & (exp["Дата"] <= "2022-01-20")][
-                    "Расход"
-                ].sum()
+                exp[
+                    (exp["Дата"] >= "2022-01-01")
+                    & (exp["Дата"] <= "2022-01-20")
+                ]["Расход"].sum()
             ),
             round(
-                exp[(exp["Дата"] >= "2022-01-01") & (exp["Дата"] <= "2022-01-20")][
-                    "Расход"
-                ].sum()
+                exp[
+                    (exp["Дата"] >= "2022-01-01")
+                    & (exp["Дата"] <= "2022-01-20")
+                ]["Расход"].sum()
             )
             * 1.2,
         ],
         "Расход с 1 по 21 января": [
             round(
-                exp[(exp["Дата"] >= "2022-01-01") & (exp["Дата"] <= "2022-01-21")][
-                    "Расход"
-                ].sum()
+                exp[
+                    (exp["Дата"] >= "2022-01-01")
+                    & (exp["Дата"] <= "2022-01-21")
+                ]["Расход"].sum()
             ),
             round(
-                exp[(exp["Дата"] >= "2022-01-01") & (exp["Дата"] <= "2022-01-21")][
-                    "Расход"
-                ].sum()
+                exp[
+                    (exp["Дата"] >= "2022-01-01")
+                    & (exp["Дата"] <= "2022-01-21")
+                ]["Расход"].sum()
             )
             * 1.2,
         ],
