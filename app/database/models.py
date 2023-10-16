@@ -98,13 +98,13 @@ class TildaLead(db.Model):
     quiz_answers6 = db.Column(db.String(256), index=True)
     sp_book_id = db.Column(db.String(16), index=True)
     roistat_fields_roistat = db.Column(db.String(16), index=True)
-    name = db.Column(db.String(256), index=True)
+    name = db.Column(db.String(2048), index=True)
     phone = db.Column(db.String(32), index=True)
     email = db.Column(db.String(128), index=True)
-    roistat_url = db.Column(db.String(2048), index=True)
+    roistat_url = db.Column(db.String(4096), index=True)
     formid = db.Column(db.String(32), index=True)
     formname = db.Column(db.String(32), index=True)
-    referer = db.Column(db.String(2048), index=True)
+    referer = db.Column(db.String(4096), index=True)
     checkbox = db.Column(db.String(16), index=True)
 
     @hybrid_property
