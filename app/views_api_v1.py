@@ -418,6 +418,8 @@ class ApiUploadLeads(APIView):
                 db_rows.append(row.identifier)
 
         dataframe = dataframe[~dataframe["identifier"].isin(db_rows)]
+        if "roistat_fields_roistat" not in dataframe.columns:
+            dataframe["roistat_fields_roistat"] = ""
         dataframe = dataframe[
             [
                 "created",
