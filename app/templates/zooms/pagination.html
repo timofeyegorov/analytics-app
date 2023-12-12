@@ -1,0 +1,11 @@
+<div class="pagination" style="margin: 10px;">
+    <nav aria-label="Навигация по страницам">
+        <ul class="pagination">
+        <li class="page-item"><a class="page-link" href="#">Предыдущая</a></li>
+        {% for page in pages %}
+            <li class="page-item"><a class="page-link" href="?{{ query_string }}&p={{ page }}">{{ page }}</a></li>
+        {% endfor %}
+        <li class="page-item"><a class="page-link" href="#">Следующая</a></li>
+        </ul>
+    </nav>
+</div> 

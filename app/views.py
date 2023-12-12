@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional, Callable, Union
 from collections import OrderedDict
 from transliterate import slugify
-from urllib.parse import urlparse, parse_qsl, urlencode, unquote
+from urllib.parse import urlparse, parse_qsl, urlencode, unquote, parse_qs
 from pydantic import BaseModel, ConstrainedDate, conint
 from werkzeug.datastructures import ImmutableMultiDict
 from flask_sqlalchemy import BaseQuery
@@ -320,6 +320,7 @@ class ZoomsFiltersData(BaseModel):
     expected_payment_date_from: Optional[ConstrainedDate]
     expected_payment_date_to: Optional[ConstrainedDate]
     on_control: Optional[bool]
+    page: Optional[int]
 
     def __getitem__(self, item):
         if item == "group":
@@ -4121,6 +4122,10 @@ class ZoomsView(FilteringBaseView):
     def get_filters(self):
         initial = self.filters_initial()
 
+        page = request.args.get("p", None)
+        if page is None:
+            page = 1
+
         date_from = request.args.get("date_from")
         if date_from is None:
             date_from = initial.get("date_from")
@@ -4198,6 +4203,7 @@ class ZoomsView(FilteringBaseView):
             expected_payment_date_from=expected_payment_date_from,
             expected_payment_date_to=expected_payment_date_to,
             on_control=on_control,
+            page=page,
         )
 
         filters_class = self.get_filters_class()
@@ -4422,6 +4428,10 @@ class ZoomsView(FilteringBaseView):
                 "estimate": data[data["estimate"] != ""]["estimate"].sum(),
             }
         )
+        # пагинация
+        pages = [p for p in range(1, data.shape[0] // 25 + 2)]
+        if self.filters.page is not None:
+            data = data.iloc[25 * (self.filters.page - 1): 25 * self.filters.page]
 
         data = data[
             [col for col in data.columns if (col != "time" and col != "profit")]
@@ -4448,10 +4458,18 @@ class ZoomsView(FilteringBaseView):
             inplace=True,
         )
 
+        query_string = request.query_string.decode('utf-8')
+        parsed_url = urlparse('?' + query_string)
+        query_params = parse_qs(parsed_url.query)
+        query_params.pop('p', None)
+        query_string = urlencode(query_params, doseq=True)
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("total", total)
         self.context("data", data)
+        self.context("pages", pages)
+        self.context("query_string", query_string)
 
         if is_download:
             return data, total
