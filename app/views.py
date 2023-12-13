@@ -36,7 +36,7 @@ from flask import (
 )
 from flask.views import MethodView
 
-from app import decorators, cache
+from app import decorators
 from app.plugins.ads import vk
 from app.analytics import utils
 from app.analytics.pickle_load import PickleLoader
@@ -4283,7 +4283,6 @@ class ZoomsView(FilteringBaseView):
             <= date_to
         )
 
-    # @cache.cached(timeout=600)
     def _read_s3_json_to_df(
         self,
         json_name: str,
