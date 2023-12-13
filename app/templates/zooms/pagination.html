@@ -1,11 +1,23 @@
-<div class="pagination" style="margin: 10px;">
-    <nav aria-label="Навигация по страницам">
-        <ul class="pagination">
-        <li class="page-item"><a class="page-link" href="#">Предыдущая</a></li>
-        {% for page in pages %}
-            <li class="page-item"><a class="page-link" href="?{{ query_string }}&p={{ page }}">{{ page }}</a></li>
-        {% endfor %}
-        <li class="page-item"><a class="page-link" href="#">Следующая</a></li>
-        </ul>
-    </nav>
-</div> 
+<div class="pagination">
+    <div class="pagination-range">
+        <select class="form-select" aria-label="pagination_range"  style="width: 68px;" id="paginationSelect">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+        </select>
+    </div> 
+    <div class="page-info">
+        <span>Страница: {{ cr_page }} из {{ max_page}}: </span>
+    </div>
+    <div class="pagination-nav" style="margin-left: 3px;">
+        <nav aria-label="Навигация по страницам">
+            <ul class="pagination">
+            <li class="page-item"><a class="page-link" {% if cr_page > 1 %}href="?{{ query_string }}&p={{ cr_page - 1 }}" {% else %}href="#" disabled="disabled"{% endif %}>Предыдущая</a></li>
+            {% for page in pages %}
+                <li class="page-item"><a class="page-link" href="?{{ query_string }}&p={{ page }}">{{ page }}</a></li>
+            {% endfor %}
+            <li class="page-item"><a class="page-link" {% if cr_page < max_page %}href="?{{ query_string }}&p={{ cr_page + 1 }}" {% else %}href="#" disabled="disabled"{% endif %}>Следующая</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>

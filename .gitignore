@@ -16,3 +16,4 @@ celerybeat-schedule
 /app/ats/api/api.log
 /app/intensives/*.json
 /app/intensives/*.log
+/cache

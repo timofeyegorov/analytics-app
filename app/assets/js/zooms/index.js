@@ -101,6 +101,28 @@
             form.submit();
         });
 
+        const selectElement = document.getElementById('paginationSelect');
+        selectElement.addEventListener('change', function () {
+            const selectedValue = this.value;
+            updateQueryStringParameter('r', selectedValue);
+            selectElement.value = selectElement;
+            window.location.href = window.location.href;
+        });
+        function updateQueryStringParameter(key, value) {
+            const url = new URL(window.location.href);
+            url.searchParams.set(key, value);
+            url.searchParams.delete('p');
+            history.replaceState(null, null, url.toString());
+        }
+        window.addEventListener('load', function () {
+            const url = new URL(window.location.href);
+            const selectedValue = url.searchParams.get('r');
+    
+            if (selectedValue !== null) {
+                selectElement.value = selectedValue;
+            }
+        });
+
     });
 
 
