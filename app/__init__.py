@@ -4,6 +4,7 @@ import redis
 import click
 import pandas as pd
 import pickle as pkl
+from flask_caching import Cache
 
 from flask import Flask, request, render_template
 from flask.cli import with_appcontext
@@ -17,6 +18,7 @@ from celery.schedules import crontab
 from datetime import datetime, timedelta
 from app.plugins.tg_report import TGReportChannelsSummary
 from app import decorators, commands
+import cache
 
 
 # def fig_leads_dynamics():
@@ -33,6 +35,7 @@ from app import decorators, commands
 
 app = Flask(__name__, static_url_path="/assets", static_folder="assets")
 app.config.from_object("config")
+cache = Cache(app, config=cache.SIMPLE)
 
 for bp in commands.bps:
     app.register_blueprint(bp)

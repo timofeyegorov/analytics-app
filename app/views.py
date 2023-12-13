@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional, Callable, Union
 from collections import OrderedDict
 from transliterate import slugify
-from urllib.parse import urlparse, parse_qsl, urlencode, unquote
+from urllib.parse import urlparse, parse_qsl, urlencode, unquote, parse_qs
 from pydantic import BaseModel, ConstrainedDate, conint
 from werkzeug.datastructures import ImmutableMultiDict
 from flask_sqlalchemy import BaseQuery
@@ -36,7 +36,7 @@ from flask import (
 )
 from flask.views import MethodView
 
-from app import decorators
+from app import decorators, cache
 from app.plugins.ads import vk
 from app.analytics import utils
 from app.analytics.pickle_load import PickleLoader
@@ -320,6 +320,8 @@ class ZoomsFiltersData(BaseModel):
     expected_payment_date_from: Optional[ConstrainedDate]
     expected_payment_date_to: Optional[ConstrainedDate]
     on_control: Optional[bool]
+    page: Optional[int]
+    data_range: Optional[int]
 
     def __getitem__(self, item):
         if item == "group":
@@ -4121,6 +4123,13 @@ class ZoomsView(FilteringBaseView):
     def get_filters(self):
         initial = self.filters_initial()
 
+        page = request.args.get("p", None)
+        if page is None:
+            page = 1
+        data_range = request.args.get("r", None)
+        if data_range is None:
+            data_range = 25
+
         date_from = request.args.get("date_from")
         if date_from is None:
             date_from = initial.get("date_from")
@@ -4198,6 +4207,8 @@ class ZoomsView(FilteringBaseView):
             expected_payment_date_from=expected_payment_date_from,
             expected_payment_date_to=expected_payment_date_to,
             on_control=on_control,
+            page=page,
+            data_range=data_range
         )
 
         filters_class = self.get_filters_class()
@@ -4272,7 +4283,8 @@ class ZoomsView(FilteringBaseView):
             <= date_to
         )
 
-    def __read_s3_json_to_df(
+    # @cache.cached(timeout=600)
+    def _read_s3_json_to_df(
         self,
         json_name: str,
         date_from: datetime.date,
@@ -4286,25 +4298,13 @@ class ZoomsView(FilteringBaseView):
         :return: pandas.DataFrame
         """
         s3 = Client()
-
         df = pandas.DataFrame(columns=zoom_json_columns)
-
         for folder_path in s3.get_paths_2_level():
             manager = folder_path.split("/")[-2]
             datetime_obj = folder_path.split("/")[-1]
             date_str = datetime_obj.split("-")[0]
             time_str = datetime_obj.split("-")[1]
 
-            # local test
-            # for folder_path in [r'F:/Test/Гирса Юрий/20230801-1900',
-            #                     r'F:/Test/Фасхутдинова Эльвира/20230731-1100',
-            #                     r'F:/Test/Попелыш Наталья/20230730-1300',
-            #                     r'F:/Test/Попелыш Наталья/20230609-1600',
-            #                     ]:
-            #
-            #     try:
-            #         with open(folder_path + '/' + 'output_data.json', 'rb') as obj:
-            #             tmp_json = json.load(obj)
             if (manager in manager_list) and self.__check_date(
                 current_date=date_str, date_from=date_from, date_to=date_to
             ):
@@ -4315,36 +4315,27 @@ class ZoomsView(FilteringBaseView):
                     continue
             else:
                 continue
-
-            data = {}
-
-            data["manager"] = manager
-            data["date"] = datetime.datetime.strptime(
-                f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}", "%Y-%m-%d"
-            ).date()
-
-            data["time"] = datetime.datetime.strptime(
-                f"{time_str[:2]}:{time_str[2:]}:00", "%H:%M:%S"
-            ).time()
-            data["data_link"] = "_".join(folder_path.split("/")[-2:])
+            data = {
+                "manager": manager,
+                "date": datetime.datetime.strptime(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}", "%Y-%m-%d").date(),
+                "time": datetime.datetime.strptime(f"{time_str[:2]}:{time_str[2:]}:00", "%H:%M:%S").time(),
+                "data_link": "_".join(folder_path.split("/")[-2:])
+            }
 
             data.update(JsonParseService().to_dict(tmp_json))
-
             tmp_df = pandas.DataFrame.from_dict(data)
             col_to_move = tmp_df.pop("data_link")
             tmp_df.insert(8, "data_link", col_to_move)
 
             df = pandas.concat([df, tmp_df])
-            del tmp_df
-            del tmp_json
 
         df = df[
             (df.date >= date_from)
             & (df.date <= date_to)
             & (df.manager.isin(manager_list))
         ]
-
-        return df if len(df) != 0 else None
+        #  if len(df) != 0 else None
+        return df
 
     def get(self, is_download=False):
         self.get_filters()
@@ -4368,25 +4359,7 @@ class ZoomsView(FilteringBaseView):
             self.controllable, how="left", on=["manager_id", "lead", "date"]
         )
 
-        manager_list = self.values[
-            (self.values.date >= self.filters.date_from)
-            & (self.values.date <= self.filters.date_to)
-        ].manager.unique()
-
-        s3_data_df = self.__read_s3_json_to_df(
-            self.json_file_name,
-            self.filters.date_from,
-            self.filters.date_to,
-            manager_list,
-        )
-
-        if s3_data_df is not None:
-            self.values = self.values.merge(
-                s3_data_df, how="left", on=["manager", "date", "time"]
-            )
-
-        self.values.fillna(pandas.NA, inplace=True)
-        if len(self.values):
+        if not self.values.empty:
             self.values["estimate"] = (
                 self.values.apply(parse_estimate, axis=1)
                 .apply(parse_int)
@@ -4404,13 +4377,10 @@ class ZoomsView(FilteringBaseView):
         self.values["on_control"] = (
             self.values["on_control"].apply(parse_bool).fillna("")
         )
-        self.values.fillna("", inplace=True)
-
         self.filtering_values()
         self.get_extras()
 
         data = self.values.sort_values(by=["group", "manager", "date"])
-
         total = pandas.Series(
             {
                 "name": "Итого",
@@ -4422,11 +4392,30 @@ class ZoomsView(FilteringBaseView):
                 "estimate": data[data["estimate"] != ""]["estimate"].sum(),
             }
         )
+        # пагинация
+        data_range = int(self.filters.data_range)
+        max_page = data.shape[0] // data_range + 2
+        pages = [p for p in range(1, max_page)]
+        if self.filters.page is not None:
+            data = data.iloc[data_range * (self.filters.page - 1): data_range * self.filters.page]
+
+        manager_list = data.manager.unique()
+
+        s3_data_df = self._read_s3_json_to_df(
+                self.json_file_name,
+                self.filters.date_from,
+                self.filters.date_to,
+                manager_list,
+            )
+        # if s3_data_df is not None:
+        data = data.merge(
+                s3_data_df, how="left", on=["manager", "date", "time"]
+            )
+        data.fillna("", inplace=True)
 
         data = data[
             [col for col in data.columns if (col != "time" and col != "profit")]
         ]
-
         data.rename(
             columns={
                 "group": "Группа",
@@ -4448,10 +4437,25 @@ class ZoomsView(FilteringBaseView):
             inplace=True,
         )
 
+        query_string = request.query_string.decode('utf-8')
+        parsed_url = urlparse('?' + query_string)
+        query_params = parse_qs(parsed_url.query)
+        query_params.pop('p', None)
+        query_string = urlencode(query_params, doseq=True)
+        cr_page = request.args.get('p', None)
+        if cr_page is not None:
+            cr_page = int(cr_page)
+        else:
+            cr_page = 1
+
         self.context("filters", self.filters)
         self.context("extras", self.extras)
         self.context("total", total)
         self.context("data", data)
+        self.context("pages", pages)
+        self.context("query_string", query_string)
+        self.context("cr_page", cr_page)
+        self.context("max_page", int(max_page - 1))
 
         if is_download:
             return data, total

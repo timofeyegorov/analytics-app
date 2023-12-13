@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% block title %}{{ title }}{% endblock %}
+{% block css %}
+    <link href="{{ url_for('static', filename='css/zooms/index.css') }}" rel="stylesheet">
+{% endblock css %}
 
 {% block content %}
     <span>Вы зашли под пользователем:  <b>{{ request.user.username }}</b></span>
@@ -10,6 +13,7 @@
     </div>
     {% include 'zooms/filters.html' %}
     {% include 'zooms/data.html' %}
+    {% include 'zooms/pagination.html' %}
 {% endblock %}
 
 {% block js %}
