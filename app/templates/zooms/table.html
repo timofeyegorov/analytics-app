@@ -1,0 +1,26 @@
+<table class="table-striped">
+    <thead>
+      <tr>
+        <th scope="col">-</th>
+        <th scope="col">Менеджер</th>
+        <th scope="col">Проведено zoom</th>
+        <th scope="col">Загружено zoom</th>
+        <th scope="col">Двухканальных zoom</th>
+      </tr>
+    </thead>
+    <tbody class="table-hover">
+        {% for index, user in managers_statistic.iterrows() %}
+        <tr>
+            <td id="manager_{{ index + 1 }}">{{ index + 1 }}</td>
+            <td id="manager" data-manager="{{ user.manager }}">{{ user.manager }}</td>
+            <td id="zooms_{{ index + 1 }}" data-zooms="{{ user.manager }}">{{ user.lead }}</td>
+            <td id="uploaded_{{ index + 1 }}" data-uploaded="{{ user.manager }}">-</td>
+            <td id="dual_{{ index + 1 }}" data-dual="{{ user.manager }}">-</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+
+<script>
+    var statistic_json = {{ statistic_json|tojson|safe }};
+</script>
