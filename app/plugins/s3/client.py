@@ -186,6 +186,18 @@ class Client:
                     if sub_f.type == PathInfoTypeEnum.directory:
                         yield sub_f.name
 
+    def get_paths_2_level_by_list(self, folders: List) -> List[str]:
+        """
+        Генератор пути второго уровня всех пользователей,
+        в которых располагаются json файлы
+        """
+        for f in folders:
+            for folder in self.ls(f):
+                if folder.type == PathInfoTypeEnum.directory and folder.name != 'temp':
+                    for sub_f in self.ls(folder.name):
+                        if sub_f.type == PathInfoTypeEnum.directory:
+                            yield sub_f.name
+
     def open(self, path: str):
         """
         Метод возвращает объект файлового типа из файловой системы

@@ -281,3 +281,4 @@ def statuses_page():
 from .auth import *
 from .analytics import *
 from .trafficologists import *
+from .templates.template_filters import *

@@ -971,6 +971,10 @@ app.add_url_rule(
     view_func=views.ZoomsView.as_view("zooms"),
 )
 app.add_url_rule(
+    "/zooms/statistics",
+    view_func=views.ZoomsStatisticsApiView.as_view("zooms_statistics"),
+)
+app.add_url_rule(
     "/intensives_old",
     view_func=views.IntensivesView.as_view("intensives_old"),
 )

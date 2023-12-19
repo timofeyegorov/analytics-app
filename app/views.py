@@ -4060,7 +4060,109 @@ class FilteringBaseView(TemplateView):
         self.extras = {}
 
 
-class ZoomsView(FilteringBaseView):
+class ZoomsBaseView:
+    json_file_name: str = "result.json"
+
+    @staticmethod
+    def __check_date(current_date: str, date_from: datetime, date_to: datetime):
+        if date_to is None:
+            return (
+                    date_from
+                    <= datetime.datetime.strptime(current_date, "%Y%m%d").date()
+            )
+        return (
+                date_from
+                <= datetime.datetime.strptime(current_date, "%Y%m%d").date()
+                <= date_to
+        )
+
+    # def
+
+    def _read_s3_json_to_df(
+        self,
+        json_name: str,
+        date_from: datetime.date,
+        date_to: datetime.date,
+        manager_list: list,
+    ) -> Union[pandas.DataFrame, None]:
+        """
+        Метод чтения всех json объектов из облака s3 и формирования df
+
+        :param json_name: универсальное наименованиe json файла
+        :return: pandas.DataFrame
+        """
+        s3 = Client()
+        df = pandas.DataFrame(columns=zoom_json_columns)
+        for folder_path in s3.get_paths_2_level():
+            manager = folder_path.split("/")[-2]
+            datetime_obj = folder_path.split("/")[-1]
+            date_str = datetime_obj.split("-")[0]
+            time_str = datetime_obj.split("-")[1]
+
+            if (manager in manager_list) and self.__check_date(
+                current_date=date_str, date_from=date_from, date_to=date_to
+            ):
+                try:
+                    with s3.open(folder_path + "/" + json_name) as obj:
+                        tmp_json = json.load(obj)
+                except FileNotFoundError:
+                    continue
+            else:
+                continue
+            data = {
+                "manager": manager,
+                "date": datetime.datetime.strptime(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}", "%Y-%m-%d").date(),
+                "time": datetime.datetime.strptime(f"{time_str[:2]}:{time_str[2:]}:00", "%H:%M:%S").time(),
+                "data_link": "_".join(folder_path.split("/")[-2:])
+            }
+
+            data.update(JsonParseService().to_dict(tmp_json))
+            tmp_df = pandas.DataFrame.from_dict(data)
+            col_to_move = tmp_df.pop("data_link")
+            tmp_df.insert(8, "data_link", col_to_move)
+
+            df = pandas.concat([df, tmp_df])
+
+        df = df[
+            (df.date >= date_from)
+            & (df.date <= date_to)
+            & (df.manager.isin(manager_list))
+        ]
+        #  if len(df) != 0 else None
+        return df
+
+
+class ZoomsStatisticsApiView(ZoomsBaseView, APIView):
+    def post(self):
+        manager_id = session.get("uid")
+        if not manager_id:
+            self.data = json.dumps({"status": "failed"}).encode("utf-8")
+            return super().post()
+        else:
+            data = json.loads(request.get_json())
+            managers = data.get("managers", [])
+            date_from = data.get("date_from")
+            date_to = data.get("date_to", None)
+            date_from = datetime.datetime.strptime(date_from, "%Y-%m-%d").date()
+            if date_to is None:
+                date_to = datetime.datetime.now().date()
+            else:
+                date_to = datetime.datetime.strptime(date_to, "%Y-%m-%d").date()
+            print(managers)
+            df = self._read_s3_json_to_df(
+                json_name=self.json_file_name,
+                date_from=date_from,
+                date_to=date_to,
+                manager_list=managers,
+            )
+            print('df:', df)
+            # self.data = json.dumps(
+            #     {"cloudfiles": user_files}, indent=2, ensure_ascii=False
+            # ).encode("utf-8")
+            return super().post()
+
+
+class ZoomsView(ZoomsBaseView, FilteringBaseView):
     template_name = "zooms/index.html"
     title = "Zooms"
     filters_class = ZoomsFiltersData
@@ -4070,7 +4172,6 @@ class ZoomsView(FilteringBaseView):
     controllable_path: Path = (
         Path(DATA_FOLDER) / "week" / "managers_zooms_controllable.pkl"
     )
-    json_file_name: str = "result.json"
 
     def filters_initial(self) -> Dict[str, Any]:
         return {
@@ -4270,72 +4371,6 @@ class ZoomsView(FilteringBaseView):
             "month": month,
         }
 
-    @staticmethod
-    def __check_date(current_date: str, date_from: datetime, date_to: datetime):
-        if date_to is None:
-            return (
-                date_from
-                <= datetime.datetime.strptime(current_date, "%Y%m%d").date()
-            )
-        return (
-            date_from
-            <= datetime.datetime.strptime(current_date, "%Y%m%d").date()
-            <= date_to
-        )
-
-    def _read_s3_json_to_df(
-        self,
-        json_name: str,
-        date_from: datetime.date,
-        date_to: datetime.date,
-        manager_list: list,
-    ) -> Union[pandas.DataFrame, None]:
-        """
-        Метод чтения всех json объектов из облака s3 и формирования df
-
-        :param json_name: универсальное наименованиe json файла
-        :return: pandas.DataFrame
-        """
-        s3 = Client()
-        df = pandas.DataFrame(columns=zoom_json_columns)
-        for folder_path in s3.get_paths_2_level():
-            manager = folder_path.split("/")[-2]
-            datetime_obj = folder_path.split("/")[-1]
-            date_str = datetime_obj.split("-")[0]
-            time_str = datetime_obj.split("-")[1]
-
-            if (manager in manager_list) and self.__check_date(
-                current_date=date_str, date_from=date_from, date_to=date_to
-            ):
-                try:
-                    with s3.open(folder_path + "/" + json_name) as obj:
-                        tmp_json = json.load(obj)
-                except FileNotFoundError:
-                    continue
-            else:
-                continue
-            data = {
-                "manager": manager,
-                "date": datetime.datetime.strptime(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}", "%Y-%m-%d").date(),
-                "time": datetime.datetime.strptime(f"{time_str[:2]}:{time_str[2:]}:00", "%H:%M:%S").time(),
-                "data_link": "_".join(folder_path.split("/")[-2:])
-            }
-
-            data.update(JsonParseService().to_dict(tmp_json))
-            tmp_df = pandas.DataFrame.from_dict(data)
-            col_to_move = tmp_df.pop("data_link")
-            tmp_df.insert(8, "data_link", col_to_move)
-
-            df = pandas.concat([df, tmp_df])
-
-        df = df[
-            (df.date >= date_from)
-            & (df.date <= date_to)
-            & (df.manager.isin(manager_list))
-        ]
-        #  if len(df) != 0 else None
-        return df
-
     def get(self, is_download=False):
         self.get_filters()
         self.values = self.load_dataframe(self.values_path)
@@ -4380,6 +4415,7 @@ class ZoomsView(FilteringBaseView):
         self.get_extras()
 
         data = self.values.sort_values(by=["group", "manager", "date"])
+        statistic = data.groupby("manager").count()["lead"].reset_index()
         total = pandas.Series(
             {
                 "name": "Итого",
@@ -4455,6 +4491,18 @@ class ZoomsView(FilteringBaseView):
         self.context("query_string", query_string)
         self.context("cr_page", cr_page)
         self.context("max_page", int(max_page - 1))
+        self.context("managers_statistic", statistic)
+        self.context("statistic_json",
+                     json.dumps(
+                         {
+                             "managers": list(statistic.manager.unique()),
+                             "date_from": self.filters.date_from,
+                             "date_to": self.filters.date_to
+                         },
+                         ensure_ascii=False,
+                         default=str,
+                         indent=2,
+                     ))
 
         if is_download:
             return data, total
