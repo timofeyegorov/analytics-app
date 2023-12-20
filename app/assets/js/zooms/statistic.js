@@ -5,22 +5,25 @@ let statisticsZoomAjax;
 (($) => {
     
     window.updateStatistic  = async function () {
-        console.log('getting statistic')
-        const managerName = "Алиев Анар";
-        const uploadedValue = 12;
-        const element = $('[data-uploaded="' + managerName + '"]');
-        element.text(uploadedValue);
+        console.log('zooms statistic')
         const data = statistic_json
 
         statisticsZoomAjax = $.ajax({
             url: `/zooms/statistics`,
             type: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            contentType: 'application/json',
             data: JSON.stringify(data),
-            success: (data, status) => {
-                console.log(data, status)
+            success: (responseData, status) => {
+                // Обновление значений в таблице
+                console.log(status)
+                responseData = JSON.parse(responseData)
+                responseData.data.forEach(item => {
+                    const managerName = item.manager;
+                    const uploaded = $(`[data-uploaded="${managerName}"]`);
+                    uploaded.text(item.uploaded);
+                    const dual = $(`[data-dual="${managerName}"]`);
+                    dual.text(item.dual);
+                });
             },
             error: (err) => {
                 console.log(err)

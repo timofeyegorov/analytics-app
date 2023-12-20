@@ -9,7 +9,7 @@ import requests
 
 from time import time
 from s3fs import S3FileSystem, S3File
-from typing import List, Optional
+from typing import List, Optional, Union
 from dotenv import load_dotenv
 from hashlib import sha1
 
@@ -175,28 +175,44 @@ class Client:
                 for path, _, file_list in self.s3fs.walk(path=path)
                 for file in file_list]
 
-    def get_paths_2_level(self) -> List[str]:
+    def walk_generator(
+            self,
+            path: str,
+            regexp: Union[str, None] = None
+    ) -> List[str]:
+        """
+        Метод рекурсивного получение имен файлов в указанном каталоге.
+        Если указано регулярное выражение, то оно будет применено к именам файлов
+        для поиска совпадений
+
+        :param path: путь до каталога.
+        :param regexp: регулярное выражение
+        :return: список имен файлов с указанием относительного пути
+        """
+        path = self._resolve_path(path)
+        for path, _, file_list in self.s3fs.walk(path=path):
+            for file in file_list:
+                full_path = os.path.join(path, file).replace('\\', '/').replace('//', '/').replace(f'{self.env.bucket}/', '')
+                if regexp:
+                    pattern = re.compile(regexp)
+                    if pattern.search(full_path):
+                        yield full_path
+                else:
+                    yield full_path
+
+    def get_paths_2_level(
+            self,
+            folder_name: Union[str, None] = None
+    ) -> List[str]:
         """
         Генератор пути второго уровня всех пользователей,
         в которых располагаются json файлы
         """
-        for folder in self.ls():
+        for folder in self.ls(folder_name):
             if folder.type == PathInfoTypeEnum.directory and folder.name != 'temp':
                 for sub_f in self.ls(folder.name):
                     if sub_f.type == PathInfoTypeEnum.directory:
                         yield sub_f.name
-
-    def get_paths_2_level_by_list(self, folders: List) -> List[str]:
-        """
-        Генератор пути второго уровня всех пользователей,
-        в которых располагаются json файлы
-        """
-        for f in folders:
-            for folder in self.ls(f):
-                if folder.type == PathInfoTypeEnum.directory and folder.name != 'temp':
-                    for sub_f in self.ls(folder.name):
-                        if sub_f.type == PathInfoTypeEnum.directory:
-                            yield sub_f.name
 
     def open(self, path: str):
         """
