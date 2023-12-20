@@ -1,5 +1,5 @@
 <table class="table-striped">
-    <thead>
+    <thead style="position: sticky;top: 0;z-index: 2;">
       <tr>
         <th scope="col">-</th>
         <th scope="col">Менеджер</th>
@@ -19,7 +19,7 @@
         </tr>
         {% endfor %}
     </tbody>
-  </table>
+</table>
 
 <script>
     var statistic_json = {{ statistic_json|tojson|safe }};

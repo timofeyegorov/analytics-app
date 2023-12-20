@@ -4147,7 +4147,6 @@ class ZoomsBaseView:
                 tmp_df = pandas.DataFrame.from_dict(data)
                 col_to_move = tmp_df.pop("data_link")
                 tmp_df.insert(8, "data_link", col_to_move)
-
                 df = pandas.concat([df, tmp_df])
         return df
 
@@ -4185,7 +4184,7 @@ class ZoomsStatisticsApiView(ZoomsBaseView, APIView):
                     )))
                     if audio_records >= len(f_list) * 2:
                         dual_records += 1
-                result.append({"manager": manager, "uploaded": folders, "dual": dual_records})
+                result.append({"manager": manager, "uploaded": len(folders), "dual": dual_records})
 
             self.data = json.dumps(
                 {"data": result}, indent=2, ensure_ascii=False

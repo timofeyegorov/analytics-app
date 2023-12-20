@@ -5,6 +5,12 @@ let statisticsZoomAjax;
 (($) => {
     
     window.updateStatistic  = async function () {
+        const spinner = $('#statisticSpinner');
+        const btn = $('#statisticButton');
+
+        spinner.show();
+        btn.attr("disabled", true);
+
         console.log('zooms statistic')
         const data = statistic_json
 
@@ -24,10 +30,13 @@ let statisticsZoomAjax;
                     const dual = $(`[data-dual="${managerName}"]`);
                     dual.text(item.dual);
                 });
+                spinner.hide();
+                btn.attr("disabled", false);
             },
             error: (err) => {
                 console.log(err)
             },
+            
         });
     }
 
