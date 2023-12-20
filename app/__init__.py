@@ -1,21 +1,13 @@
-import os
-import json
 import redis
-import click
-import pandas as pd
-import pickle as pkl
 # from flask_caching import Cache
 
-from flask import Flask, request, render_template
-from flask.cli import with_appcontext
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from .database.auth import check_token
 from .database import get_leads_data, get_target_audience
 from config import config
-from config import RESULTS_FOLDER
 from celery import Celery
 from celery.schedules import crontab
-from datetime import datetime, timedelta
 from app.plugins.tg_report import TGReportChannelsSummary
 from app import decorators, commands
 # import cache
@@ -281,4 +273,4 @@ def statuses_page():
 from .auth import *
 from .analytics import *
 from .trafficologists import *
-from .templates.template_filters import *
+from app.template_filters import *
