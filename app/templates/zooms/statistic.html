@@ -1,0 +1,26 @@
+<div class="modal fade" id="statisticModal" tabindex="-1" aria-labelledby="statisticModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="statisticModal">Период: {{ filters.date_from|format_datetime }} - {{ filters.date_to|format_datetime }}</h5>            
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>           
+        </div>
+        <div class="modal-body" style="padding-top: inherit;">
+            {% include 'zooms/table.html'%}
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" onclick="updateStatistic()" id="statisticButton">
+                <span 
+                    class="spinner-border spinner-border-sm" 
+                    role="status" 
+                    aria-hidden="true" 
+                    id="statisticSpinner"
+                    style="display: none; margin-right: 5px;">
+                </span>
+                Обновить информацию
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        </div>
+        </div>
+    </div>
+</div>
