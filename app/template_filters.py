@@ -6,7 +6,7 @@ babel = Babel(app)
 
 
 @app.template_filter()
-def format_datetime(value, date_format: str = "dd.m.YYYY"):
+def format_datetime(value, date_format: str = "dd.mm.YYYY"):
     if not value:
         return ''
     return babel_format_datetime(value, date_format)
