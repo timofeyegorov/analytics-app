@@ -4124,30 +4124,32 @@ class ZoomsBaseView:
                 datetime_obj = folder_path.split("/")[-1]
                 date_str = datetime_obj.split("-")[0]
                 time_str = datetime_obj.split("-")[1]
+                tmp_json = {}
 
                 if self.__check_date(
                         current_date=date_str, date_from=date_from, date_to=date_to
                 ):
+                    data = {
+                        "manager": manager,
+                        "date": datetime.datetime.strptime(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}",
+                                                           "%Y-%m-%d").date(),
+                        "time": datetime.datetime.strptime(f"{time_str[:2]}:{time_str[2:]}:00", "%H:%M:%S").time(),
+                        "data_link": "_".join(folder_path.split("/")[-2:])
+                    }
+
                     try:
                         with s3.open(folder_path + "/" + json_name) as obj:
                             tmp_json = json.load(obj)
                     except FileNotFoundError:
-                        continue
+                        pass
+
+                    data.update(JsonParseService().to_dict(tmp_json))
+                    tmp_df = pandas.DataFrame.from_dict(data)
+                    col_to_move = tmp_df.pop("data_link")
+                    tmp_df.insert(8, "data_link", col_to_move)
+                    df = pandas.concat([df, tmp_df])
                 else:
                     continue
-                data = {
-                    "manager": manager,
-                    "date": datetime.datetime.strptime(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}",
-                                                       "%Y-%m-%d").date(),
-                    "time": datetime.datetime.strptime(f"{time_str[:2]}:{time_str[2:]}:00", "%H:%M:%S").time(),
-                    "data_link": "_".join(folder_path.split("/")[-2:])
-                }
-
-                data.update(JsonParseService().to_dict(tmp_json))
-                tmp_df = pandas.DataFrame.from_dict(data)
-                col_to_move = tmp_df.pop("data_link")
-                tmp_df.insert(8, "data_link", col_to_move)
-                df = pandas.concat([df, tmp_df])
         return df
 
 

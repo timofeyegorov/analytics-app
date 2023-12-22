@@ -54,7 +54,7 @@
                                             <td class="font-monospace text-center">{% if item[column] %}{{ item[column] }} %{% endif %}</td>
                                     {% elif column == "Ссылка на видео" %}
                                         <td class="nowrap font-monospace text-center">                                        
-                                            {% if item.revealing or item.presentation or item.objections or item.materials or item.general_report %}
+                                            {% if item[column] %}
                                                 <a class="btn btn-outline-primary" role="button" data-link="{{ item[column] }}" @click="get_link">Получить</a>
                                             {% endif %}
                                         </td>
