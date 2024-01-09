@@ -4481,7 +4481,7 @@ class ZoomsView(ZoomsBaseView, FilteringBaseView):
         data.fillna("", inplace=True)
 
         data = data[
-            [col for col in data.columns if (col != "time" and col != "profit")]
+            [col for col in data.columns if col != "profit"]
         ]
         data.rename(
             columns={
@@ -4490,6 +4490,7 @@ class ZoomsView(ZoomsBaseView, FilteringBaseView):
                 "date": "Дата зума",
                 "lead": "Лид",
                 # "profit": "Оплата",
+                "time": "Время",
                 "typeZoom": "B2B или B2С",
                 "ratio": "Клиент/Менеджер",
                 "quality": "Качество Zoom",

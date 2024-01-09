@@ -12,7 +12,11 @@
                 <tr>
                     {% for column in data.columns %}
                         {% if column not in extras.exclude_columns %}
-                            <th class="sticky">{{ column }}</th>
+                            {% if column == "Время" %}
+                                <th class="sticky nowrap"  v-if="showArchiveData" v-cloak>{{ column }}</th>
+                            {% else %}
+                                <th class="sticky">{{ column }}</th>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                     <th class="sticky nowrap" v-if="showArchiveData" v-cloak>Вероятность<br>покупки</th>
@@ -41,9 +45,18 @@
                             {% for column in data.columns %}
                                 {% if column not in extras.exclude_columns %}
                                     {% if column == "Лид" %}
-                                        <td class="nowrap"><a href="https://neuraluniversity.amocrm.ru/leads/detail/{{ item[column] }}" target="_blank">{{ item[column] }}</a></td>
+                                        <td 
+                                        data-amo="{{ item[column] }}"
+                                        class="nowrap"
+                                        ><a href="https://neuraluniversity.amocrm.ru/leads/detail/{{ item[column] }}" target="_blank">{{ item[column] }}</a></td>
                                     {% elif column == "Дата зума" %}
-                                        <td class="nowrap font-monospace">{{ format_date(item[column]) }}</td>
+                                        <td 
+                                        class="nowrap font-monospace" 
+                                        data-date="{{format_date(item[column])}}"
+                                        data-time="{{item['Время']}}"
+                                        >{{ format_date(item[column]) }}</td>
+                                    {% elif column == "Время" %}
+                                        <td class="nowrap font-monospace" v-if="showArchiveData" v-cloak>{{ item[column] }}</td>
                                     {% elif column == "Оплата" %}
                                         <td class="nowrap font-monospace text-right">{{ format_int(item[column]) }} ₽</td>
                                     {% elif column == "Качество Zoom" %}                                
@@ -65,7 +78,9 @@
                                             {% endif %}
                                         </td>
                                     {% elif (column == "Менеджер") %}
-                                        <td class="nowrap">{{ item[column] }}</td>
+                                        <td 
+                                        data-manager="{{item[column]}}"
+                                        class="nowrap">{{ item[column] }}</td>
                                     {% else %}
                                         <td class="nowrap font-monospace text-center">{{ item[column] }}</td>
                                     {% endif %}

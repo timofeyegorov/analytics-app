@@ -1,4 +1,5 @@
-const AppStatistic = {
+var AppStatistic = new Vue({
+    el: '#statistics',
     delimiters: ['[[', ']]'],
     data() {
         return {
@@ -60,7 +61,5 @@ const AppStatistic = {
                 event.target.innerHTML = 'Развернуть'
             }
         }
-    },   
-}
-
-Vue.createApp(AppStatistic).mount('#statistics')
+    }, 
+  })
