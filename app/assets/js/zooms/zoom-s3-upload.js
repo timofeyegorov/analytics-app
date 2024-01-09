@@ -1,4 +1,5 @@
-const App = {
+var App = new Vue({
+    el: '#app',
     delimiters: ['[[', ']]'],
     data() {
         return {
@@ -259,6 +260,4 @@ const App = {
             return response                        
         },
     }
-}
-
-Vue.createApp(App).mount('#app')
+})
