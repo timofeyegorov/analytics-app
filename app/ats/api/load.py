@@ -27,7 +27,7 @@ def get_response(df: datetime.date, dt: datetime.date) -> pandas.DataFrame:
         'to': datetime.date.strftime(dt, '%Y-%m-%d'),
         'toAnswer': '',
         'toNumber': '',
-        'tree': '000-478278',
+        'tree': '',
         'type': '2',
         'user': user_api,
         'hash': hash_api,
