@@ -1167,7 +1167,7 @@ def get_managers_sales():
         "https://docs.google.com/spreadsheets/d/1ZOsLTSWLGIFwZfWusioUcyngGXE_sGSSbqs5-ELsg_w/export?format=xlsx&id=1ZOsLTSWLGIFwZfWusioUcyngGXE_sGSSbqs5-ELsg_w"
     )
     groups: pandas.DataFrame = pandas.read_excel(
-        BytesIO(response.content), sheet_name="Продукты УИИ", dtype=str
+        BytesIO(response.content), sheet_name="Продукты УИИ", dtype=str, engine="openpyxl"
     )
     groups.rename(
         columns=dict(zip(list(groups.columns), slugify_columns(list(groups.columns)))),
@@ -1540,7 +1540,7 @@ def get_source_so():
     response = requests.get(
         "https://docs.google.com/spreadsheets/d/1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE/export?format=xlsx&id=1C4TnjTkSIsHs2svSgyFduBpRByA7M_i2sa6hrsX84EE"
     )
-    data_file = pandas.ExcelFile(BytesIO(response.content))
+    data_file = pandas.ExcelFile(BytesIO(response.content), engine='openpyxl')
     data: pandas.DataFrame = data_file.parse("SpecialOffers")
     data.rename(
         columns=dict(zip(data.columns, slugify_columns(list(data.columns)))),
