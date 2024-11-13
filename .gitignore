@@ -4,6 +4,7 @@ logs/
 *standalone*
 webserver_config.py
 /.idea/
+.DS_Store
 celerybeat-schedule
 /app/dags/results/
 /app/dags/data/

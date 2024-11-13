@@ -22,7 +22,7 @@ def format_percent(x):
 # для фильтра по опенерам
 def show_openers_list():
     data = prep_data()
-    data_set = data['Откуда'].tolist()
+    data_set = data['ИсходящаяЛиния'].tolist()
     result = list(set(data_set))
     return result
 
@@ -30,7 +30,7 @@ def show_openers_list():
 # для фильтра по номерам
 def show_numbers_list():
     data = prep_data()
-    data_set = data['ИсходящаяЛиния'].tolist()
+    data_set = data['Откуда'].tolist()
     result = list(set(data_set))
     return result
 

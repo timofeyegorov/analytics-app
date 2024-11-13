@@ -13,6 +13,7 @@ def prep_data():
     global filter_open
     global settings_open
     data = pd.read_csv(file_path, delimiter=';', low_memory=False)
+    # TODO может быть стоит брать этот параметр 'Информация из CRM' в работу вместо Исходящая линия
     # удалим лишние данные
     new_data = data.drop(
         columns=['Схема', 'Кто разговаривал', 'Кто ответил', 'Оценка', 'ID записи', 'Метка', 'Теги', 'ID заказа звонка',
@@ -20,16 +21,16 @@ def prep_data():
                  'Ответственный из CRM'])
     # добавим нужные столбы
     new_data['Дозвон'] = [1 if duration > 10 and status == 'Отвечен' else 0 for duration, status in
-                          zip(new_data['Длительность звонка'], new_data['Статус'])]
+                          zip(new_data['Длительность звонка'], new_data['Тип'])]
     new_data['Звонок'] = 1
     # Это нужно чтобы работал query, с пробелами в названии не работает
     new_data = new_data.rename(columns={'Исходящая линия': 'ИсходящаяЛиния'})
     if settings_open != []:
         new_data = new_data.query(f'Откуда == {settings_open}')
     if filter_open != []:
-        new_data = new_data.query(f'Откуда == {filter_open}')
+        new_data = new_data.query(f'ИсходящаяЛиния == {filter_open}')
     if filter_num != []:
-        new_data = new_data.query(f'ИсходящаяЛиния == {filter_num}')
+        new_data = new_data[new_data['Откуда'].isin([int(x) for x in filter_num])]
     return new_data
 
 
