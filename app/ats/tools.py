@@ -38,6 +38,8 @@ def show_numbers_list():
 # По номера телефона
 def table_number(options: Union[int, str] = None):
     data = prep_data()
+    if data.empty:
+        return data
     if options is None:
         # делаем сводную таблицу
         table = data.pivot_table(index=['ИсходящаяЛиния', 'Откуда'], values=['Дозвон', 'Звонок'],

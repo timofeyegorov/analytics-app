@@ -12,7 +12,10 @@ def prep_data():
     global filter_num
     global filter_open
     global settings_open
-    data = pd.read_csv(file_path, delimiter=';', low_memory=False)
+    try:
+        data = pd.read_csv(file_path, delimiter=';', low_memory=False)
+    except FileNotFoundError:
+        return pd.DataFrame({}, columns=['Откуда', 'ИсходящаяЛиния', 'Дозвон', 'Звонок'])
     # TODO может быть стоит брать этот параметр 'Информация из CRM' в работу вместо Исходящая линия
     # удалим лишние данные
     new_data = data.drop(

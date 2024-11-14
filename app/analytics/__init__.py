@@ -1390,7 +1390,35 @@ from app.ats.preparData import (
 from flask.views import MethodView
 
 
-class CallsMain(MethodView):
+class CallsBase(MethodView):
+
+    @staticmethod
+    def update_calls(redirect_to: str = None):
+        start_date = (
+            datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+        ).strftime("%d-%m-%Y")
+        end_date = (
+            datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+        ).strftime("%d-%m-%Y")
+        data_range = (
+            f"Текущий диапазон данных: с {start_date} по {end_date}"
+        )
+        set_datarange(data_range)
+        response_status_code = start_import(start_date, end_date)
+        if response_status_code == 200:
+            message = (
+                f"Получены данные звонков с {start_date} по {end_date}"
+            )
+        else:
+            message = (f"Ошибка получения данных с {start_date} по {end_date} "
+                       f"на стороне Sipuni. Статус: {response_status_code}")
+        if not redirect_to:
+            return message
+
+        return redirect(url_for(redirect_to, message=message))
+
+
+class CallsMain(CallsBase):
     def get(self):
         return render_template(
             "calls/index.html",
@@ -1401,23 +1429,7 @@ class CallsMain(MethodView):
 
     def post(self):
         if "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            # Вызываем функцию для получения данных с api
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
+            message = self.update_calls()
             return render_template(
                 "calls/index.html",
                 data_list=show_openers_list(),
@@ -1438,7 +1450,7 @@ class CallsMain(MethodView):
             return redirect(url_for("calls_main"))
 
 
-class callsNumbers(MethodView):
+class callsNumbers(CallsBase):
     def get(self):
         message = request.args.get("message", "")
         type_table = session.get("type_table")
@@ -1457,23 +1469,8 @@ class callsNumbers(MethodView):
 
     def post(self):
         if "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
-            return redirect(url_for("calls_numbers", message=message))
+            self.update_calls("calls_numbers")
+
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_numbers"))
@@ -1495,7 +1492,7 @@ class callsNumbers(MethodView):
             return redirect(url_for("calls_main"))
 
 
-class callsOpeners(MethodView):
+class callsOpeners(CallsBase):
     def get(self):
         message = request.args.get("message", "")
         type_table = session.get("type_table")
@@ -1514,23 +1511,8 @@ class callsOpeners(MethodView):
 
     def post(self):
         if "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
-            return redirect(url_for("calls_openers", message=message))
+            self.update_calls("calls_openers")
+
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_openers"))
@@ -1552,7 +1534,7 @@ class callsOpeners(MethodView):
             return redirect(url_for("calls_main"))
 
 
-class callsHours(MethodView):
+class callsHours(CallsBase):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_time_day()
@@ -1570,23 +1552,8 @@ class callsHours(MethodView):
 
     def post(self):
         if "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
-            return redirect(url_for("calls_hours", message=message))
+            self.update_calls("calls_hours")
+
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_hours"))
@@ -1600,7 +1567,7 @@ class callsHours(MethodView):
             return redirect(url_for("calls_main"))
 
 
-class callsOpenerNumber(MethodView):
+class callsOpenerNumber(CallsBase):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_opener_number(2)
@@ -1642,28 +1609,12 @@ class callsOpenerNumber(MethodView):
             filter_delete()
             return redirect(url_for("calls_openernumber"))
         elif "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
-            return redirect(url_for("calls_openernumber", message=message))
+            self.update_calls("calls_openernumber")
         else:
             return redirect(url_for("calls_main"))
 
 
-class callsOpenerHour(MethodView):
+class callsOpenerHour(CallsBase):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_opener_time(2)
@@ -1705,28 +1656,12 @@ class callsOpenerHour(MethodView):
             filter_delete()
             return redirect(url_for("calls_openerhour"))
         elif "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
-            return redirect(url_for("calls_openerhour", message=message))
+            self.update_calls("calls_openerhour")
         else:
             return redirect(url_for("calls_main"))
 
 
-class callsMedTime(MethodView):
+class callsMedTime(CallsBase):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_timecall()
@@ -1744,23 +1679,7 @@ class callsMedTime(MethodView):
 
     def post(self):
         if "change_data" in request.form:
-            start_date = (
-                datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            end_date = (
-                datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            ).strftime("%d-%m-%Y")
-            data_range = (
-                f"Текущий диапазон данных: с {start_date} по {end_date}"
-            )
-            set_datarange(data_range)
-            if start_import(start_date, end_date) == 200:
-                message = (
-                    f"Получены данные звонков с {start_date} по {end_date}"
-                )
-            else:
-                message = f"Ошибка получения данных на стороне Sipuni"
-            return redirect(url_for("calls_medtime", message=message))
+            self.update_calls("calls_medtime")
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_medtime"))
