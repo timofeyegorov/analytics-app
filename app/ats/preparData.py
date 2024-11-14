@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 
 file_path = 'app/ats/api/data.csv'
@@ -5,6 +6,17 @@ filter_open: list = []
 filter_num: list = []
 settings_open: list = []
 data_range = ''
+
+
+def contains_digits(s):
+    return bool(re.search(r'\d', s))
+
+
+def format_phone(number: str) -> str:
+    if not contains_digits(number):
+        return number
+    digits = re.sub(r'\D', '', number)
+    return f"+7 {digits[1:4]} {digits[4:7]}-{digits[7:9]}-{digits[9:]}"
 
 
 # Функция подготовки базовой таблицы для всех срезов
@@ -15,13 +27,17 @@ def prep_data():
     try:
         data = pd.read_csv(file_path, delimiter=';', low_memory=False)
     except FileNotFoundError:
-        return pd.DataFrame({}, columns=['Откуда', 'ИсходящаяЛиния', 'Дозвон', 'Звонок'])
+        return pd.DataFrame({}, columns=['Схема', 'ИсходящаяЛиния', 'Дозвон', 'Звонок'])
     # TODO может быть стоит брать этот параметр 'Информация из CRM' в работу вместо Исходящая линия
     # удалим лишние данные
     new_data = data.drop(
-        columns=['Схема', 'Кто разговаривал', 'Кто ответил', 'Оценка', 'ID записи', 'Метка', 'Теги', 'ID заказа звонка',
+        columns=['Откуда', 'Кто разговаривал', 'Кто ответил', 'Оценка', 'ID записи', 'Метка', 'Теги', 'ID заказа звонка',
                  'Запись существует', 'Новый клиент', 'Состояние перезвона', 'Время перезвона', 'Информация из CRM',
                  'Ответственный из CRM', 'Unnamed: 0'])
+    new_data = new_data[~new_data['Схема'].isna()]
+    # форматируем телефоны
+    new_data['Схема'] = new_data['Схема'].apply(format_phone)
+    new_data['Схема'] = new_data['Схема'].astype(str)
     # добавим нужные столбы
     new_data['Дозвон'] = [1 if duration > 10 and status == 'Отвечен' else 0 for duration, status in
                           zip(new_data['Длительность звонка'], new_data['Тип'])]
@@ -29,11 +45,11 @@ def prep_data():
     # Это нужно чтобы работал query, с пробелами в названии не работает
     new_data = new_data.rename(columns={'Исходящая линия': 'ИсходящаяЛиния'})
     if settings_open != []:
-        new_data = new_data.query(f'Откуда == {settings_open}')
+        new_data = new_data.query(f'Схема == {settings_open}')
     if filter_open != []:
         new_data = new_data.query(f'ИсходящаяЛиния == {filter_open}')
     if filter_num != []:
-        new_data = new_data[new_data['Откуда'].isin([int(x) for x in filter_num])]
+        new_data = new_data[new_data['Схема'].isin(filter_num)]
     return new_data
 
 

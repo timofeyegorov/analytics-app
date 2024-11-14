@@ -31,7 +31,7 @@ def show_openers_list():
 # для фильтра по номерам
 def show_numbers_list():
     data = prep_data()
-    data_set = data['Откуда'].tolist()
+    data_set = data['Схема'].tolist()
     result = list(set(data_set))
     return result
 
@@ -43,8 +43,8 @@ def table_number(options: Union[int, str] = None):
         return data
     if options is None:
         # делаем сводную таблицу
-        table = data.pivot_table(index=['ИсходящаяЛиния', 'Откуда'], values=['Дозвон', 'Звонок'],
-                                 aggfunc="sum", margins=True, margins_name='Итого')
+        table = data.pivot_table(index=['ИсходящаяЛиния', 'Схема'], values=['Дозвон', 'Звонок'],
+                                 aggfunc=[np.sum], margins=True, margins_name='Итого')
         # добавляем в нее вычисляемое поле
         table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
         # Применяем форматирование процентного значения к столбцу '%'
@@ -59,7 +59,7 @@ def table_number(options: Union[int, str] = None):
     else:
         # делаем сводную таблицу
         table = data.pivot_table(index='ИсходящаяЛиния', values=['Дозвон', 'Звонок'],
-                                 aggfunc="sum", margins=True, margins_name='Итого')
+                                 aggfunc=[np.sum], margins=True, margins_name='Итого')
         # добавляем в нее вычисляемое поле
         table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
         # Применяем форматирование процентного значения к столбцу '%'

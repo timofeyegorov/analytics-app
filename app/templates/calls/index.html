@@ -52,6 +52,10 @@
         width: 220px;
         font-size: 16px; /* Установите желаемый размер шрифта для опций */
     }
+    .disabled {
+    pointer-events: none;
+    opacity: 0.6;
+}
 </style>
 <body>
 <br>
@@ -133,13 +137,13 @@
         номерам</a>
     <a href="{{ url_for('calls_openers') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
         опенерам</a>
-    <a href="{{ url_for('calls_hours') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+    <a href="{{ url_for('calls_hours') }}" class="btn btn-outline-success disabled" role="button" aria-pressed="true">По
         часам</a>
-    <a href="{{ url_for('calls_openernumber') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+    <a href="{{ url_for('calls_openernumber') }}" class="btn btn-outline-success disabled" role="button" aria-pressed="true">По
         опенерам-номерам</a>
-    <a href="{{ url_for('calls_openerhour') }}" class="btn btn-outline-success" role="button" aria-pressed="true">По
+    <a href="{{ url_for('calls_openerhour') }}" class="btn btn-outline-success disabled" role="button" aria-pressed="true">По
         опенерам-часам</a>
-    <a href="{{ url_for('calls_medtime') }}" class="btn btn-outline-success" role="button" aria-pressed="true">Среднее
+    <a href="{{ url_for('calls_medtime') }}" class="btn btn-outline-success disabled" role="button" aria-pressed="true">Среднее
         время</a>
     <hr>
 </div>
