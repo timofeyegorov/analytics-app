@@ -1390,10 +1390,9 @@ from app.ats.preparData import (
 from flask.views import MethodView
 
 
-class CallsBase(MethodView):
+class CallsBaseMixin:
 
-    @staticmethod
-    def update_calls(redirect_to: str = None):
+    def update_calls(self, redirect_to: str = None):
         start_date = (
             datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
         ).strftime("%d-%m-%Y")
@@ -1418,7 +1417,7 @@ class CallsBase(MethodView):
         return redirect(url_for(redirect_to, message=message))
 
 
-class CallsMain(CallsBase):
+class CallsMain(MethodView, CallsBaseMixin):
     def get(self):
         return render_template(
             "calls/index.html",
@@ -1450,7 +1449,7 @@ class CallsMain(CallsBase):
             return redirect(url_for("calls_main"))
 
 
-class callsNumbers(CallsBase):
+class callsNumbers(MethodView, CallsBaseMixin):
     def get(self):
         message = request.args.get("message", "")
         type_table = session.get("type_table")
@@ -1469,8 +1468,7 @@ class callsNumbers(CallsBase):
 
     def post(self):
         if "change_data" in request.form:
-            self.update_calls("calls_numbers")
-
+            return self.update_calls(redirect_to="calls_numbers")
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_numbers"))
@@ -1492,7 +1490,7 @@ class callsNumbers(CallsBase):
             return redirect(url_for("calls_main"))
 
 
-class callsOpeners(CallsBase):
+class callsOpeners(MethodView, CallsBaseMixin):
     def get(self):
         message = request.args.get("message", "")
         type_table = session.get("type_table")
@@ -1511,8 +1509,7 @@ class callsOpeners(CallsBase):
 
     def post(self):
         if "change_data" in request.form:
-            self.update_calls("calls_openers")
-
+            return self.update_calls("calls_openers")
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_openers"))
@@ -1534,7 +1531,7 @@ class callsOpeners(CallsBase):
             return redirect(url_for("calls_main"))
 
 
-class callsHours(CallsBase):
+class callsHours(MethodView, CallsBaseMixin):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_time_day()
@@ -1552,7 +1549,7 @@ class callsHours(CallsBase):
 
     def post(self):
         if "change_data" in request.form:
-            self.update_calls("calls_hours")
+            return self.update_calls("calls_hours")
 
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
@@ -1567,7 +1564,7 @@ class callsHours(CallsBase):
             return redirect(url_for("calls_main"))
 
 
-class callsOpenerNumber(CallsBase):
+class callsOpenerNumber(MethodView, CallsBaseMixin):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_opener_number(2)
@@ -1609,12 +1606,12 @@ class callsOpenerNumber(CallsBase):
             filter_delete()
             return redirect(url_for("calls_openernumber"))
         elif "change_data" in request.form:
-            self.update_calls("calls_openernumber")
+            return self.update_calls("calls_openernumber")
         else:
             return redirect(url_for("calls_main"))
 
 
-class callsOpenerHour(CallsBase):
+class callsOpenerHour(MethodView, CallsBaseMixin):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_opener_time(2)
@@ -1656,12 +1653,12 @@ class callsOpenerHour(CallsBase):
             filter_delete()
             return redirect(url_for("calls_openerhour"))
         elif "change_data" in request.form:
-            self.update_calls("calls_openerhour")
+            return self.update_calls("calls_openerhour")
         else:
             return redirect(url_for("calls_main"))
 
 
-class callsMedTime(CallsBase):
+class callsMedTime(MethodView, CallsBaseMixin):
     def get(self):
         message = request.args.get("message", "")
         pivot_table = table_timecall()
@@ -1679,7 +1676,7 @@ class callsMedTime(CallsBase):
 
     def post(self):
         if "change_data" in request.form:
-            self.update_calls("calls_medtime")
+            return self.update_calls("calls_medtime")
         elif "change_openers" in request.form:
             filter_openers(request.form.getlist("options"))
             return redirect(url_for("calls_medtime"))
@@ -1693,7 +1690,7 @@ class callsMedTime(CallsBase):
             return redirect(url_for("calls_main"))
 
 
-class callsSettings(MethodView):
+class callsSettings(MethodView, CallsBaseMixin):
     def get(self):
         return render_template(
             "calls/settings.html", openers=show_openers_list()

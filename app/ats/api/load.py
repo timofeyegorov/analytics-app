@@ -72,5 +72,6 @@ def start_import(from_date, to_date):
         logger.error(f'Error: {error_message}')
 
     if not dataframe.empty:
+        dataframe.reset_index(drop=True, inplace=True)
         dataframe.to_csv('app/ats/api/data.csv', sep=';', encoding='utf-8')
     return status_code

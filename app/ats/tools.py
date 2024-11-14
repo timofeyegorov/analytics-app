@@ -1,6 +1,7 @@
 from typing import Union
 import pandas as pd
 import numpy as np
+
 from app.ats.preparData import prep_data
 
 
@@ -43,7 +44,7 @@ def table_number(options: Union[int, str] = None):
     if options is None:
         # делаем сводную таблицу
         table = data.pivot_table(index=['ИсходящаяЛиния', 'Откуда'], values=['Дозвон', 'Звонок'],
-                                 aggfunc=[np.sum], margins=True, margins_name='Итого')
+                                 aggfunc="sum", margins=True, margins_name='Итого')
         # добавляем в нее вычисляемое поле
         table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
         # Применяем форматирование процентного значения к столбцу '%'
@@ -58,7 +59,7 @@ def table_number(options: Union[int, str] = None):
     else:
         # делаем сводную таблицу
         table = data.pivot_table(index='ИсходящаяЛиния', values=['Дозвон', 'Звонок'],
-                                 aggfunc=[np.sum], margins=True, margins_name='Итого')
+                                 aggfunc="sum", margins=True, margins_name='Итого')
         # добавляем в нее вычисляемое поле
         table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
         # Применяем форматирование процентного значения к столбцу '%'
