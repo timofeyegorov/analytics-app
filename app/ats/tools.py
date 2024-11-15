@@ -74,7 +74,7 @@ def table_number(options: Union[int, str] = None):
 def table_opener(options: Union[int, str] = None):
     data = prep_data()
     if options is None:
-        table = data.pivot_table(index=['Откуда', 'ИсходящаяЛиния'], values=['Звонок', 'Дозвон'], aggfunc=[np.sum],
+        table = data.pivot_table(index=['ИсходящаяЛиния', 'Схема'], values=['Звонок', 'Дозвон'], aggfunc=[np.sum],
                                  margins=True, margins_name='Итого')
         # добавляем в нее вычисляемое поле
         table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
@@ -83,12 +83,12 @@ def table_opener(options: Union[int, str] = None):
         # Извлекаем строку с итогами
         total_row = table.iloc[-1].copy()
         # Удаляем строку с итогами из исходной таблицы
-        table.drop(index='Итого', level='Откуда', inplace=True)
+        table.drop(index='Итого', level='ИсходящаяЛиния', inplace=True)
         # Вставляем строку с итогами в начало таблицы
         table = pd.concat([total_row.to_frame().T, table], axis=0)
         return table
     else:
-        table = data.pivot_table(index='Откуда', values=['Звонок', 'Дозвон'], aggfunc=[np.sum],
+        table = data.pivot_table(index='ИсходящаяЛиния', values=['Звонок', 'Дозвон'], aggfunc=[np.sum],
                                  margins=True, margins_name='Итого')
         # добавляем в нее вычисляемое поле
         table['Дозвон%'] = table[('sum', 'Дозвон')] / table[('sum', 'Звонок')]
