@@ -2,7 +2,7 @@ import re
 import pandas as pd
 
 file_path = 'app/ats/api/data.csv'
-filter_open: list = ['236 (Хмелева Мария)', '306 (Исангильдина Гузель)', '565 (Шустанова Наталья)', '576 (Жердева Ангелина)', '645 (Филимонова Оксана)', '798 (Михайлов Максим)', '852 (Жакевич Артем)']
+filter_open: list = []
 filter_num: list = []
 settings_open: list = []
 data_range = ''
