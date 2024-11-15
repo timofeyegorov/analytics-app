@@ -16,7 +16,9 @@ def format_phone(number: str) -> str:
     if not contains_digits(number):
         return number
     digits = re.sub(r'\D', '', number)
-    return f"+7 {digits[1:4]} {digits[4:7]}-{digits[7:9]}-{digits[9:]}"
+    bias = 1 if digits.startswith('9') else 0
+    return (f"+7 {digits[1 - bias:4 - bias]} {digits[4 - bias:7 - bias]}"
+            f"-{digits[7 - bias:9 - bias]}-{digits[9 - bias:]}")
 
 
 # Функция подготовки базовой таблицы для всех срезов
