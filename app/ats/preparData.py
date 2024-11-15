@@ -2,7 +2,7 @@ import re
 import pandas as pd
 
 file_path = 'app/ats/api/data.csv'
-filter_open: list = []
+filter_open: list = ['236 (Хмелева Мария)', '306 (Исангильдина Гузель)', '565 (Шустанова Наталья)', '576 (Жердева Ангелина)', '645 (Филимонова Оксана)', '798 (Михайлов Максим)', '852 (Жакевич Артем)']
 filter_num: list = []
 settings_open: list = []
 data_range = ''
@@ -41,8 +41,8 @@ def prep_data():
     new_data['Схема'] = new_data['Схема'].apply(format_phone)
     new_data['Схема'] = new_data['Схема'].astype(str)
     # добавим нужные столбы
-    new_data['Дозвон'] = [1 if duration > 10 and status == 'Отвечен' else 0 for duration, status in
-                          zip(new_data['Длительность звонка'], new_data['Тип'])]
+    new_data['Дозвон'] = [1 if duration > 5 and status == 'Отвечен' else 0 for duration, status in
+                          zip(new_data['Длительность разговора'], new_data['Тип'])]
     new_data['Звонок'] = 1
     # Это нужно чтобы работал query, с пробелами в названии не работает
     new_data = new_data.rename(columns={'Исходящая линия': 'ИсходящаяЛиния'})
